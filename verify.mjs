@@ -120,6 +120,10 @@ const AUDIT = `(() => {
 })()`
 
 const browser = await chromium.launch()
+const failures = []
+const gate = (size, label, condition) => {
+  if (condition) failures.push(size + ' ' + label)
+}
 for (const size of SIZES) {
   const page = await browser.newPage({ viewport: size, deviceScaleFactor: 1 })
   const errors = []
@@ -133,8 +137,16 @@ for (const size of SIZES) {
   const reduced = await page.evaluate(AUDIT)
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.waitForTimeout(13000)
-  const max = await page.evaluate(() => document.body.scrollHeight - innerHeight)
-  await page.evaluate((y) => window.scrollTo(0, y), Math.round(max * 0.42))
+  /* Sample at 42% of the *film*, not of the document. The product
+     console appended below the stage grows the document, so a
+     document-relative probe would stop describing the mid-film frame. */
+  const filmEnd = await page.evaluate(() => {
+    const stage = document.querySelector('.stage')
+    return stage
+      ? Math.max(0, stage.offsetHeight - innerHeight)
+      : document.body.scrollHeight - innerHeight
+  })
+  await page.evaluate((y) => window.scrollTo(0, y), Math.round(filmEnd * 0.42))
   await page.waitForTimeout(600)
   const mid = await page.evaluate(AUDIT)
 
@@ -194,6 +206,25 @@ for (const size of SIZES) {
   for (const line of reduced.outline) console.log('    ' + line)
   console.log('  landmarks          ' + JSON.stringify(reduced.landmarks))
   if (errors.length) console.log('  CONSOLE ERRORS     ' + errors.join(' | '))
+
+  /* Exit gate: horizontal overflow and any sub-4.5:1 text are hard
+     failures at every viewport, in every pass. */
+  gate(size.label, 'horizontalOverflow ' + mid.horizontalOverflow, mid.horizontalOverflow > 0)
+  gate(size.label, 'lowContrast mid', mid.contrastFloor.length > 0)
+  gate(size.label, 'lowContrast reduced', reduced.contrastFloor.length > 0)
+  gate(size.label, 'reduced horizontalOverflow ' + reduced.horizontalOverflow, reduced.horizontalOverflow > 0)
+  for (const [id, snap] of Object.entries(centred)) {
+    gate(size.label, 'lowContrast @' + id, snap.contrastFloor.length > 0)
+    gate(size.label, 'overflow @' + id, snap.horizontalOverflow > 0)
+  }
+
   await page.close()
 }
 await browser.close()
+
+if (failures.length) {
+  console.log('\nFAILED CHECKS')
+  for (const f of failures) console.log('  ' + f)
+  process.exit(1)
+}
+console.log('\nall gate checks passed')

@@ -274,15 +274,24 @@ export function useCinema(stageRef) {
     lenis.on('scroll', onForeignScroll)
     window.addEventListener('keydown', onKey)
 
-    lenis.scrollTo(lenis.limit, {
-      ...AUTOPLAY_SCROLL,
-      duration: AUTOPLAY,
-      /* `power1.inOut` translated from the GSAP easing the autoplay
-         used to run on, so the scroll surface keeps the same feel. */
-      easing: (t) =>
-        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
-      onComplete: stop,
-    })
+    /* The autoplay target is the end of the *film*, not the end of the
+       document. Today those are the same number — the visually hidden
+       h1 above the stage contributes no height — so this is
+       bit-identical behaviour. With the product console appended below
+       the stage it becomes what it always meant to be: the last frame
+       of act six, rather than a sprint through the console. */
+    lenis.scrollTo(
+      Math.min(lenis.limit, Math.max(0, stage.offsetHeight - window.innerHeight)),
+      {
+        ...AUTOPLAY_SCROLL,
+        duration: AUTOPLAY,
+        /* `power1.inOut` translated from the GSAP easing the autoplay
+           used to run on, so the scroll surface keeps the same feel. */
+        easing: (t) =>
+          t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+        onComplete: stop,
+      },
+    )
 
     /* Lenis and ScrollTrigger both need to re-measure on resize, and
        in that order: Lenis recomputes its own limit, and ScrollTrigger
