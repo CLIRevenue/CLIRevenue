@@ -1,111 +1,343 @@
+/* =============================================================
+   CLIRevenue — design tokens
+   Dark graphite terminal environment, restrained amber
+   instrumentation, hairline borders, precise spacing.
+   ============================================================= */
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* surfaces */
+  --void: #07070a;
+  --stage: #0a0b0d;
+  --panel: #0d0e11;
+  --panel-2: #101216;
+  --chrome: #14161a;
+  --input: #0a0b0e;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  /* hairlines */
+  --hair: rgba(255, 255, 255, 0.06);
+  --hair-strong: rgba(255, 255, 255, 0.11);
+  --hair-amber: rgba(240, 169, 43, 0.28);
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Ink ramp. Four steps, monotonic, and every one of them clears
+     WCAG AA (4.5:1) against every surface in the palette — worst case
+     is --ink-4 on --chrome at 4.61:1. The bottom two steps are
+     deliberately close together: the original ramp ran 8.2 / 4.1 /
+     2.3, which read well as a gradient and failed as type. Below about
+     4.5 there is no amount of restraint that stays legible, so the
+     quiet end of the ramp is compressed and the top half is left
+     alone to carry the contrast. Size and weight separate the lower
+     tiers; hue does not. */
+  --ink: #edeef0;
+  --ink-2: #a3a8b0;
+  --ink-3: #8b919b;
+  --ink-4: #7b818a;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  /* amber — instrumentation only, never decoration */
+  --amber: #f0a92b;
+  --amber-dim: #b8811f;
+  --amber-wash: rgba(240, 169, 43, 0.1);
+  --amber-glow: rgba(240, 169, 43, 0.28);
+
+  /* sponsored slot is deliberately cool + neutral so it never
+     reads as terminal output or as amber instrumentation */
+  --ad-ink: #e2e6ea;
+  --ad-dim: #8a9199;
+  --ad-edge: rgba(255, 255, 255, 0.14);
+  --ad-fill: #111318;
+
+  /* status */
+  --ok: #63b98d;
+
+  /* type */
+  --mono: ui-monospace, 'SF Mono', SFMono-Regular, 'JetBrains Mono', Menlo,
+    Consolas, 'Liberation Mono', monospace;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+
+  /* rhythm */
+  --gutter: clamp(20px, 5vw, 72px);
+  --measure: 1180px;
+  --u: 4px;
+
+  /* Corners. Zero, everywhere, no exceptions.
+
+     Rounded corners are the single cheapest way to make a dark
+     interface read as a consumer app rather than as an instrument, and
+     they are the first thing that turns a layout into a set of cards.
+     Every surface in this product is a panel, a plate or a line — hard
+     edges are what say so, and they are what let the hairlines carry
+     the structure on their own. Circles are unaffected: a status dot or
+     a cursor block sets `border-radius: 50%` locally and is not a
+     rounded rectangle in any sense that matters. */
+  --radius: 0px;
+
+  /* Display type, locked to the viewport height and then capped against
+     the viewport width. A width-only fluid size (`clamp(30px, 4.2vw,
+     52px)`) tracks the window but not the composition: the same 4.2vw
+     is a headline on a wide laptop and a caption on a tall portrait
+     phone, so the type stops being part of the layout and becomes a
+     passenger in it. Keying the top of the scale to `svh` instead —
+     and using `min()` so the width still gets a veto — makes the
+     statement a function of how much vertical room the composition
+     actually has, which is what a designer means by "big".
+
+     The `svh` unit rather than `vh`: the small viewport height does not
+     move when a mobile browser's URL bar collapses, so nothing reflows
+     mid-scroll. The whole page is already built on `svh` for the same
+     reason.
+
+     Each step names two numbers: the height it would like, and the width
+     that would stop it getting there. The height always wins on a
+     landscape desktop, which is the primary target. The width only binds
+     on a phone, and it is deliberately set loose (a display line
+     normally breaks well before it is out of room) so that a narrow
+     screen gets a *smaller statement* rather than a *smaller page*. */
+  --display-xl: min(8svh, 12.5vw);
+  --display-l: min(5.3svh, 8.6vw);
+  --display-m: min(4svh, 6.9vw);
+  --display-s: min(2.6svh, 5.4vw);
+
+  /* Tracking. Display type is set tight, body type is set normal, and
+     the micro-labels are set wide — three jobs, three values, and no
+     size in between that is allowed its own opinion. Tight negative
+     tracking on a large sans is what makes it look drawn rather than
+     typed; wide tracking on a 10px uppercase label is what makes it
+     read as a label instead of a word. */
+  --track-display: -0.042em;
+  --track-tight: -0.022em;
+  --track-label: 0.22em;
+
+  /* Easing. One curve for the interface, one for display type, and the
+     split is not arbitrary.
+
+     `.4,0,.2,1` handles every state change a viewer can trigger or
+     perceive as UI — hovers, disclosure, anything that should feel
+     like a control responding. It is used fourteen times across the
+     project and reused deliberately, so the whole surface has one
+     physical feel and nothing feels hand-placed.
+
+     Display type gets a different curve, `.19,1,.22,1`, because it
+     arrives rather than responds. It decelerates hard from the very
+     first frame, which is what reads as mass; a control that decelerated
+     that hard would feel sluggish, and a headline that eased in evenly
+     would feel like it had no weight. Mixing the two within one element
+     is the thing to avoid — an easing vocabulary is only worth having
+     if it is applied consistently. */
+  --ease-ui: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-reveal: cubic-bezier(0.19, 1, 0.22, 1);
+
+  --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.03) inset,
+    0 24px 70px -30px rgba(0, 0, 0, 0.9);
+  --shadow-ad: 0 0 0 1px var(--ad-edge), 0 12px 40px -22px rgba(0, 0, 0, 0.9),
+    0 0 34px -22px var(--amber-glow);
+
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+/* =============================================================
+   reset
+   ============================================================= */
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
+  background: var(--void);
+  color: var(--ink-2);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
   min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  isolation: isolate;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+img,
+svg {
+  display: block;
+  max-width: 100%;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
 }
 
-code,
-.counter {
+ul,
+ol {
+  list-style: none;
+}
+
+:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 3px;
+}
+
+/* Selection is the one interaction on this page that the viewer
+   actually performs, so it gets the same amber the instrumentation
+   gets rather than the browser's default blue — which is a colour
+   that appears nowhere else in the film. */
+::selection {
+  background: var(--amber-glow);
+  color: var(--ink);
+}
+
+/* Lenis adds `lenis`, and `lenis-smooth` while it is easing, to the
+   root element. It ships no stylesheet of its own — these are the
+   rules it assumes you have written.
+
+   The one that is not optional is `scroll-behavior: auto`. Lenis
+   animates the scroll position itself; if CSS is also allowed to
+   smooth it, the two smoothers compound and every wheel tick arrives
+   late and twice-removed. `height: auto` is the other half of the same
+   idea: Lenis measures the document's real height, and a `100%` on
+   html or body would be a height it is measuring against itself. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+/* Anything that opts out of smoothing is opted out of the wrapper's
+   overscroll too, or dragging inside it scrolls the page behind it. */
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+/* Lenis parks the document with `overflow: clip` while stopped, which
+   `hidden` cannot do because it would drop the scroll position. */
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+/* =============================================================
+   shared type primitives
+   ============================================================= */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.mono {
   font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+  font-variant-ligatures: none;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+/* chapter eyebrow — small amber instrumentation label */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--amber-dim);
+}
+
+.eyebrow::before {
+  content: '';
+  width: 18px;
+  height: 1px;
+  background: var(--hair-amber);
+}
+
+.eyebrow--plain::before {
+  display: none;
+}
+
+/* =============================================================
+   reduced motion
+   ============================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* The only initial states in the project GSAP is not the author of.
+     Everything else that starts hidden is hidden by a `gsap.set` in
+     the cinema hook, which is never reached when motion is reduced —
+     so there is nothing to undo. These two, though, ship hidden in
+     their own markup and stylesheet and would stay hidden forever
+     with no timeline to reveal them: a collapsed rule above each
+     benefit, and the arrowheads that give each wire a direction.
+     `!important` because App.css loads after this file and the
+     surrounding block uses it for the same reason. */
+  .benefit__rule {
+    transform: none !important;
+  }
+
+  .flow__arrowhead {
+    opacity: 1 !important;
+  }
+
+  /* A third element also ships hidden in its markup and is left that
+     way on purpose: the dot on each wire. It is the one thing in the
+     money scene that exists only to move, so with motion reduced it
+     has no meaning left to carry. Unhiding it would not give a
+     static diagram, it would park three dots at the vertex each
+     travels from, which reads as debris rather than as a paused
+     journey. The wires themselves are already drawn — DrawSVG is a
+     GSAP write, and with no timeline it simply never runs, so the
+     geometry survives the reduction intact. */
+}
+
+/* =============================================================
+   forced colors
+   ============================================================= */
+
+/* A high-contrast user swaps the entire palette for system colours and
+   the design absorbs that well: every surface, hairline, wire stroke
+   and corner tick in the prototype is drawn with `border` or `stroke`,
+   and those survive the swap intact.
+
+   What does not survive is `box-shadow`, and the ad slot's identity is
+   carried mostly by its amber ring. So the ring is restated here as a
+   dashed border — the one styling a high-contrast user still reads as
+   "this region is not part of the output". */
+@media (forced-colors: active) {
+  .adslot {
+    border: 1px dashed CanvasText;
+  }
 }
