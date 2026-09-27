@@ -2308,3 +2308,314 @@
     box-shadow: inset 2px 0 0 var(--amber);
   }
 }
+
+/* =============================================================
+   Stage 6 — conversion & validation layer
+   -------------------------------------------------------------
+   Appended wholesale. Every selector below is new, so neither the
+   film's choreography nor the console above is affected by it. The
+   atoms it leans on (.block, .eyebrow, .form, .field, .btn,
+   .loop__*, .console__foot) are the console's own, already global.
+   ============================================================== */
+
+/* The one disclosure line required near the demo. Deliberately quiet:
+   mono, hairline, amber rule — present without shouting. */
+.console__disclosure {
+  margin: clamp(18px, 2.6vh, 30px) 0 0;
+  padding: 11px 14px;
+  max-width: 82ch;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-left: 2px solid var(--amber-dim);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  line-height: 1.75;
+  color: var(--ink-4);
+}
+
+.conv {
+  position: relative;
+  background: var(--void);
+  border-top: 1px solid var(--hair);
+  padding: clamp(72px, 10vh, 132px) var(--gutter) clamp(56px, 8vh, 96px);
+}
+
+.conv__inner {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.conv__block + .conv__block {
+  border-top: 1px solid var(--hair);
+}
+
+.conv__block--first {
+  padding-top: 0;
+}
+
+/* --- entry points -------------------------------------------------- */
+
+.conv__entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 56px);
+  align-items: start;
+}
+
+.conv__entry__lead {
+  display: grid;
+  gap: clamp(22px, 2.6vw, 30px);
+  justify-items: start;
+}
+
+.conv__entry__lead .block__head {
+  margin-bottom: 0;
+}
+
+.conv__entry__side {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.conv__side-label {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.conv__promise {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+}
+
+.conv__promise li {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--panel);
+}
+
+.conv__promise-key {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber-dim);
+}
+
+.conv__promise-body {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.conv__cta::after {
+  content: '↓';
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+.conv__cta[aria-expanded='true']::after {
+  content: '↑';
+}
+
+/* The reveal is always in the DOM so aria-controls never points at a
+   node that does not exist; only its panel mounts. */
+.conv__reveal {
+  width: 100%;
+}
+
+.conv__reveal__panel {
+  overflow: hidden;
+  max-width: 640px;
+}
+
+.conv__reveal__panel .form,
+.conv__form {
+  margin-top: clamp(20px, 2.4vw, 30px);
+}
+
+.conv__form {
+  max-width: 640px;
+}
+
+/* --- how the money moves ------------------------------------------- */
+
+.conv__stepnum {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+}
+
+.conv__arrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1;
+  color: var(--ink-4);
+}
+
+.conv__stipulation {
+  margin: clamp(18px, 2.4vw, 26px) 0 0;
+  max-width: 74ch;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  line-height: 1.75;
+  color: var(--ink-4);
+}
+
+/* --- three participants -------------------------------------------- */
+
+.conv__cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+}
+
+.conv__card {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: clamp(20px, 2.4vw, 28px);
+  background: var(--panel);
+}
+
+.conv__card-role {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--amber-dim);
+}
+
+.conv__card-title {
+  margin: 0;
+  font-size: clamp(19px, 2vw, 24px);
+  font-weight: 600;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+}
+
+.conv__card-body {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* --- questions ------------------------------------------------------ */
+
+.conv__faq {
+  display: grid;
+  gap: 1px;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+}
+
+.faq__item {
+  background: var(--panel);
+}
+
+.faq__q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 20px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.faq__q::-webkit-details-marker {
+  display: none;
+}
+
+.faq__q::marker {
+  content: '';
+}
+
+.faq__title {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 600;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+}
+
+.faq__q::after {
+  content: '+';
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 16px;
+  line-height: 1;
+  color: var(--amber-dim);
+}
+
+.faq__item[open] .faq__q::after {
+  content: '–';
+}
+
+.faq__item[open] .faq__title {
+  color: var(--amber);
+}
+
+.faq__a {
+  padding: 0 20px 18px;
+}
+
+.faq__a p {
+  margin: 0;
+  max-width: 82ch;
+  font-size: 14.5px;
+  line-height: 1.68;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+@media (max-width: 900px) {
+  .conv__entry {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .conv__cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .conv {
+    padding-top: 88px;
+  }
+
+  .conv__reveal__panel,
+  .conv__form {
+    max-width: none;
+  }
+}
+
+/* Stage 6 — reduced motion must never hide the conversion layer.
+   The scroll reveal above is driven by motion/react; this repeats the
+   same guarantee in CSS, so the content is present even if the
+   preference is read before the media query has ever fired. */
+@media (prefers-reduced-motion: reduce) {
+  .conv .block {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

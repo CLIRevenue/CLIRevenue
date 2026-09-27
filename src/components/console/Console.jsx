@@ -35,6 +35,12 @@ function Console() {
       <section className="console" id="product" aria-label="CLIRevenue product simulation">
         <div className="console__inner">
           <ConsoleMasthead />
+
+          {/* Requirement: subtle, but unmistakable. */}
+          <p className="console__disclosure">
+            Demo environment. Campaigns, rewards and settlements shown here are
+            simulated and do not involve real money.
+          </p>
           <Workbench economy={economy} />
           <AdvertiserConsole economy={economy} />
           <RewardsPanel economy={economy} />
