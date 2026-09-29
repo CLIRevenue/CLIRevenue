@@ -1,11 +1,44 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth, roleHome } from './authState.js'
 import { navigateApp } from '../../hooks/useAppRoute.js'
 import { sendPasswordReset } from '../../lib/authPassword.js'
+import {
+  COMMON_FIELDS,
+  allFieldNames,
+  roleFields,
+  validateSignup,
+} from '../../lib/authFields.js'
 
 function FieldError({ message }) {
   if (!message) return null
   return <p className="form__error" role="alert">{message}</p>
+}
+
+function TextField({ label, name, value, onChange, required, autoComplete, type = 'text', inputMode, placeholder, area = false, min }) {
+  const props = {
+    className: 'field__input',
+    name,
+    value,
+    onChange,
+    autoComplete,
+    type,
+    inputMode,
+    placeholder,
+    min,
+  }
+  return (
+    <label className="field">
+      <span className="field__label">
+        {label}
+        {required ? <span aria-hidden="true"> *</span> : null}
+      </span>
+      {area ? (
+        <textarea className="field__input field__input--area" rows={3} {...props} />
+      ) : (
+        <input {...props} />
+      )}
+    </label>
+  )
 }
 
 function PasswordField({ label, value, onChange, name, autoComplete }) {
@@ -112,7 +145,7 @@ export function LoginPage() {
       <form className="form adv-form" onSubmit={onSubmit} noValidate>
         <label className="field">
           <span className="field__label">Email</span>
-          <input className="field__input" type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+          <input className="field__input" type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" inputMode="email" />
         </label>
         <PasswordField label="Password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
         <FieldError message={error} />
@@ -131,12 +164,17 @@ export function LoginPage() {
   )
 }
 
+const EMPTY_VALUES = Object.fromEntries(allFieldNames().map((n) => [n, '']))
+
 export function SignupPage() {
   const { signUp, role, isAuthenticated, loading } = useAuth()
+  const [step, setStep] = useState(1)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [accountType, setAccountType] = useState('advertiser')
+  const [accountType, setAccountType] = useState(null)
+  const [values, setValues] = useState(EMPTY_VALUES)
+  const [attempted, setAttempted] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
@@ -148,35 +186,48 @@ export function SignupPage() {
     }
   }, [loading, isAuthenticated, role])
 
+  // Errors are DERIVED from live values on every render — never stored — so
+  // correcting an input removes its error (and any disabled state) on the
+  // very next render. `attempted` only controls when messages first appear.
+  const errors = useMemo(
+    () => (attempted ? validateSignup({ step, email, password, confirm, role: accountType, values }) : {}),
+    [attempted, step, email, password, confirm, accountType, values],
+  )
+  const errorCount = Object.keys(errors).length
+
+  function setValue(name, v) {
+    setValues((s) => ({ ...s, [name]: v }))
+  }
+
+  function goStep1(e) {
+    e.preventDefault()
+    setStep(1)
+  }
+
+  function continueToStep2(e) {
+    e.preventDefault()
+    setAttempted(true)
+    setError('')
+    if (errorCount === 0) setStep(2)
+  }
+
   async function onSubmit(e) {
     e.preventDefault()
+    setAttempted(true)
     setError('')
     setInfo('')
-    if (!email.trim() || !password || !confirm) {
-      setError('Email, password, and confirmation are required.')
-      return
-    }
-    if (password !== confirm) {
-      setError('Passwords do not match.')
-      return
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
-      return
-    }
-    if (!['advertiser', 'developer'].includes(accountType)) {
-      setError('Pick Advertiser or Developer.')
-      return
-    }
+    if (errorCount > 0) return
     setBusy(true)
     try {
-      const data = await signUp({ email: email.trim(), password, role: accountType })
+      const data = await signUp({ email: email.trim(), password, role: accountType, values })
       if (data.session) {
-        // Session present: provider refresh resolves role and effect redirects.
-        setInfo('Account created. Resolving your dashboard…')
+        // Session present: provider refresh resolves role, flushes profile
+        // fields, and the effect redirects.
+        setInfo('Account created. Opening your dashboard…')
       } else {
-        // Email confirmation required: no session yet.
-        setInfo('Check your email to confirm, then log in. Your dashboard is assigned by role.')
+        // Email confirmation required: no session yet. Profile fields are
+        // parked and flush on the first authenticated refresh.
+        setInfo('Check your email to confirm, then log in. Your profile details are saved and applied then.')
       }
     } catch (err) {
       setError(err.message || 'Signup failed.')
@@ -185,38 +236,107 @@ export function SignupPage() {
     }
   }
 
+  const activeRoleFields = accountType ? roleFields(accountType) : []
+
   return (
     <AuthShell
       eyebrow="CLIRevenue · Signup"
       title="Create your account."
-      body="Advertiser and Developer are the only public options. Admin is never offered here."
+      body="Advertiser and Developer are the only public options. Admin is never offered here. Your dashboard is assigned by the role stored on your profile."
       footer="Profiles are created through RLS-safe trigger/RPC paths only. No service-role key is used in the browser."
     >
       <form className="form adv-form" onSubmit={onSubmit} noValidate>
-        <label className="field">
-          <span className="field__label">Email</span>
-          <input className="field__input" type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
-        </label>
-        <PasswordField label="Password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
-        <PasswordField label="Confirm password" name="confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
-        <div className="field" role="group" aria-label="Account type">
-          <span className="field__label">Account type</span>
-          <div className="adv-radio-row">
-            <label className="adv-check">
-              <input type="radio" name="accountType" value="advertiser" checked={accountType === 'advertiser'} onChange={() => setAccountType('advertiser')} />
-              <span>Advertiser</span>
-            </label>
-            <label className="adv-check">
-              <input type="radio" name="accountType" value="developer" checked={accountType === 'developer'} onChange={() => setAccountType('developer')} />
-              <span>Developer</span>
-            </label>
-          </div>
+        <p className="form__note" aria-hidden="true">
+          {step === 1 ? 'Step 1 of 2 — credentials' : 'Step 2 of 2 — profile'}
+        </p>
+
+        {/* Step 1 fields stay mounted (hidden, not unmounted) on step 2 so
+            password managers and controlled state never lose the password. */}
+        <div hidden={step !== 1}>
+          <label className="field">
+            <span className="field__label">Email <span aria-hidden="true">*</span></span>
+            <input className="field__input" type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" inputMode="email" />
+            <FieldError message={errors.email} />
+          </label>
+          <PasswordField label="Password *" name="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
+          <FieldError message={errors.password} />
+          <PasswordField label="Confirm password *" name="confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
+          <FieldError message={errors.confirm} />
+          <button className="btn btn--primary" type="button" onClick={continueToStep2} disabled={busy}>
+            Continue
+          </button>
         </div>
-        <FieldError message={error} />
-        {info ? <div className="adv-notice" role="status">{info}</div> : null}
-        <button className="btn btn--primary" type="submit" disabled={busy}>
-          {busy ? 'Creating…' : 'Sign up'}
-        </button>
+
+        <div hidden={step !== 2}>
+          <div className="field" role="group" aria-label="Account type">
+            <span className="field__label">Account type <span aria-hidden="true">*</span></span>
+            <div className="adv-radio-row">
+              <label className="adv-check">
+                <input type="radio" name="accountType" value="advertiser" checked={accountType === 'advertiser'} onChange={() => setAccountType('advertiser')} />
+                <span>Advertiser</span>
+              </label>
+              <label className="adv-check">
+                <input type="radio" name="accountType" value="developer" checked={accountType === 'developer'} onChange={() => setAccountType('developer')} />
+                <span>Developer</span>
+              </label>
+            </div>
+            <FieldError message={errors.role} />
+          </div>
+
+          {accountType ? (
+            <>
+              <p className="form__note">Required fields are marked *. Everything else is optional.</p>
+
+              <p className="eyebrow eyebrow--plain">Profile</p>
+              {COMMON_FIELDS.map((f) => (
+                <TextField
+                  key={f.name}
+                  label={f.label}
+                  name={f.name}
+                  value={values[f.name]}
+                  onChange={(e) => setValue(f.name, e.target.value)}
+                  required={f.required}
+                  autoComplete={f.autoComplete}
+                  type={f.type}
+                  inputMode={f.inputMode}
+                  placeholder={f.placeholder}
+                />
+              ))}
+              <FieldError message={COMMON_FIELDS.filter((f) => f.required).map((f) => errors[f.name]).find(Boolean)} />
+
+              <p className="eyebrow eyebrow--plain">{accountType === 'advertiser' ? 'Company' : 'Developer'}</p>
+              {activeRoleFields.map((f) => (
+                <TextField
+                  key={f.name}
+                  label={f.label}
+                  name={f.name}
+                  value={values[f.name]}
+                  onChange={(e) => setValue(f.name, e.target.value)}
+                  required={f.required}
+                  autoComplete={f.autoComplete}
+                  type={f.type}
+                  inputMode={f.inputMode}
+                  placeholder={f.placeholder}
+                  area={f.area}
+                  min={f.min}
+                />
+              ))}
+              <FieldError message={activeRoleFields.map((f) => errors[f.name]).find(Boolean)} />
+            </>
+          ) : (
+            <p className="form__note">Pick Advertiser or Developer to show the profile fields.</p>
+          )}
+
+          <FieldError message={error} />
+          {info ? <div className="adv-notice" role="status">{info}</div> : null}
+          <button className="btn btn--primary" type="submit" disabled={busy}>
+            {busy ? 'Creating…' : 'Sign up'}
+          </button>
+          <button className="btn btn--ghost" type="button" onClick={goStep1} disabled={busy}>
+            Back
+          </button>
+        </div>
+
         <p className="form__note">
           Have an account? <button type="button" className="adv-link" onClick={() => navigateApp('/login')}>Log in</button>
         </p>

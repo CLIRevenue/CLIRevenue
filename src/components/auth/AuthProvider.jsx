@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/api.js'
 import { fetchAuthStatus } from '../../lib/advertiserApi.js'
+import { flushPendingProfile, parkPendingProfile } from '../../lib/authPassword.js'
 import { AuthContext, roleHome } from './authState.js'
 
 function userIdFromSession(session) {
@@ -94,16 +95,23 @@ export function AuthProvider({ children }) {
         return
       }
       const { data: { user } } = await supabase.auth.getUser()
-      const resolved = await resolveProfile(user?.id || userIdFromSession(session))
+      const uid = user?.id || userIdFromSession(session)
+      const resolved = await resolveProfile(uid)
+      // Signup can park profile fields (email-confirmation flow leaves the
+      // user anonymous at signup time). Now that an authenticated RLS write
+      // is possible, flush them once; re-read account rows if anything was
+      // written so the dashboards see the data immediately.
+      const flush = await flushPendingProfile(uid, user?.email)
+      const rows = flush.flushed ? await readAccountRows(uid) : resolved
       setState({
         loading: false,
         session,
         user: user || session.user || null,
         profile: resolved.profile,
         role: resolved.profile?.role || null,
-        advertiser: resolved.advertiser,
-        developerAccount: resolved.developerAccount,
-        error: '',
+        advertiser: rows.advertiser,
+        developerAccount: rows.developerAccount,
+        error: flush.errors?.length ? `Profile save failed: ${flush.errors.join('; ')}` : '',
       })
     } catch (e) {
       // Keep any existing session so refresh does not flash the public site,
@@ -139,10 +147,15 @@ export function AuthProvider({ children }) {
     return data
   }, [refresh])
 
-  const signUp = useCallback(async ({ email, password, role }) => {
+  const signUp = useCallback(async ({ email, password, role, values }) => {
     if (!['advertiser', 'developer'].includes(role)) {
       throw new Error('Pick Advertiser or Developer.')
     }
+    // Park the profile fields before the auth call: when email confirmation
+    // is on there is no session yet, so the flush happens on first
+    // authenticated refresh. The park is email-scoped, so it can never be
+    // flushed into a different user's profile.
+    parkPendingProfile({ role, values: values || {}, email })
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
