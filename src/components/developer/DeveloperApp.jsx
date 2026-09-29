@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdvBarChart, AdvEmpty, AdvError, AdvLoading, AdvPageHead, AdvStats } from '../advertiser/AdvertiserUI.jsx'
 import { Panel } from '../console/ui.jsx'
-import { useAuth } from '../auth/authState.js'
 import { supabase } from '../../lib/api.js'
+import DeveloperAccount from './DeveloperAccount.jsx'
 
 function trimBase(raw) {
   return String(raw || '').replace(/\/+$/, '')
@@ -72,13 +72,11 @@ async function fetchBalanceAndRewards() {
 }
 
 export default function DeveloperApp() {
-  const auth = useAuth()
   const [tab, setTab] = useState('dashboard')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [balance, setBalance] = useState(null)
   const [rewards, setRewards] = useState([])
-  const [signingOut, setSigningOut] = useState(false)
 
   // Initial load: every setState happens after the awaited fetch, so the
   // effect itself never synchronously updates state.
@@ -130,13 +128,6 @@ export default function DeveloperApp() {
     value: Number(r.amount_cents ?? r.amountCents ?? 0),
     display: formatCents(r.amount_cents ?? r.amountCents ?? 0),
   })), [rewards])
-
-  async function handleLogout() {
-    setSigningOut(true)
-    try {
-      await auth.signOut('/')
-    } finally { setSigningOut(false) }
-  }
 
   const TABS = [
     { id: 'dashboard', label: 'Dashboard' },
@@ -215,19 +206,7 @@ export default function DeveloperApp() {
                 ]} />
               </Panel>
             )}
-            {tab === 'account' && (
-              <Panel className="adv-panel">
-                <h4 className="adv-panel__title">Account</h4>
-                <dl className="adv-detail">
-                  <div><dt>Account email</dt><dd>{auth.user?.email || '—'}</dd></div>
-                  <div><dt>Role</dt><dd><span className="adv-pill">{auth.role || 'unknown'}</span></dd></div>
-                  <div><dt>User ID</dt><dd className="mono adv-id">{auth.user?.id || '—'}</dd></div>
-                </dl>
-                <button className="btn btn--primary" type="button" onClick={handleLogout} disabled={signingOut}>
-                  {signingOut ? 'Signing out…' : 'Log out'}
-                </button>
-              </Panel>
-            )}
+            {tab === 'account' && <DeveloperAccount />}
           </>
         )}
       </div>
