@@ -3615,8 +3615,6 @@ body {
   .scene__inner::after {
     opacity: 1;
   }
-  .atmos__drift--a,
-  .atmos__drift--b,
   .journey__status i,
   .terminal__light--live,
   .flow__node--hub,
@@ -3625,10 +3623,8 @@ body {
   }
   .atmos__grid,
   .atmos__vlines i,
-  .atmos__hlines i,
   .atmos__depth--a,
   .atmos__depth--b,
-  .atmos__signal,
   .stage,
   .scene__inner {
     transform: none !important;

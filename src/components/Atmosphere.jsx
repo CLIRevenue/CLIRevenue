@@ -2,9 +2,15 @@
    CLIRevenue — persistent cinematic atmosphere
    -------------------------------------------------------------
    One fixed backdrop for the whole page: faint technical grid,
-   hairline instrumentation, long-distance signal drift, depth
-   parallax. All compositor-friendly transforms/opacity only.
+   long-distance signal drift, depth parallax. All compositor-friendly
+   transforms/opacity only.
    Reduced motion collapses to a static layer.
+
+   Horizontal instrumentation (hlines, drift lines, the signal rule and
+   the grid's horizontal rows) was removed deliberately: 1px full-width
+   lines over the soft radial pools read as seams/banding rather than
+   as instrumentation. The depth pools and vertical grid carry the
+   atmosphere on their own.
    ============================================================= */
 
 import { useEffect, useRef } from 'react'
@@ -51,16 +57,8 @@ function Atmosphere() {
         <i style={{ left: '73%' }} />
         <i style={{ left: '92%' }} />
       </div>
-      <div className="atmos__hlines">
-        <i style={{ top: '18%' }} />
-        <i style={{ top: '46%' }} />
-        <i style={{ top: '74%' }} />
-      </div>
       <div className="atmos__depth atmos__depth--a" />
       <div className="atmos__depth atmos__depth--b" />
-      <div className="atmos__drift atmos__drift--a" />
-      <div className="atmos__drift atmos__drift--b" />
-      <div className="atmos__signal" />
     </div>
   )
 }
