@@ -52,34 +52,56 @@ function AdSlot() {
   const detail = reduced ? FLAT : SPRING
 
   return (
-    <aside className="adslot" aria-label="Sponsored advertisement">
+    <aside
+      className="adslot"
+      aria-label="Sponsored advertisement"
+      data-visual={open ? 'opened' : 'visible'}
+    >
       <p className="visually-hidden">
         {placement.statement} {placement.detail}
       </p>
-      <div className="adslot__rail">
-        <span className="adslot__label">{adSlot.label}</span>
-        <span className="adslot__dot" />
-        <span className="adslot__publisher">{adSlot.publisher}</span>
-        <span className="adslot__mark">Ad</span>
-      </div>
-      <div className="adslot__body">
-        <div className="adslot__copy">
-          <p className="adslot__headline">{adSlot.headline}</p>
+
+      {/* The sheet is a separate element from the shell on purpose.
+          GSAP owns the shell's transform for the chapter entrance; the
+          sheet owns hover, focus and paint. Splitting them is what
+          keeps a scrubbed inline transform from permanently pinning the
+          hover lift out of reach. */}
+      <div className="adslot__plate">
+        <span className="adslot__scan" aria-hidden="true" />
+
+        <div className="adslot__rail">
+          <span className="adslot__label">{adSlot.label}</span>
+          <span className="adslot__dot" />
+          <span className="adslot__publisher">{adSlot.advertiser}</span>
+          <span className="adslot__mark">Ad</span>
+          <span className="adslot__disclosure">{adSlot.disclosure}</span>
         </div>
-        <motion.button
-          type="button"
-          className="adslot__cta"
-          onClick={() => setOpen((was) => !was)}
-          aria-expanded={open}
-          aria-controls={open ? panelId : undefined}
-          whileHover={{ y: -1 }}
-          whileTap={{ scale: 0.97, y: 0 }}
-          transition={detail}
-        >
-          {adSlot.action}
-          <Arrow aria-hidden="true" />
-        </motion.button>
-      </div>
+
+        <div className="adslot__body">
+          <span className="adslot__logo" aria-hidden="true">
+            {adSlot.brand.slice(0, 1)}
+          </span>
+          <div className="adslot__copy">
+            <span className="adslot__brand">{adSlot.brand}</span>
+            <p className="adslot__headline">{adSlot.headline}</p>
+            <p className="adslot__support">{adSlot.support}</p>
+            <p className="adslot__meta">
+              {adSlot.category} · {adSlot.region} · {adSlot.disclosure}
+            </p>
+          </div>
+          <motion.button
+            type="button"
+            className="adslot__cta"
+            onClick={() => setOpen((was) => !was)}
+            aria-expanded={open}
+            aria-controls={open ? panelId : undefined}
+            whileTap={{ scale: 0.97 }}
+            transition={detail}
+          >
+            {adSlot.action}
+            <Arrow aria-hidden="true" />
+          </motion.button>
+        </div>
 
       {/* `AnimatePresence` earns its place here and nowhere else in
           the prototype. The scenes are stacked, not swapped, so there
@@ -98,7 +120,7 @@ function AdSlot() {
             key="detail"
             id={panelId}
             role="region"
-            aria-label={`${adSlot.label} — ${adSlot.publisher}`}
+            aria-label={`${adSlot.label} — ${adSlot.advertiser}`}
             className="adslot__detail"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -112,6 +134,7 @@ function AdSlot() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </aside>
   )
 }

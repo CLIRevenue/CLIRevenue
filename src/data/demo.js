@@ -5,6 +5,7 @@ import {
   Network,
   Users,
 } from 'lucide-react'
+import { SEED_CAMPAIGNS } from './economy.js'
 
 /* =============================================================
    CLIRevenue — scripted demo content
@@ -41,12 +42,23 @@ export const placement = {
    The copy below is what that region says when it is — and it is a
    statement about placement, not a claim about money, reach, or
    performance. `detail` is prose; `region` is the one-line technical
-   restatement of the same fact, in the same mono as the rail. */
+   restatement of the same fact, in the same mono as the rail.
+
+   The creative itself is not duplicated here: the film shows the
+   seeded Atlas campaign, so the advertiser console and the terminal
+   slot are always describing the same simulated advertiser. */
+const filmCampaign = SEED_CAMPAIGNS.find((campaign) => campaign.id === 'cmp_atlas')
+
 export const adSlot = {
   label: 'Sponsored',
-  publisher: 'Developer Platform',
-  headline: 'Build faster. Deploy smarter.',
-  action: 'Learn More',
+  advertiser: filmCampaign.advertiser,
+  brand: filmCampaign.brand,
+  category: filmCampaign.category,
+  disclosure: filmCampaign.disclosure,
+  publisher: filmCampaign.name,
+  headline: filmCampaign.headline,
+  support: filmCampaign.description,
+  action: filmCampaign.cta,
   detail:
     'The host application renders this region beside its output, not inside it. Opening it changes nothing above the prompt — a script reading the command still receives exactly what the tool emitted.',
   region: 'ui region · not stdout',

@@ -1,0 +1,145 @@
+import { useMemo, useState } from 'react'
+import { AdvBarChart, AdvEmpty, AdvError, AdvLoading, AdvPageHead, AdvStats } from './AdvertiserUI.jsx'
+import { ctrPct, formatCents } from '../../lib/advertiserApi.js'
+
+function sum(list, pick) {
+  return list.reduce((n, c) => n + (Number(pick(c)) || 0), 0)
+}
+
+export default function AdvertiserOverview({ campaigns, loading, error, onRetry, onCreate }) {
+  const [activityFilter, setActivityFilter] = useState('all')
+
+  const totals = useMemo(() => {
+    const spend = sum(campaigns, (c) => c.spendCents)
+    const impressions = sum(campaigns, (c) => c.impressions)
+    const clicks = sum(campaigns, (c) => c.clicks)
+    const conversions = sum(campaigns, (c) => c.conversions)
+    const active = campaigns.filter((c) => c.status === 'active').length
+    return { spend, impressions, clicks, conversions, active, ctr: ctrPct(clicks, impressions) }
+  }, [campaigns])
+
+  const chartRows = useMemo(
+    () =>
+      [...campaigns]
+        .sort((a, b) => b.spendCents - a.spendCents)
+        .slice(0, 6)
+        .map((c) => ({ id: c.id, name: c.name, value: c.spendCents, display: formatCents(c.spendCents) })),
+    [campaigns],
+  )
+
+  const recent = useMemo(
+    () =>
+      [...campaigns]
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .slice(0, 4),
+    [campaigns],
+  )
+
+  const activity = useMemo(() => {
+    let rows = [...campaigns].sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
+    if (activityFilter !== 'all') rows = rows.filter((c) => c.status === activityFilter)
+    return rows.slice(0, 6).map((c) => ({
+      id: c.id,
+      label: `${c.name} · ${c.status}`,
+      detail: `${c.impressions.toLocaleString('en-US')} impressions · ${c.clicks.toLocaleString('en-US')} clicks · ${formatCents(c.spendCents)} spend`,
+    }))
+  }, [campaigns, activityFilter])
+
+  return (
+    <div className="adv-page">
+      <AdvPageHead
+        index="A1"
+        label="Advertiser · Overview"
+        title="Spend, delivery, and momentum."
+        body="Live campaign records from the campaigns Edge Function. Spend and delivery come from the backend; nothing here is fabricated."
+      />
+      <AdvError message={error} onRetry={onRetry} />
+      {loading ? (
+        <AdvLoading />
+      ) : campaigns.length === 0 ? (
+        <AdvEmpty
+          title="No campaigns yet"
+          body="Create your first campaign to see spend, impressions, and CTR here. Billing stays in demo mode until a billing API ships."
+          actionLabel="Create a campaign"
+          onAction={onCreate}
+        />
+      ) : (
+        <>
+          <AdvStats
+            items={[
+              { label: 'Total spend', value: formatCents(totals.spend), hint: 'sum of campaign spendCents' },
+              { label: 'Active campaigns', value: String(totals.active), hint: `${campaigns.length} total` },
+              { label: 'Impressions', value: totals.impressions.toLocaleString('en-US') },
+              { label: 'Clicks', value: totals.clicks.toLocaleString('en-US') },
+              { label: 'CTR', value: `${totals.ctr.toFixed(2)}%`, hint: 'clicks / impressions' },
+              { label: 'Conversions', value: totals.conversions.toLocaleString('en-US') },
+            ]}
+          />
+          <div className="adv-grid adv-grid--2">
+            <section className="panel adv-panel" aria-label="Campaign performance">
+              <h4 className="adv-panel__title">Campaign performance</h4>
+              <p className="adv-panel__sub">Spend by campaign, from backend records.</p>
+              <AdvBarChart rows={chartRows} valueLabel="Spend" />
+            </section>
+            <section className="panel adv-panel" aria-label="Recent activity">
+              <div className="adv-panel__row">
+                <div>
+                  <h4 className="adv-panel__title">Recent activity</h4>
+                  <p className="adv-panel__sub">Latest campaign updates.</p>
+                </div>
+                <select
+                  className="field__input field__input--select adv-select"
+                  value={activityFilter}
+                  onChange={(e) => setActivityFilter(e.target.value)}
+                  aria-label="Filter activity by status"
+                >
+                  <option value="all">All statuses</option>
+                  <option value="draft">Draft</option>
+                  <option value="active">Active</option>
+                  <option value="paused">Paused</option>
+                  <option value="completed">Completed</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+              <ul className="adv-activity">
+                {activity.map((a) => (
+                  <li key={a.id} className="adv-activity__row">
+                    <span className="adv-activity__label">{a.label}</span>
+                    <span className="adv-activity__detail">{a.detail}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+          <section className="panel adv-panel" aria-label="Recent campaigns">
+            <h4 className="adv-panel__title">Recent campaigns</h4>
+            <div className="adv-tablewrap">
+              <table className="adv-table">
+                <thead>
+                  <tr>
+                    <th>Campaign</th>
+                    <th>Status</th>
+                    <th>Audience</th>
+                    <th>Spend</th>
+                    <th>CTR</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recent.map((c) => (
+                    <tr key={c.id}>
+                      <td>{c.name}</td>
+                      <td><span className="adv-pill">{c.status}</span></td>
+                      <td>{c.audienceLabel}</td>
+                      <td className="mono">{formatCents(c.spendCents)}</td>
+                      <td className="mono">{ctrPct(c.clicks, c.impressions).toFixed(2)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
+    </div>
+  )
+}

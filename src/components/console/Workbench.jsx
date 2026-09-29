@@ -199,12 +199,20 @@ function Transcript({ campaign, connected, visible, onActivate }) {
   return AGENT_RUN.lines.map((line, index) => {
     const state = index < visible ? 'printed' : 'pending'
     if (index === SLOT_AT) {
+      /* The sponsored slot is a permanent UI region of the host
+         application, not a line the run prints — it therefore never
+         takes the pending state the surrounding transcript lines take.
+         Gating it on `visible` left a 196px hole in the middle of the
+         workbench for the first ~8.5 seconds of every loop, which read
+         as a broken panel rather than as output still arriving. It is
+         visible for the whole demonstration, exactly as the film's own
+         slot is. */
       return (
         <SponsoredSlot
           key="slot"
           campaign={campaign}
           connected={connected}
-          hidden={index >= visible}
+          hidden={false}
           onActivate={onActivate}
         />
       )

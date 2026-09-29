@@ -42,6 +42,10 @@ export const SEED_CAMPAIGNS = [
   {
     id: 'cmp_atlas',
     name: 'Atlas launch',
+    advertiser: 'Meridian Works',
+    brand: 'Atlas',
+    category: 'Developer platform',
+    disclosure: 'Demo',
     headline: 'Ship the gateway before lunch.',
     description:
       'Atlas turns a written spec into a running service with tests, migrations, and a deploy preview. Built for teams who review before they merge.',
@@ -58,6 +62,10 @@ export const SEED_CAMPAIGNS = [
   {
     id: 'cmp_quill',
     name: 'Quill type search',
+    advertiser: 'Quill Labs',
+    brand: 'Quill',
+    category: 'Search infrastructure',
+    disclosure: 'Demo',
     headline: 'Search that understands your schema.',
     description:
       'Quill indexes migrations and types so answers cite the file they came from. No embeddings to tune, no vector bill.',
@@ -74,6 +82,10 @@ export const SEED_CAMPAIGNS = [
   {
     id: 'cmp_beacon',
     name: 'Beacon on-call',
+    advertiser: 'Beacon Relay',
+    brand: 'Beacon',
+    category: 'Incident response',
+    disclosure: 'Demo',
     headline: 'Fewer pages. Better ones.',
     description:
       'Beacon groups related alerts into a single incident with the runbook already attached, so the right person is woken once.',

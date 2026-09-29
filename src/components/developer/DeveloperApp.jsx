@@ -1,0 +1,236 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AdvBarChart, AdvEmpty, AdvError, AdvLoading, AdvPageHead, AdvStats } from '../advertiser/AdvertiserUI.jsx'
+import { Panel } from '../console/ui.jsx'
+import { useAuth } from '../auth/authState.js'
+import { supabase } from '../../lib/api.js'
+
+function trimBase(raw) {
+  return String(raw || '').replace(/\/+$/, '')
+}
+
+async function authedGet(url) {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  const res = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  })
+  const text = await res.text()
+  let json
+  try { json = text ? JSON.parse(text) : null } catch { json = null }
+  if (!res.ok) {
+    const err = new Error(json?.error?.message || json?.error || json?.message || res.statusText || 'Request failed')
+    err.status = res.status
+    throw err
+  }
+  return json
+}
+
+function formatCents(cents) {
+  const n = Number(cents || 0)
+  const abs = Math.abs(n)
+  const body = `${Math.floor(abs / 100).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}.${(abs % 100).toString().padStart(2, '0')}`
+  return `${n < 0 ? '-' : ''}$${body}`
+}
+
+function rewardsBases() {
+  const raw = trimBase(import.meta.env.VITE_API_BASE_URL || '')
+  if (!raw) return ['/api/rewards']
+  if (raw.endsWith('/functions/v1')) return [`${raw}/rewards`, `${raw}/api/rewards`]
+  return [`${raw}/api/rewards`]
+}
+
+async function fetchBalanceAndRewards() {
+  let lastErr = null
+  for (const base of rewardsBases()) {
+    try {
+      let balance = null
+      let rewardsPayload = null
+      // balance
+      try {
+        balance = await authedGet(`${base}/balance`)
+      } catch (e) {
+        if (e.status !== 404 && e.status !== 405) throw e
+        lastErr = e
+      }
+      // list (limit small for dashboard)
+      try {
+        rewardsPayload = await authedGet(`${base}?limit=8`)
+      } catch (e) {
+        if (e.status !== 404 && e.status !== 405) throw e
+        lastErr = e
+      }
+      if (balance || rewardsPayload) return { balance, rewardsPayload }
+    } catch (e) {
+      lastErr = e
+      if (e.status !== 404 && e.status !== 405) throw e
+    }
+  }
+  throw lastErr || new Error('Rewards endpoint not found.')
+}
+
+export default function DeveloperApp() {
+  const auth = useAuth()
+  const [tab, setTab] = useState('dashboard')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [balance, setBalance] = useState(null)
+  const [rewards, setRewards] = useState([])
+  const [signingOut, setSigningOut] = useState(false)
+
+  // Initial load: every setState happens after the awaited fetch, so the
+  // effect itself never synchronously updates state.
+  const load = useCallback(async () => {
+    try {
+      const { balance: b, rewardsPayload } = await fetchBalanceAndRewards()
+      const list = rewardsPayload?.rewards || rewardsPayload?.data || []
+      setRewards(Array.isArray(list) ? list : [])
+      // Contract uses *_cents; normalize defensively.
+      setBalance(b ? {
+        availableCents: b.available_cents ?? b.availableCents ?? 0,
+        pendingCents: b.pending_cents ?? b.pendingCents ?? 0,
+        lifetimeCents: b.lifetime_cents ?? b.lifetimeCents ?? 0,
+        reservedCents: b.reserved_cents ?? b.reservedCents ?? 0,
+      } : null)
+      setError('')
+    } catch (e) {
+      setError(e.status === 401 ? 'Session expired. Please log in again.' : (e.message || 'Could not load developer data.'))
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Retry path (event handlers): may flip loading synchronously.
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    await load()
+  }, [load])
+
+  useEffect(() => {
+    // Async boundary: kick the loader off without synchronously mutating
+    // state from the effect body itself.
+    void (async () => {
+      await load()
+    })()
+  }, [load])
+
+  const stats = useMemo(() => ([
+    { label: 'Available', value: formatCents(balance?.availableCents), hint: 'withdrawable (mock)' },
+    { label: 'Pending', value: formatCents(balance?.pendingCents), hint: 'settling' },
+    { label: 'Lifetime', value: formatCents(balance?.lifetimeCents) },
+    { label: 'Reserved', value: formatCents(balance?.reservedCents), hint: 'payouts requested' },
+  ]), [balance])
+
+  const chartRows = useMemo(() => rewards.slice(0, 6).map((r) => ({
+    id: r.id,
+    name: r.campaign_name || r.campaign_id || 'Reward',
+    value: Number(r.amount_cents ?? r.amountCents ?? 0),
+    display: formatCents(r.amount_cents ?? r.amountCents ?? 0),
+  })), [rewards])
+
+  async function handleLogout() {
+    setSigningOut(true)
+    try {
+      await auth.signOut('/')
+    } finally { setSigningOut(false) }
+  }
+
+  const TABS = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'earnings', label: 'Earnings' },
+    { id: 'integrations', label: 'Integrations' },
+    { id: 'analytics', label: 'Analytics' },
+    { id: 'account', label: 'Account' },
+  ]
+
+  return (
+    <section className="adv-shell" aria-label="Developer dashboard">
+      <div className="adv-shell__inner">
+        <nav className="adv-nav" aria-label="Developer">
+          {TABS.map((t) => (
+            <button key={t.id} type="button" className="adv-nav__btn" data-active={tab === t.id} aria-current={tab === t.id ? 'page' : undefined} onClick={() => setTab(t.id)}>
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
+        <AdvPageHead
+          index="D1"
+          label="Developer"
+          title={tab === 'dashboard' ? 'Earnings at a glance.' : tab[0].toUpperCase() + tab.slice(1) + '.'}
+          body="Backend is authoritative. Rewards are read from the rewards Edge Function; nothing is minted in the browser."
+        />
+        {error ? <AdvError message={error} onRetry={refresh} /> : null}
+        {loading ? <AdvLoading label="Loading developer rewards…" /> : (
+          <>
+            {(tab === 'dashboard' || tab === 'earnings') && (
+              <>
+                <AdvStats items={stats} />
+                <div className="adv-grid adv-grid--2">
+                  <section className="panel adv-panel" aria-label="Recent rewards">
+                    <h4 className="adv-panel__title">Recent rewards</h4>
+                    <p className="adv-panel__sub">Latest ledger entries for this developer.</p>
+                    {rewards.length === 0 ? (
+                      <AdvEmpty title="No rewards yet" body="Interact with a sponsored slot in the public workbench demo to generate demo rewards." />
+                    ) : (
+                      <ul className="adv-activity">
+                        {rewards.slice(0, 6).map((r) => (
+                          <li key={r.id} className="adv-activity__row">
+                            <span className="adv-activity__label">{r.campaign_name || r.campaign_id} · {r.status}</span>
+                            <span className="adv-activity__detail">{formatCents(r.amount_cents ?? r.amountCents ?? 0)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                  <section className="panel adv-panel" aria-label="Reward mix">
+                    <h4 className="adv-panel__title">Reward mix</h4>
+                    <p className="adv-panel__sub">By campaign (latest entries).</p>
+                    {chartRows.length ? <AdvBarChart rows={chartRows} valueLabel="Rewards" /> : <AdvEmpty title="Nothing to chart" body="Rewards will appear here." />}
+                  </section>
+                </div>
+              </>
+            )}
+            {tab === 'integrations' && (
+              <Panel className="adv-panel">
+                <h4 className="adv-panel__title">Integrations</h4>
+                <p className="adv-panel__sub">MISSING_BACKEND: no CLI-integration management endpoint exists in this repo, so this stays informational.</p>
+                <ul className="adv-activity">
+                  <li className="adv-activity__row"><span className="adv-activity__label">Claude Code</span><span className="adv-activity__detail">Docs-only slot in this prototype.</span></li>
+                  <li className="adv-activity__row"><span className="adv-activity__label">Codex / Cline / OpenCode</span><span className="adv-activity__detail">Same sponsored-slot contract; no per-tool keys issued here.</span></li>
+                </ul>
+              </Panel>
+            )}
+            {tab === 'analytics' && (
+              <Panel className="adv-panel">
+                <h4 className="adv-panel__title">Analytics</h4>
+                <p className="adv-panel__sub">Derived from your reward ledger only. No invented delivery stats.</p>
+                <AdvStats items={[
+                  { label: 'Rewards seen', value: String(rewards.length) },
+                  { label: 'Available', value: formatCents(balance?.availableCents) },
+                  { label: 'Pending', value: formatCents(balance?.pendingCents) },
+                ]} />
+              </Panel>
+            )}
+            {tab === 'account' && (
+              <Panel className="adv-panel">
+                <h4 className="adv-panel__title">Account</h4>
+                <dl className="adv-detail">
+                  <div><dt>Account email</dt><dd>{auth.user?.email || '—'}</dd></div>
+                  <div><dt>Role</dt><dd><span className="adv-pill">{auth.role || 'unknown'}</span></dd></div>
+                  <div><dt>User ID</dt><dd className="mono adv-id">{auth.user?.id || '—'}</dd></div>
+                </dl>
+                <button className="btn btn--primary" type="button" onClick={handleLogout} disabled={signingOut}>
+                  {signingOut ? 'Signing out…' : 'Log out'}
+                </button>
+              </Panel>
+            )}
+          </>
+        )}
+      </div>
+    </section>
+  )
+}

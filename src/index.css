@@ -1,63 +1,95 @@
 /* =============================================================
    CLIRevenue — design tokens
-   Dark graphite terminal environment, restrained amber
-   instrumentation, hairline borders, precise spacing.
+   Brutalist cyber-editorial: black / paper / grey / one signal red.
+   Hard 1px rules, inverted paper panels, oversized geometric display
+   type, technical micro-labels. Four colours and no fifth.
    ============================================================= */
 
 :root {
-  /* surfaces */
-  --void: #07070a;
-  --stage: #0a0b0d;
-  --panel: #0d0e11;
-  --panel-2: #101216;
-  --chrome: #14161a;
-  --input: #0a0b0e;
+  /* ---- §24 palette ----------------------------------------
+     Black, paper, grey, red. Nothing else is a colour.
 
-  /* hairlines */
-  --hair: rgba(255, 255, 255, 0.06);
-  --hair-strong: rgba(255, 255, 255, 0.11);
-  --hair-amber: rgba(240, 169, 43, 0.28);
+     --signal is a *flag*, not a highlight. Red appears where the
+     system needs to name something: a label, a number, a rule, a
+     live state. It is never used to decorate a surface, and it is
+     never used for a paragraph. */
+  --bg: #050505;
+  --surface: #1c1c1c;
+  --paper: #e4e4e4;
+  --signal: #fc282b;
+  /* --signal-text is the reading-weight red: it clears AA on both
+     --surface (5.14:1) and --bg (6.15:1), where pure --signal is
+     3.9:1 and therefore display-only. */
+  --signal-text: #ff4a4d;
+  --signal-dark: #a80f12;
+  --signal-soft: rgba(252, 40, 43, 0.1);
+  --muted: #8a8a8a;
+  --text: #e4e4e4;
+  --text-muted: #a8a8a8;
+  --border: rgba(228, 228, 228, 0.16);
+  --border-strong: #e4e4e4;
 
-  /* Ink ramp. Four steps, monotonic, and every one of them clears
-     WCAG AA (4.5:1) against every surface in the palette — worst case
-     is --ink-4 on --chrome at 4.61:1. The bottom two steps are
-     deliberately close together: the original ramp ran 8.2 / 4.1 /
-     2.3, which read well as a gradient and failed as type. Below about
-     4.5 there is no amount of restraint that stays legible, so the
-     quiet end of the ramp is compressed and the top half is left
-     alone to carry the contrast. Size and weight separate the lower
-     tiers; hue does not. */
-  --ink: #edeef0;
-  --ink-2: #a3a8b0;
-  --ink-3: #8b919b;
-  --ink-4: #7b818a;
+  /* ---- legacy surface names ------------------------------
+     App.css is entirely token-driven and addresses these directly.
+     They are aliases onto the §24 palette, so one re-skin moves all
+     2600 lines of it. */
+  --void: var(--bg);
+  --stage: #0a0a0a;
+  --panel: #0e0e0e;
+  --panel-2: #141414;
+  --chrome: var(--surface);
+  --input: #1c1c1c;
 
-  /* amber — instrumentation only, never decoration */
-  --amber: #f0a92b;
-  --amber-dim: #b8811f;
-  --amber-wash: rgba(240, 169, 43, 0.1);
-  --amber-glow: rgba(240, 169, 43, 0.28);
+  /* hairlines — the structure of the whole page */
+  --hair: rgba(228, 228, 228, 0.14);
+  --hair-strong: rgba(228, 228, 228, 0.28);
+  --hair-amber: rgba(252, 40, 43, 0.5);
 
-  /* sponsored slot is deliberately cool + neutral so it never
-     reads as terminal output or as amber instrumentation */
-  --ad-ink: #e2e6ea;
-  --ad-dim: #8a9199;
-  --ad-edge: rgba(255, 255, 255, 0.14);
-  --ad-fill: #111318;
+  /* Ink ramp. Four steps, monotonic, every one clearing WCAG AA
+     (4.5:1) against the darkest surface in the palette — worst case
+     is --ink-4 on --chrome at 5.79:1. Size and weight separate the
+     lower tiers; hue does not. */
+  --ink: var(--paper);
+  --ink-2: #c4c4c4;
+  --ink-3: var(--text-muted);
+  --ink-4: var(--muted);
 
-  /* status */
-  --ok: #63b98d;
+  /* signal — instrumentation only, never decoration */
+  --amber: var(--signal);
+  --amber-dim: var(--signal-text);
+  --amber-wash: var(--signal-soft);
+  --amber-glow: rgba(252, 40, 43, 0.3);
 
-  /* type */
-  --mono: ui-monospace, 'SF Mono', SFMono-Regular, 'JetBrains Mono', Menlo,
+  /* sponsored slot: neutral plate, no second accent */
+  --ad-ink: var(--paper);
+  --ad-dim: var(--text-muted);
+  --ad-edge: rgba(228, 228, 228, 0.28);
+  --ad-fill: var(--surface);
+
+  /* status — the palette has four colours, so "good" is inverted
+     paper rather than a fifth hue. Red stays reserved for flags. */
+  --ok: var(--paper);
+
+  /* type — self-hosted, /fonts/fonts.css */
+  --font-display: 'Orbitron', 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo,
     Consolas, 'Liberation Mono', monospace;
-  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
-    Arial, sans-serif;
+  --mono: var(--font-mono);
+  --sans: var(--font-body);
 
   /* rhythm */
   --gutter: clamp(20px, 5vw, 72px);
   --measure: 1180px;
   --u: 4px;
+
+  /* glass — translucent dark instrument material, square geometry */
+  --glass-bg: rgba(18, 18, 18, 0.58);
+  --glass-bg-strong: rgba(24, 24, 24, 0.72);
+  --glass-edge: rgba(228, 228, 228, 0.16);
+  --glass-hi: rgba(228, 228, 228, 0.08);
+  --glass-blur: 14px;
 
   /* Corners. Zero, everywhere, no exceptions.
 
@@ -70,6 +102,19 @@
      a cursor block sets `border-radius: 50%` locally and is not a
      rounded rectangle in any sense that matters. */
   --radius: 0px;
+
+  /* Border weights. One language: 1px rules everywhere, 2px for a
+     structural division, 3px only for the flag bar. */
+  --border-w: 1px;
+  --border-w-2: 2px;
+  --border-w-3: 3px;
+
+  /* Motion durations. Four steps and no fifth; anything that needs a
+     different number is asking for its own opinion. */
+  --dur-fast: 140ms;
+  --dur: 240ms;
+  --dur-slow: 520ms;
+  --dur-cine: 900ms;
 
   /* Display type, locked to the viewport height and then capped against
      the viewport width. A width-only fluid size (`clamp(30px, 4.2vw,
@@ -99,13 +144,14 @@
 
   /* Tracking. Display type is set tight, body type is set normal, and
      the micro-labels are set wide — three jobs, three values, and no
-     size in between that is allowed its own opinion. Tight negative
-     tracking on a large sans is what makes it look drawn rather than
-     typed; wide tracking on a 10px uppercase label is what makes it
-     read as a label instead of a word. */
-  --track-display: -0.042em;
+     size in between that is allowed its own opinion. Orbitron is
+     already a wide geometric face, so its display tracking is only
+     lightly negative; the negative value belongs to Space Grotesk,
+     which is the one that needs drawing rather than typing. */
+  --track-display: -0.01em;
+  --track-head: -0.03em;
   --track-tight: -0.022em;
-  --track-label: 0.22em;
+  --track-label: 0.18em;
 
   /* Easing. One curve for the interface, one for display type, and the
      split is not arbitrary.
@@ -126,7 +172,7 @@
   --ease-ui: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-reveal: cubic-bezier(0.19, 1, 0.22, 1);
 
-  --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.03) inset,
+  --shadow-panel: 0 1px 0 rgba(228, 228, 228, 0.03) inset,
     0 24px 70px -30px rgba(0, 0, 0, 0.9);
   --shadow-ad: 0 0 0 1px var(--ad-edge), 0 12px 40px -22px rgba(0, 0, 0, 0.9),
     0 0 34px -22px var(--amber-glow);
@@ -191,18 +237,25 @@ ol {
   list-style: none;
 }
 
+/* One focus indicator, one colour, one weight. `--signal-text` rather
+   than `--signal` because the ring has to clear 3:1 against both the
+   black stage and the dark chrome it lands on, and pure signal red
+   only manages 4.45:1 on the latter. 2px because a 1px ring is a ring
+   that disappears at 125% zoom and in forced-colours, where it is the
+   only affordance left. */
 :focus-visible {
-  outline: 1px solid var(--amber);
-  outline-offset: 3px;
+  outline: 2px solid var(--signal-text);
+  outline-offset: 2px;
 }
 
 /* Selection is the one interaction on this page that the viewer
-   actually performs, so it gets the same amber the instrumentation
-   gets rather than the browser's default blue — which is a colour
-   that appears nowhere else in the film. */
+   actually performs, so it gets the flag colour rather than the
+   browser's default blue — which is a colour that appears nowhere
+   else in the film. Black on red is 5.32:1, which is a selection you
+   can still read while it is selected. */
 ::selection {
-  background: var(--amber-glow);
-  color: var(--ink);
+  background: var(--signal);
+  color: var(--bg);
 }
 
 /* Lenis adds `lenis`, and `lenis-smooth` while it is easing, to the
@@ -236,6 +289,186 @@ html.lenis body {
   overflow: clip;
 }
 
+/* The intro plays over a locked document. `scrollbar-gutter: stable`
+   is the whole reason this is safe: `overflow: hidden` takes the
+   scrollbar away, and without the gutter reserved the viewport would
+   be ~15px wider for the length of the intro and the page would jump
+   sideways when it released. With the gutter reserved the layout is
+   identical before, during and after, so nothing reflows when the
+   lock comes off. */
+html.intro-lock,
+html.intro-lock body {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
+/* =============================================================
+   persistent cinematic atmosphere (fixed GPU layers)
+   ============================================================= */
+
+.atmos {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  --atmos-p: 0;
+}
+
+.atmos__grid {
+  position: absolute;
+  inset: -12vh 0;
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      rgba(228, 228, 228, 0.045) 0 1px,
+      transparent 1px calc(100% / 12)
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(228, 228, 228, 0.03) 0 1px,
+      transparent 1px 120px
+    );
+  opacity: 0.55;
+  transform: translate3d(0, calc(var(--atmos-p) * -36px), 0);
+}
+
+.atmos__vlines i,
+.atmos__hlines i {
+  position: absolute;
+  background: rgba(228, 228, 228, 0.06);
+}
+
+.atmos__vlines i {
+  top: -8vh;
+  bottom: -8vh;
+  width: 1px;
+  transform: translate3d(0, calc(var(--atmos-p) * -58px), 0);
+}
+
+.atmos__hlines i {
+  left: -6vw;
+  right: -6vw;
+  height: 1px;
+  transform: translate3d(calc(var(--atmos-p) * 44px), 0, 0);
+}
+
+.atmos__depth {
+  position: absolute;
+  inset: -10%;
+  background:
+    radial-gradient(58% 44% at 18% 8%, rgba(228, 228, 228, 0.045), transparent 68%),
+    radial-gradient(52% 44% at 84% 92%, rgba(252, 40, 43, 0.045), transparent 70%);
+}
+
+.atmos__depth--a {
+  transform: translate3d(0, calc(var(--atmos-p) * -78px), 0);
+}
+
+.atmos__depth--b {
+  opacity: 0.55;
+  transform: translate3d(0, calc(var(--atmos-p) * -132px), 0) scale(1.04);
+}
+
+.atmos__drift {
+  position: absolute;
+  left: -20vw;
+  right: -20vw;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(228, 228, 228, 0.16),
+    transparent
+  );
+}
+
+.atmos__drift--a {
+  top: 30%;
+  opacity: 0.38;
+  animation: atmos-drift 26s linear infinite;
+}
+
+.atmos__drift--b {
+  top: 66%;
+  opacity: 0.24;
+  animation: atmos-drift 38s linear infinite reverse;
+}
+
+.atmos__signal {
+  position: absolute;
+  left: 6vw;
+  right: 6vw;
+  top: 12%;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(252, 40, 43, 0.28),
+    transparent
+  );
+  opacity: 0.28;
+  transform: translate3d(0, calc(var(--atmos-p) * 180px), 0);
+}
+
+@keyframes atmos-drift {
+  from {
+    transform: translate3d(-8vw, 0, 0);
+  }
+  to {
+    transform: translate3d(8vw, 0, 0);
+  }
+}
+
+/* content must paint above the fixed atmosphere */
+.stage,
+.console,
+.conv {
+  position: relative;
+  z-index: 1;
+}
+
+/* scroll-depth response for the film shell (driven by GSAP --film-p) */
+.stage {
+  --film-p: 0;
+  transform: translate3d(0, calc(var(--film-p) * 14px), 0);
+}
+
+.scene__inner {
+  transform: translate3d(0, calc(var(--film-p, 0) * -8px), 0);
+}
+
+/* =============================================================
+   liquid glass instrument material
+   ============================================================= */
+
+.glass {
+  position: relative;
+  background:
+    linear-gradient(180deg, var(--glass-hi), transparent 34%),
+    var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.08);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.08);
+  border: var(--border-w) solid var(--glass-edge);
+  box-shadow:
+    inset 0 1px 0 rgba(228, 228, 228, 0.1),
+    0 18px 44px rgba(0, 0, 0, 0.32);
+}
+
+.glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 42%, rgba(228, 228, 228, 0.075) 50%, transparent 58%);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: var(--glass-bg-strong);
+  }
+}
+
 /* =============================================================
    shared type primitives
    ============================================================= */
@@ -257,7 +490,7 @@ html.lenis body {
   font-variant-ligatures: none;
 }
 
-/* chapter eyebrow — small amber instrumentation label */
+/* chapter eyebrow — small signal instrumentation label */
 .eyebrow {
   display: inline-flex;
   align-items: center;

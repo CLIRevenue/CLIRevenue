@@ -18,6 +18,7 @@ import { useRef } from 'react'
 import { MotionConfig } from 'motion/react'
 
 import useCinema from '../hooks/useCinema.js'
+import Intro from './Intro.jsx'
 import Cta from './scenes/Cta.jsx'
 import TheAd from './scenes/TheAd.jsx'
 import TheExperience from './scenes/TheExperience.jsx'
@@ -32,6 +33,12 @@ function Cinema() {
 
   return (
     <MotionConfig reducedMotion="user">
+      {/* The boot overlay is a sibling of the stage, not a child of it:
+          it is `position: fixed`, it is gone by the time the film
+          starts, and the stage must stay the outermost element of the
+          film so the GSAP context keeps its scope. */}
+      <Intro />
+
       {/* The film has no visible title — it opens on a cursor in an
           empty terminal, and a masthead would break that. It still
           needs one for the document outline, so it is carried

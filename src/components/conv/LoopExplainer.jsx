@@ -44,7 +44,7 @@ function LoopExplainer() {
   return (
     <motion.section
       className="block conv__block"
-      id="money"
+      id="model"
       aria-label="How the money moves"
       {...reveal}
     >

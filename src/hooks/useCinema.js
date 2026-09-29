@@ -1,31 +1,28 @@
 /* =============================================================
    CLIRevenue — the cinema
    -------------------------------------------------------------
-   One hook, one master timeline, one ScrollTrigger, and the
-   decision that the cinematic autoplay and the viewer's own
-   scrolling are the same mechanism.
+   One hook, one master timeline, one ScrollTrigger. The film only
+   ever runs on scroll: the scrollbar is the playhead, and there is
+   no second mechanism that can move it.
 
-   The tempting design is two: a timeline that plays itself on
-   load, plus a second copy of the same timeline bound to scroll for
-   replay. That is two sources of truth that drift, and a viewer who
-   scrolls during the first four seconds ends up with the autoplay
-   and the scrub fighting over the same playhead.
+   What used to live here was an autoplay — an animated scroll to
+   the end of the stage that any user input cancelled. It is gone,
+   and the page opens on the boot overlay instead, which is a
+   different thing with a different job: the boot is an
+   introduction that runs once and never touches the scroll, and
+   when it finishes it simply reports itself done. This hook waits
+   for that report and then re-measures, because the document is
+   locked while it plays and `overflow: hidden` changes what the
+   viewport is worth.
 
-    So: the film only ever runs on scroll. Autoplay is one animated
-    scroll from wherever the page is to the end of the stage, and the
-    ScrollTrigger below does the rest by reading the scrollbar. The
-    autoplay is not a second animation — it is the scrollbar being
-    pushed by a hand. Any user input at all takes the hand back, and
-    from that moment the viewer is driving.
-
-    Lenis owns the scrollbar, GSAP owns the playhead. They are
-    connected in one direction only: Lenis reports where the scroll is,
-    ScrollTrigger.update reads that, and the playhead follows. Neither
-    one ever writes to the other, so there is no feedback loop to go
-    unstable and no frame where the film disagrees with the scrollbar.
-    Lenis runs on the GSAP ticker, which matters for more than tidiness
-    — the film and the scroll surface are then sampled by the same
-    rAF, so a scrubbed playhead and an eased scroll can never tear.
+   Lenis owns the scrollbar, GSAP owns the playhead. They are
+   connected in one direction only: Lenis reports where the scroll is,
+   ScrollTrigger.update reads that, and the playhead follows. Neither
+   one ever writes to the other, so there is no feedback loop to go
+   unstable and no frame where the film disagrees with the scrollbar.
+   Lenis runs on the GSAP ticker, which matters for more than tidiness
+   — the film and the scroll surface are then sampled by the same
+   rAF, so a scrubbed playhead and an eased scroll can never tear.
 
 
    Everything GSAP creates lives inside a single `gsap.context`
@@ -47,6 +44,7 @@ import Lenis from 'lenis'
 
 import { planChapters, TOTAL } from '../lib/sequence.js'
 import { publishAll, publishSceneProgress, resetCinema } from '../lib/cinemaStore.js'
+import { isIntroDone, subscribeIntro } from '../lib/introStore.js'
 import usePrefersReducedMotion from './usePrefersReducedMotion.js'
 
 gsap.registerPlugin(ScrollTrigger, DrawSVGPlugin, MotionPathPlugin, ScrambleTextPlugin)
@@ -63,31 +61,6 @@ gsap.registerPlugin(ScrollTrigger, DrawSVGPlugin, MotionPathPlugin, ScrambleText
    third of a second and a stop reads as a slow drift rather than a
    stop. One smoothing surface, not two. */
 const SCRUB = true
-
-/* The full pass takes roughly as long as `TOTAL`, minus the tail
-   nobody watches: autoplay stops at the last scroll position, and
-   the last chapter spends its final beat holding the closing frame
-   rather than animating into it. */
-const AUTOPLAY = TOTAL - 1.6
-
-/* Keys that mean "the viewer is driving". */
-const SCROLL_KEYS = new Set([
-  'ArrowDown',
-  'ArrowUp',
-  'PageDown',
-  'PageUp',
-  'Home',
-  'End',
-  ' ',
-])
-
-/* The autoplay stamps this onto the scrolls it causes. Lenis copies
-   `userData` into every scroll event payload, so one string compare is
-   enough to tell "the film is still driving" apart from "a human moved
-   the scrollbar" — which is a question a position comparison cannot
-   answer honestly, because during the autoplay the two are the same
-   number by construction. */
-const AUTOPLAY_SCROLL = { userData: { cinema: 'autoplay' } }
 
 export function useCinema(stageRef) {
   const reduced = usePrefersReducedMotion()
@@ -134,6 +107,7 @@ export function useCinema(stageRef) {
        on modern iOS and visibly stutter on older versions, and no
        amount of easing makes that trade worth taking by default. */
     const lenis = new Lenis({ autoRaf: false, anchors: true })
+    window.__clirLenis = lenis
 
     /* One direction only. Lenis reports, ScrollTrigger reads. */
     const onLenisScroll = () => ScrollTrigger.update()
@@ -183,6 +157,7 @@ export function useCinema(stageRef) {
          are never told about time that belongs to somebody else. */
       timeline.eventCallback('onUpdate', () => {
         const time = timeline.time()
+        stage.style.setProperty('--film-p', timeline.progress().toFixed(4))
         for (const chapter of chapters) {
           const local = chapter.local(time)
           publishSceneProgress(chapter.id, local)
@@ -205,7 +180,13 @@ export function useCinema(stageRef) {
              back up has to pause it again or the agent would still be
              working on a scene the viewer has already scrolled past. */
           if (chapter.id === 'wait') {
-            const active = local > 0.1 && local < 0.84
+            /* The gate opens at the top of the chapter rather than a
+               tenth of the way in. The opening scene is the hero, and
+               at scroll position zero the claim on screen is that the
+               agent is working *right now* — a stream that stayed dark
+               until the viewer nudged the scrollbar would be a hero
+               with a dead panel in it. */
+            const active = local < 0.84
             if (active && !working) {
               working = true
               workLoop?.play()
@@ -230,68 +211,26 @@ export function useCinema(stageRef) {
       workLoop = buildWorkLoop(stage)
     }, stage)
 
-    /* Autoplay, in three parts: the scroll Lenis is told to perform, a
-       listener that hands control back the instant a human touches
-       anything, and a stop that tears all of it down.
+    /* The document is locked while the boot plays, and a locked
+       document is measured differently from an unlocked one: the
+       scrollbar is gone, so the viewport is a few pixels wider and
+       every chapter length derived from it is wrong. The stages below
+       were therefore planned against the *locked* geometry — the hook
+       runs before the lock is released, which is exactly why it has to
+       wait for the release rather than assume it.
 
-       This used to be a GSAP tween writing `window.scrollTo(0, y)`
-       every frame, with a hand-rolled drift threshold to guess whether
-       a human had taken over. Both halves of that were fighting the
-       thing that is now in the loop: `window.scrollTo` is exactly how
-       you talk *past* Lenis, and a drift threshold can only ever
-       compare the position against itself. Asking Lenis to perform
-       the scroll itself means the film rides the same easing as every
-       other scroll on the page, and it stamps its own name on the
-       scrolls it causes so the cancel check has something true to
-       look at. */
-    const stop = () => {
-      lenis.off('scroll', onForeignScroll)
-      window.removeEventListener('keydown', onKey)
+       `scrollbar-gutter: stable` means the released layout is the same
+       as the locked one, so this is a re-confirmation rather than a
+       correction — but it is still the moment ScrollTrigger is allowed
+       to trust the document, and the moment the viewer is allowed to
+       move it. */
+    const release = () => {
+      lenis.resize()
+      ScrollTrigger.refresh()
+      window.scrollTo(0, 0)
     }
 
-    /* A scroll Lenis performed that it was not asked to perform is a
-       human: a wheel, a trackpad flick, a dragged scrollbar, a
-       keyboard nudge. All four arrive here, and none of them need a
-       threshold to be recognised. */
-    const onForeignScroll = (payload) => {
-      if (payload?.userData?.cinema === 'autoplay') return
-      stop()
-    }
-
-    /* Keys are listened for separately, and only for immediacy. Lenis
-       does animate a keyboard scroll, so the listener above would
-       catch it a frame later — but a frame is perceptible when the
-       expectation is that pressing a key stops the film. */
-    const onKey = (event) => {
-      if (SCROLL_KEYS.has(event.key)) stop()
-    }
-
-    /* No wheel or touchstart listener is needed. Lenis emits its
-       scroll event with a delta payload the moment a gesture begins,
-       which is earlier and more reliable than listening for the raw
-       event and hoping the browser agrees about what counts as a
-       gesture. */
-    lenis.on('scroll', onForeignScroll)
-    window.addEventListener('keydown', onKey)
-
-    /* The autoplay target is the end of the *film*, not the end of the
-       document. Today those are the same number — the visually hidden
-       h1 above the stage contributes no height — so this is
-       bit-identical behaviour. With the product console appended below
-       the stage it becomes what it always meant to be: the last frame
-       of act six, rather than a sprint through the console. */
-    lenis.scrollTo(
-      Math.min(lenis.limit, Math.max(0, stage.offsetHeight - window.innerHeight)),
-      {
-        ...AUTOPLAY_SCROLL,
-        duration: AUTOPLAY,
-        /* `power1.inOut` translated from the GSAP easing the autoplay
-           used to run on, so the scroll surface keeps the same feel. */
-        easing: (t) =>
-          t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
-        onComplete: stop,
-      },
-    )
+    const unsubscribeIntro = subscribeIntro(release)
 
     /* Lenis and ScrollTrigger both need to re-measure on resize, and
        in that order: Lenis recomputes its own limit, and ScrollTrigger
@@ -303,9 +242,14 @@ export function useCinema(stageRef) {
 
     window.addEventListener('resize', onResize)
 
+    /* If the boot had already finished by the time this ran — reduced
+       motion marks it synchronously — there is no release event left
+       to wait for, so measure now instead of never. */
+    if (isIntroDone()) release()
+
     return () => {
+      unsubscribeIntro()
       window.removeEventListener('resize', onResize)
-      stop()
       gsap.ticker.remove(raf)
       lenis.off('scroll', onLenisScroll)
       lenis.destroy()
@@ -464,21 +408,28 @@ function buildParticles(stage) {
    do — an infinite repeat inside the master would report an infinite
    duration and take the scroll mapping with it.
 
-/* Three things are collapsed to zero here, not one. The rows start
-   hidden, and so do their text and their detail, and the reason is
-   that the loop fades both of them *in* on every pass — which is only
-   true if they are not already at their destination when the first
-   pass records it. Left at their natural opacity, the first pass would
-   have nothing to fade from and would show every row at full strength
-   the instant it was lit, while every pass after that faded in
-   properly. Same cycle, two different behaviours, and the one nobody
-   is looking for is the one that runs first.
+/* The idle state of this list is dim, not empty.
 
-   The rows are collapsed out here rather than by a `set` inside the
-   loop: a `set` at a position past zero does not apply at build time
-   (GSAP's `set` defaults to `immediateRender: false` inside a
-   timeline), so the first frame would arrive with the whole list
-   showing and the loop would then reset it — a visible flash.
+   It used to be zero, and zero is correct for a stream being read
+   against a playhead — but the opening scene is a hero, and a hero
+   whose only proof of life is whichever single line happens to be lit
+   at that frame reads as a panel with a hole in it. The unlit rows now
+   sit at DIM, so the viewer sees the whole shape of the work with one
+   line of it in progress, and the lit row is unmistakable because it
+   is the only one at full strength.
+
+   The three things are still collapsed together — item, text and
+   detail — because the loop fades all three *in* on every pass, and
+   that only reads as one motion if they all start from the same
+   place. Left at their natural opacity the first pass would have
+   nothing to fade from and would show every row at full strength the
+   instant it was lit, while every pass after that faded in properly.
+
+   The set stays out here rather than inside the loop: a `set` at a
+   position past zero does not apply at build time (GSAP's `set`
+   defaults to `immediateRender: false` inside a timeline), so the
+   first frame would arrive with the whole list showing and the loop
+   would then reset it — a visible flash.
 
    The row leaves as a whole, and the row is in the target list for a
    reason that is not tidiness. The dots are a sibling of the text, not
@@ -489,8 +440,8 @@ function buildParticles(stage) {
    Fading the item takes the dots with it.
 
    The gap between one row leaving and the next arriving is the point.
-   A quarter of a second goes by with nothing on screen, and that beat of
-   nothing is what separates two states instead of blending them. */
+   A quarter of a second goes by with the screen at its quietest, and
+   that beat is what separates two states instead of blending them. */
 function buildWorkLoop(stage) {
   const items = Array.from(stage.querySelectorAll('.work__item'))
   if (!items.length) return null
@@ -510,7 +461,8 @@ function buildWorkLoop(stage) {
 
   if (!rows.length) return null
 
-  gsap.set([...rows.map((row) => row.item), ...texts, ...details], { opacity: 0 })
+  const DIM = 0.16
+  gsap.set([...rows.map((row) => row.item), ...texts, ...details], { opacity: DIM })
 
   const loop = gsap.timeline({
     paused: true,
@@ -535,7 +487,7 @@ function buildWorkLoop(stage) {
     loop.to(row.detail, { opacity: 1, duration: STEP * 0.14 }, from + STEP * 0.4)
     loop.to(
       [row.item, row.text, row.detail],
-      { opacity: 0, duration: STEP * 0.16 },
+      { opacity: DIM, duration: STEP * 0.16 },
       from + STEP * 0.84,
     )
   })
@@ -565,16 +517,17 @@ function beatFor(id, timeline, { pick, at, span }) {
 /* The opening scene, and the only one that opens on something rather
    than on its own furniture.
 
-   The interface is not arriving. It is being uncovered: the body
-   starts clipped away and the clip sweeps open from the bottom edge,
-   so the prompt and the cursor are the first thing on screen and they
-   never move. Nothing rises, nothing settles — the window is already
-   running and we are only being shown the rest of it. The `fromTo`
-   defaults to `immediateRender: true`, so the clipped state is real
-   before the first paint and there is no frame where the full chrome
-   is painted and then removed.
+   The window's entrance is not here. The clip that opens the terminal
+   body and the ramp that brings it out of 35% opacity used to be the
+   first two tweens of this chapter, and they are now the boot
+   overlay's job: at scroll position zero the film has nowhere to come
+   *from*, because zero is also where the viewer lands when they scroll
+   back to the top. Moving them to the intro means the window opens
+   once, on load, and every later arrival at the top of the document
+   finds it already running — which is what the scene always claimed.
 
-   The stream arrives at a tenth, once there is a screen to write on.
+   The stream arrives as soon as the gate in `onUpdate` opens it, which
+   is now at the top of the chapter.
 
    The last move in the chapter is subtraction, and it is the one place
    where the film leaves a scene by making less of it. The rows go
@@ -585,28 +538,6 @@ function beatFor(id, timeline, { pick, at, span }) {
    going out is the same information, and it carries no contrast
    obligation with it. */
 function waitBeat(timeline, { pick, at, span }) {
-  timeline
-    .fromTo(
-      pick('.terminal__body'),
-      { clipPath: 'inset(100% 0% 0% 0%)' },
-      { clipPath: 'inset(0% 0% 0% 0%)', duration: span(0.2), ease: 'power2.out' },
-      at(0.02),
-    )
-    .fromTo(
-      pick('.terminal__body'),
-      { opacity: 0.35 },
-      { opacity: 1, duration: span(0.14), ease: 'none' },
-      at(0.02),
-    )
-
-  reveal(
-    timeline,
-    pick('.work'),
-    { opacity: 0, y: 10 },
-    { opacity: 1, y: 0, duration: span(0.14), ease: 'power3.out' },
-    at(0.1),
-  )
-
   timeline
     .fromTo(
       pick('.work'),
@@ -625,14 +556,17 @@ function waitBeat(timeline, { pick, at, span }) {
    and busy by the time the slot arrives, so the slot gets its own
    entrance — dropping in from above with a slight vertical squash,
    the way a reserved region fills rather than an element fading
-   up. Deliberately not folded into the generic terminal reveal. */
+   up. Deliberately not folded into the generic terminal reveal.
+   It lands in the first half of the chapter: the slot IS the
+   subject of this scene, so the reader has to be able to see it
+   for most of the pass, not only after they have scrolled past. */
 function adBeat(timeline, { pick, at, span }) {
   reveal(
     timeline,
     pick('.adslot'),
     { opacity: 0, y: -14, scaleY: 0.82 },
-    { opacity: 1, y: 0, scaleY: 1, duration: span(0.16), ease: 'power3.out' },
-    at(0.7),
+    { opacity: 1, y: 0, scaleY: 1, duration: span(0.18), ease: 'power3.out' },
+    at(0.22),
   )
 }
 
@@ -644,11 +578,11 @@ function moneyBeat(timeline, { pick, at, span }) {
     {
       opacity: 1,
       scale: 1,
-      duration: span(0.3),
+      duration: span(0.26),
       ease: 'back.out(1.7)',
-      stagger: span(0.08),
+      stagger: span(0.07),
     },
-    at(0.16),
+    at(0.12),
   )
 
   /* The wires are drawn, not faded in. A diagram that assembles by
@@ -664,8 +598,8 @@ function moneyBeat(timeline, { pick, at, span }) {
 
   wires.forEach((wire, index) => {
     const head = heads[index]
-    const start = at(0.24) + step * index
-    const draw = span(0.26) - step * index * 0.6
+    const start = at(0.2) + step * index
+    const draw = span(0.24) - step * index * 0.6
 
     timeline.fromTo(
       wire,
@@ -694,26 +628,41 @@ function moneyBeat(timeline, { pick, at, span }) {
     { opacity: 0, rise: 8 },
     {
       opacity: 1,
-      duration: span(0.2),
+      duration: span(0.18),
       ease: 'power2.out',
       stagger: span(0.05),
     },
-    at(0.42),
+    at(0.34),
   )
 
   reveal(
     timeline,
     pick('.flow__legends'),
     { opacity: 0, y: 12 },
-    { opacity: 1, y: 0, duration: span(0.24), ease: 'power2.out' },
-    at(0.52),
+    { opacity: 1, y: 0, duration: span(0.2), ease: 'power2.out' },
+    at(0.44),
   )
 }
 
 /* The annotations are the argument of this scene — four flat claims
    about what does not break. They land after the terminal has been
-   left running long enough to be believable. */
+   left running long enough to be believable.
+
+   The sponsored region gets its own earlier beat here, for the same
+   reason it has one in the ad chapter: the slot is an interface
+   region of the host application, so it has to be present before the
+   reader starts reading the claims around it. Without this the slot
+   simply sat at its natural opacity and never participated in the
+   scene's staging. */
 function experienceBeat(timeline, { pick, at, span }) {
+  reveal(
+    timeline,
+    pick('.adslot'),
+    { opacity: 0, y: -14, scaleY: 0.82 },
+    { opacity: 1, y: 0, scaleY: 1, duration: span(0.18), ease: 'power3.out' },
+    at(0.24),
+  )
+
   reveal(
     timeline,
     pick('.annot__item'),
@@ -725,7 +674,7 @@ function experienceBeat(timeline, { pick, at, span }) {
       ease: 'power2.out',
       stagger: span(0.05),
     },
-    at(0.58),
+    at(0.52),
   )
 }
 
@@ -788,9 +737,9 @@ function ctaBeat(timeline, { pick, at, span }) {
      it rises monotonically. */
   rise('.closing__headline span', 0.1)
   rise('.closing__verbs span', 0.4)
-  rise('.closing__mark', 0.58)
-  rise('.closing__status', 0.68)
-  rise('.closing__ask', 0.76)
+  rise('.closing__mark', 0.5)
+  rise('.closing__status', 0.58)
+  rise('.closing__ask', 0.64)
 
   /* The amber half of the wordmark gets the one effect that belongs
      to a title card: the letters arrive out of noise and settle into
@@ -806,8 +755,8 @@ function ctaBeat(timeline, { pick, at, span }) {
 
      The scramble overlays the entrance rather than being one. The
      wordmark has no reveal of its own — it is a `<span>` inside
-     `.closing__mark`, so it arrives on the box's rise at `at(0.58)`,
-     and this tween starts at `at(0.66)` while that rise is still
+     `.closing__mark`, so it arrives on the box's rise at `at(0.5)`,
+     and this tween starts at `at(0.56)` while that rise is still
      going. ScrambleText rearranges the characters of text that is
      already painted; it cannot bring anything into being. What the
      timing buys is the name resolving out of a box that is still
@@ -825,7 +774,7 @@ function ctaBeat(timeline, { pick, at, span }) {
         ease: 'none',
         scrambleText: { text: accent[0].textContent, chars: 'lowerCase', speed: 0.2 },
       },
-      at(0.66),
+      at(0.56),
     )
   }
 }
