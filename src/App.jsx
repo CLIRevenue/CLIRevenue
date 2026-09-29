@@ -9,6 +9,7 @@ import { AuthProvider } from './components/auth/AuthProvider.jsx'
 import { LoginPage, SignupPage } from './components/auth/AuthPages.jsx'
 import { RequireRole, AuthLoadingScreen } from './components/auth/RequireAuth.jsx'
 import { useAuth, roleHome } from './components/auth/authState.js'
+import PublicHeader from './components/PublicHeader.jsx'
 import useAppRoute, { navigateApp } from './hooks/useAppRoute.js'
 import './components/advertiser/advertiser.css'
 import './App.css'
@@ -38,6 +39,7 @@ function Routes() {
     return (
       <>
         <Atmosphere />
+        <PublicHeader />
         <LoginPage />
       </>
     )
@@ -47,6 +49,7 @@ function Routes() {
     return (
       <>
         <Atmosphere />
+        <PublicHeader />
         <SignupPage />
       </>
     )
@@ -112,6 +115,7 @@ function Routes() {
   return (
     <>
       <Atmosphere />
+      <PublicHeader />
       <Cinema />
       <Console />
       <Conversion />

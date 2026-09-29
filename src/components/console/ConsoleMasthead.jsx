@@ -34,14 +34,6 @@ function ConsoleMasthead() {
         <DemoTag>Every figure is simulated</DemoTag>
       </div>
 
-      <p className="masthead__auth">
-        <a className="masthead__auth-link" href="/login">Log in</a>
-        <span aria-hidden="true"> · </span>
-        <a className="masthead__auth-link" href="/signup">Sign up</a>
-        <span aria-hidden="true"> · </span>
-        <a className="masthead__auth-link" href="/app">Open app</a>
-      </p>
-
       <nav className="journey glass" aria-label="The revenue loop, party by party">
         <span className="journey__status" aria-hidden="true">
           <i />

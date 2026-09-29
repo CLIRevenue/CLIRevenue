@@ -1385,6 +1385,22 @@
   cursor: not-allowed;
 }
 
+.btn--ghost {
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--hair-amber);
+  background: var(--amber-wash);
+}
+
+.btn--sm {
+  padding: 7px 13px;
+  font-size: 12.5px;
+}
+
 /* -------------------------------------------------------------
    masthead + journey
    ------------------------------------------------------------- */
