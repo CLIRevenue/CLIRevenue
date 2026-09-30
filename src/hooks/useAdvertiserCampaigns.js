@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchAdvertiserCampaigns } from '../lib/advertiserApi.js'
+import { campaignErrorMessage } from '../lib/campaignErrors.js'
 
 function toCampaignsError(e) {
-  const status = e.status
-  if (status === 401) return 'Session expired. Please sign in again.'
-  if (status === 404) return 'Campaigns endpoint not found. Check Edge Function deployment.'
-  return e.message || 'Could not load campaigns.'
+  return campaignErrorMessage(e, 'Could not load campaigns.')
 }
 
 export default function useAdvertiserCampaigns() {
@@ -36,5 +34,21 @@ export default function useAdvertiserCampaigns() {
     })()
   }, [load])
 
-  return { ...state, refresh, setCampaigns: (campaigns) => setState((s) => ({ ...s, campaigns })) }
+  const upsertCampaign = useCallback((campaign) => {
+    if (!campaign?.id) return
+    setState((s) => {
+      const idx = s.campaigns.findIndex((c) => c.id === campaign.id)
+      const campaigns = idx >= 0
+        ? s.campaigns.map((c, i) => (i === idx ? { ...c, ...campaign } : c))
+        : [campaign, ...s.campaigns]
+      return { ...s, campaigns, error: '' }
+    })
+  }, [])
+
+  return {
+    ...state,
+    refresh,
+    upsertCampaign,
+    setCampaigns: (campaigns) => setState((s) => ({ ...s, campaigns })),
+  }
 }

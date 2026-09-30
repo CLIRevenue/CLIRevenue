@@ -1,91 +1,67 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+import { adminClient } from "../_shared/auth.ts";
+import { apiError, json, optionsResponse } from "../_shared/http.ts";
 
 serve(async (req) => {
-  // Only allow GET requests
+  if (req.method === "OPTIONS") return optionsResponse();
   if (req.method !== "GET") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" }
-    });
+    return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
   }
-
   try {
-    // Get the active campaign ID from platform_settings
-    const { data: settings, error: settingsError } = await supabaseAdmin
+    const admin = adminClient();
+    const { data: settings, error: settingsError } = await admin
       .from("platform_settings")
       .select("active_campaign_id")
-      .single();
-
+      .maybeSingle();
     if (settingsError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch platform settings" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
+      return apiError("INTERNAL_ERROR", "Failed to fetch platform settings.", 500);
     }
-
-    if (!settings.active_campaign_id) {
-      return new Response(
-        JSON.stringify({ error: "No active campaign set" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
+    if (!settings?.active_campaign_id) {
+      return apiError("CAMPAIGN_NOT_FOUND", "No active campaign set.", 404);
     }
-
-    // Get the campaign details
-    const { data: campaign, error: campaignError } = await supabaseAdmin
+    const { data: campaign, error: campaignError } = await admin
       .from("campaigns")
       .select(
-        `id, name, headline, description, cta, audience_id, budget_cents, spend_milli_cents, impressions_count, clicks_count, conversions_count, status, created_at, updated_at`
+        "id, name, headline, description, cta, audience_id, budget_cents, spend_milli_cents, impressions_count, clicks_count, conversions_count, status, starts_at, ends_at, created_at, updated_at",
       )
       .eq("id", settings.active_campaign_id)
-      .single();
-
-    if (campaignError) {
-      return new Response(
-        JSON.stringify({ error: "Active campaign not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
+      .maybeSingle();
+    if (campaignError || !campaign) {
+      return apiError("CAMPAIGN_NOT_FOUND", "Active campaign not found.", 404);
     }
-
-    // Get the audience label from the audiences table
-    const { data: audience, error: audienceError } = await supabaseAdmin
+    const servable =
+      campaign.status === "active" &&
+      (campaign.starts_at == null || new Date(campaign.starts_at).getTime() <= Date.now()) &&
+      (campaign.ends_at == null || new Date(campaign.ends_at).getTime() >= Date.now()) &&
+      campaign.spend_milli_cents < campaign.budget_cents * 1000;
+    if (!servable) {
+      return apiError("CAMPAIGN_NOT_SERVABLE", "The selected campaign is not eligible to serve.", 404);
+    }
+    const { data: audience } = await admin
       .from("audiences")
       .select("label")
       .eq("id", campaign.audience_id)
-      .single();
-
-    // Convert spend_milli_cents to spend_cents (integer division)
+      .maybeSingle();
     const spendCents = Math.floor(campaign.spend_milli_cents / 1000);
-
-    // Return the campaign object with audience label (or id if not found)
-    return new Response(
-      JSON.stringify({
-        id: campaign.id,
-        name: campaign.name,
-        headline: campaign.headline,
-        description: campaign.description,
-        cta: campaign.cta,
-        audience: audience ? audience.label : campaign.audience_id,
-        budgetCents: campaign.budget_cents,
-        spendCents: spendCents,
-        impressions: campaign.impressions_count,
-        clicks: campaign.clicks_count,
-        conversions: campaign.conversions_count,
-        status: campaign.status,
-        createdAt: campaign.created_at,
-        updatedAt: campaign.updated_at,
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+    return json({
+      id: campaign.id,
+      name: campaign.name,
+      headline: campaign.headline,
+      description: campaign.description,
+      cta: campaign.cta,
+      audience_id: campaign.audience_id,
+      audience: audience?.label || campaign.audience_id,
+      budgetCents: campaign.budget_cents,
+      spendCents,
+      impressions: campaign.impressions_count,
+      clicks: campaign.clicks_count,
+      conversions: campaign.conversions_count,
+      status: campaign.status,
+      createdAt: campaign.created_at,
+      updatedAt: campaign.updated_at,
+    });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: "Internal server error", details: err.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    console.error(err);
+    return apiError("INTERNAL_ERROR", "Internal server error.", 500);
   }
 });

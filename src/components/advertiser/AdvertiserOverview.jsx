@@ -11,11 +11,20 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
 
   const totals = useMemo(() => {
     const spend = sum(campaigns, (c) => c.spendCents)
+    const budget = sum(campaigns, (c) => c.budgetCents)
     const impressions = sum(campaigns, (c) => c.impressions)
     const clicks = sum(campaigns, (c) => c.clicks)
     const conversions = sum(campaigns, (c) => c.conversions)
     const active = campaigns.filter((c) => c.status === 'active').length
-    return { spend, impressions, clicks, conversions, active, ctr: ctrPct(clicks, impressions) }
+    return {
+      spend,
+      remaining: Math.max(0, budget - spend),
+      impressions,
+      clicks,
+      conversions,
+      active,
+      ctr: ctrPct(clicks, impressions),
+    }
   }, [campaigns])
 
   const chartRows = useMemo(
@@ -68,6 +77,7 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
           <AdvStats
             items={[
               { label: 'Total spend', value: formatCents(totals.spend), hint: 'across all campaigns' },
+              { label: 'Remaining budget', value: formatCents(totals.remaining), hint: 'budget minus spend' },
               { label: 'Active campaigns', value: String(totals.active), hint: `${campaigns.length} total` },
               { label: 'Impressions', value: totals.impressions.toLocaleString('en-US') },
               { label: 'Clicks', value: totals.clicks.toLocaleString('en-US') },

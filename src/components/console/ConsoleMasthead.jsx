@@ -35,10 +35,6 @@ function ConsoleMasthead() {
       </div>
 
       <nav className="journey glass" aria-label="The revenue loop, party by party">
-        <span className="journey__status" aria-hidden="true">
-          <i />
-          loop instrument
-        </span>
         <ol className="journey__list">
           {JOURNEY.map((step, i) => (
             <li className="journey__item" key={step.index}>

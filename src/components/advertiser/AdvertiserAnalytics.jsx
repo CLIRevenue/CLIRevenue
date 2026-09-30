@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { AdvBarChart, AdvEmpty, AdvError, AdvLoading, AdvPageHead, AdvStats } from './AdvertiserUI.jsx'
-import { ctrPct, formatCents } from '../../lib/advertiserApi.js'
+import { ctrPct, conversionRatePct, formatCents } from '../../lib/advertiserApi.js'
 
 export default function AdvertiserAnalytics({ campaigns, loading, error, onRetry }) {
   const totals = useMemo(() => {
@@ -8,7 +8,14 @@ export default function AdvertiserAnalytics({ campaigns, loading, error, onRetry
     const impressions = campaigns.reduce((n, c) => n + (c.impressions || 0), 0)
     const clicks = campaigns.reduce((n, c) => n + (c.clicks || 0), 0)
     const conversions = campaigns.reduce((n, c) => n + (c.conversions || 0), 0)
-    return { spend, impressions, clicks, conversions, ctr: ctrPct(clicks, impressions) }
+    return {
+      spend,
+      impressions,
+      clicks,
+      conversions,
+      ctr: ctrPct(clicks, impressions),
+      cvr: conversionRatePct(conversions, clicks),
+    }
   }, [campaigns])
 
   const byCampaign = useMemo(
@@ -64,6 +71,7 @@ export default function AdvertiserAnalytics({ campaigns, loading, error, onRetry
               { label: 'Impressions', value: totals.impressions.toLocaleString('en-US') },
               { label: 'Clicks', value: totals.clicks.toLocaleString('en-US') },
               { label: 'CTR', value: `${totals.ctr.toFixed(2)}%` },
+              { label: 'Conversion rate', value: `${totals.cvr.toFixed(2)}%`, hint: 'conversions / clicks' },
               { label: 'Conversions', value: totals.conversions.toLocaleString('en-US') },
               { label: 'Spend', value: formatCents(totals.spend) },
             ]}

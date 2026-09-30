@@ -4,6 +4,7 @@ import { Panel } from '../console/ui.jsx'
 import {
   ADVERTISER_AUDIENCES,
   CAMPAIGN_STATUSES,
+  archiveAdvertiserCampaign,
   createAdvertiserCampaign,
   ctrPct,
   formatCents,
@@ -12,6 +13,8 @@ import {
   updateAdvertiserCampaign,
   validateCampaignInput,
 } from '../../lib/advertiserApi.js'
+import { campaignErrorMessage } from '../../lib/campaignErrors.js'
+import { allowedNextStatuses } from '../../lib/campaignRules.js'
 
 const EMPTY_FORM = {
   name: '',
@@ -23,7 +26,7 @@ const EMPTY_FORM = {
   status: 'draft',
 }
 
-export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry, onChanged }) {
+export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry, onChanged, onUpsert }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [audience, setAudience] = useState('all')
@@ -71,11 +74,13 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
     setNotice('')
     try {
       const created = await createAdvertiserCampaign(form)
+      onUpsert?.(created)
+      setSelectedId(created.id)
       setNotice(`Created ${created.name}. It starts as draft in the backend.`)
       setForm(EMPTY_FORM)
       await onChanged()
     } catch (err) {
-      setFormErrors({ form: err.status === 401 ? 'Session expired. Please sign in again.' : (err.message || 'Create failed.') })
+      setFormErrors({ form: campaignErrorMessage(err, 'Campaign could not be created.') })
     } finally {
       setSaving(false)
     }
@@ -90,19 +95,27 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
     setSaving(true)
     setDetailError('')
     try {
-      await updateAdvertiserCampaign(selected.id, {
-        name: form.name,
-        headline: form.headline,
-        description: form.description,
-        cta: form.cta,
-        audienceId: form.audienceId,
-        budgetDollars: form.budgetDollars,
-        status: form.status,
-      })
-      setNotice(`Saved ${form.name}.`)
+      const patch = {}
+      if (form.name !== selected.name) patch.name = form.name
+      if (form.headline !== selected.headline) patch.headline = form.headline
+      if (form.description !== selected.description) patch.description = form.description
+      if (form.cta !== selected.cta) patch.cta = form.cta
+      if (form.audienceId !== selected.audienceId) patch.audienceId = form.audienceId
+      if (toBudgetDollars(selected.budgetCents) !== String(form.budgetDollars)) {
+        patch.budgetDollars = form.budgetDollars
+      }
+      if (form.status !== selected.status) patch.status = form.status
+      if (Object.keys(patch).length === 0) {
+        setNotice('No changes to save.')
+        setSaving(false)
+        return
+      }
+      const updated = await updateAdvertiserCampaign(selected.id, patch)
+      onUpsert?.(updated)
+      setNotice(`Saved ${updated.name}.`)
       await onChanged()
     } catch (err) {
-      setDetailError(err.status === 401 ? 'Session expired. Please sign in again.' : (err.message || 'Update failed.'))
+      setDetailError(campaignErrorMessage(err, 'Campaign could not be saved.'))
     } finally {
       setSaving(false)
     }
@@ -115,7 +128,21 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
       setNotice('Active campaign updated server-side.')
       await onChanged()
     } catch (err) {
-      setDetailError(err.message || 'Could not set active campaign.')
+      setDetailError(campaignErrorMessage(err, 'Could not set active campaign.'))
+    }
+  }
+
+  async function handleArchive() {
+    if (!selected) return
+    setDetailError('')
+    try {
+      const archived = await archiveAdvertiserCampaign(selected.id)
+      onUpsert?.(archived)
+      setNotice(`${archived.name} archived. Accounting history is kept.`)
+      setForm((f) => ({ ...f, status: 'archived' }))
+      await onChanged()
+    } catch (err) {
+      setDetailError(campaignErrorMessage(err, 'Campaign could not be archived.'))
     }
   }
 
@@ -206,6 +233,9 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
               <div className="adv-detail__actions">
                 <button type="button" className="btn btn--ghost" onClick={editSelected}>Load into editor</button>
                 <button type="button" className="btn btn--ghost" onClick={() => handleSelect(selected.id)}>Set active</button>
+                {selected.status !== 'archived' ? (
+                  <button type="button" className="btn btn--ghost" onClick={handleArchive}>Archive</button>
+                ) : null}
                 <button type="button" className="btn btn--ghost" onClick={() => setSelectedId(null)}>New…</button>
               </div>
             ) : null}
@@ -255,8 +285,15 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                 </label>
                 <label className="field">
                   <span className="field__label">Status</span>
-                  <select className="field__input field__input--select" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                    {CAMPAIGN_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  <select
+                    className="field__input field__input--select"
+                    value={selected ? form.status : 'draft'}
+                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    disabled={!selected}
+                  >
+                    {(selected ? allowedNextStatuses(selected.status) : CAMPAIGN_STATUSES).map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
                   </select>
                 </label>
               </div>

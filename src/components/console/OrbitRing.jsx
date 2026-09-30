@@ -3,11 +3,14 @@
    -------------------------------------------------------------
    A genuine WebGL cylinder on a sticky cinematic scroll stage:
    a rotating visual index of the modern AI coding CLI ecosystem —
-   Claude Code, Codex, a terminal-native sponsored slot, Cline,
-   OpenCode, Gemini CLI, Aider, Copilot CLI and a local/self-hosted
-   runtime — nine premium terminal cards painted into one local
-   atlas. Each CLI card carries the tool's real vector logo, name,
-   category, command, terminal output and status. The CLIRevenue
+   Claude Code, Codex, Cline, OpenCode, Gemini CLI, Aider,
+   Copilot CLI and a local/self-hosted runtime — eight premium
+   terminal cards painted into one local atlas. Each card is painted as its own program: the tool's real
+   identity treatment, transcript frame, input style and status
+   chrome — never one card repeated — and every tool's genuinely
+   free strip (status line, quota row, cost line) carries a
+   permanent placement; the bare shell, which has no idle chrome,
+   reserves a band that fills only once stdout finishes printing. The CLIRevenue
    black/white/red system end to end: pure #000000 surfaces,
    #ffffff ink, white hairline frames, IBM Plex Mono terminal
    readouts and one red accent (#ff1f2d). Nothing else is a colour —
@@ -78,6 +81,22 @@ function logoPath(key) {
 
 /* Paint one mark centred inside a box of `box` px. */
 function drawLogoMark(ctx, kind, bx, by, box) {
+  if (kind === 'opencode') {
+    /* OpenCode's blocky O — two stacked paths, light frame over
+       dark core, exactly as the brand asset ships (36×42). */
+    const s = (box * 0.94) / 42
+    ctx.save()
+    ctx.translate(bx + (box - 36 * s) / 2, by + (box - 42 * s) / 2)
+    ctx.scale(s, s)
+    const core = new Path2D(OPENCODE_PATHS[0].d)
+    const frame = new Path2D(OPENCODE_PATHS[1].d)
+    ctx.fillStyle = OPENCODE_PATHS[0].fill
+    ctx.fill(core)
+    ctx.fillStyle = OPENCODE_PATHS[1].fill
+    ctx.fill(frame, 'evenodd')
+    ctx.restore()
+    return
+  }
   if (kind === 'aider') {
     /* The Aider wordmark — green, lowercase, fitted to the box. */
     let size = 34
@@ -95,24 +114,8 @@ function drawLogoMark(ctx, kind, bx, by, box) {
     return
   }
 
-  if (kind === 'opencode') {
-    /* OpenCode's blocky O — two stacked paths, light frame over
-       dark core, exactly as the brand asset ships (36×42). */
-    const s = (box * 0.94) / 42
-    ctx.save()
-    ctx.translate(bx + (box - 36 * s) / 2, by + (box - 42 * s) / 2)
-    ctx.scale(s, s)
-    const core = new Path2D(OPENCODE_PATHS[0].d)
-    const frame = new Path2D(OPENCODE_PATHS[1].d)
-    ctx.fillStyle = OPENCODE_PATHS[0].fill
-    ctx.fill(core)
-    ctx.fillStyle = OPENCODE_PATHS[1].fill
-    ctx.fill(frame, 'evenodd')
-    ctx.restore()
-    return
-  }
-
-  /* Standard 24-viewBox vector marks. */
+  /* Standard 24-viewBox vector marks — simple-icons geometry,
+     each in its own brand colour against the black panel. */
   const s = (box * 0.92) / 24
   ctx.save()
   ctx.translate(bx + (box - 24 * s) / 2, by + (box - 24 * s) / 2)
@@ -130,11 +133,18 @@ function drawLogoMark(ctx, kind, bx, by, box) {
   ctx.restore()
 }
 
-/* The surfaces wrapped around the drum, in order. One consistent
-   terminal card per tool: vector logo, name, category, the tool's
-   real invocation, 2–4 lines of realistic terminal output, and a
-   tiny status — plus one dedicated sponsored surface that mirrors
-   the SponsoredSlot component's semantics and data. */
+/* The surfaces wrapped around the drum, in order. Each tool keeps
+   its own chrome — the identity treatment, transcript frame, input
+   style and free status strip its real interface has — so the drum
+   reads as eight different programs, not one card repeated.
+   `chrome` picks the painter, `ui` carries the strings that
+   interface shows, `ad` says whether the free strip holds a
+   permanent placement or a slot that opens only after stdout
+   finishes printing, and every tool's free strip carries an ad.
+   Logo marks are canvas vector paths: simple-icons geometry for
+   the ecosystem brands (Anthropic, OpenAI, Cline, Gemini, GitHub,
+   Ollama), the OpenCode blocky O (36×42) from its own asset, and
+   a green 'aider' wordmark. */
 const SURFACES = [
   {
     index: '01',
@@ -142,6 +152,8 @@ const SURFACES = [
     logo: 'claude',
     category: 'AI CODING AGENT',
     provider: 'ANTHROPIC',
+    chrome: 'claude',
+    ad: { mode: 'permanent' },
     command: '$ claude',
     lines: [
       '> inspecting repository',
@@ -150,6 +162,11 @@ const SURFACES = [
       '> planning changes',
       '✓ implementation ready',
     ],
+    ui: {
+      input: 'How can I help you today?',
+      status: 'sonnet · 52k/200k',
+      hint: 'esc to interrupt · ? for shortcuts',
+    },
     status: 'ACTIVE',
   },
   {
@@ -158,6 +175,8 @@ const SURFACES = [
     logo: 'openai',
     category: 'CODING AGENT',
     provider: 'OPENAI',
+    chrome: 'codex',
+    ad: { mode: 'permanent' },
     command: '$ codex',
     lines: [
       '> loading workspace',
@@ -166,13 +185,12 @@ const SURFACES = [
       '> generating patch',
       '✓ patch ready',
     ],
+    ui: {
+      model: 'model: gpt-5.6-sol medium',
+      hint: '100% context left · ? for shortcuts',
+      input: 'instructions',
+    },
     status: 'READY',
-  },
-  {
-    kind: 'sponsored',
-    index: '·',
-    name: 'SPONSORED',
-    slot: adSlot,
   },
   {
     index: '03',
@@ -180,6 +198,8 @@ const SURFACES = [
     logo: 'cline',
     category: 'VS CODE AGENT',
     provider: 'CLINE',
+    chrome: 'cline',
+    ad: { mode: 'permanent' },
     command: null,
     lines: [
       '> initializing agent',
@@ -188,6 +208,13 @@ const SURFACES = [
       '> executing task',
       '✓ task completed',
     ],
+    ui: {
+      mode: 'ACT',
+      input: 'Describe the task',
+      status: 'Sonnet 4.5 · $0.012 · 12k',
+      ctx: '12k/200k',
+      hint: 'auto-approve on · plan/act · mcp +3',
+    },
     status: 'ACTIVE',
   },
   {
@@ -196,6 +223,8 @@ const SURFACES = [
     logo: 'opencode',
     category: 'TERMINAL AGENT',
     provider: 'OPEN SOURCE',
+    chrome: 'opencode',
+    ad: { mode: 'permanent' },
     command: '$ opencode',
     lines: [
       '> loading project',
@@ -204,6 +233,11 @@ const SURFACES = [
       '> running tests',
       '✓ checks passed',
     ],
+    ui: {
+      strip: 'build · qwen3-coder · 14:32',
+      input: 'send a message',
+      hint: '/commands · ctrl+o files · esc quit',
+    },
     status: 'READY',
   },
   {
@@ -212,6 +246,8 @@ const SURFACES = [
     logo: 'gemini',
     category: 'AI CODING AGENT',
     provider: 'GOOGLE',
+    chrome: 'gemini',
+    ad: { mode: 'permanent' },
     command: '$ gemini',
     lines: [
       '> indexing repository',
@@ -220,6 +256,11 @@ const SURFACES = [
       '> refining answer',
       '✓ response ready',
     ],
+    ui: {
+      quota: '60/min · 1000/day · 5% ctx',
+      input: 'How can I help?',
+      hint: 'free tier · /help · /tools',
+    },
     status: 'READY',
   },
   {
@@ -228,6 +269,8 @@ const SURFACES = [
     logo: 'aider',
     category: 'PAIR PROGRAMMING',
     provider: 'OPEN SOURCE',
+    chrome: 'aider',
+    ad: { mode: 'permanent' },
     command: '$ aider',
     lines: [
       '> scanning codebase',
@@ -236,6 +279,12 @@ const SURFACES = [
       '> running checks',
       '✓ committed to git',
     ],
+    ui: {
+      banner: 'v0.81 · main: sonnet · repo-map 1024',
+      tokens: '11,740 sent · $0.08 session',
+      input: 'ask anything · /commands',
+      hint: 'repo-map 1024 · git: main · auto-commits',
+    },
     status: 'ACTIVE',
   },
   {
@@ -244,6 +293,8 @@ const SURFACES = [
     logo: 'copilot',
     category: 'CODE SUGGESTIONS',
     provider: 'GITHUB',
+    chrome: 'copilot',
+    ad: { mode: 'permanent' },
     command: '$ copilot',
     lines: [
       '> loading context',
@@ -252,6 +303,13 @@ const SURFACES = [
       '> streaming candidates',
       '✓ suggestions ready',
     ],
+    ui: {
+      tabs: ['Session', 'Issues', 'PRs', 'Gists'],
+      usage: '144/300 requests',
+      model: 'Using Sonnet 4.5',
+      input: 'Describe your task',
+      hint: '! shell · /usage · /login',
+    },
     status: 'READY',
   },
   {
@@ -260,7 +318,9 @@ const SURFACES = [
     logo: 'ollama',
     category: 'LOCAL RUNTIME',
     provider: 'OLLAMA · LLAMA.CPP',
-    command: '$ ollama',
+    chrome: 'shell',
+    ad: { mode: 'deferred' },
+    command: '$ ollama run llama3.1:70b',
     lines: [
       '> loading llama3.1:70b',
       '> warming context',
@@ -268,6 +328,9 @@ const SURFACES = [
       '> private / no egress',
       '✓ model ready',
     ],
+    ui: {
+      hint: 'bare shell · no idle chrome · slot opens after stdout',
+    },
     status: 'READY',
   },
 ]
@@ -276,7 +339,7 @@ const SURFACES = [
    The palette the drum is built from — CLIRevenue's locked system:
    black surfaces, white ink, one red accent. Nothing else is a
    colour. Red marks instrumentation (rule head, prompt glyphs,
-   status dot, the sponsored plate's top edge).
+   status dot, the placement's leading tick).
    ------------------------------------------------------------- */
 const INK = '#ffffff' /* titles and marks */
 const SUB = '#ffffff' /* primary text — brand, command, status */
@@ -286,7 +349,7 @@ const HAIR = 'rgba(255, 255, 255, 0.45)' /* borders, frames */
 const VOID = '#000000' /* page black */
 const AMBER = '#ff1f2d' /* the single accent — red */
 
-/* Geometry: nine surfaces share a circumference of 2πr, so a radius of
+/* Geometry: eight surfaces share a circumference of 2πr, so a radius of
    3 against a height of 2.6 gives each wrapped surface a tall,
    generous card — flatter under perspective, easier to read front-on,
    while the sides still visibly curve away. */
@@ -298,10 +361,9 @@ const TILE_W = 512
 const TILE_H = 706
 /* Rotation budget across the pinned sequence: 0.90 of a revolution
    over 1360vh — every surface (through LOCAL / SELF-HOSTED at index
-   8) reaches dead front, yet deg-per-pixel is ~14% under the previous
-   pass: scroll turns the drum like a mechanical selector, never a
-   spin. Nine panels, 40° apart; the sponsored slot is front and
-   centre around p ≈ 0.19–0.25 (dead-on at f = 2 → p = 0.185). */
+   7) reaches dead front, yet deg-per-pixel stays low: scroll turns
+   the drum like a mechanical selector, never a spin. Eight panels,
+   45° apart. */
 const TURNS = 0.9
 /* Damping constant (per second) of the single follow step:
    target → damped → rendered. ~0.2s settle: a heavy mechanism, and
@@ -342,9 +404,9 @@ const lerp = (a, b, t) => a + (b - a) * t
 /* Rest the drum with tile 01 near the centre of the opening view
    (the 0.5-panel PHASE offset), and fix reduced motion on a
    hand-placed frame where OPENCODE sits front with its full terminal
-   sequence printed (f = 4 + 30/40 → p·TURNS·N + 0.5 = 4.75). */
+   sequence printed (f = 4 + 30/45 → p·TURNS·N + 0.5 = 4.667). */
 const PHASE = -Math.PI / SURFACES.length
-const STATIC_P = (4.75 - 0.5) / (TURNS * SURFACES.length)
+const STATIC_P = (4.667 - 0.5) / (TURNS * SURFACES.length)
 
 /* Uniform Catmull-Rom through four control points. The camera path
    uses this instead of per-segment smoothstep so velocity is
@@ -389,10 +451,8 @@ function sampleCamera(p) {
    -------------------------------------------------------------
    One canvas, SURFACES.length tiles wide, painted as premium
    terminal cards: vector logo, tool name, brand, a terminal
-   screen with the real command and output, status. Plus one
-   sponsored card that mirrors SponsoredSlot's rail, plate, logo
-   box, headline, meta and CTA. Generated in-page, so the drum
-   never waits on a network image. All painters lay out in a
+   screen with the real command and output, status. Generated
+   in-page, so the drum never waits on a network image. All painters lay out in a
    virtual TILE_W×TILE_H space; the canvas is scaled to fit the
    GPU's texture limit. */
 
@@ -447,139 +507,77 @@ function panelBase(ctx, x, y, w, h) {
   ctx.fillRect(x + w - 15, y + h - 45, 3, 30)
 }
 
-function drawTile(ctx, x, y, w, h, surface, events) {
-  const total = tileEvents(surface)
-  const ev = events === undefined ? total : events
-  const cmdOn = Boolean(surface.command) && ev >= 1
-  const lineCount = surface.command ? Math.max(0, ev - 1) : ev
+/* -------------------------------------------------------------
+   Per-CLI chrome painters.
+   Every surface keeps the drum's shared instrumentation — the
+   index/category rail up top, the STATUS footer at the bottom —
+   but between them each tool is painted the way its real
+   interface is laid out: its identity treatment, its transcript
+   frame, its input style, and the free status strip where a
+   placement lives. `drawStripAd` fills that strip permanently;
+   `drawDeferredBand` holds an inert reserved slot that only
+   fills with the ad once stdout has finished printing (ev >=
+   total). Radius 0 everywhere; red only marks disclosure.
+   ------------------------------------------------------------- */
+const MONO = '"IBM Plex Mono", ui-monospace, monospace'
+const SANS = '"Space Grotesk", system-ui, sans-serif'
 
-  panelBase(ctx, x, y, w, h)
+/* Shrink-to-fit: returns `text` (possibly ellipsised) measured
+   inside maxW, at the largest font ≤ size that fits. Leaves
+   ctx.font at the final size. Measurement is safe under a live
+   `letterSpacing`: the canvas spec excludes letter spacing from
+   measureText, so every measurement resets it to 0 and restores
+   it after — a tracked label would otherwise shrink past its
+   real width and render loose. */
+function fitText(ctx, text, maxW, weight, size, minSize, family) {
+  let s = size
+  let out = String(text)
+  const tracked = ctx.letterSpacing && ctx.letterSpacing !== '0px'
+  if (tracked) ctx.letterSpacing = '0px'
+  ctx.font = `${weight} ${s}px ${family}`
+  while (ctx.measureText(out).width > maxW && s > minSize) {
+    s -= 1
+    ctx.font = `${weight} ${s}px ${family}`
+  }
+  if (ctx.measureText(out).width > maxW) {
+    while (ctx.measureText(`${out}…`).width > maxW && out.length > 4) {
+      out = out.slice(0, -1)
+    }
+    out = `${out}…`
+  }
+  ctx.font = `${weight} ${s}px ${family}`
+  if (tracked) ctx.letterSpacing = tracked
+  return out
+}
 
-  const left = x + 42
-  const right = x + w - 42
-
+/* Shared rail: index left, category right. */
+function drawRail(ctx, surface, y, left, right) {
   ctx.textBaseline = 'alphabetic'
   ctx.textAlign = 'left'
-
-  /* Top row: index · small category label. */
   ctx.fillStyle = DIM
-  ctx.font = '600 22px "IBM Plex Mono", ui-monospace, monospace'
+  ctx.font = `600 22px ${MONO}`
   ctx.fillText(surface.index, left, y + 70)
-
   ctx.textAlign = 'right'
   ctx.fillStyle = FAINT
   ctx.letterSpacing = '0.14em'
-  ctx.font = '500 14px "IBM Plex Mono", ui-monospace, monospace'
+  ctx.font = `500 14px ${MONO}`
   ctx.fillText(surface.category, right, y + 70)
   ctx.letterSpacing = '0px'
   ctx.textAlign = 'left'
+}
 
-  /* The real vector logo in a hairline plate — one of the first
-     things the eye lands on. */
-  const box = 76
-  const bx = left
-  const by = y + 94
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
-  ctx.fillRect(bx, by, box, box)
-  ctx.strokeStyle = HAIR
-  ctx.lineWidth = 2
-  ctx.strokeRect(bx + 1, by + 1, box - 2, box - 2)
-  ctx.fillStyle = AMBER
-  ctx.fillRect(bx + 8, by + 8, 14, 3)
-  drawLogoMark(ctx, surface.logo, bx + 15, by + 15, 46)
-
-  /* Tool name beside the logo — bold but controlled: measured and
-     re-set until it fits, never a giant editorial heading. */
-  const titleX = left + 96
-  const titleMax = right - titleX
-  let size = 46
-  ctx.fillStyle = INK
-  ctx.font = `700 ${size}px "Space Grotesk", system-ui, sans-serif`
-  while (ctx.measureText(surface.name).width > titleMax && size > 26) {
-    size -= 2
-    ctx.font = `700 ${size}px "Space Grotesk", system-ui, sans-serif`
-  }
-  ctx.fillText(surface.name, titleX, y + 150)
-
-  /* Rule under the title: accent head, hairline tail. */
-  ctx.fillStyle = AMBER
-  ctx.fillRect(titleX, y + 190, 48, 3)
-  ctx.fillStyle = HAIR
-  ctx.fillRect(titleX + 48, y + 190, Math.max(0, titleMax - 48), 3)
-
-  /* Brand line. */
-  ctx.fillStyle = SUB
-  ctx.font = '500 20px "IBM Plex Mono", ui-monospace, monospace'
-  ctx.fillText(surface.provider, left, y + 226)
-
-  /* The terminal screen: a recessed panel holding the invocation
-     and its output — the card reads as a window into the tool. */
-  const sx = x + 24
-  const sy = y + 254
-  const sw = w - 48
-  const sh = 320
-  ctx.fillStyle = '#000000'
-  ctx.fillRect(sx, sy, sw, sh)
-  ctx.strokeStyle = HAIR
-  ctx.lineWidth = 1.5
-  ctx.strokeRect(sx + 0.75, sy + 0.75, sw - 1.5, sh - 1.5)
-
-  ctx.fillStyle = FAINT
-  ctx.letterSpacing = '0.18em'
-  ctx.font = '500 12px "IBM Plex Mono", ui-monospace, monospace'
-  ctx.fillText('STDOUT', sx + 16, sy + 24)
-  ctx.textAlign = 'right'
-  ctx.fillText('EXIT 0', sx + sw - 16, sy + 24)
-  ctx.textAlign = 'left'
-  ctx.letterSpacing = '0px'
-  ctx.fillStyle = HAIR
-  ctx.fillRect(sx, sy + 36, sw, 1)
-
-  /* Invocation — the tool's real command, red sigil. The first
-     event to print as the surface enters its reveal window. */
-  if (cmdOn) {
-    ctx.fillStyle = AMBER
-    ctx.font = '600 22px "IBM Plex Mono", ui-monospace, monospace'
-    ctx.fillText('$', sx + 16, sy + 84)
-    ctx.fillStyle = SUB
-    ctx.fillText(surface.command.slice(1), sx + 32, sy + 84)
-  }
-
-  /* Terminal output — each line prints only once its scroll event
-     has been reached (lineCount comes from tileCounts). The prompt
-     glyph is the only red in the block; the ✓ line resolves
-     brighter so completion reads as completion. */
-  surface.lines.slice(0, lineCount).forEach((line, li) => {
-    const ty = sy + (surface.command ? 132 : 96) + li * 38
-    let fs = 19
-    ctx.font = '400 19px "IBM Plex Mono", ui-monospace, monospace'
-    while (ctx.measureText(line).width > sw - 32 && fs > 13) {
-      fs -= 1
-      ctx.font = `400 ${fs}px "IBM Plex Mono", ui-monospace, monospace`
-    }
-    if (line.startsWith('>')) {
-      ctx.fillStyle = AMBER
-      ctx.fillText('>', sx + 16, ty)
-      ctx.fillStyle = li === 0 ? SUB : DIM
-      ctx.fillText(line.slice(1), sx + 32, ty)
-    } else {
-      ctx.fillStyle = line.startsWith('✓') ? SUB : DIM
-      ctx.fillText(line, sx + 16, ty)
-    }
-  })
-
-  /* Bottom row: tiny status indicator + status, index of the set. */
+/* Shared footer: status dot + STATUS / X, position in the set. */
+function drawDrumFooter(ctx, surface, y, h, left, right) {
   ctx.fillStyle = AMBER
   ctx.beginPath()
   ctx.arc(left + 5, y + h - 53, 5, 0, Math.PI * 2)
   ctx.fill()
   ctx.fillStyle = SUB
-  ctx.font = '600 16px "IBM Plex Mono", ui-monospace, monospace'
+  ctx.font = `600 16px ${MONO}`
   ctx.fillText(`STATUS / ${surface.status}`, left + 18, y + h - 48)
-
   ctx.textAlign = 'right'
   ctx.fillStyle = FAINT
-  ctx.font = '500 15px "IBM Plex Mono", ui-monospace, monospace'
+  ctx.font = `500 15px ${MONO}`
   ctx.fillText(
     `${surface.index} / ${String(SURFACES.length).padStart(2, '0')}`,
     right,
@@ -588,152 +586,925 @@ function drawTile(ctx, x, y, w, h, surface, events) {
   ctx.textAlign = 'left'
 }
 
-/* The sponsored surface — the same semantics SponsoredSlot renders:
-   disclosure rail (label · advertiser · Ad · chip), the red logo
-   plate with the brand initial, headline, support copy, the meta
-   line (category · ui region · not stdout · disclosure), and the
-   CTA. The drum shows both the CLI ecosystem and the CLIRevenue
-   sponsored experience. */
-function drawSponsoredTile(ctx, x, y, w, h, slot) {
-  panelBase(ctx, x, y, w, h)
-
-  const left = x + 42
-  const right = x + w - 42
-  const contentW = right - left
-
-  /* The plate is the one region that is deliberately not output, so
-     it is marked at its top edge with the accent instead of the
-     neutral rule the rest of the terminal uses. */
+/* The tool's real invocation, red sigil. */
+function printCommand(ctx, command, x, y, size) {
+  ctx.font = `600 ${size}px ${MONO}`
   ctx.fillStyle = AMBER
-  ctx.fillRect(x + 12, y + 12, w - 24, 3)
-
-  ctx.textBaseline = 'alphabetic'
-  ctx.textAlign = 'left'
-
-  /* Rail: label · dot · advertiser, with Ad mark and disclosure
-     chip on the right — exactly SponsoredSlot's rail order. */
-  ctx.fillStyle = AMBER
-  ctx.letterSpacing = '0.2em'
-  ctx.font = '600 14px "IBM Plex Mono", ui-monospace, monospace'
-  ctx.fillText(String(slot.label).toUpperCase(), left, y + 70)
-  const labelW = ctx.measureText(String(slot.label).toUpperCase()).width
-
-  ctx.fillStyle = FAINT
-  ctx.beginPath()
-  ctx.arc(left + labelW + 14, y + 65, 2.5, 0, Math.PI * 2)
-  ctx.fill()
-
-  ctx.letterSpacing = '0.14em'
-  ctx.font = '500 13px "IBM Plex Mono", ui-monospace, monospace'
-  ctx.fillText(String(slot.advertiser).toUpperCase(), left + labelW + 26, y + 70)
-
-  /* Disclosure chip (red plate, dark text) + Ad mark. */
-  const chipText = String(slot.disclosure).toUpperCase()
-  ctx.font = '600 11px "IBM Plex Mono", ui-monospace, monospace'
-  const chipW = ctx.measureText(chipText).width + 14
-  ctx.fillStyle = AMBER
-  ctx.fillRect(right - chipW, y + 54, chipW, 22)
-  ctx.fillStyle = '#000000'
-  ctx.fillText(chipText, right - chipW + 7, y + 70)
-
-  ctx.letterSpacing = '0.2em'
-  ctx.font = '500 12px "IBM Plex Mono", ui-monospace, monospace'
-  ctx.fillStyle = FAINT
-  ctx.fillText('AD', right - chipW - 34, y + 70)
-  ctx.letterSpacing = '0px'
-
-  /* The brand plate: black square with a red frame and a
-     red initial — the same mark SponsoredSlot's logo box shows,
-     in the cylinder's own material language. */
-  const box = 64
-  const bx = left
-  const by = y + 104
-  ctx.save()
-  ctx.shadowColor = 'rgba(255, 31, 45, 0.30)'
-  ctx.shadowBlur = 12
-  ctx.fillStyle = '#000000'
-  ctx.fillRect(bx, by, box, box)
-  ctx.strokeStyle = AMBER
-  ctx.lineWidth = 2
-  ctx.strokeRect(bx + 1, by + 1, box - 2, box - 2)
-  ctx.restore()
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillStyle = AMBER
-  ctx.font = '700 30px "Space Grotesk", system-ui, sans-serif'
-  ctx.fillText(String(slot.brand).slice(0, 1).toUpperCase(), bx + box / 2, by + box / 2 + 1)
-  ctx.textBaseline = 'alphabetic'
-  ctx.textAlign = 'left'
-
-  /* Brand, uppercase and tracked — as the component renders it. */
-  ctx.fillStyle = INK
-  ctx.letterSpacing = '0.14em'
-  ctx.font = '700 15px "Space Grotesk", system-ui, sans-serif'
-  ctx.fillText(String(slot.brand).toUpperCase(), left + 84, y + 144)
-  ctx.letterSpacing = '0px'
-
-  /* Headline — display weight, wrapped, never a giant editorial
-     heading. */
-  ctx.fillStyle = INK
-  ctx.font = '700 30px "Space Grotesk", system-ui, sans-serif'
-  let headlineY = wrapText(ctx, slot.headline, left, y + 224, contentW, 38)
-
-  /* Support copy. */
-  ctx.fillStyle = DIM
-  ctx.font = '400 16.5px "Space Grotesk", system-ui, sans-serif'
-  let supportY = headlineY
-  if (slot.support) {
-    supportY = wrapText(ctx, slot.support, left, headlineY + 22, contentW, 26)
-  }
-
-  /* Meta: category · ui region · not stdout · disclosure. */
-  const meta = `${slot.category} · ${slot.region} · ${slot.disclosure}`
-  ctx.fillStyle = FAINT
-  let metaSize = 13
-  ctx.letterSpacing = '0.14em'
-  ctx.font = `500 ${metaSize}px "IBM Plex Mono", ui-monospace, monospace`
-  while (ctx.measureText(meta.toUpperCase()).width > contentW && metaSize > 10) {
-    metaSize -= 1
-    ctx.font = `500 ${metaSize}px "IBM Plex Mono", ui-monospace, monospace`
-  }
-  ctx.fillText(meta.toUpperCase(), left, supportY + 30)
-  ctx.letterSpacing = '0px'
-
-  /* CTA pill: the red action, white label — the ad's one accent. */
-  const ctaLabel = `${slot.action} ↗`
-  ctx.font = '600 16px "Space Grotesk", system-ui, sans-serif'
-  const ctaW = ctx.measureText(ctaLabel).width + 28
-  const ctaY = supportY + 56
-  ctx.fillStyle = AMBER
-  ctx.fillRect(left, ctaY, ctaW, 44)
-  ctx.fillStyle = '#ffffff'
-  ctx.fillText(ctaLabel, left + 14, ctaY + 28)
-
-  /* Footer instrumentation. */
-  ctx.fillStyle = HAIR
-  ctx.fillRect(left, y + h - 106, contentW, 1)
-  ctx.fillStyle = AMBER
-  ctx.beginPath()
-  ctx.arc(left + 5, y + h - 53, 5, 0, Math.PI * 2)
-  ctx.fill()
+  ctx.fillText('$', x, y)
+  const textX = x + ctx.measureText('$').width + 6
   ctx.fillStyle = SUB
-  ctx.font = '600 16px "IBM Plex Mono", ui-monospace, monospace'
-  ctx.fillText('SPONSORED · CLI REVENUE', left + 18, y + h - 48)
-  ctx.textAlign = 'right'
+  ctx.fillText(command.slice(1), textX, y)
+}
+
+/* Transcript printing — each line appears only once its scroll
+   event has been reached. `glyph` replaces the data's '>' marker
+   (null renders the step line as plain text, Aider style). */
+function printLines(ctx, surface, count, x, y0, lineH, glyph, size, maxW) {
+  surface.lines.slice(0, count).forEach((line, li) => {
+    const ty = y0 + li * lineH
+    const isStep = line.startsWith('>')
+    const isDone = !isStep && line.startsWith('✓')
+    const body = isStep ? line.slice(1) : line
+    let fs = size
+    let gW = 0
+    const setBodyFont = () => {
+      ctx.font = `400 ${fs}px ${MONO}`
+      if (isStep && glyph) {
+        ctx.font = `600 ${fs}px ${MONO}`
+        gW = ctx.measureText(glyph).width + 8
+        ctx.font = `400 ${fs}px ${MONO}`
+      }
+    }
+    setBodyFont()
+    while (ctx.measureText(body).width > maxW - gW && fs > 12) {
+      fs -= 1
+      setBodyFont()
+    }
+    if (isStep && glyph) {
+      ctx.fillStyle = AMBER
+      ctx.font = `600 ${fs}px ${MONO}`
+      ctx.fillText(glyph, x, ty)
+      ctx.font = `400 ${fs}px ${MONO}`
+    }
+    if (isDone) ctx.fillStyle = SUB
+    else if (isStep) ctx.fillStyle = li === 0 ? SUB : DIM
+    else ctx.fillStyle = DIM
+    ctx.fillText(body, x + gW, ty)
+  })
+}
+
+/* Bordered input box — the shape Claude Code, OpenCode, Gemini,
+   Copilot and Cline all put under their transcript. */
+function drawInputBox(ctx, x, y, w, h, glyph, placeholder, hint) {
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(x, y, w, h)
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(x + 0.75, y + 0.75, w - 1.5, h - 1.5)
+  const baseY = y + h / 2 + 5
+  let textX = x + 14
+  if (glyph) {
+    ctx.fillStyle = AMBER
+    ctx.font = `600 15px ${MONO}`
+    ctx.fillText(glyph, textX, baseY)
+    textX += ctx.measureText(glyph).width + 8
+  }
   ctx.fillStyle = FAINT
-  ctx.font = '500 15px "IBM Plex Mono", ui-monospace, monospace'
-  ctx.fillText('NOT STDOUT', right, y + h - 48)
+  ctx.font = `400 14px ${MONO}`
+  ctx.fillText(placeholder, textX, baseY)
+  if (hint) {
+    ctx.textAlign = 'right'
+    ctx.fillStyle = FAINT
+    ctx.font = `500 11px ${MONO}`
+    ctx.fillText(hint, x + w - 14, baseY)
+    ctx.textAlign = 'left'
+  }
+}
+
+/* Permanent strip ad — lives in the free half of a CLI's status
+   strip (h = 40): disclosure chip on the right, SPONSORED ·
+   advertiser rail over the headline on the left, one red tick
+   at the leading edge. Always drawn, regardless of print state. */
+function drawStripAd(ctx, x, y, w, h, slot) {
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(x, y, w, h)
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
+  ctx.lineWidth = 1
+  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1)
+  ctx.fillStyle = AMBER
+  ctx.fillRect(x, y, 3, h)
+
+  const padL = x + 11
+  const padR = x + w - 8
+
+  const chipText = String(slot.disclosure).toUpperCase()
+  ctx.font = `600 9px ${MONO}`
+  const chipW = ctx.measureText(chipText).width + 12
+  const chipY = Math.round(y + (h - 16) / 2)
+  ctx.fillStyle = AMBER
+  ctx.fillRect(padR - chipW, chipY, chipW, 16)
+  ctx.fillStyle = '#000000'
+  ctx.fillText(chipText, padR - chipW + 6, chipY + 12)
+
+  const textW = padR - chipW - 12 - padL
+
+  ctx.letterSpacing = '0.18em'
+  ctx.font = `600 10px ${MONO}`
+  ctx.fillStyle = AMBER
+  ctx.fillText('SPONSORED', padL, y + 17)
+  const labW = ctx.measureText('SPONSORED').width
+
+  ctx.letterSpacing = '0.08em'
+  ctx.font = `500 10px ${MONO}`
+  ctx.fillStyle = FAINT
+  const advAvail = textW - labW - 8
+  let adv = `· ${String(slot.advertiser).toUpperCase()}`
+  while (ctx.measureText(adv).width > advAvail && adv.length > 4) {
+    adv = adv.slice(0, -1)
+  }
+  ctx.fillText(adv, padL + labW + 8, y + 17)
+  ctx.letterSpacing = '0px'
+
+  ctx.fillStyle = INK
+  const hl = fitText(ctx, slot.headline, textW, '600', 12, 9, SANS)
+  ctx.fillText(hl, padL, y + 33)
+}
+
+/* Box ad — the taller placement for a free region with real
+   height (Codex's splash box right half): rail, brand, headline,
+   disclosure chip and not-stdout echo. */
+function drawBoxAd(ctx, x, y, w, h, slot) {
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(x, y, w, h)
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1
+  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1)
+  ctx.fillStyle = AMBER
+  ctx.fillRect(x, y, w, 3)
+
+  const pad = 12
+  const tx = x + pad
+  const tw = w - pad * 2
+
+  ctx.letterSpacing = '0.18em'
+  ctx.font = `600 10px ${MONO}`
+  ctx.fillStyle = AMBER
+  ctx.fillText('SPONSORED', tx, y + 26)
+  ctx.letterSpacing = '0.2em'
+  ctx.font = `500 10px ${MONO}`
+  ctx.fillStyle = FAINT
+  ctx.textAlign = 'right'
+  ctx.fillText('AD', x + w - pad, y + 26)
+  ctx.textAlign = 'left'
+  ctx.letterSpacing = '0px'
+
+  ctx.letterSpacing = '0.14em'
+  ctx.font = `700 15px ${SANS}`
+  ctx.fillStyle = INK
+  ctx.fillText(String(slot.brand).toUpperCase(), tx, y + 52)
+  ctx.letterSpacing = '0px'
+
+  ctx.fillStyle = DIM
+  ctx.font = `600 13px ${SANS}`
+  wrapText(ctx, slot.headline, tx, y + 74, tw, 18)
+
+  const chipText = String(slot.disclosure).toUpperCase()
+  ctx.font = `600 9px ${MONO}`
+  const chipW = ctx.measureText(chipText).width + 12
+  const chipY = y + h - 24
+  ctx.fillStyle = AMBER
+  ctx.fillRect(tx, chipY, chipW, 16)
+  ctx.fillStyle = '#000000'
+  ctx.fillText(chipText, tx + 6, chipY + 12)
+  ctx.textAlign = 'right'
+  ctx.letterSpacing = '0.1em'
+  ctx.font = `500 9px ${MONO}`
+  ctx.fillStyle = FAINT
+  ctx.fillText('NOT STDOUT', x + w - pad, chipY + 12)
+  ctx.letterSpacing = '0px'
   ctx.textAlign = 'left'
 }
 
+/* Deferred band — a bare terminal has no idle chrome strip, so
+   the placement waits: until stdout finishes (ready) the band
+   stays inert, framed and labelled; then the ad fills it. */
+function drawDeferredBand(ctx, x, y, w, h, slot, ready) {
+  if (!ready) {
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)'
+    ctx.fillRect(x + 1, y + 1, 16, 2)
+    ctx.fillRect(x + 1, y + 1, 2, 16)
+    ctx.fillRect(x + w - 17, y + h - 3, 16, 2)
+    ctx.fillRect(x + w - 3, y + h - 17, 2, 16)
+    ctx.fillStyle = FAINT
+    ctx.letterSpacing = '0.14em'
+    const label = fitText(
+      ctx,
+      'SPONSORED SLOT · OPENS WHEN OUTPUT COMPLETES',
+      w - 32,
+      '500',
+      11,
+      8,
+      MONO,
+    )
+    ctx.fillText(label, x + 16, y + h / 2 + 4)
+    ctx.letterSpacing = '0px'
+    return
+  }
+
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(x, y, w, h)
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1
+  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1)
+  ctx.fillStyle = AMBER
+  ctx.fillRect(x, y, w, 3)
+
+  const tx = x + 16
+  const tw = w - 32
+
+  ctx.letterSpacing = '0.18em'
+  ctx.font = `600 11px ${MONO}`
+  ctx.fillStyle = AMBER
+  ctx.fillText('SPONSORED', tx, y + 30)
+  const labW = ctx.measureText('SPONSORED').width
+  ctx.letterSpacing = '0.1em'
+  ctx.font = `500 11px ${MONO}`
+  ctx.fillStyle = FAINT
+  ctx.fillText(` · ${String(slot.advertiser).toUpperCase()}`, tx + labW, y + 30)
+
+  const chipText = String(slot.disclosure).toUpperCase()
+  ctx.letterSpacing = '0px'
+  ctx.font = `600 9px ${MONO}`
+  const chipW = ctx.measureText(chipText).width + 12
+  ctx.fillStyle = AMBER
+  ctx.fillRect(x + w - 16 - chipW, y + 14, chipW, 16)
+  ctx.fillStyle = '#000000'
+  ctx.fillText(chipText, x + w - 16 - chipW + 6, y + 26)
+  ctx.textAlign = 'right'
+  ctx.letterSpacing = '0.2em'
+  ctx.font = `500 10px ${MONO}`
+  ctx.fillStyle = FAINT
+  ctx.fillText('AD', x + w - 26 - chipW, y + 26)
+  ctx.letterSpacing = '0px'
+  ctx.textAlign = 'left'
+
+  ctx.fillStyle = INK
+  const hl = fitText(ctx, slot.headline, tw, '700', 17, 12, SANS)
+  ctx.fillText(hl, tx, y + 64)
+
+  ctx.letterSpacing = '0.12em'
+  ctx.font = `500 10px ${MONO}`
+  ctx.fillStyle = FAINT
+  ctx.fillText(String(slot.region).toUpperCase(), tx, y + 88)
+  ctx.textAlign = 'right'
+  ctx.fillStyle = AMBER
+  ctx.font = `600 10px ${MONO}`
+  ctx.fillText(`${String(slot.action).toUpperCase()} ↗`, x + w - 16, y + 88)
+  ctx.letterSpacing = '0px'
+  ctx.textAlign = 'left'
+}
+
+/* --- 01 · Claude Code — text-forward header, unframed
+   transcript, boxed input, custom status line with the free
+   right half holding the placement. ------------------------- */
+function drawClaudeTile(ctx, x, y, w, h, surface, ev) {
+  const cmdOn = Boolean(surface.command) && ev >= 1
+  const lineCount = surface.command ? Math.max(0, ev - 1) : ev
+  const left = x + 42
+  const right = x + w - 42
+  const cw = right - left
+
+  panelBase(ctx, x, y, w, h)
+  drawRail(ctx, surface, y, left, right)
+
+  const box = 54
+  const bx = left
+  const by = y + 92
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
+  ctx.fillRect(bx, by, box, box)
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(bx + 0.75, by + 0.75, box - 1.5, box - 1.5)
+  ctx.fillStyle = AMBER
+  ctx.fillRect(bx + 7, by + 7, 12, 3)
+  drawLogoMark(ctx, surface.logo, bx + 11, by + 14, 32)
+
+  ctx.fillStyle = INK
+  ctx.font = `700 30px ${SANS}`
+  ctx.fillText(surface.name, left + 66, y + 126)
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.14em'
+  ctx.font = `500 13px ${MONO}`
+  ctx.fillText(surface.provider, left + 66, y + 148)
+  ctx.letterSpacing = '0px'
+
+  ctx.fillStyle = AMBER
+  ctx.fillRect(left, y + 166, 44, 3)
+  ctx.fillStyle = HAIR
+  ctx.fillRect(left + 44, y + 166, cw - 44, 1)
+
+  if (cmdOn) printCommand(ctx, surface.command, left, y + 206, 17)
+  /* 6 lines at 34px leading: the last baseline (y+410) must clear the
+     composer box below (y+424) even when the transcript is complete —
+     the box is painted after the lines, so overlap would erase text. */
+  printLines(ctx, surface, lineCount, left, y + 240, 34, '⏺', 16, cw)
+
+  drawInputBox(ctx, left, y + 424, cw, 48, null, surface.ui.input, '⏎')
+
+  /* Status line: state on the left, placement in the free right. */
+  ctx.fillStyle = FAINT
+  ctx.font = `500 13px ${MONO}`
+  ctx.fillText(surface.ui.status, left, y + 500)
+  drawStripAd(ctx, left + 210, y + 476, cw - 210, 40, adSlot)
+
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.06em'
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.ui.hint, left, y + 552)
+  ctx.letterSpacing = '0px'
+
+  drawDrumFooter(ctx, surface, y, h, left, right)
+}
+
+/* --- 02 · Codex — boxed splash with model/directory left and
+   the placement in the splash's empty right half; unframed
+   output; underline composer. ------------------------------ */
+function drawCodexTile(ctx, x, y, w, h, surface, ev) {
+  const cmdOn = Boolean(surface.command) && ev >= 1
+  const lineCount = surface.command ? Math.max(0, ev - 1) : ev
+  const left = x + 42
+  const right = x + w - 42
+  const cw = right - left
+
+  panelBase(ctx, x, y, w, h)
+  drawRail(ctx, surface, y, left, right)
+
+  const sx = x + 24
+  const sy = y + 92
+  const sw = w - 48
+  const sh = 156
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(sx, sy, sw, sh)
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(sx + 0.75, sy + 0.75, sw - 1.5, sh - 1.5)
+  ctx.fillStyle = FAINT
+  ctx.fillRect(sx + 6, sy + 6, 14, 2)
+  ctx.fillRect(sx + 6, sy + 6, 2, 14)
+  ctx.fillRect(sx + sw - 20, sy + sh - 8, 14, 2)
+  ctx.fillRect(sx + sw - 8, sy + sh - 20, 2, 14)
+
+  /* Logo box — the splash's identity mark: OpenAI's blossom in
+     the same framed treatment every other tile on the drum uses
+     (black plate, hairline frame, red tick, real vector path). */
+  const box = 44
+  const bx = sx + 16
+  const by = sy + 20
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
+  ctx.fillRect(bx, by, box, box)
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(bx + 0.75, by + 0.75, box - 1.5, box - 1.5)
+  ctx.fillStyle = AMBER
+  ctx.fillRect(bx + 7, by + 7, 12, 3)
+  drawLogoMark(ctx, surface.logo, bx + 8, by + 11, 28)
+
+  ctx.fillStyle = INK
+  ctx.font = `700 17px ${SANS}`
+  ctx.fillText('OpenAI Codex', sx + 74, sy + 48)
+  ctx.fillStyle = FAINT
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.ui.model, sx + 16, sy + 86)
+  ctx.fillText('/model to change', sx + 16, sy + 108)
+  ctx.fillText('directory: ~/code', sx + 16, sy + 130)
+
+  drawBoxAd(ctx, sx + sw / 2 + 6, sy + 12, sw / 2 - 24, 132, adSlot)
+
+  if (cmdOn) printCommand(ctx, surface.command, left, y + 292, 17)
+  /* 32px leading keeps the final line clear of the composer at y+510. */
+  printLines(ctx, surface, lineCount, left, y + 324, 32, '›', 16, cw)
+
+  ctx.fillStyle = AMBER
+  ctx.font = `600 16px ${MONO}`
+  ctx.fillText('›', left, y + 510)
+  ctx.fillStyle = FAINT
+  ctx.font = `400 14px ${MONO}`
+  ctx.fillText(surface.ui.input, left + 20, y + 510)
+  ctx.fillStyle = HAIR
+  ctx.fillRect(left, y + 524, cw, 1.5)
+
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.06em'
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.ui.hint, left, y + 556)
+  ctx.letterSpacing = '0px'
+
+  drawDrumFooter(ctx, surface, y, h, left, right)
+}
+
+/* --- 03 · Cline — VS Code panel header with Plan/Act chips,
+   framed task view, input box, and the model/cost row directly
+   under it where the placement sits. ----------------------- */
+function drawClineTile(ctx, x, y, w, h, surface, ev) {
+  const lineCount = surface.command
+    ? Math.max(0, ev - 1)
+    : Math.max(0, ev)
+  const left = x + 42
+  const right = x + w - 42
+  const cw = right - left
+
+  panelBase(ctx, x, y, w, h)
+  drawRail(ctx, surface, y, left, right)
+
+  const hbY = y + 92
+  const hbH = 54
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'
+  ctx.fillRect(left, hbY, cw, hbH)
+  ctx.fillStyle = HAIR
+  ctx.fillRect(left, hbY, cw, 1)
+  ctx.fillRect(left, hbY + hbH - 1, cw, 1)
+  drawLogoMark(ctx, surface.logo, left + 10, hbY + 10, 34)
+  ctx.fillStyle = INK
+  ctx.font = `700 22px ${SANS}`
+  ctx.fillText(surface.name, left + 56, hbY + 34)
+
+  const chipW = 62
+  const chipH = 24
+  const chipY = hbY + 15
+  ;['PLAN', 'ACT'].forEach((label, i) => {
+    const cx = right - chipW - (1 - i) * (chipW + 8)
+    const active = label === surface.ui.mode
+    ctx.font = `600 11px ${MONO}`
+    if (active) {
+      ctx.fillStyle = AMBER
+      ctx.fillRect(cx, chipY, chipW, chipH)
+      ctx.fillStyle = '#000000'
+    } else {
+      ctx.strokeStyle = HAIR
+      ctx.lineWidth = 1
+      ctx.strokeRect(cx + 0.5, chipY + 0.5, chipW - 1, chipH - 1)
+      ctx.fillStyle = FAINT
+    }
+    ctx.textAlign = 'center'
+    ctx.fillText(label, cx + chipW / 2, chipY + 16)
+    ctx.textAlign = 'left'
+  })
+
+  const sx = x + 24
+  const sy = y + 162
+  const sw = w - 48
+  const sh = 250
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(sx, sy, sw, sh)
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(sx + 0.75, sy + 0.75, sw - 1.5, sh - 1.5)
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.18em'
+  ctx.font = `500 10px ${MONO}`
+  ctx.fillText('TASK', sx + 16, sy + 24)
+  ctx.textAlign = 'right'
+  ctx.fillText(surface.ui.ctx, sx + sw - 16, sy + 24)
+  ctx.textAlign = 'left'
+  ctx.letterSpacing = '0px'
+  ctx.fillStyle = HAIR
+  ctx.fillRect(sx, sy + 34, sw, 1)
+  printLines(ctx, surface, lineCount, sx + 16, sy + 66, 34, '*', 14, sw - 32)
+
+  drawInputBox(ctx, left, y + 428, cw, 46, null, surface.ui.input, null)
+
+  /* The row under the command box — model, cost, context —
+     free at its right: the placement's home. */
+  ctx.fillStyle = HAIR
+  ctx.fillRect(left, y + 490, cw, 1)
+  ctx.fillStyle = FAINT
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.ui.status, left, y + 515)
+  drawStripAd(ctx, left + 210, y + 490, cw - 210, 40, adSlot)
+
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.06em'
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.ui.hint, left, y + 560)
+  ctx.letterSpacing = '0px'
+
+  drawDrumFooter(ctx, surface, y, h, left, right)
+}
+
+/* --- 04 · OpenCode — inline header, session view, then the
+   status strip above the input (mode · model · time) whose
+   empty right holds the placement. ------------------------- */
+function drawOpencodeTile(ctx, x, y, w, h, surface, ev) {
+  const cmdOn = Boolean(surface.command) && ev >= 1
+  const lineCount = surface.command ? Math.max(0, ev - 1) : ev
+  const left = x + 42
+  const right = x + w - 42
+  const cw = right - left
+
+  panelBase(ctx, x, y, w, h)
+  drawRail(ctx, surface, y, left, right)
+
+  const box = 52
+  const bx = left
+  const by = y + 92
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
+  ctx.fillRect(bx, by, box, box)
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(bx + 0.75, by + 0.75, box - 1.5, box - 1.5)
+  ctx.fillStyle = AMBER
+  ctx.fillRect(bx + 7, by + 7, 12, 3)
+  drawLogoMark(ctx, surface.logo, bx + 9, by + 14, 34)
+
+  ctx.fillStyle = INK
+  ctx.font = `700 30px ${SANS}`
+  ctx.fillText(surface.name, left + 66, y + 124)
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.14em'
+  ctx.font = `500 13px ${MONO}`
+  ctx.fillText(surface.provider, left + 66, y + 146)
+  ctx.letterSpacing = '0px'
+
+  ctx.fillStyle = AMBER
+  ctx.fillRect(left, y + 164, 44, 3)
+  ctx.fillStyle = HAIR
+  ctx.fillRect(left + 44, y + 164, cw - 44, 1)
+
+  const sx = x + 24
+  const sy = y + 186
+  const sw = w - 48
+  const sh = 248
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(sx, sy, sw, sh)
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(sx + 0.75, sy + 0.75, sw - 1.5, sh - 1.5)
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.18em'
+  ctx.font = `500 10px ${MONO}`
+  ctx.fillText('SESSION', sx + 16, sy + 24)
+  ctx.textAlign = 'right'
+  ctx.fillText('EXIT 0', sx + sw - 16, sy + 24)
+  ctx.textAlign = 'left'
+  ctx.letterSpacing = '0px'
+  ctx.fillStyle = HAIR
+  ctx.fillRect(sx, sy + 34, sw, 1)
+  if (cmdOn) printCommand(ctx, surface.command, sx + 16, sy + 70, 16)
+  /* 27px leading keeps all six lines inside the session frame
+     (sy..sy+248): at 32px the sixth line fell 18px past its edge. */
+  printLines(ctx, surface, lineCount, sx + 16, sy + 100, 27, '❯', 14, sw - 32)
+
+  /* Status strip above the command box — placement at its right. */
+  ctx.fillStyle = FAINT
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.ui.strip, left, y + 477)
+  drawStripAd(ctx, left + 235, y + 452, cw - 235, 40, adSlot)
+
+  drawInputBox(ctx, left, y + 506, cw, 46, '❯', surface.ui.input, null)
+
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.06em'
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.ui.hint, left, y + 578)
+  ctx.letterSpacing = '0px'
+
+  drawDrumFooter(ctx, surface, y, h, left, right)
+}
+
+/* --- 05 · Gemini CLI — identity with FREE TIER chip,
+   double-framed editor, quota row (rate limits) holding the
+   placement, boxed input. --------------------------------- */
+function drawGeminiTile(ctx, x, y, w, h, surface, ev) {
+  const cmdOn = Boolean(surface.command) && ev >= 1
+  const lineCount = surface.command ? Math.max(0, ev - 1) : ev
+  const left = x + 42
+  const right = x + w - 42
+  const cw = right - left
+
+  panelBase(ctx, x, y, w, h)
+  drawRail(ctx, surface, y, left, right)
+
+  const box = 52
+  const bx = left
+  const by = y + 92
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
+  ctx.fillRect(bx, by, box, box)
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(bx + 0.75, by + 0.75, box - 1.5, box - 1.5)
+  ctx.fillStyle = AMBER
+  ctx.fillRect(bx + 7, by + 7, 12, 3)
+  drawLogoMark(ctx, surface.logo, bx + 9, by + 14, 34)
+
+  ctx.fillStyle = INK
+  ctx.font = `700 30px ${SANS}`
+  ctx.fillText(surface.name, left + 66, y + 124)
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.14em'
+  ctx.font = `500 13px ${MONO}`
+  ctx.fillText(surface.provider, left + 66, y + 146)
+  ctx.letterSpacing = '0px'
+
+  const tierW = 84
+  const tierH = 24
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1
+  ctx.strokeRect(right - tierW + 0.5, y + 104.5, tierW - 1, tierH - 1)
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.14em'
+  ctx.font = `600 10px ${MONO}`
+  ctx.textAlign = 'center'
+  ctx.fillText('FREE TIER', right - tierW / 2, y + 120)
+  ctx.textAlign = 'left'
+  ctx.letterSpacing = '0px'
+
+  ctx.fillStyle = AMBER
+  ctx.fillRect(left, y + 164, 44, 3)
+  ctx.fillStyle = HAIR
+  ctx.fillRect(left + 44, y + 164, cw - 44, 1)
+
+  const sx = x + 24
+  const sy = y + 186
+  const sw = w - 48
+  const sh = 246
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(sx, sy, sw, sh)
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(sx + 0.75, sy + 0.75, sw - 1.5, sh - 1.5)
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)'
+  ctx.lineWidth = 1
+  ctx.strokeRect(sx + 7, sy + 7, sw - 14, sh - 14)
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.16em'
+  ctx.font = `500 10px ${MONO}`
+  ctx.fillText('GEMINI ▸ GEMINI-3-PRO', sx + 18, sy + 28)
+  ctx.textAlign = 'right'
+  ctx.fillStyle = AMBER
+  ctx.font = `600 10px ${MONO}`
+  ctx.fillText('5%', sx + sw - 18, sy + 28)
+  ctx.textAlign = 'left'
+  ctx.letterSpacing = '0px'
+  ctx.fillStyle = HAIR
+  ctx.fillRect(sx + 7, sy + 40, sw - 14, 1)
+  if (cmdOn) printCommand(ctx, surface.command, sx + 18, sy + 78, 16)
+  /* 25px leading keeps all six lines inside the double frame
+     (sy..sy+246): at 30px the sixth line fell past its edge. */
+  printLines(ctx, surface, lineCount, sx + 18, sy + 106, 25, '❯', 14, sw - 36)
+
+  /* Quota row — rate limits left, placement right. */
+  ctx.fillStyle = FAINT
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.ui.quota, left, y + 475)
+  drawStripAd(ctx, left + 230, y + 450, cw - 230, 40, adSlot)
+
+  drawInputBox(ctx, left, y + 504, cw, 44, '❯', surface.ui.input, null)
+
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.06em'
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.ui.hint, left, y + 574)
+  ctx.letterSpacing = '0px'
+
+  drawDrumFooter(ctx, surface, y, h, left, right)
+}
+
+/* --- 06 · Aider — startup banner with the wordmark, plain
+   unframed output (no prompt glyph), tokens/cost line whose
+   right half is free for the placement, bare prompt. -------- */
+function drawAiderTile(ctx, x, y, w, h, surface, ev) {
+  const cmdOn = Boolean(surface.command) && ev >= 1
+  const lineCount = surface.command ? Math.max(0, ev - 1) : ev
+  const left = x + 42
+  const right = x + w - 42
+  const cw = right - left
+
+  panelBase(ctx, x, y, w, h)
+  drawRail(ctx, surface, y, left, right)
+
+  const hbY = y + 92
+  const hbH = 42
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'
+  ctx.fillRect(left, hbY, cw, hbH)
+  ctx.fillStyle = HAIR
+  ctx.fillRect(left, hbY, cw, 1)
+  ctx.fillRect(left, hbY + hbH - 1, cw, 1)
+  drawLogoMark(ctx, surface.logo, left + 12, hbY - 12, 64)
+  ctx.fillStyle = FAINT
+  ctx.font = `500 11px ${MONO}`
+  ctx.fillText(surface.ui.banner, left + 92, hbY + 26)
+  ctx.textAlign = 'right'
+  ctx.fillText('GIT: MAIN', right, hbY + 26)
+  ctx.textAlign = 'left'
+
+  if (cmdOn) printCommand(ctx, surface.command, left, y + 170, 17)
+  /* 32px leading: the tokens row's hairline sits at y+408, and at
+     44px leading the sixth line's glyphs crossed it. */
+  printLines(ctx, surface, lineCount, left, y + 210, 32, null, 16, cw)
+
+  /* Tokens/cost line — Aider prints it after each turn; its
+     right side is always empty. */
+  ctx.fillStyle = HAIR
+  ctx.fillRect(left, y + 408, cw, 1)
+  ctx.fillStyle = FAINT
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.ui.tokens, left, y + 433)
+  drawStripAd(ctx, left + 230, y + 408, cw - 230, 40, adSlot)
+
+  /* Bare prompt — a line, not a box. */
+  ctx.fillStyle = AMBER
+  ctx.font = `600 17px ${MONO}`
+  ctx.fillText('>', left, y + 492)
+  ctx.fillStyle = FAINT
+  ctx.font = `400 14px ${MONO}`
+  ctx.fillText(surface.ui.input, left + 20, y + 492)
+  ctx.fillStyle = HAIR
+  ctx.fillRect(left, y + 506, cw, 1.5)
+
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.06em'
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.ui.hint, left, y + 540)
+  ctx.letterSpacing = '0px'
+
+  drawDrumFooter(ctx, surface, y, h, left, right)
+}
+
+/* --- 07 · Copilot CLI — tab row (Session active, red
+   underline), framed session view, "Using <model>" line above
+   the input with the placement beside it. ------------------ */
+function drawCopilotTile(ctx, x, y, w, h, surface, ev) {
+  const cmdOn = Boolean(surface.command) && ev >= 1
+  const lineCount = surface.command ? Math.max(0, ev - 1) : ev
+  const left = x + 42
+  const right = x + w - 42
+  const cw = right - left
+
+  panelBase(ctx, x, y, w, h)
+  drawRail(ctx, surface, y, left, right)
+
+  const box = 44
+  const bx = left
+  const by = y + 90
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
+  ctx.fillRect(bx, by, box, box)
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(bx + 0.75, by + 0.75, box - 1.5, box - 1.5)
+  ctx.fillStyle = AMBER
+  ctx.fillRect(bx + 7, by + 7, 12, 3)
+  drawLogoMark(ctx, surface.logo, bx + 7, by + 10, 30)
+
+  ctx.fillStyle = INK
+  ctx.font = `700 28px ${SANS}`
+  ctx.fillText(surface.name, left + 58, y + 122)
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.14em'
+  ctx.font = `500 12px ${MONO}`
+  ctx.textAlign = 'right'
+  ctx.fillText(surface.provider, right, y + 122)
+  ctx.textAlign = 'left'
+  ctx.letterSpacing = '0px'
+
+  ctx.fillStyle = AMBER
+  ctx.fillRect(left, y + 142, 40, 3)
+  ctx.fillStyle = HAIR
+  ctx.fillRect(left + 40, y + 142, cw - 40, 1)
+
+  /* Tab row. */
+  const tY = y + 158
+  const tH = 40
+  ctx.fillStyle = HAIR
+  ctx.fillRect(left, tY, cw, 1)
+  ctx.fillRect(left, tY + tH, cw, 1)
+  let tabX = left + 4
+  surface.ui.tabs.forEach((tab, i) => {
+    const active = i === 0
+    ctx.font = `${active ? '600' : '500'} 14px ${SANS}`
+    const tabW = ctx.measureText(tab).width
+    ctx.fillStyle = active ? INK : FAINT
+    ctx.fillText(tab, tabX, tY + 25)
+    if (active) {
+      ctx.fillStyle = AMBER
+      ctx.fillRect(tabX, tY + tH - 2, tabW, 2)
+    }
+    if (i < surface.ui.tabs.length - 1) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.25)'
+      ctx.fillRect(tabX + tabW + 11, tY + 12, 1, 16)
+    }
+    tabX += tabW + 24
+  })
+  ctx.textAlign = 'right'
+  ctx.fillStyle = FAINT
+  ctx.font = `500 11px ${MONO}`
+  ctx.fillText(surface.ui.usage, right, tY + 26)
+  ctx.textAlign = 'left'
+
+  const sx = x + 24
+  const sy = y + 214
+  const sw = w - 48
+  const sh = 228
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(sx, sy, sw, sh)
+  ctx.strokeStyle = HAIR
+  ctx.lineWidth = 1.5
+  ctx.strokeRect(sx + 0.75, sy + 0.75, sw - 1.5, sh - 1.5)
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.18em'
+  ctx.font = `500 10px ${MONO}`
+  ctx.fillText('SESSION', sx + 16, sy + 24)
+  ctx.textAlign = 'right'
+  ctx.fillText('SONNET 4.5', sx + sw - 16, sy + 24)
+  ctx.textAlign = 'left'
+  ctx.letterSpacing = '0px'
+  ctx.fillStyle = HAIR
+  ctx.fillRect(sx, sy + 34, sw, 1)
+  if (cmdOn) printCommand(ctx, surface.command, sx + 16, sy + 68, 15)
+  /* 24px leading keeps all six lines inside the session frame
+     (sy..sy+228): at 28px the sixth line fell past its edge. */
+  printLines(ctx, surface, lineCount, sx + 16, sy + 98, 24, '*', 14, sw - 32)
+
+  /* "Using <model>" above the input — placement beside it. */
+  ctx.fillStyle = FAINT
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.ui.model, left, y + 481)
+  drawStripAd(ctx, left + 180, y + 456, cw - 180, 40, adSlot)
+
+  drawInputBox(ctx, left, y + 510, cw, 44, '*', surface.ui.input, null)
+
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.06em'
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.ui.hint, left, y + 578)
+  ctx.letterSpacing = '0px'
+
+  drawDrumFooter(ctx, surface, y, h, left, right)
+}
+
+/* --- 08 · Local / self-hosted — a bare REPL: minimal identity,
+   plain output, no idle chrome strip at all. The placement is
+   reserved below and opens only once stdout finishes. ------ */
+function drawShellTile(ctx, x, y, w, h, surface, ev, total) {
+  const cmdOn = Boolean(surface.command) && ev >= 1
+  const lineCount = surface.command ? Math.max(0, ev - 1) : ev
+  const left = x + 42
+  const right = x + w - 42
+  const cw = right - left
+
+  panelBase(ctx, x, y, w, h)
+  drawRail(ctx, surface, y, left, right)
+
+  ctx.fillStyle = INK
+  ctx.font = `700 26px ${SANS}`
+  ctx.fillText(surface.name, left, y + 118)
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.14em'
+  ctx.font = `500 12px ${MONO}`
+  ctx.fillText(surface.provider, left, y + 142)
+  ctx.letterSpacing = '0px'
+  drawLogoMark(ctx, surface.logo, right - 34, y + 96, 34)
+
+  ctx.fillStyle = AMBER
+  ctx.fillRect(left, y + 160, 40, 3)
+  ctx.fillStyle = HAIR
+  ctx.fillRect(left + 40, y + 160, cw - 40, 1)
+
+  if (cmdOn) printCommand(ctx, surface.command, left, y + 202, 17)
+  /* 36px leading: the deferred band below opens (and fills) exactly
+     when stdout completes, so its frame must clear the last line. */
+  printLines(ctx, surface, lineCount, left, y + 238, 36, '>>>', 16, cw)
+
+  drawDeferredBand(ctx, left, y + 446, cw, 100, adSlot, ev >= total)
+
+  ctx.fillStyle = FAINT
+  ctx.letterSpacing = '0.1em'
+  const hint = fitText(ctx, surface.ui.hint, cw, '500', 11, 8, MONO)
+  ctx.fillText(hint, left, y + 568)
+  ctx.letterSpacing = '0px'
+
+  drawDrumFooter(ctx, surface, y, h, left, right)
+}
+
+/* Dispatch — each surface's chrome picks its painter. The event
+   count (from tileCounts) drives line printing; the deferred
+   band compares it against the surface's total. */
+function drawTile(ctx, x, y, w, h, surface, events) {
+  const total = tileEvents(surface)
+  const ev = events === undefined ? total : events
+  switch (surface.chrome) {
+    case 'claude':
+      return drawClaudeTile(ctx, x, y, w, h, surface, ev)
+    case 'codex':
+      return drawCodexTile(ctx, x, y, w, h, surface, ev)
+    case 'cline':
+      return drawClineTile(ctx, x, y, w, h, surface, ev)
+    case 'opencode':
+      return drawOpencodeTile(ctx, x, y, w, h, surface, ev)
+    case 'gemini':
+      return drawGeminiTile(ctx, x, y, w, h, surface, ev)
+    case 'aider':
+      return drawAiderTile(ctx, x, y, w, h, surface, ev)
+    case 'copilot':
+      return drawCopilotTile(ctx, x, y, w, h, surface, ev)
+    case 'shell':
+      return drawShellTile(ctx, x, y, w, h, surface, ev, total)
+    default:
+      return undefined
+  }
+}
+
+/* Removal marker kept so nobody re-adds a standalone sponsored tile
+   by copying from an older revision. */
 /* -------------------------------------------------------------
    Scroll-driven terminal print.
    -------------------------------------------------------------
    Each CLI's output prints line by line as its surface swings
    through the readable zone: the reveal starts 45° before dead
    front and completes 30° past it, so the last line always lands
-   BEFORE the next surface takes the front (the sponsored slot
-   included), then holds. One event = one row on the screen — the
+   BEFORE the next surface takes the front, then holds. One event = one row on the screen — the
    '$ command' row first, then each output line, finishing with the
    ✓ line. The count is a pure function of the drum's angle: output
    stops printing when scroll stops and un-prints when scroll
@@ -744,8 +1515,7 @@ function tileEvents(surface) {
 
 function tileCounts(f) {
   return SURFACES.map((surface, i) => {
-    if (surface.kind === 'sponsored') return -1 /* static: always full */
-    const a = (i - f) * 40 /* degrees from dead front, + = approaching */
+    const a = (i - f) * 45 /* degrees from dead front, + = approaching */
     const u = clamp01((45 - a) / 75)
     if (u <= 0) return 0
     const total = tileEvents(surface)
@@ -755,7 +1525,7 @@ function tileCounts(f) {
 
 function buildAtlas(gl) {
   /* Respect the GPU's texture ceiling: lay out in virtual tile
-     coordinates and scale the whole canvas down when 10 × 512 would
+     coordinates and scale the whole canvas down when 8 × 512 would
      exceed it. */
   const maxTex =
     (gl && gl.getParameter(gl.MAX_TEXTURE_SIZE)) || 4096
@@ -770,12 +1540,7 @@ function buildAtlas(gl) {
   ctx.setTransform(tw / TILE_W, 0, 0, th / TILE_H, 0, 0)
   const counts = tileCounts(0.5) /* the opening frame's print state */
   SURFACES.forEach((surface, i) => {
-    const x = i * TILE_W
-    if (surface.kind === 'sponsored') {
-      drawSponsoredTile(ctx, x, 0, TILE_W, TILE_H, surface.slot)
-    } else {
-      drawTile(ctx, x, 0, TILE_W, TILE_H, surface, counts[i])
-    }
+    drawTile(ctx, i * TILE_W, 0, TILE_W, TILE_H, surface, counts[i])
   })
   return canvas
 }
@@ -943,7 +1708,6 @@ function OrbitRing() {
       for (let i = 0; i < counts.length; i += 1) {
         if (counts[i] === lastCounts[i]) continue
         lastCounts[i] = counts[i]
-        if (SURFACES[i].kind === 'sponsored') continue
         scratchCtx.setTransform(1, 0, 0, 1, 0, 0)
         scratchCtx.clearRect(0, 0, atlasTw, atlasTh)
         scratchCtx.setTransform(atlasTw / TILE_W, 0, 0, atlasTh / TILE_H, 0, 0)
@@ -1016,6 +1780,8 @@ function OrbitRing() {
     let observer = null
     let ro = null
     let st = null
+    let alive = true
+    let fontsRepaint = false
 
     /* Scroll instrument state: written only when a value changes. */
     const progressEl = progressRef.current
@@ -1155,7 +1921,48 @@ function OrbitRing() {
       if (reduced) draw(STATIC_P, 0)
     }
 
+    /* Canvas text never triggers a font load, and the atlas is baked
+       once at mount — so if the self-hosted woff2 files land after the
+       first paint, the drum would keep rendering fallback glyphs
+       forever. When the font set settles, repaint every tile IN PLACE
+       with its current print count (not the full state: output must
+       stay a pure function of scroll position) and re-upload the whole
+       atlas. Per-tile syncs continue to work unchanged on top of it. */
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready
+        .then(() => {
+          if (!alive || fontsRepaint) return
+          fontsRepaint = true
+          const atlasCtx = atlasCanvas.getContext('2d')
+          atlasCtx.setTransform(1, 0, 0, 1, 0, 0)
+          atlasCtx.fillStyle = VOID
+          atlasCtx.fillRect(0, 0, atlasCanvas.width, atlasCanvas.height)
+          atlasCtx.setTransform(atlasTw / TILE_W, 0, 0, atlasTh / TILE_H, 0, 0)
+          SURFACES.forEach((surface, i) => {
+            drawTile(atlasCtx, i * TILE_W, 0, TILE_W, TILE_H, surface, lastCounts[i])
+          })
+          const prev = gl.getParameter(gl.TEXTURE_BINDING_2D)
+          gl.bindTexture(gl.TEXTURE_2D, texture.texture)
+          gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
+          gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            atlasCanvas,
+          )
+          gl.generateMipmap(gl.TEXTURE_2D)
+          gl.bindTexture(gl.TEXTURE_2D, prev)
+          if (reduced) draw(STATIC_P, 0)
+        })
+        .catch((error) =>
+          console.error('[OrbitRing] font-settle repaint failed', error),
+        )
+    }
+
     const teardown = () => {
+      alive = false
       stop()
       if (st) st.kill()
       if (observer) observer.disconnect()
@@ -1206,7 +2013,7 @@ function OrbitRing() {
       <div className="orbit__sticky">
         <div className="orbit__frame" ref={hostRef}>
           {failed ? (
-            /* Only ever rendered when WebGL is unavailable: the same nine
+            /* Only ever rendered when WebGL is unavailable: the same eight
                surfaces as a flat strip, so the region is never blank. */
             <div className="orbit__fallback">
               {SURFACES.map((surface, i) => (
@@ -1217,10 +2024,7 @@ function OrbitRing() {
               ))}
             </div>
           ) : (
-            <>
-              <canvas className="orbit__canvas" ref={canvasRef} aria-hidden="true" />
-              <div className="orbit__boot">initialising the drum</div>
-            </>
+            <canvas className="orbit__canvas" ref={canvasRef} aria-hidden="true" />
           )}
         </div>
         {/* Scroll-position instrument: one row per drum surface,
@@ -1231,17 +2035,13 @@ function OrbitRing() {
         <div className="orbit__progress" ref={progressRef} aria-hidden="true">
           {SURFACES.map((surface, i) => (
             <div className="orbit__progress-row" key={`${surface.name}-${i}`}>
-              <span>{surface.kind === 'sponsored' ? 'AD' : surface.index}</span>
+              <span>{surface.index}</span>
               <i>
                 <b />
               </i>
             </div>
           ))}
         </div>
-        <p className="orbit__caption">
-          one axis · nine surfaces · scroll turns the drum · output prints
-          with position
-        </p>
       </div>
     </section>
   )

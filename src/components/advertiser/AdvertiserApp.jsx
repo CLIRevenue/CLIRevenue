@@ -75,6 +75,7 @@ export default function AdvertiserApp() {
             error={campaignsState.error}
             onRetry={campaignsState.refresh}
             onChanged={campaignsState.refresh}
+            onUpsert={campaignsState.upsertCampaign}
           />
         ) : null}
         {tab === 'analytics' ? (

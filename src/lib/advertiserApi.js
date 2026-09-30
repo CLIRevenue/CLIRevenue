@@ -1,4 +1,5 @@
 import { supabase } from './api.js'
+import { CAMPAIGN_STATUSES as RULE_STATUSES, MAX_BUDGET_CENTS } from './campaignRules.js'
 
 /**
  * Advertiser-specific service layer.
@@ -14,7 +15,7 @@ export const ADVERTISER_AUDIENCES = [
   { id: 'oss', label: 'OSS maintainers' },
 ]
 
-export const CAMPAIGN_STATUSES = ['draft', 'active', 'paused', 'completed', 'archived']
+export const CAMPAIGN_STATUSES = RULE_STATUSES
 
 const AUDIENCE_LABELS = Object.fromEntries(ADVERTISER_AUDIENCES.map((a) => [a.id, a.label]))
 
@@ -30,11 +31,8 @@ function campaignsBaseCandidates() {
     return out
   }
   if (raw.endsWith('/functions/v1')) {
-    // Canonical Supabase layout from the task:
-    // /functions/v1/campaigns/api/campaigns
+    out.push(`${raw}/campaigns`)
     out.push(`${raw}/campaigns/api/campaigns`)
-    // Legacy / alternative gateway layout used by src/lib/api.js:
-    // /functions/v1/api/campaigns
     out.push(`${raw}/api/campaigns`)
     return out
   }
@@ -74,7 +72,7 @@ async function authedFetch(url, options = {}) {
   }
   if (!res.ok) {
     const msg =
-      (json && (json.error?.message || json.error || json.message)) ||
+      (json && (json.error?.message || (typeof json.error === 'string' ? json.error : json.message))) ||
       res.statusText ||
       'Request failed'
     const err = new Error(typeof msg === 'string' ? msg : 'Request failed')
@@ -99,9 +97,18 @@ async function tryCandidates(urls, options) {
   throw lastErr
 }
 
+function resolveAudienceId(raw = {}) {
+  if (raw.audience_id && AUDIENCE_LABELS[raw.audience_id]) return raw.audience_id
+  if (raw.audienceId && AUDIENCE_LABELS[raw.audienceId]) return raw.audienceId
+  if (raw.audience && AUDIENCE_LABELS[raw.audience]) return raw.audience
+  const byLabel = ADVERTISER_AUDIENCES.find(
+    (a) => a.label === raw.audience || a.label === raw.audienceLabel,
+  )
+  return byLabel?.id || 'backend'
+}
+
 export function normalizeCampaign(raw = {}) {
-  const audienceId =
-    raw.audience_id || raw.audienceId || raw.audience || 'backend'
+  const audienceId = resolveAudienceId(raw)
   const spendCents =
     Number.isFinite(raw.spendCents)
       ? raw.spendCents
@@ -139,6 +146,7 @@ export function normalizeCampaign(raw = {}) {
     audienceLabel: AUDIENCE_LABELS[audienceId] || raw.audience || audienceId,
     budgetCents,
     spendCents,
+    remainingBudgetCents: Math.max(0, budgetCents - spendCents),
     impressions,
     clicks,
     conversions,
@@ -170,12 +178,12 @@ export function validateCampaignInput(input) {
   if (!String(input.name || '').trim()) errors.name = 'Campaign name is required.'
   if (!String(input.headline || '').trim()) errors.headline = 'Headline is required.'
   if (!ADVERTISER_AUDIENCES.some((a) => a.id === input.audienceId)) {
-    errors.audienceId = 'Pick a valid audience.'
+    errors.audienceId = 'Select an audience.'
   }
   const budgetCents = Math.round(Number(input.budgetDollars) * 100)
   if (!Number.isFinite(budgetCents) || budgetCents <= 0) {
     errors.budgetDollars = 'Budget must be greater than $0.'
-  } else if (budgetCents > 100_000_00) {
+  } else if (budgetCents > MAX_BUDGET_CENTS) {
     errors.budgetDollars = 'Budget must be $100,000 or less in this prototype.'
   }
   if (input.status && !CAMPAIGN_STATUSES.includes(input.status)) {
@@ -233,6 +241,32 @@ export async function updateAdvertiserCampaign(id, patch) {
   for (const url of urls) {
     try {
       const data = await authedFetch(url, { method: 'PATCH', body: JSON.stringify(body) })
+      return normalizeCampaign(data?.campaign || data)
+    } catch (e) {
+      lastErr = e
+      if (e.status !== 404 && e.status !== 405) throw e
+    }
+  }
+  throw lastErr
+}
+
+export async function archiveAdvertiserCampaign(id) {
+  const bases = campaignsBaseCandidates()
+  const archiveUrls = bases.map((b) => `${b}/${id}/archive`)
+  const deleteUrls = bases.map((b) => `${b}/${id}`)
+  let lastErr = null
+  for (const url of archiveUrls) {
+    try {
+      const data = await authedFetch(url, { method: 'POST', body: JSON.stringify({}) })
+      return normalizeCampaign(data?.campaign || data)
+    } catch (e) {
+      lastErr = e
+      if (e.status !== 404 && e.status !== 405) throw e
+    }
+  }
+  for (const url of deleteUrls) {
+    try {
+      const data = await authedFetch(url, { method: 'DELETE' })
       return normalizeCampaign(data?.campaign || data)
     } catch (e) {
       lastErr = e
@@ -311,4 +345,9 @@ export function formatCents(cents) {
 export function ctrPct(clicks, impressions) {
   if (!impressions) return 0
   return (clicks / impressions) * 100
+}
+
+export function conversionRatePct(conversions, clicks) {
+  if (!clicks) return 0
+  return (conversions / clicks) * 100
 }

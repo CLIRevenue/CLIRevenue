@@ -1,454 +1,330 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+import { adminClient, getJwtUser, requireAdvertiser } from "../_shared/auth.ts";
+import {
+  canTransition,
+  createUnknownFields,
+  isCampaignStatus,
+  parseBudgetCents,
+  patchUnknownFields,
+  requireNonEmptyString,
+} from "../_shared/campaignRules.ts";
+import { apiError, isUuid, json, optionsResponse } from "../_shared/http.ts";
 
-const supabaseAdmin = createClient(
-  supabaseUrl,
-  supabaseServiceKey,
-);
-serve(async (req)=>{
-  // Get the Authorization header
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return new Response(JSON.stringify({
-      error: "Missing or invalid Authorization header"
-    }), {
-      status: 401,
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
-  }
-  const accessToken = authHeader.substring(7);
+type AudienceRow = { id: string; label: string };
 
-  const supabaseUser = createClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
-    },
-  );
+function parsePath(pathname: string): string[] {
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts[0] === "campaigns") parts.shift();
+  if (parts[0] === "api" && parts[1] === "campaigns") {
+    parts.splice(0, 2);
+  } else if (parts[0] === "api") {
+    parts.shift();
+  }
+  return parts;
+}
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabaseUser.auth.getUser();
-  if (userError) {
-    return new Response(JSON.stringify({
-      error: "Invalid token"
-    }), {
-      status: 401,
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
-  }
-  // Get the user's profile to check role
-  const { data: profile, error: profileError } = await supabaseAdmin.from("profiles").select("role").eq("id", user.id).single();
-  if (profileError) {
-    return new Response(JSON.stringify({
-      error: "Failed to fetch profile"
-    }), {
-      status: 500,
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
-  }
-  const isAdvertiser = profile.role === "advertiser";
-  const isAdmin = profile.role === "admin";
-  // Parse the URL to get the path and method
-  const url = new URL(req.url);
-  const pathParts = url.pathname
-  .split("/")
-  .filter((part) => part !== "");
-
-  if (pathParts[0] === "campaigns") {
-    pathParts.shift();
-  }
-  // Expected path: /api/campaigns or /api/campaigns/:id
-  const method = req.method;
-  // Helper to handle errors
-  const handleError = (error, status = 500, message = "Internal server error")=>{
-    return new Response(JSON.stringify({
-      error: message,
-      details: error?.message || error
-    }), {
-      status,
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
+function formatCampaign(row: Record<string, unknown>, audienceMap: Record<string, string>) {
+  const audienceId = String(row.audience_id || "");
+  const spendMilli = Number(row.spend_milli_cents || 0);
+  const budgetCents = Number(row.budget_cents || 0);
+  const spendCents = Math.floor(spendMilli / 1000);
+  return {
+    id: row.id,
+    advertiser_id: row.advertiser_id,
+    name: row.name,
+    headline: row.headline,
+    description: row.description,
+    cta: row.cta,
+    audience_id: audienceId,
+    audienceId,
+    audience: audienceMap[audienceId] || audienceId,
+    budget_cents: budgetCents,
+    budgetCents,
+    spend_milli_cents: spendMilli,
+    spend_cents: spendCents,
+    spendCents,
+    remaining_budget_cents: Math.max(0, budgetCents - spendCents),
+    remainingBudgetCents: Math.max(0, budgetCents - spendCents),
+    impressions_count: row.impressions_count,
+    impressions: row.impressions_count,
+    clicks_count: row.clicks_count,
+    clicks: row.clicks_count,
+    conversions_count: row.conversions_count,
+    conversions: row.conversions_count,
+    status: row.status,
+    starts_at: row.starts_at ?? null,
+    ends_at: row.ends_at ?? null,
+    created_at: row.created_at,
+    createdAt: row.created_at,
+    updated_at: row.updated_at,
+    updatedAt: row.updated_at,
+    simulated: false,
   };
-  // GET /api/campaigns - list campaigns for the advertiser
-  if (method === "GET" && pathParts.length === 2 && pathParts[0] === "api" && pathParts[1] === "campaigns") {
-    try {
-      // Get the advertiser id from the advertiser profile linked to the user
-      const { data: advertiserProfile, error: advError } = await supabaseAdmin.from("advertisers").select("id").eq("profile_id", user.id).single();
-      if (advError) {
-        return handleError(advError, 404, "Advertiser profile not found");
-      }
-      const advertiserId = advertiserProfile.id;
-      const { data: campaigns, error: campaignsError } = await supabaseAdmin.from("campaigns").select(`
-          id,
-          name,
-          headline,
-          description,
-          cta,
-          audience_id,
-          budget_cents,
-          spend_milli_cents,
-          impressions_count,
-          clicks_count,
-          conversions_count,
-          status,
-          created_at,
-          updated_at
-        `).eq("advertiser_id", advertiserId);
-      if (campaignsError) {
-        return handleError(campaignsError, 500, "Failed to fetch campaigns");
-      }
-      // Convert to the expected format (spend_cents from spend_milli_cents)
-      const formattedCampaigns = campaigns.map((camp)=>({
-          id: camp.id,
-          name: camp.name,
-          headline: camp.headline,
-          description: camp.description,
-          cta: camp.cta,
-          audience: camp.audience_id,
-          // In the economyStore, we transform the audience_id to the audience string (like 'backend') by using the audiences table.
-          // However, the frontend's economyStore expects the audience to be the string (from the audiences table) because it uses it to get the campaign name by id? 
-          // Actually, the economyStore's getCampaignNameById function uses the campaign's id to find the campaign in the snapshot and then returns the name? 
-          // Wait, the economyStore's getCampaignNameById is not shown. We'll assume the frontend expects the audience string (like 'backend') for display.
-          // We'll fetch the audience label for each campaign.
-          budgetCents: camp.budget_cents,
-          spendCents: Math.floor(camp.spend_milli_cents / 1000),
-          impressions: camp.impressions_count,
-          clicks: camp.clicks_count,
-          conversions: camp.conversions_count,
-          status: camp.status,
-          simulated: false
-        }));
-      // Now we need to enrich with audience label. Let's do a separate query for audiences to avoid N+1.
-      // For simplicity, we'll do a join in the original query? We'll do a separate query for now.
-      const { data: audiences, error: audiencesError } = await supabaseAdmin.from("audiences").select("id, label");
-      if (audiencesError) {
-        // If we can't fetch audiences, we'll fall back to using the audience_id as the audience string.
-        return new Response(JSON.stringify(formattedCampaigns.map((camp)=>({
-            ...camp,
-            audience: camp.audience
-          }))), {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
-      }
-      const audienceMap = Object.fromEntries(audiences.map((aud)=>[
-          aud.id,
-          aud.label
-        ]));
-      const enrichedCampaigns = formattedCampaigns.map((camp)=>({
-          ...camp,
-          audience: audienceMap[camp.audience] || camp.audience
-        }));
-      return new Response(JSON.stringify(enrichedCampaigns), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-    } catch (err) {
-      return handleError(err);
-    }
+}
+
+const SELECT_COLS =
+  "id, advertiser_id, name, headline, description, cta, audience_id, budget_cents, cpm_cents, spend_milli_cents, impressions_count, clicks_count, conversions_count, status, starts_at, ends_at, created_at, updated_at";
+
+async function audienceMap(admin: ReturnType<typeof adminClient>) {
+  const { data } = await admin.from("audiences").select("id, label");
+  return Object.fromEntries((data as AudienceRow[] | null || []).map((a) => [a.id, a.label]));
+}
+
+async function loadOwnedCampaign(
+  admin: ReturnType<typeof adminClient>,
+  campaignId: string,
+  advertiserId: string,
+) {
+  const { data, error } = await admin
+    .from("campaigns")
+    .select(SELECT_COLS)
+    .eq("id", campaignId)
+    .eq("advertiser_id", advertiserId)
+    .maybeSingle();
+  if (error) return { error: apiError("INTERNAL_ERROR", "Could not load campaign.", 500) };
+  if (!data) return { error: apiError("CAMPAIGN_NOT_FOUND", "Campaign not found.", 404) };
+  return { campaign: data };
+}
+
+async function archiveCampaign(
+  admin: ReturnType<typeof adminClient>,
+  campaign: Record<string, unknown>,
+  advertiserId: string,
+) {
+  if (campaign.status === "archived") return { campaign };
+  if (!canTransition(campaign.status as "draft", "archived")) {
+    return {
+      error: apiError(
+        "INVALID_STATUS_TRANSITION",
+        `Cannot archive a campaign in status "${campaign.status}".`,
+        400,
+      ),
+    };
   }
-  // GET /api/campaigns/:id - get a specific campaign for the advertiser
-  if (method === "GET" && pathParts.length === 3 && pathParts[0] === "api" && pathParts[1] === "campaigns") {
-    try {
-      const campaignId = pathParts[2];
-      // Get the advertiser id from the advertiser profile linked to the user
-      const { data: advertiserProfile, error: advError } = await supabaseAdmin.from("advertisers").select("id").eq("profile_id", user.id).single();
-      if (advError) {
-        return handleError(advError, 404, "Advertiser profile not found");
-      }
-      const advertiserId = advertiserProfile.id;
-      const { data: campaign, error: campaignError } = await supabaseAdmin.from("campaigns").select(`
-          id,
-          name,
-          headline,
-          description,
-          cta,
-          audience_id,
-          budget_cents,
-          spend_milli_cents,
-          impressions_count,
-          clicks_count,
-          conversions_count,
-          status,
-          created_at,
-          updated_at
-        `).eq("id", campaignId).eq("advertiser_id", advertiserId).single();
-      if (campaignError) {
-        return handleError(campaignError, 404, "Campaign not found or access denied");
-      }
-      // Get the audience label
-      const { data: audience, error: audienceError } = await supabaseAdmin.from("audiences").select("label").eq("id", campaign.audience_id).single();
-      // Convert spend_milli_cents to spend_cents
-      const spendCents = Math.floor(campaign.spend_milli_cents / 1000);
-      return new Response(JSON.stringify({
-        id: campaign.id,
-        name: campaign.name,
-        headline: campaign.headline,
-        description: campaign.description,
-        cta: campaign.cta,
-        audience: audience ? audience.label : campaign.audience_id,
-        budgetCents: campaign.budget_cents,
-        spendCents: spendCents,
-        impressions: campaign.impressions_count,
-        clicks: campaign.clicks_count,
-        conversions: campaign.conversions_count,
-        status: campaign.status,
-        createdAt: campaign.created_at,
-        updatedAt: campaign.updated_at
-      }), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-    } catch (err) {
-      return handleError(err);
+  const { data, error } = await admin
+    .from("campaigns")
+    .update({ status: "archived" })
+    .eq("id", campaign.id)
+    .eq("advertiser_id", advertiserId)
+    .select(SELECT_COLS)
+    .single();
+  if (error) return { error: apiError("INTERNAL_ERROR", "Could not archive campaign.", 500) };
+  return { campaign: data };
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return optionsResponse();
+
+  const authed = await getJwtUser(req);
+  if ("error" in authed && authed.error) return authed.error;
+  const admin = adminClient();
+  const adv = await requireAdvertiser(admin, authed.user!.id);
+  if ("error" in adv && adv.error) return adv.error;
+  const advertiserId = adv.advertiser!.id;
+  const rest = parsePath(new URL(req.url).pathname);
+  const method = req.method;
+
+  try {
+    if (method === "GET" && rest.length === 0) {
+      const { data, error } = await admin
+        .from("campaigns")
+        .select(SELECT_COLS)
+        .eq("advertiser_id", advertiserId)
+        .order("created_at", { ascending: false });
+      if (error) return apiError("INTERNAL_ERROR", "Failed to fetch campaigns.", 500);
+      const map = await audienceMap(admin);
+      const campaigns = (data || []).map((row) => formatCampaign(row, map));
+      return json({ campaigns });
     }
+
+    if (method === "POST" && rest.length === 0) {
+      let body: Record<string, unknown>;
+      try {
+        body = await req.json();
+      } catch {
+        return apiError("INVALID_EVENT", "JSON body required.", 400);
+      }
+      const unknown = createUnknownFields(body);
+      if (unknown.length) {
+        return apiError("UNKNOWN_FIELDS", `Unsupported fields: ${unknown.join(", ")}.`, 400);
+      }
+      const nameErr = requireNonEmptyString(body.name, "name");
+      const headlineErr = requireNonEmptyString(body.headline, "headline");
+      if (nameErr) return apiError("MISSING_FIELDS", "Campaign name is required.", 400);
+      if (headlineErr) return apiError("MISSING_FIELDS", "Headline is required.", 400);
+      const audienceId = body.audience_id ?? body.audience;
+      if (typeof audienceId !== "string" || !audienceId.trim()) {
+        return apiError("INVALID_AUDIENCE", "Select an audience.", 400);
+      }
+      const budgetRaw = body.budget_cents ?? body.budgetCents;
+      const budget = parseBudgetCents(budgetRaw);
+      if (!budget.ok) return apiError(budget.code, budget.message, 400);
+
+      const { data: audience, error: audErr } = await admin
+        .from("audiences")
+        .select("id")
+        .eq("id", audienceId)
+        .maybeSingle();
+      if (audErr) return apiError("INTERNAL_ERROR", "Could not validate audience.", 500);
+      if (!audience) return apiError("INVALID_AUDIENCE", "Select an audience.", 400);
+
+      const insert = {
+        advertiser_id: advertiserId,
+        name: String(body.name).trim(),
+        headline: String(body.headline).trim(),
+        description: body.description == null ? null : String(body.description),
+        cta: body.cta ? String(body.cta) : "Learn more",
+        audience_id: audienceId,
+        budget_cents: budget.value,
+        spend_milli_cents: 0,
+        impressions_count: 0,
+        clicks_count: 0,
+        conversions_count: 0,
+        status: "draft",
+        starts_at: body.starts_at ?? null,
+        ends_at: body.ends_at ?? null,
+      };
+      const { data: created, error: insertError } = await admin
+        .from("campaigns")
+        .insert([insert])
+        .select(SELECT_COLS)
+        .single();
+      if (insertError) return apiError("INTERNAL_ERROR", "Campaign could not be created.", 500);
+      const map = await audienceMap(admin);
+      return json({ campaign: formatCampaign(created, map) }, 201);
+    }
+
+    if (rest.length >= 1) {
+      const campaignId = rest[0];
+      if (!isUuid(campaignId)) {
+        return apiError("INVALID_ID", "Malformed campaign id.", 400);
+      }
+      const loaded = await loadOwnedCampaign(admin, campaignId, advertiserId);
+      if ("error" in loaded && loaded.error) return loaded.error;
+      const existing = loaded.campaign!;
+
+      if (method === "GET" && rest.length === 1) {
+        const map = await audienceMap(admin);
+        return json({ campaign: formatCampaign(existing, map) });
+      }
+
+      if (method === "DELETE" && rest.length === 1) {
+        const result = await archiveCampaign(admin, existing, advertiserId);
+        if ("error" in result && result.error) return result.error;
+        const map = await audienceMap(admin);
+        return json({ campaign: formatCampaign(result.campaign!, map), archived: true });
+      }
+
+      if (method === "POST" && rest.length === 2 && rest[1] === "archive") {
+        const result = await archiveCampaign(admin, existing, advertiserId);
+        if ("error" in result && result.error) return result.error;
+        const map = await audienceMap(admin);
+        return json({ campaign: formatCampaign(result.campaign!, map), archived: true });
+      }
+
+      if (method === "POST" && rest.length === 2 && rest[1] === "select") {
+        const { data: settings, error: settingsError } = await admin
+          .from("platform_settings")
+          .select("id")
+          .maybeSingle();
+        if (settingsError || !settings) {
+          return apiError("INTERNAL_ERROR", "Could not update active campaign.", 500);
+        }
+        const { data: updated, error: updateError } = await admin
+          .from("platform_settings")
+          .update({ active_campaign_id: campaignId })
+          .eq("id", settings.id)
+          .select("active_campaign_id")
+          .single();
+        if (updateError) return apiError("INTERNAL_ERROR", "Could not update active campaign.", 500);
+        return json({ active_campaign_id: updated.active_campaign_id });
+      }
+
+      if (method === "PATCH" && rest.length === 1) {
+        let body: Record<string, unknown>;
+        try {
+          body = await req.json();
+        } catch {
+          return apiError("INVALID_EVENT", "JSON body required.", 400);
+        }
+        const unknown = patchUnknownFields(body);
+        if (unknown.length) {
+          return apiError("UNKNOWN_FIELDS", `Cannot update: ${unknown.join(", ")}.`, 400);
+        }
+
+        const filtered: Record<string, unknown> = {};
+        if (body.name !== undefined) {
+          const err = requireNonEmptyString(body.name, "name");
+          if (err) return apiError("MISSING_FIELDS", "Campaign name is required.", 400);
+          filtered.name = String(body.name).trim();
+        }
+        if (body.headline !== undefined) {
+          const err = requireNonEmptyString(body.headline, "headline");
+          if (err) return apiError("MISSING_FIELDS", "Headline is required.", 400);
+          filtered.headline = String(body.headline).trim();
+        }
+        if (body.description !== undefined) filtered.description = body.description;
+        if (body.cta !== undefined) filtered.cta = body.cta;
+        if (body.starts_at !== undefined) filtered.starts_at = body.starts_at;
+        if (body.ends_at !== undefined) filtered.ends_at = body.ends_at;
+        const audienceId = body.audience_id ?? body.audience;
+        if (audienceId !== undefined) {
+          if (typeof audienceId !== "string" || !audienceId.trim()) {
+            return apiError("INVALID_AUDIENCE", "Select an audience.", 400);
+          }
+          const { data: audience, error: audErr } = await admin
+            .from("audiences")
+            .select("id")
+            .eq("id", audienceId)
+            .maybeSingle();
+          if (audErr) return apiError("INTERNAL_ERROR", "Could not validate audience.", 500);
+          if (!audience) return apiError("INVALID_AUDIENCE", "Select an audience.", 400);
+          filtered.audience_id = audienceId;
+        }
+        if (body.budget_cents !== undefined || body.budgetCents !== undefined) {
+          const budget = parseBudgetCents(body.budget_cents ?? body.budgetCents);
+          if (!budget.ok) return apiError(budget.code, budget.message, 400);
+          filtered.budget_cents = budget.value;
+        }
+        if (body.status !== undefined) {
+          if (!isCampaignStatus(body.status)) {
+            return apiError("INVALID_STATUS", "Unsupported campaign status.", 400);
+          }
+          if (!canTransition(existing.status, body.status)) {
+            return apiError(
+              "INVALID_STATUS_TRANSITION",
+              `Cannot change status from "${existing.status}" to "${body.status}".`,
+              400,
+            );
+          }
+          const nextBudget = (filtered.budget_cents as number | undefined) ?? existing.budget_cents;
+          if (body.status === "active" && existing.status !== "active" && nextBudget <= 0) {
+            return apiError("INVALID_BUDGET", "Budget must be greater than 0 to activate.", 400);
+          }
+          filtered.status = body.status;
+        }
+
+        if (Object.keys(filtered).length === 0) {
+          const map = await audienceMap(admin);
+          return json({ campaign: formatCampaign(existing, map) });
+        }
+
+        const { data: updated, error: updateError } = await admin
+          .from("campaigns")
+          .update(filtered)
+          .eq("id", campaignId)
+          .eq("advertiser_id", advertiserId)
+          .select(SELECT_COLS)
+          .single();
+        if (updateError) return apiError("INTERNAL_ERROR", "Failed to update campaign.", 500);
+        const map = await audienceMap(admin);
+        return json({ campaign: formatCampaign(updated, map) });
+      }
+    }
+
+    return apiError("NOT_FOUND", "Not found.", 404);
+  } catch (err) {
+    console.error(err);
+    return apiError("INTERNAL_ERROR", "Internal server error.", 500);
   }
-  // PATCH /api/campaigns/:id - update a campaign (advertiser only)
-  if (method === "PATCH" && pathParts.length === 3 && pathParts[0] === "api" && pathParts[1] === "campaigns") {
-    try {
-      const campaignId = pathParts[2];
-      // Get the advertiser id from the advertiser profile linked to the user
-      const { data: advertiserProfile, error: advError } = await supabaseAdmin.from("advertisers").select("id").eq("profile_id", user.id).single();
-      if (advError) {
-        return handleError(advError, 404, "Advertiser profile not found");
-      }
-      const advertiserId = advertiserProfile.id;
-      // Check if the campaign exists and belongs to the advertiser
-      const { data: existingCampaign, error: existError } = await supabaseAdmin.from("campaigns").select("id").eq("id", campaignId).eq("advertiser_id", advertiserId).single();
-      if (existError || !existingCampaign) {
-        return new Response(JSON.stringify({
-          error: "Campaign not found or access denied"
-        }), {
-          status: 404,
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
-      }
-      const updates = await req.json();
-      // We'll allow updating: name, headline, description, cta, audience_id, budget_cents, status
-      // We'll not allow changing advertiser_id or the counts (those are updated via other endpoints)
-      const allowedUpdates = [
-        "name",
-        "headline",
-        "description",
-        "cta",
-        "audience_id",
-        "budget_cents",
-        "status"
-      ];
-      const filteredUpdates = {};
-      for (const key of allowedUpdates){
-        if (updates[key] !== undefined) {
-          filteredUpdates[key] = updates[key];
-        }
-      }
-      // Validate audience_id if provided
-      if (filteredUpdates.audience_id) {
-        const { data: audienceData, error: audienceError } = await supabaseAdmin.from("audiences").select("id").eq("id", filteredUpdates.audience_id).single();
-        if (audienceError) {
-          return new Response(JSON.stringify({
-            error: "Invalid audience"
-          }), {
-            status: 400,
-            headers: {
-              "Content-Type": "application/json"
-            }
-          });
-        }
-      }
-      // Validate status if provided
-      if (filteredUpdates.status) {
-        const validStatuses = [
-          "draft",
-          "active",
-          "paused",
-          "completed",
-          "archived"
-        ];
-        if (!validStatuses.includes(filteredUpdates.status)) {
-          return new Response(JSON.stringify({
-            error: "Invalid status"
-          }), {
-            status: 400,
-            headers: {
-              "Content-Type": "application/json"
-            }
-          });
-        }
-      }
-      // Validate budget_cents if provided
-      if (filteredUpdates.budget_cents !== undefined) {
-        if (typeof filteredUpdates.budget_cents !== "number" || filteredUpdates.budget_cents < 0) {
-          return new Response(JSON.stringify({
-            error: "Budget must be a non-negative integer"
-          }), {
-            status: 400,
-            headers: {
-              "Content-Type": "application/json"
-            }
-          });
-        }
-      }
-      const { data: updatedCampaign, error: updateError } = await supabaseAdmin.from("campaigns").update(filteredUpdates).eq("id", campaignId).eq("advertiser_id", advertiserId).select().single();
-      if (updateError) {
-        return handleError(updateError, 500, "Failed to update campaign");
-      }
-      // Insert a ledger event for campaign update? We'll skip for now.
-      // Get audience label for response
-      const { data: audienceData, error: audienceError } = await supabaseAdmin.from("audiences").select("label").eq("id", updatedCampaign.audience_id).single();
-      // Convert spend_milli_cents to spend_cents for response
-      const spendCents = Math.floor(updatedCampaign.spend_milli_cents / 1000);
-      return new Response(JSON.stringify({
-        id: updatedCampaign.id,
-        name: updatedCampaign.name,
-        headline: updatedCampaign.headline,
-        description: updatedCampaign.description,
-        cta: updatedCampaign.cta,
-        audience: audienceData ? audienceData.label : updatedCampaign.audience_id,
-        budget_cents: updatedCampaign.budget_cents,
-        spend_cents: spendCents,
-        impressions_count: updatedCampaign.impressions_count,
-        clicks_count: updatedCampaign.clicks_count,
-        conversions_count: updatedCampaign.conversions_count,
-        status: updatedCampaign.status,
-        created_at: updatedCampaign.created_at,
-        updated_at: updatedCampaign.updated_at
-      }), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-    } catch (err) {
-      return handleError(err);
-    }
-  }
-  // POST /api/campaigns - create a new campaign (advertiser only)
-  if (method === "POST" && pathParts.length === 2 && pathParts[0] === "api" && pathParts[1] === "campaigns") {
-    try {
-      // Get the advertiser id from the advertiser profile linked to the user
-      const { data: advertiserProfile, error: advError } = await supabaseAdmin.from("advertisers").select("id").eq("profile_id", user.id).single();
-      if (advError) {
-        return handleError(advError, 404, "Advertiser profile not found");
-      }
-      const advertiserId = advertiserProfile.id;
-      const { name, headline, description, cta, audience_id, budget_cents } = await req.json();
-      // Validate required fields
-      if (!name || !headline || !audience_id || budget_cents === undefined) {
-        return new Response(JSON.stringify({
-          error: "Missing required fields"
-        }), {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
-      }
-      // Validate audience_id
-      const { data: audienceData, error: audienceError } = await supabaseAdmin.from("audiences").select("id").eq("id", audience_id).single();
-      if (audienceError) {
-        return new Response(JSON.stringify({
-          error: "Invalid audience"
-        }), {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
-      }
-      // Validate budget_cents
-      if (typeof budget_cents !== "number" || budget_cents < 0) {
-        return new Response(JSON.stringify({
-          error: "Budget must be a non-negative integer"
-        }), {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
-      }
-      // Set default values
-      const finalCta = cta || "Learn more";
-      const finalDescription = description || null;
-      const { data: newCampaign, error: insertError } = await supabaseAdmin.from("campaigns").insert([
-        {
-          advertiser_id: advertiserId,
-          name,
-          headline,
-          description: finalDescription,
-          cta: finalCta,
-          audience_id,
-          budget_cents,
-          spend_milli_cents: 0,
-          impressions_count: 0,
-          clicks_count: 0,
-          conversions_count: 0,
-          status: "draft"
-        }
-      ]).select().single();
-      if (insertError) {
-        return handleError(insertError, 500, "Failed to create campaign");
-      }
-      // Get audience label for response
-      const { data: audienceData2, error: audienceError2 } = await supabaseAdmin.from("audiences").select("label").eq("id", newCampaign.audience_id).single();
-      // Convert spend_milli_cents to spend_cents (which is 0)
-      const spendCents = 0;
-      return new Response(JSON.stringify({
-        id: newCampaign.id,
-        name: newCampaign.name,
-        headline: newCampaign.headline,
-        description: newCampaign.description,
-        cta: newCampaign.cta,
-        audience: audienceData2 ? audienceData2.label : newCampaign.audience_id,
-        budgetCents: newCampaign.budget_cents,
-        spendCents: spendCents,
-        impressions: newCampaign.impressions_count,
-        clicks: newCampaign.clicks_count,
-        conversions: newCampaign.conversions_count,
-        status: newCampaign.status,
-        createdAt: newCampaign.created_at,
-        updatedAt: newCampaign.updated_At
-      }), {
-        status: 201,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-    } catch (err) {
-      return handleError(err);
-    }
-  }
-  // If none of the above matched, return 404
-  return new Response(JSON.stringify({
-    error: "Not found"
-  }), {
-    status: 404,
-    headers: {
-      "Content-Type": "application/json"
-    }
-  });
 });

@@ -3270,7 +3270,7 @@ body {
   background-attachment: fixed;
 }
 
-/* §25 — the instrument drum: one axis, nine surfaces, real WebGL.
+/* §25 — the instrument drum: one axis, eight surfaces, real WebGL.
    A sticky cinematic stage: `.orbit` owns the scroll distance (the
    cinematic duration), `.orbit__sticky` is the pinned 100vh frame the
    drum plays inside, and it releases naturally when the stage ends.
@@ -3310,23 +3310,6 @@ body {
   pointer-events: none;
 }
 
-.orbit__boot {
-  position: absolute;
-  left: 50%;
-  top: 16px;
-  transform: translateX(-50%);
-  font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--ink-4);
-  transition: opacity 0.6s var(--ease-ui);
-}
-
-.orbit[data-state='ready'] .orbit__boot {
-  opacity: 0;
-}
-
 /* Only ever rendered when the browser has no WebGL: a flat strip in
    the drum's own language, so the region is never blank. */
 .orbit__fallback {
@@ -3354,24 +3337,6 @@ body {
 .orbit__fallback i {
   font-style: normal;
   color: var(--amber-dim);
-}
-
-/* Caption floats over the pinned frame — instrumentation, not chrome. */
-.orbit__caption {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 16px;
-  z-index: 2;
-  margin: 0;
-  padding: 0;
-  text-align: center;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-4);
-  pointer-events: none;
 }
 
 /* Scroll-position instrument: one thin row per drum surface. White
@@ -3431,28 +3396,9 @@ body {
   background: var(--amber);
 }
 
-/* journey instrument rail */
+/* journey rail */
 .journey {
   padding: 14px;
-}
-
-.journey__status {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-
-.journey__status i {
-  width: 6px;
-  height: 6px;
-  background: var(--signal);
-  animation: clir-blink 2.2s step-end infinite;
 }
 
 .journey__link {
@@ -3574,10 +3520,6 @@ body {
   .orbit {
     height: 1120vh;
   }
-  .orbit__caption {
-    font-size: 9px;
-    letter-spacing: 0.16em;
-  }
   .orbit__progress {
     left: 8px;
     gap: 6px;
@@ -3595,7 +3537,6 @@ body {
   .scene__inner::after {
     opacity: 1;
   }
-  .journey__status i,
   .terminal__light--live,
   .flow__node--hub,
   .activity__row {
@@ -3606,9 +3547,6 @@ body {
   .stage,
   .scene__inner {
     transform: none !important;
-  }
-  .orbit__caption {
-    color: var(--ink-3);
   }
   /* Reduced motion: no pin, no scroll cinema — one static frame. */
   .orbit {

@@ -24,3 +24,10 @@ dist-ssr
 *.sw?
 .firecrawl/
 .env
+/shots
+
+# One-off throwaway repair/probe scripts from the backend rewrite. The codemod
+# rewrites src/lib/economyStore.js into a known-broken state, so it must not
+# come back through a checkout.
+scripts/fix-economy-store.py
+scripts/orbit-probe.mjs
