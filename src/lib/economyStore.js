@@ -123,12 +123,14 @@ export function disconnectAccount() {
  * ------------------------------------------------------------------ */
 
 /**
- * Candidates for a campaigns-edge-function URL.
+ * Candidate base URLs for the campaigns edge function, in preferred order.
  * The Supabase gateway strips /functions/v1/<fn> from the path, so
- * requesting <fn>/api/campaigns (or <fn>/campaigns) lands inside the
- * campaigns function, which parses those prefixes itself.
+ * <fn>/api/campaigns (or <fn>/campaigns) lands inside the campaigns
+ * function, which parses those prefixes itself. The same base serves the
+ * collection route (GET/POST with an empty rest path) and the per-campaign
+ * routes (/<id>, /<id>/select, /<id>/archive).
  */
-function campaignsCandidates() {
+function campaignBases() {
   const raw = String(API_BASE || '').replace(/\/+$/, '')
   if (!raw) return ['/api/campaigns']
   if (raw.endsWith('/functions/v1')) {
@@ -139,6 +141,20 @@ function campaignsCandidates() {
     ]
   }
   return [`${raw}/api/campaigns`, `${raw}/campaigns/api/campaigns`]
+}
+
+/**
+ * Candidates for a campaigns-edge-function URL.
+ */
+function campaignsCandidates() {
+  return campaignBases()
+}
+
+/**
+ * Candidates for a sub-route of one campaign, e.g. '<id>/select'.
+ */
+function campaignResourceCandidates(id, suffix) {
+  return campaignBases().map((base) => `${base}/${id}/${suffix}`)
 }
 
 /**
@@ -158,22 +174,89 @@ async function apiGetActiveCampaign() {
 }
 
 async function updateActiveCampaignInAPI(id) {
-  return await apiRequestCandidates(
-    [API_BASE ? `${API_BASE}/campaigns/${id}/select` : `/api/campaigns/${id}/select`],
-    { method: 'POST' },
-  )
+  return await apiRequestCandidates(campaignResourceCandidates(id, 'select'), {
+    method: 'POST',
+  })
 }
 
 async function createCampaignInAPI(campaignData) {
-  return await apiRequestCandidates(
-    [API_BASE ? `${API_BASE}/campaigns` : '/api/campaigns'],
-    { method: 'POST', body: JSON.stringify(campaignData) },
-  )
+  return await apiRequestCandidates(campaignBases(), {
+    method: 'POST',
+    body: JSON.stringify(campaignData),
+  })
+}
+
+export function selectCampaign(id) {
+  // Call API to set active campaign
+  updateActiveCampaignInAPI(id)
+    .then(() => {
+      // Update snapshot after success
+      replace({ activeCampaignId: id })
+    })
+    .catch(error => {
+      console.error('Failed to select campaign:', error)
+      // Optionally, show a notification to the user
+    })
+}
+
+export function createCampaign(input) {
+  // Transform input to match API expectations
+  const campaignData = {
+    name: input.name,
+    headline: input.headline,
+    description: input.description,
+    cta: input.cta || 'Learn more',
+    audience: input.audience,
+    budgetCents: input.budgetCents,
+  }
+
+  createCampaignInAPI(campaignData)
+    .then(createdCampaign => {
+      // Add the new campaign to the snapshot
+      replace(prev => ({
+        campaigns: [...prev.campaigns, createdCampaign],
+        activeCampaignId: createdCampaign.id,
+      }))
+    })
+    .catch(error => {
+      console.error('Failed to create campaign:', error)
+    })
 }
 
 /* ------------------------------------------------------------------ *
  * Event tracking (impressions / clicks / conversions)
  * ------------------------------------------------------------------ */
+
+/** Mirrors isUuid() in supabase/functions/_shared/http.ts. */
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+function isCampaignUuid(value) {
+  return typeof value === 'string' && UUID_RE.test(value)
+}
+
+/**
+ * One identifier per browser session: groups a developer's events and keys
+ * the (session x kind x campaign) idempotency key. Held in sessionStorage so
+ * a reload does not re-send an impression the backend already accepted, and so
+ * a real reload is not a free way to reset frequency. Falls back to an
+ * in-memory value where storage is unavailable (private mode, blocked
+ * cookies), which is safe — it only weakens dedupe within that tab.
+ */
+const EVENT_SESSION_STORAGE_KEY = 'clirevenue.eventSessionId'
+const eventSessionId = (() => {
+  const fallback = () =>
+    `sess_${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`
+  try {
+    const existing = window.sessionStorage.getItem(EVENT_SESSION_STORAGE_KEY)
+    if (existing) return existing
+    const generated = window.crypto?.randomUUID?.() ?? fallback()
+    window.sessionStorage.setItem(EVENT_SESSION_STORAGE_KEY, generated)
+    return generated
+  } catch {
+    return fallback()
+  }
+})()
 
 /**
  * Candidates for the events-edge-function URL, in preferred order.
@@ -275,7 +358,7 @@ export function recordImpression(campaignId) {
   if (!payload) return // demo seed / non-UUID campaign: nothing billable
 
   recordImpressionInAPI(payload)
-    .then((res) => {
+    .then(() => {
       // On success — or a deduplicated earlier attempt — one real
       // impression was counted by the backend, so the snapshot mirrors it.
       replace(prev => ({
@@ -381,6 +464,131 @@ export function getActiveCampaign(snap = snapshot) {
  * (Console.jsx) so wallet, activity list and ledger move off one
  * clock — a local settlement simulation against SETTLEMENT_MS.
  */
+export function settlePending(now = Date.now()) {
+  const due = (snapshot.rewards || []).filter(
+    (r) =>
+      r.status === 'accrued' &&
+      now - Date.parse(r.createdAt || 0) >= SETTLEMENT_MS,
+  )
+  if (!due.length) return 0
+  const dueIds = new Set(due.map((r) => r.id))
+  replace((prev) => ({
+    rewards: prev.rewards.map((r) =>
+      dueIds.has(r.id)
+        ? { ...r, status: 'available', settledAt: new Date(now).toISOString() }
+        : r,
+    ),
+  }))
+  return due.length
+}
+
+export function rewardActivity(limit = 6) {
+  const rows = [
+    ...snapshot.rewards.map(r => ({
+      id: r.id,
+      kind: 'reward',
+      title: 'Sponsored interaction',
+      meta: getCampaignNameById(r.campaignId),
+      amountCents: r.amountCents,
+      status: r.status,
+      at: r.createdAt,
+      simulated: false,
+    })),
+    ...snapshot.payouts.map(p => ({
+      id: p.id,
+      kind: 'payout',
+      title: 'Payout requested',
+      meta: getProviderLabel(p.providerId),
+      amountCents: -p.amountCents,
+      status: p.status,
+      at: p.createdAt,
+      simulated: false,
+    })),
+  ]
+  return rows.sort((a, b) => b.at - a.at).slice(0, limit)
+}
+
+/* ------------------------------------------------------------------ *
+ * Payout draft (mock functions)
+ * ------------------------------------------------------------------ */
+
+export function openPayoutDraft(amountCents, providerId) {
+  replace({ payoutDraft: { amountCents, providerId, open: true } })
+}
+
+export function closePayoutDraft() {
+  replace({ payoutDraft: { ...snapshot.payoutDraft, open: false } })
+}
+
+export function setPayoutProvider(providerId) {
+  replace({ payoutDraft: { ...snapshot.payoutDraft, providerId } })
+}
+
+export function requestPayout() {
+  const { amountCents, providerId } = snapshot.payoutDraft
+  const balances = economyBalances()
+
+  // Check if connected (we'll rely on the API to check auth, but we can do a quick check)
+  if (!snapshot.account.connected || amountCents <= 0 || amountCents > balances.availableCents) {
+    return null
+  }
+
+  // We'll return a temporary object immediately and update the snapshot after the API call
+  const tempId = `temp_${Date.now()}`
+  const pendingPayout = {
+    id: tempId,
+    accountId: snapshot.account.id,
+    amountCents,
+    providerId,
+    status: 'requested',
+    at: Date.now(),
+    simulated: true,
+  }
+  const pendingTransaction = {
+    id: `txn_${tempId}`,
+    type: 'payout',
+    amountCents,
+    providerId,
+    status: 'requested',
+    at: Date.now(),
+    simulated: true,
+  }
+
+  // Update the snapshot optimistically
+  replace(prev => ({
+    payouts: [...prev.payouts, pendingPayout],
+    payoutDraft: { amountCents: 0, providerId: prev.payoutDraft.providerId, open: false },
+  }))
+
+  // Now make the API call to persist it
+  requestPayoutInAPI({ amountCents, providerId })
+    .then(result => {
+      // Replace the temporary payout with the real one
+      replace(prev => ({
+        payouts: prev.payouts.map(p =>
+          p.id === tempId ? result.payout : p
+        ),
+        // We don't store transactions in the snapshot, so we don't need to update them here.
+        // The ledger will be updated via a separate mechanism? We don't have a ledger endpoint.
+        // We'll add a ledger event for the payout if we had a ledger endpoint, but we don't.
+        // For now, we'll leave the ledger as is.
+      }))
+    })
+    .catch(error => {
+      console.error('Failed to request payout:', error)
+      // Rollback the optimistic update
+      replace(prev => ({
+        payouts: prev.payouts.filter(p => p.id !== tempId),
+        payoutDraft: { ...prev.payoutDraft, open: false },
+      }))
+    })
+
+  // Return the pending object to match the mock store's return value
+  return {
+    payout: pendingPayout,
+    transaction: pendingTransaction,
+  }
+}
 
 async function fetchCampaigns() {
   try {
@@ -481,18 +689,12 @@ async function fetchAccount() {
 
 /* ------------------------------------------------------------------ *
  * API wrapper functions
+ *
+ * apiGetCampaigns / apiGetActiveCampaign / createCampaignInAPI and
+ * updateActiveCampaignInAPI live with the campaign section above, where the
+ * candidate-route helpers they use are defined. These are the reward, auth
+ * and event wrappers.
  * ------------------------------------------------------------------ */
-
-async function apiGetCampaigns() {
-  return await apiRequestCandidates(campaignsCandidates(), { method: 'GET' })
-}
-
-async function apiGetActiveCampaign() {
-  return await apiRequestCandidates(
-    [API_BASE ? `${API_BASE}/get_active_campaign` : '/api/active-campaign'],
-    { method: 'GET' },
-  )
-}
 
 async function apiGetRewards() {
   return await apiRequestCandidates(
@@ -505,20 +707,6 @@ async function apiGetAuthStatus() {
   return await apiRequestCandidates(
     [API_BASE ? `${API_BASE}/auth` : '/api/auth/status'],
     { method: 'GET' },
-  )
-}
-
-async function updateActiveCampaignInAPI(id) {
-  return await apiRequestCandidates(
-    [API_BASE ? `${API_BASE}/campaigns/${id}/select` : `/api/campaigns/${id}/select`],
-    { method: 'POST' },
-  )
-}
-
-async function createCampaignInAPI(campaignData) {
-  return await apiRequestCandidates(
-    [API_BASE ? `${API_BASE}/campaigns` : '/api/campaigns'],
-    { method: 'POST', body: JSON.stringify(campaignData) },
   )
 }
 
@@ -541,7 +729,13 @@ async function requestPayoutInAPI(data) {
   )
 }
 
-// Generic API request function (kept for call sites that still need it)
+// Generic API request function. Every live call site now goes through
+// apiRequestCandidates, which fails through 404/405 across candidate routes
+// and attaches .status/.payload to its errors — the shape the duplicate-event
+// handling above reads. This helper throws a plain Error with no .status, so
+// it is intentionally retained-but-unused rather than silently adopted by a
+// new call site. Delete it once the routing candidates are settled.
+// eslint-disable-next-line no-unused-vars
 async function apiRequest(endpoint, options = {}) {
   const session = await supabase.auth.getSession()
   const token = session.data.session?.access_token
