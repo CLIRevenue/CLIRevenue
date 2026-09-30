@@ -47,10 +47,8 @@ function TheWait() {
         <div className="hero__grid">
           <div className="hero__copy">
             <p className="hero__body">
-              Output is sacred. Scripts parse it, pipes consume it, people diff
-              it. So the advertisement does not go in the output — it goes in a
-              permanent region between the transcript and the prompt, and it
-              shares what it earns.
+              Output is sacred. The ad sits between transcript and prompt —
+              never in stdout — and shares what it earns.
             </p>
 
             <dl className="hero__facts">

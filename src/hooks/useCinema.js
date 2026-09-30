@@ -532,8 +532,8 @@ function beatFor(id, timeline, { pick, at, span }) {
    The last move in the chapter is subtraction, and it is the one place
    where the film leaves a scene by making less of it. The rows go
    first, and then the live light goes out — and only the light. Fading
-   the whole terminal instead would leave the last line of output as
-   small grey text in a static frame, which reads as a disabled control
+    the whole terminal instead would leave the last line of output as
+    small dim text in a static frame, which reads as a disabled control
    rather than a program that is still thinking. A nine-pixel light
    going out is the same information, and it carries no contrast
    obligation with it. */
@@ -588,10 +588,10 @@ function moneyBeat(timeline, { pick, at, span }) {
   /* The wires are drawn, not faded in. A diagram that assembles by
      having its own opacity ramp up looks like a dissolve, and the
      shape of the flow is the whole point of this scene — the line has
-     to arrive as a line. The stroke is already amber in the markup:
-     the draw is the animation, and the wire arriving in its final
-     colour is simpler than a line that draws in grey and then
-     ignites. */
+     to arrive as a line. The stroke already carries its final palette
+     colour in the markup: the draw is the animation, and the wire
+     arriving in its final colour is simpler than a line that draws
+     dim and then ignites. */
   const wires = pick('.flow__wire')
   const heads = pick('.flow__arrowhead')
   const step = span(0.07)

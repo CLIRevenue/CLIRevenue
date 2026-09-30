@@ -67,8 +67,6 @@ function AdSlot() {
           keeps a scrubbed inline transform from permanently pinning the
           hover lift out of reach. */}
       <div className="adslot__plate">
-        <span className="adslot__scan" aria-hidden="true" />
-
         <div className="adslot__rail">
           <span className="adslot__label">{adSlot.label}</span>
           <span className="adslot__dot" />

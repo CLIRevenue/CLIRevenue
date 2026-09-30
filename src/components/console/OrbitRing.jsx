@@ -8,12 +8,11 @@
    runtime — nine premium terminal cards painted into one local
    atlas. Each CLI card carries the tool's real vector logo, name,
    category, command, terminal output and status. The CLIRevenue
-   dark system end to end: #050505 / #0A0A0A blacks, #151515–#2B2B2B
-   graphite surfaces, #3A3A3A borders, #555555–#858585 muted ink,
-   #D0D0D0 soft text, IBM Plex Mono terminal readouts, restrained
-   amber instrumentation (#F5B942) — the cylinder reads graphite,
-   never gold. No red: red stays reserved for exceptional status
-   elsewhere.
+   black/white/red system end to end: pure #000000 surfaces,
+   #ffffff ink, white hairline frames, IBM Plex Mono terminal
+   readouts and one red accent (#ff1f2d). Nothing else is a colour —
+   the cylinder reads as white-and-red instrumentation emerging from
+   a black void.
 
    `.orbit` owns the scroll distance (the cinematic duration),
    `.orbit__sticky` pins a 100vh frame while the section is in play,
@@ -38,7 +37,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import {
   Camera,
   Cylinder,
-  Geometry,
   Mesh,
   Program,
   Renderer,
@@ -121,13 +119,13 @@ function drawLogoMark(ctx, kind, bx, by, box) {
   ctx.scale(s, s)
   const fills = {
     claude: '#D97757',
-    openai: '#F0F0F0',
-    cline: '#F0F0F0',
+    openai: '#ffffff',
+    cline: '#ffffff',
     gemini: '#5B8DEF',
-    copilot: '#F0F0F0',
-    ollama: '#F0F0F0',
+    copilot: '#ffffff',
+    ollama: '#ffffff',
   }
-  ctx.fillStyle = fills[kind] || '#F0F0F0'
+  ctx.fillStyle = fills[kind] || '#ffffff'
   ctx.fill(logoPath(kind))
   ctx.restore()
 }
@@ -274,20 +272,19 @@ const SURFACES = [
   },
 ]
 
-/* The palette the drum is built from — CLIRevenue's dark system:
-   black/graphite surfaces, white ink, grey instrumentation, borders
-   at #3A3A3A, one restrained amber. Not a gold treatment: amber only
-   marks instrumentation (rule head, prompt glyphs, status dot, the
-   sponsored plate's top edge). */
-const INK = '#D0D0D0' /* soft text — titles and marks (brightest ink) */
-const SUB = '#D0D0D0' /* primary text — brand, command, status */
-const DIM = '#858585' /* secondary text — terminal output */
-const FAINT = '#555555' /* micro metadata */
-const HAIR = '#3A3A3A' /* borders, frames */
-const PANEL = '#151515' /* graphite panel */
-const DEEP = '#0A0A0A' /* deep surface */
-const VOID = '#050505' /* near-black page */
-const AMBER = '#F5B942' /* the single accent — restrained */
+/* -------------------------------------------------------------
+   The palette the drum is built from — CLIRevenue's locked system:
+   black surfaces, white ink, one red accent. Nothing else is a
+   colour. Red marks instrumentation (rule head, prompt glyphs,
+   status dot, the sponsored plate's top edge).
+   ------------------------------------------------------------- */
+const INK = '#ffffff' /* titles and marks */
+const SUB = '#ffffff' /* primary text — brand, command, status */
+const DIM = 'rgba(255, 255, 255, 0.78)' /* secondary text — terminal output */
+const FAINT = 'rgba(255, 255, 255, 0.6)' /* micro metadata */
+const HAIR = 'rgba(255, 255, 255, 0.45)' /* borders, frames */
+const VOID = '#000000' /* page black */
+const AMBER = '#ff1f2d' /* the single accent — red */
 
 /* Geometry: nine surfaces share a circumference of 2πr, so a radius of
    3 against a height of 2.6 gives each wrapped surface a tall,
@@ -418,18 +415,14 @@ function wrapText(ctx, text, x, y, maxW, lh) {
 }
 
 function panelBase(ctx, x, y, w, h) {
-  /* CLIRevenue graphite: #202020 crown → #151515 body → #0A0A0A
-     foot. Reads clearly against the #050505 page without ever
-     becoming a bright surface. */
-  const grad = ctx.createLinearGradient(x, y, x, y + h)
-  grad.addColorStop(0, '#202020')
-  grad.addColorStop(0.45, PANEL)
-  grad.addColorStop(1, DEEP)
-  ctx.fillStyle = grad
+  /* Pure black. The drum emerges from the page's own black — no
+     graphite steps, no gradient that could read as a gray wash. */
+  ctx.fillStyle = '#000000'
   ctx.fillRect(x, y, w, h)
 
-  /* Thin engineering grid — the surface reads as a machined panel. */
-  ctx.strokeStyle = 'rgba(58, 58, 58, 0.45)'
+  /* Vertical structure only — the machined-panel read. Horizontal
+     rows were removed: they sliced every surface into bands. */
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)'
   ctx.lineWidth = 1
   for (let gx = x + 64; gx < x + w; gx += 64) {
     ctx.beginPath()
@@ -437,22 +430,16 @@ function panelBase(ctx, x, y, w, h) {
     ctx.lineTo(gx, y + h)
     ctx.stroke()
   }
-  for (let gy = y + 64; gy < y + h; gy += 64) {
-    ctx.beginPath()
-    ctx.moveTo(x, gy)
-    ctx.lineTo(x + w, gy)
-    ctx.stroke()
-  }
 
   /* Frame, plus a hairline inset. */
   ctx.strokeStyle = HAIR
   ctx.lineWidth = 2
   ctx.strokeRect(x + 12, y + 12, w - 24, h - 24)
-  ctx.strokeStyle = 'rgba(208, 208, 208, 0.06)'
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)'
   ctx.lineWidth = 1
   ctx.strokeRect(x + 24, y + 24, w - 48, h - 48)
 
-  /* Corner ticks in graphite — two corners only, never gold. */
+  /* Corner ticks — two corners only. */
   ctx.fillStyle = FAINT
   ctx.fillRect(x + 12, y + 12, 30, 3)
   ctx.fillRect(x + 12, y + 12, 3, 30)
@@ -492,7 +479,7 @@ function drawTile(ctx, x, y, w, h, surface, events) {
   const box = 76
   const bx = left
   const by = y + 94
-  ctx.fillStyle = 'rgba(10, 10, 10, 0.72)'
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
   ctx.fillRect(bx, by, box, box)
   ctx.strokeStyle = HAIR
   ctx.lineWidth = 2
@@ -531,7 +518,7 @@ function drawTile(ctx, x, y, w, h, surface, events) {
   const sy = y + 254
   const sw = w - 48
   const sh = 320
-  ctx.fillStyle = 'rgba(5, 5, 5, 0.9)'
+  ctx.fillStyle = '#000000'
   ctx.fillRect(sx, sy, sw, sh)
   ctx.strokeStyle = HAIR
   ctx.lineWidth = 1.5
@@ -548,7 +535,7 @@ function drawTile(ctx, x, y, w, h, surface, events) {
   ctx.fillStyle = HAIR
   ctx.fillRect(sx, sy + 36, sw, 1)
 
-  /* Invocation — the tool's real command, amber sigil. The first
+  /* Invocation — the tool's real command, red sigil. The first
      event to print as the surface enters its reveal window. */
   if (cmdOn) {
     ctx.fillStyle = AMBER
@@ -560,7 +547,7 @@ function drawTile(ctx, x, y, w, h, surface, events) {
 
   /* Terminal output — each line prints only once its scroll event
      has been reached (lineCount comes from tileCounts). The prompt
-     glyph is the only amber in the block; the ✓ line resolves
+     glyph is the only red in the block; the ✓ line resolves
      brighter so completion reads as completion. */
   surface.lines.slice(0, lineCount).forEach((line, li) => {
     const ty = sy + (surface.command ? 132 : 96) + li * 38
@@ -602,7 +589,7 @@ function drawTile(ctx, x, y, w, h, surface, events) {
 }
 
 /* The sponsored surface — the same semantics SponsoredSlot renders:
-   disclosure rail (label · advertiser · Ad · chip), the amber logo
+   disclosure rail (label · advertiser · Ad · chip), the red logo
    plate with the brand initial, headline, support copy, the meta
    line (category · ui region · not stdout · disclosure), and the
    CTA. The drum shows both the CLI ecosystem and the CLIRevenue
@@ -640,13 +627,13 @@ function drawSponsoredTile(ctx, x, y, w, h, slot) {
   ctx.font = '500 13px "IBM Plex Mono", ui-monospace, monospace'
   ctx.fillText(String(slot.advertiser).toUpperCase(), left + labelW + 26, y + 70)
 
-  /* Disclosure chip (amber plate, dark text) + Ad mark. */
+  /* Disclosure chip (red plate, dark text) + Ad mark. */
   const chipText = String(slot.disclosure).toUpperCase()
   ctx.font = '600 11px "IBM Plex Mono", ui-monospace, monospace'
   const chipW = ctx.measureText(chipText).width + 14
   ctx.fillStyle = AMBER
   ctx.fillRect(right - chipW, y + 54, chipW, 22)
-  ctx.fillStyle = '#0A0A0A'
+  ctx.fillStyle = '#000000'
   ctx.fillText(chipText, right - chipW + 7, y + 70)
 
   ctx.letterSpacing = '0.2em'
@@ -655,16 +642,16 @@ function drawSponsoredTile(ctx, x, y, w, h, slot) {
   ctx.fillText('AD', right - chipW - 34, y + 70)
   ctx.letterSpacing = '0px'
 
-  /* The brand plate: graphite square with an amber frame and an
-     amber initial — the same mark SponsoredSlot's logo box shows,
+  /* The brand plate: black square with a red frame and a
+     red initial — the same mark SponsoredSlot's logo box shows,
      in the cylinder's own material language. */
   const box = 64
   const bx = left
   const by = y + 104
   ctx.save()
-  ctx.shadowColor = 'rgba(245, 185, 66, 0.30)'
+  ctx.shadowColor = 'rgba(255, 31, 45, 0.30)'
   ctx.shadowBlur = 12
-  ctx.fillStyle = '#202020'
+  ctx.fillStyle = '#000000'
   ctx.fillRect(bx, by, box, box)
   ctx.strokeStyle = AMBER
   ctx.lineWidth = 2
@@ -712,17 +699,14 @@ function drawSponsoredTile(ctx, x, y, w, h, slot) {
   ctx.fillText(meta.toUpperCase(), left, supportY + 30)
   ctx.letterSpacing = '0px'
 
-  /* CTA pill: the same bordered action the component uses. */
+  /* CTA pill: the red action, white label — the ad's one accent. */
   const ctaLabel = `${slot.action} ↗`
-  ctx.font = '500 16px "Space Grotesk", system-ui, sans-serif'
+  ctx.font = '600 16px "Space Grotesk", system-ui, sans-serif'
   const ctaW = ctx.measureText(ctaLabel).width + 28
   const ctaY = supportY + 56
-  ctx.fillStyle = 'rgba(208, 208, 208, 0.04)'
+  ctx.fillStyle = AMBER
   ctx.fillRect(left, ctaY, ctaW, 44)
-  ctx.strokeStyle = FAINT
-  ctx.lineWidth = 1
-  ctx.strokeRect(left + 0.5, ctaY + 0.5, ctaW - 1, 43)
-  ctx.fillStyle = INK
+  ctx.fillStyle = '#ffffff'
   ctx.fillText(ctaLabel, left + 14, ctaY + 28)
 
   /* Footer instrumentation. */
@@ -805,8 +789,8 @@ function buildAtlas(gl) {
     front surface the hero — side panels fall away in brightness and
     contrast (roughly half opacity), the rear of the drum nearly
     disappears — and the end caps get their own near-black treatment
-    with a restrained amber hairline. Red never appears here: amber
-    is the only accent, and only as an edge whisper. */
+    with a restrained red hairline. Red stays an edge whisper here,
+    never a fill — the environment is black. */
 
 const SURFACE_VERTEX = `
 attribute vec3 position;
@@ -852,71 +836,32 @@ void main() {
   /* Front panel is the hero: falloff so side panels sit around
      half brightness and the back of the drum nearly disappears. */
   float shade = pow(facing, 1.75);
-  vec3 col = tex * (0.09 + 1.04 * shade);
+  vec3 col = tex * (0.12 + 1.05 * shade);
   col *= 1.0 + 0.13 * smoothstep(0.70, 1.0, facing) * wall;
 
   /* Subtle edge lighting: a neutral rim so the silhouette reads as
      a machined object against the page — definition, never glow. */
-  col += vec3(0.72, 0.72, 0.72) * pow(1.0 - facing, 3.0) * 0.05 * wall;
+  col += vec3(1.0, 1.0, 1.0) * pow(1.0 - facing, 3.0) * 0.05 * wall;
 
   /* Vertical dissolve, so the drum has no hard top or bottom edge. */
   float edge = smoothstep(0.0, 0.14, vUv.y) * smoothstep(0.0, 0.14, 1.0 - vUv.y);
   col *= mix(1.0, 0.30 + 0.70 * edge, wall);
 
-  /* End caps: a near-black disc with a faint amber hairline. */
-  vec3 capCol = vec3(0.043, 0.043, 0.043)
-    + vec3(0.96, 0.72, 0.26) * smoothstep(0.42, 0.495, length(vUv - 0.5)) * 0.09;
+  /* End caps: a near-black disc with a faint red hairline. */
+  vec3 capCol = vec3(0.0)
+    + vec3(1.0, 0.122, 0.176) * smoothstep(0.42, 0.495, length(vUv - 0.5)) * 0.12;
   capCol *= 0.55 + 0.45 * facing;
   col = mix(col, capCol, vCap);
 
-  /* A whisper of amber at the grazing silhouette — hint, never glow.
+  /* A whisper of red at the grazing silhouette — hint, never glow.
      (No scanlines: the old sin() banding is deliberately gone — the
-     surface is clean graphite, not a CRT.) */
-  col += vec3(0.96, 0.72, 0.26) * pow(1.0 - facing, 3.5) * 0.02 * wall;
+     surface is clean black, not a CRT.) */
+  col += vec3(1.0, 0.122, 0.176) * pow(1.0 - facing, 3.5) * 0.025 * wall;
 
   float alpha = uReveal * mix(1.0, edge, wall * 0.9);
   gl_FragColor = vec4(col, alpha);
 }
 `
-
-const LINE_VERTEX = `
-attribute vec3 position;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
-void main() {
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-}
-`
-
-const LINE_FRAGMENT = `
-precision highp float;
-uniform vec3 uColor;
-uniform float uOpacity;
-void main() {
-  gl_FragColor = vec4(uColor, uOpacity);
-}
-`
-
-/* Line geometry helpers. Ticks ride the drum so the rotation stays
-   legible even with a surface edge-on; the rings hold station around
-   it. Both are drawn with gl.LINES so they remain hairlines at any
-   zoom — neutral graphite, opacity held in the 0.05–0.12 band so the
-   instrumentation never competes with the panels. */
-/* Line geometry helper: the station rings that hold station around
-   the drum (there are no radial spokes — the old tick rays are gone).
-   Drawn with gl.LINES so they remain hairlines at any zoom — neutral
-   graphite, opacity held around 0.06 so the instrumentation never
-   competes with the panels. */
-function ringGeometry(gl, { segments, radius, y }) {
-  const position = new Float32Array(segments * 2 * 3)
-  for (let i = 0; i < segments; i += 1) {
-    const a0 = (i / segments) * Math.PI * 2
-    const a1 = ((i + 0.55) / segments) * Math.PI * 2
-    position.set([Math.sin(a0) * radius, y, Math.cos(a0) * radius], i * 6)
-    position.set([Math.sin(a1) * radius, y, Math.cos(a1) * radius], i * 6 + 3)
-  }
-  return new Geometry(gl, { position: { size: 3, data: position } })
-}
 
 /* -------------------------------------------------------------
     The component.
@@ -1045,25 +990,9 @@ function OrbitRing() {
     const drumMesh = new Mesh(gl, { geometry: drumGeometry, program: surfaceProgram })
     drumMesh.setParent(drum)
 
-    /* Station rings are instrumentation, never a light show: neutral
-       graphite hairlines held well below the panels' presence so
-       they can never compete. No radial particle/ray geometry is
-       rendered — the cylinder is grid, structure and lighting only. */
-    const ringProgram = new Program(gl, {
-      vertex: LINE_VERTEX,
-      fragment: LINE_FRAGMENT,
-      uniforms: { uColor: { value: [0.5, 0.5, 0.5] }, uOpacity: { value: 0.06 } },
-      transparent: true,
-    })
-
-    const ringGeometries = [
-      ringGeometry(gl, { segments: 140, radius: RADIUS * 1.42, y: 0 }),
-      ringGeometry(gl, { segments: 90, radius: RADIUS * 1.2, y: 0 }),
-    ]
-    ringGeometries.forEach((geometry) => {
-      const mesh = new Mesh(gl, { geometry, program: ringProgram, mode: gl.LINES })
-      mesh.setParent(rig)
-    })
+    /* Station rings removed: circles around the drum read as
+       horizontal lines across the carousel. The cylinder is the
+       only geometry — panels, their vertical grid and lighting. */
 
     /* --------------------------------------------------------
        Frame production.
@@ -1149,7 +1078,6 @@ function OrbitRing() {
       rig.scale.set(s, s, s)
       drum.rotation.y = angle
       surfaceProgram.uniforms.uReveal.value = reveal
-      ringProgram.uniforms.uOpacity.value = 0.06 * reveal
 
       renderer.render({ scene, camera })
 
@@ -1296,7 +1224,7 @@ function OrbitRing() {
           )}
         </div>
         {/* Scroll-position instrument: one row per drum surface,
-            graphite track, grey fill, amber only on the surface
+            white track, white fill, red only on the surface
             currently at dead front. Orthogonal by design — this must
             never become radial spokes. Filled imperatively from the
             render loop; no React re-renders per frame. */}

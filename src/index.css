@@ -1,74 +1,83 @@
 /* =============================================================
    CLIRevenue — design tokens
-   Brutalist cyber-editorial: black / paper / grey / one signal red.
-   Hard 1px rules, inverted paper panels, oversized geometric display
-   type, technical micro-labels. Four colours and no fifth.
+   Brutalist cyber-editorial: black / white / red.
+   Hard 1px rules, inverted white panels, oversized geometric display
+   type, technical micro-labels. Three colours and no fourth.
    ============================================================= */
 
 :root {
   /* ---- §24 palette ----------------------------------------
-     Black, paper, grey, red. Nothing else is a colour.
+     Black, white, red. Nothing else is a colour.
 
      --signal is a *flag*, not a highlight. Red appears where the
      system needs to name something: a label, a number, a rule, a
      live state. It is never used to decorate a surface, and it is
      never used for a paragraph. */
-  --bg: #050505;
-  --surface: #1c1c1c;
-  --paper: #e4e4e4;
-  --signal: #fc282b;
-  /* --signal-text is the reading-weight red: it clears AA on both
-     --surface (5.14:1) and --bg (6.15:1), where pure --signal is
-     3.9:1 and therefore display-only. */
-  --signal-text: #ff4a4d;
-  --signal-dark: #a80f12;
-  --signal-soft: rgba(252, 40, 43, 0.1);
-  --muted: #8a8a8a;
-  --text: #e4e4e4;
-  --text-muted: #a8a8a8;
-  --border: rgba(228, 228, 228, 0.16);
-  --border-strong: #e4e4e4;
+  --cli-black: #000000;
+  --cli-white: #ffffff;
+  --cli-red: #ff1f2d;
+
+  --bg: #000000;
+  --surface: #000000;
+  --paper: #ffffff;
+  --signal: #ff1f2d;
+  --signal-text: #ff1f2d;
+  --signal-dark: #ff1f2d;
+  --signal-soft: rgba(255, 31, 45, 0.14);
+  --muted: rgba(255, 255, 255, 0.72);
+  --text: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.76);
+  --border: rgba(255, 255, 255, 0.18);
+  --border-strong: #ffffff;
+
+  /* ---- surface aliases ------------------------------------
+     Every surface is black. Separation comes from white hairlines
+     and geometry, never from a lighter gray fill. */
+  --clr-black: #000000;
+  --clr-bg: #000000;
+  --clr-surface: #000000;
+  --clr-panel: #000000;
+  --clr-elevated: #000000;
+  --clr-border: #ffffff;
+  --clr-muted: rgba(255, 255, 255, 0.7);
+  --clr-secondary: rgba(255, 255, 255, 0.78);
+  --clr-text: #ffffff;
+  --clr-amber: #ff1f2d;
 
   /* ---- legacy surface names ------------------------------
-     App.css is entirely token-driven and addresses these directly.
-     They are aliases onto the §24 palette, so one re-skin moves all
-     2600 lines of it. */
+     App.css is entirely token-driven and addresses these directly. */
   --void: var(--bg);
-  --stage: #0a0a0a;
-  --panel: #0e0e0e;
-  --panel-2: #141414;
+  --stage: #000000;
+  --panel: #000000;
+  --panel-2: #000000;
   --chrome: var(--surface);
-  --input: #1c1c1c;
+  --input: #000000;
 
-  /* hairlines — the structure of the whole page */
-  --hair: rgba(228, 228, 228, 0.14);
-  --hair-strong: rgba(228, 228, 228, 0.28);
-  --hair-amber: rgba(252, 40, 43, 0.5);
+  /* hairlines — the structure of the whole page (white only) */
+  --hair: rgba(255, 255, 255, 0.16);
+  --hair-strong: rgba(255, 255, 255, 0.34);
+  --hair-amber: rgba(255, 31, 45, 0.6);
 
-  /* Ink ramp. Four steps, monotonic, every one clearing WCAG AA
-     (4.5:1) against the darkest surface in the palette — worst case
-     is --ink-4 on --chrome at 5.79:1. Size and weight separate the
-     lower tiers; hue does not. */
+  /* Ink ramp. White only — size and weight separate the tiers. */
   --ink: var(--paper);
-  --ink-2: #c4c4c4;
+  --ink-2: #ffffff;
   --ink-3: var(--text-muted);
   --ink-4: var(--muted);
 
-  /* signal — instrumentation only, never decoration */
+  /* accent — red only (legacy name kept: --amber now IS red) */
   --amber: var(--signal);
   --amber-dim: var(--signal-text);
   --amber-wash: var(--signal-soft);
-  --amber-glow: rgba(252, 40, 43, 0.3);
+  --amber-glow: rgba(255, 31, 45, 0.35);
 
-  /* sponsored slot: neutral plate, no second accent */
-  --ad-ink: var(--paper);
+  /* sponsored slot: black plate, white ink, white edge */
+  --ad-ink: #ffffff;
   --ad-dim: var(--text-muted);
-  --ad-edge: rgba(228, 228, 228, 0.28);
-  --ad-fill: var(--surface);
+  --ad-edge: rgba(255, 255, 255, 0.3);
+  --ad-fill: #000000;
 
-  /* status — the palette has four colours, so "good" is inverted
-     paper rather than a fifth hue. Red stays reserved for flags. */
-  --ok: var(--paper);
+  /* status — white, never a fifth hue */
+  --ok: #ffffff;
 
   /* type — self-hosted, /fonts/fonts.css */
   --font-display: 'Orbitron', 'Space Grotesk', system-ui, sans-serif;
@@ -84,11 +93,11 @@
   --measure: 1180px;
   --u: 4px;
 
-  /* glass — translucent dark instrument material, square geometry */
-  --glass-bg: rgba(18, 18, 18, 0.58);
-  --glass-bg-strong: rgba(24, 24, 24, 0.72);
-  --glass-edge: rgba(228, 228, 228, 0.16);
-  --glass-hi: rgba(228, 228, 228, 0.08);
+  /* glass — translucent black instrument material, square geometry */
+  --glass-bg: rgba(0, 0, 0, 0.78);
+  --glass-bg-strong: rgba(0, 0, 0, 0.92);
+  --glass-edge: rgba(255, 255, 255, 0.2);
+  --glass-hi: rgba(255, 255, 255, 0.06);
   --glass-blur: 14px;
 
   /* Corners. Zero, everywhere, no exceptions.
@@ -172,7 +181,7 @@
   --ease-ui: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-reveal: cubic-bezier(0.19, 1, 0.22, 1);
 
-  --shadow-panel: 0 1px 0 rgba(228, 228, 228, 0.03) inset,
+  --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.03) inset,
     0 24px 70px -30px rgba(0, 0, 0, 0.9);
   --shadow-ad: 0 0 0 1px var(--ad-edge), 0 12px 40px -22px rgba(0, 0, 0, 0.9),
     0 0 34px -22px var(--amber-glow);
@@ -199,9 +208,11 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* A continuous black field. No gradient steps: the page base is pure
+   black and the structure is carried by white hairlines only. */
 body {
   margin: 0;
-  background: var(--void);
+  background: #000000;
   color: var(--ink-2);
   font-family: var(--sans);
   font-size: 16px;
@@ -232,6 +243,14 @@ button {
   cursor: pointer;
 }
 
+/* Native checkboxes and radios default to browser-blue, which would
+   be a fourth colour. `accent-color` repaints the checked fill with
+   the single accent without replacing the control's semantics. */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--signal-text);
+}
+
 ul,
 ol {
   list-style: none;
@@ -249,12 +268,10 @@ ol {
 }
 
 /* Selection is the one interaction on this page that the viewer
-   actually performs, so it gets the flag colour rather than the
-   browser's default blue — which is a colour that appears nowhere
-   else in the film. Black on red is 5.32:1, which is a selection you
-   can still read while it is selected. */
+   actually performs. Signal-red selection with deep-black text stays
+   readable and reads as the product's single accent. */
 ::selection {
-  background: var(--signal);
+  background: var(--amber);
   color: var(--bg);
 }
 
@@ -315,16 +332,15 @@ html.intro-lock body {
   --atmos-p: 0;
 }
 
-/* Horizontal grid rows removed: the repeating row gradient read as a
-   band of horizontal seams over the soft radial pools. Vertical lines
-   only — they carry the technical grid without banding. */
+/* Vertical structure only: full-height white hairlines. No horizontal
+   rows, no scanlines, no atmospheric bands — those read as seams. */
 .atmos__grid {
   position: absolute;
   inset: -12vh 0;
   background-image:
     repeating-linear-gradient(
       to right,
-      rgba(228, 228, 228, 0.045) 0 1px,
+      rgba(255, 255, 255, 0.045) 0 1px,
       transparent 1px calc(100% / 12)
     );
   opacity: 0.55;
@@ -333,7 +349,7 @@ html.intro-lock body {
 
 .atmos__vlines i {
   position: absolute;
-  background: rgba(228, 228, 228, 0.06);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .atmos__vlines i {
@@ -343,26 +359,9 @@ html.intro-lock body {
   transform: translate3d(0, calc(var(--atmos-p) * -58px), 0);
 }
 
-/* Horizontal instrumentation (hlines, drift lines, signal rule) was
-   removed: full-width 1px lines over the radial pools read as seams.
-   The vertical lines and depth pools carry the atmosphere. */
-
-.atmos__depth {
-  position: absolute;
-  inset: -10%;
-  background:
-    radial-gradient(58% 44% at 18% 8%, rgba(228, 228, 228, 0.045), transparent 68%),
-    radial-gradient(52% 44% at 84% 92%, rgba(252, 40, 43, 0.045), transparent 70%);
-}
-
-.atmos__depth--a {
-  transform: translate3d(0, calc(var(--atmos-p) * -78px), 0);
-}
-
-.atmos__depth--b {
-  opacity: 0.55;
-  transform: translate3d(0, calc(var(--atmos-p) * -132px), 0) scale(1.04);
-}
+/* Depth pools removed: translucent white/red radial gradients over
+   black are a gray wash. The environment stays pure black; depth
+   comes from perspective and scale in the drum itself. */
 
 /* content must paint above the fixed atmosphere */
 .stage,
@@ -395,7 +394,7 @@ html.intro-lock body {
   backdrop-filter: blur(var(--glass-blur)) saturate(1.08);
   border: var(--border-w) solid var(--glass-edge);
   box-shadow:
-    inset 0 1px 0 rgba(228, 228, 228, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
     0 18px 44px rgba(0, 0, 0, 0.32);
 }
 
@@ -404,7 +403,7 @@ html.intro-lock body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(105deg, transparent 42%, rgba(228, 228, 228, 0.075) 50%, transparent 58%);
+  background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.06) 50%, transparent 58%);
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {

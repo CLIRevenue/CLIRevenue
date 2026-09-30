@@ -4,8 +4,12 @@ import { buildProfilePayloads } from './authFields.js'
 const PENDING_KEY = 'clir_pending_profile'
 
 export function sendPasswordReset(email) {
+  // Recovery links land on the same app callback as signup confirmations:
+  // the session is established there and the user is routed into the app
+  // (account page first, where the password change lives) instead of a
+  // dead-end tab.
   return supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: `${window.location.origin}/login`,
+    redirectTo: `${window.location.origin}/auth/callback`,
   })
 }
 

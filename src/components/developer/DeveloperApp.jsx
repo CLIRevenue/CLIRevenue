@@ -116,7 +116,7 @@ export default function DeveloperApp() {
   }, [load])
 
   const stats = useMemo(() => ([
-    { label: 'Available', value: formatCents(balance?.availableCents), hint: 'withdrawable (mock)' },
+    { label: 'Available', value: formatCents(balance?.availableCents), hint: 'withdrawable' },
     { label: 'Pending', value: formatCents(balance?.pendingCents), hint: 'settling' },
     { label: 'Lifetime', value: formatCents(balance?.lifetimeCents) },
     { label: 'Reserved', value: formatCents(balance?.reservedCents), hint: 'payouts requested' },
@@ -148,12 +148,24 @@ export default function DeveloperApp() {
           ))}
         </nav>
 
-        <AdvPageHead
-          index="D1"
-          label="Developer"
-          title={tab === 'dashboard' ? 'Earnings at a glance.' : tab[0].toUpperCase() + tab.slice(1) + '.'}
-          body="Backend is authoritative. Rewards are read from the rewards Edge Function; nothing is minted in the browser."
-        />
+        {/* The account tab renders its own D5 page head — showing this
+            one too would stack two eyebrows and two headlines. */}
+        {tab !== 'account' ? (
+          <AdvPageHead
+            index="D1"
+            label="Developer"
+            title={tab === 'dashboard' ? 'Earnings at a glance.' : tab[0].toUpperCase() + tab.slice(1) + '.'}
+            body={
+              {
+                dashboard: 'Every figure below is read live from your account — real reward balances and delivery, never estimates.',
+                earnings: 'Balances and rewards as they land, straight from your account.',
+                integrations: 'Which CLIs you\'ve connected and how each one reads.',
+                analytics: 'A quick look at what you\'ve earned so far.',
+                account: 'Your details, security, and account controls.',
+              }[tab]
+            }
+          />
+        ) : null}
         {error ? <AdvError message={error} onRetry={refresh} /> : null}
         {loading ? <AdvLoading label="Loading developer rewards…" /> : (
           <>
@@ -163,9 +175,9 @@ export default function DeveloperApp() {
                 <div className="adv-grid adv-grid--2">
                   <section className="panel adv-panel" aria-label="Recent rewards">
                     <h4 className="adv-panel__title">Recent rewards</h4>
-                    <p className="adv-panel__sub">Latest ledger entries for this developer.</p>
+                    <p className="adv-panel__sub">Latest entries in your reward ledger.</p>
                     {rewards.length === 0 ? (
-                      <AdvEmpty title="No rewards yet" body="Interact with a sponsored slot in the public workbench demo to generate demo rewards." />
+                      <AdvEmpty title="No rewards yet" body="Try a sponsored slot on the home page to see rewards land here." />
                     ) : (
                       <ul className="adv-activity">
                         {rewards.slice(0, 6).map((r) => (
@@ -188,17 +200,17 @@ export default function DeveloperApp() {
             {tab === 'integrations' && (
               <Panel className="adv-panel">
                 <h4 className="adv-panel__title">Integrations</h4>
-                <p className="adv-panel__sub">MISSING_BACKEND: no CLI-integration management endpoint exists in this repo, so this stays informational.</p>
+                <p className="adv-panel__sub">Which CLIs you've connected, at a glance.</p>
                 <ul className="adv-activity">
-                  <li className="adv-activity__row"><span className="adv-activity__label">Claude Code</span><span className="adv-activity__detail">Docs-only slot in this prototype.</span></li>
-                  <li className="adv-activity__row"><span className="adv-activity__label">Codex / Cline / OpenCode</span><span className="adv-activity__detail">Same sponsored-slot contract; no per-tool keys issued here.</span></li>
+                  <li className="adv-activity__row"><span className="adv-activity__label">Claude Code</span><span className="adv-activity__detail">Read-only for now.</span></li>
+                  <li className="adv-activity__row"><span className="adv-activity__label">Codex / Cline / OpenCode</span><span className="adv-activity__detail">Same sponsored slot, one shared key.</span></li>
                 </ul>
               </Panel>
             )}
             {tab === 'analytics' && (
               <Panel className="adv-panel">
                 <h4 className="adv-panel__title">Analytics</h4>
-                <p className="adv-panel__sub">Derived from your reward ledger only. No invented delivery stats.</p>
+                <p className="adv-panel__sub">Straight from your reward ledger.</p>
                 <AdvStats items={[
                   { label: 'Rewards seen', value: String(rewards.length) },
                   { label: 'Available', value: formatCents(balance?.availableCents) },

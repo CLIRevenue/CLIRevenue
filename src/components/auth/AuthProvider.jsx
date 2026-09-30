@@ -151,17 +151,24 @@ export function AuthProvider({ children }) {
     if (!['advertiser', 'developer'].includes(role)) {
       throw new Error('Pick Advertiser or Developer.')
     }
-    // Park the profile fields before the auth call: when email confirmation
-    // is on there is no session yet, so the flush happens on first
-    // authenticated refresh. The park is email-scoped, so it can never be
-    // flushed into a different user's profile.
-    parkPendingProfile({ role, values: values || {}, email })
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { role } },
+      options: {
+        data: { role },
+        // The confirmation email must land back inside the app, on the
+        // route that resolves the session and routes by profile role.
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     })
     if (error) throw error
+    // Park the profile fields only once signup has succeeded: when email
+    // confirmation is on there is no session yet, so the flush happens on
+    // first authenticated refresh. The park is email-scoped, so it can
+    // never be flushed into a different user's profile. A failed signup
+    // (e.g. email already registered) leaves nothing parked — the form
+    // itself keeps the values on screen.
+    parkPendingProfile({ role, values: values || {}, email })
     const newUserId = data.user?.id || data.session?.user?.id || null
     // Create the profile row through RLS-safe paths only (never service-role in browser):
     // 1) DB trigger (handle_new_user) usually already created it.
@@ -193,6 +200,20 @@ export function AuthProvider({ children }) {
     return data
   }, [refresh])
 
+  /** Re-send the signup confirmation email. Never re-runs signUp —
+   *  calling signUp again with the same address is how duplicate-account
+   *  confusion starts; Supabase Auth has a dedicated resend API. */
+  const resendConfirmation = useCallback(async (email) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+    if (error) throw error
+  }, [])
+
   const signOut = useCallback(async (next = '/') => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
@@ -217,8 +238,9 @@ export function AuthProvider({ children }) {
     refresh,
     signIn,
     signUp,
+    resendConfirmation,
     signOut,
-  }), [state, refresh, signIn, signUp, signOut])
+  }), [state, refresh, signIn, signUp, resendConfirmation, signOut])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

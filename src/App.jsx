@@ -6,7 +6,7 @@ import Conversion from './components/conv/Conversion.jsx'
 import AdvertiserApp from './components/advertiser/AdvertiserApp.jsx'
 import DeveloperApp from './components/developer/DeveloperApp.jsx'
 import { AuthProvider } from './components/auth/AuthProvider.jsx'
-import { LoginPage, SignupPage } from './components/auth/AuthPages.jsx'
+import { LoginPage, SignupPage, AuthCallbackPage } from './components/auth/AuthPages.jsx'
 import { RequireRole, AuthLoadingScreen } from './components/auth/RequireAuth.jsx'
 import { useAuth, roleHome } from './components/auth/authState.js'
 import PublicHeader from './components/PublicHeader.jsx'
@@ -51,6 +51,18 @@ function Routes() {
         <Atmosphere />
         <PublicHeader />
         <SignupPage />
+      </>
+    )
+  }
+
+  // Email confirmation / recovery links land here, establish the session,
+  // resolve the profile role, and continue into the right dashboard — no
+  // dead-end tab, no raw tokens, no manual "close this tab" step.
+  if (clean === '/auth/callback') {
+    return (
+      <>
+        <Atmosphere />
+        <AuthCallbackPage />
       </>
     )
   }

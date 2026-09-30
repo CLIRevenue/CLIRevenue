@@ -52,7 +52,7 @@ export default function AdvertiserAnalytics({ campaigns, loading, error, onRetry
         index="A3"
         label="Advertiser · Analytics"
         title="Delivery, efficiency, and mix."
-        body="Every number is derived from backend campaign rows. If the backend has no delivery yet, this view says so instead of inventing a trend."
+        body="Every number comes straight from your campaigns. With no delivery yet, the charts stay empty rather than guessing."
       />
       <AdvError message={error} onRetry={onRetry} />
       {loading ? <AdvLoading /> : campaigns.length === 0 ? (
@@ -71,7 +71,7 @@ export default function AdvertiserAnalytics({ campaigns, loading, error, onRetry
           <div className="adv-grid adv-grid--2">
             <section className="panel adv-panel" aria-label="Historical trend">
               <h4 className="adv-panel__title">Historical trend</h4>
-              <p className="adv-panel__sub">Impressions by campaign creation order. Backend has no time-series endpoint yet.</p>
+              <p className="adv-panel__sub">Impressions in the order campaigns were created.</p>
               <AdvBarChart rows={trend} valueLabel="Impressions" />
             </section>
             <section className="panel adv-panel" aria-label="Audience performance">
@@ -83,10 +83,10 @@ export default function AdvertiserAnalytics({ campaigns, loading, error, onRetry
                   <tbody>
                     {byAudience.map((r) => (
                       <tr key={r.id}>
-                        <td>{r.name}</td>
-                        <td className="mono">{r.impressions.toLocaleString('en-US')}</td>
-                        <td className="mono">{r.clicks.toLocaleString('en-US')}</td>
-                        <td className="mono">{formatCents(r.spendCents)}</td>
+                        <td data-label="Audience">{r.name}</td>
+                        <td className="mono" data-label="Impr.">{r.impressions.toLocaleString('en-US')}</td>
+                        <td className="mono" data-label="Clicks">{r.clicks.toLocaleString('en-US')}</td>
+                        <td className="mono" data-label="Spend">{formatCents(r.spendCents)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -102,12 +102,12 @@ export default function AdvertiserAnalytics({ campaigns, loading, error, onRetry
                 <tbody>
                   {byCampaign.map((c) => (
                     <tr key={c.id}>
-                      <td>{c.name}</td>
-                      <td className="mono">{c.impressions.toLocaleString('en-US')}</td>
-                      <td className="mono">{c.clicks.toLocaleString('en-US')}</td>
-                      <td className="mono">{c.ctr.toFixed(2)}%</td>
-                      <td className="mono">{c.conversions.toLocaleString('en-US')}</td>
-                      <td className="mono">{formatCents(c.spendCents)}</td>
+                      <td data-label="Campaign">{c.name}</td>
+                      <td className="mono" data-label="Impr.">{c.impressions.toLocaleString('en-US')}</td>
+                      <td className="mono" data-label="Clicks">{c.clicks.toLocaleString('en-US')}</td>
+                      <td className="mono" data-label="CTR">{c.ctr.toFixed(2)}%</td>
+                      <td className="mono" data-label="Conv.">{c.conversions.toLocaleString('en-US')}</td>
+                      <td className="mono" data-label="Spend">{formatCents(c.spendCents)}</td>
                     </tr>
                   ))}
                 </tbody>

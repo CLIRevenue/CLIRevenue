@@ -1,5 +1,5 @@
 import { useAuth, roleHome } from './auth/authState.js'
-import { navigateApp } from '../hooks/useAppRoute.js'
+import useAppRoute, { navigateApp } from '../hooks/useAppRoute.js'
 
 /**
  * Site-wide public header. Auth controls live top-right and stay fixed
@@ -10,7 +10,11 @@ import { navigateApp } from '../hooks/useAppRoute.js'
  */
 export default function PublicHeader() {
   const { loading, isAuthenticated, role, user } = useAuth()
+  const path = useAppRoute()
   const home = roleHome(role)
+  // Never repeat the page you are already on: on /login, "Log in" is noise.
+  const onLogin = path.startsWith('/login')
+  const onSignup = path.startsWith('/signup')
 
   return (
     <header className="sitehead glass" aria-label="Site">
@@ -39,12 +43,16 @@ export default function PublicHeader() {
           </>
         ) : (
           <>
-            <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigateApp('/login')}>
-              Log in
-            </button>
-            <button type="button" className="btn btn--primary btn--sm" onClick={() => navigateApp('/signup')}>
-              Sign up
-            </button>
+            {onLogin ? null : (
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigateApp('/login')}>
+                Log in
+              </button>
+            )}
+            {onSignup ? null : (
+              <button type="button" className="btn btn--primary btn--sm" onClick={() => navigateApp('/signup')}>
+                Sign up
+              </button>
+            )}
           </>
         )}
       </nav>

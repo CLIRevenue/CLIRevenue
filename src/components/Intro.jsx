@@ -56,7 +56,6 @@ function Intro() {
        timeline reaches past the overlay into the opening scene. */
     const ctx = gsap.context(() => {
       const vLines = gsap.utils.toArray('.intro__line--v')
-      const hLines = gsap.utils.toArray('.intro__line--h')
       const ticks = gsap.utils.toArray('.intro__tick')
       const heroTitle = gsap.utils.toArray('#wait .hero__title span')
       const heroBits = gsap.utils.toArray(
@@ -74,7 +73,6 @@ function Intro() {
       gsap.set(heroTerminal, { y: 26, opacity: 0 })
       gsap.set(heroBody, { clipPath: 'inset(100% 0% 0% 0%)' })
       gsap.set(vLines, { scaleY: 0 })
-      gsap.set(hLines, { scaleX: 0 })
       gsap.set('.intro__bar', { scaleX: 0 })
 
       const tl = gsap.timeline({
@@ -86,10 +84,10 @@ function Intro() {
         },
       })
 
-      /* 1 — the grid draws itself: verticals first, so the stage is
-         measured out before anything is written on it. */
+      /* 1 — the grid draws itself: verticals only, so the stage is
+         measured out before anything is written on it. (Horizontal
+         rules were removed with the rest of the band language.) */
       tl.to(vLines, { scaleY: 1, duration: 0.6, stagger: 0.05, ease: 'power2.out' }, 0)
-      tl.to(hLines, { scaleX: 1, duration: 0.5, stagger: 0.08, ease: 'power2.out' }, 0.1)
 
       /* 2 — boot ticks. Scrambled rather than faded: this is text
          being resolved, not text arriving. */
@@ -117,7 +115,7 @@ function Intro() {
         0.52,
       )
 
-      /* 4 — the signal bar sweeps. The one piece of red in the
+      /* 4 — the signal bar sweeps. The one saturated accent in the
          sequence, and it is a rule rather than a glow: the palette
          says rules, not halos. */
       tl.to('.intro__bar', { scaleX: 1, duration: 0.5, ease: 'power4.inOut' }, 1.05)
@@ -171,8 +169,6 @@ function Intro() {
           <i className="intro__line intro__line--v" style={{ left: '16%' }} />
           <i className="intro__line intro__line--v" style={{ left: '50%' }} />
           <i className="intro__line intro__line--v" style={{ left: '84%' }} />
-          <i className="intro__line intro__line--h" style={{ top: '22%' }} />
-          <i className="intro__line intro__line--h" style={{ top: '78%' }} />
         </div>
 
         <div className="intro__corner intro__corner--tl">

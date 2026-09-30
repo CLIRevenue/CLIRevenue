@@ -59,7 +59,6 @@ function SponsoredSlot({ campaign, connected, hidden, onActivate }) {
       </p>
 
       <div className="adslot__plate">
-        <span className="adslot__scan" aria-hidden="true" />
 
         <div className="adslot__rail">
           <span className="adslot__label">Sponsored</span>

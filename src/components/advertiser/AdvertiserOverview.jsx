@@ -51,7 +51,7 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
         index="A1"
         label="Advertiser · Overview"
         title="Spend, delivery, and momentum."
-        body="Live campaign records from the campaigns Edge Function. Spend and delivery come from the backend; nothing here is fabricated."
+        body="Live spend, impressions, and CTR from your campaigns."
       />
       <AdvError message={error} onRetry={onRetry} />
       {loading ? (
@@ -59,7 +59,7 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
       ) : campaigns.length === 0 ? (
         <AdvEmpty
           title="No campaigns yet"
-          body="Create your first campaign to see spend, impressions, and CTR here. Billing stays in demo mode until a billing API ships."
+          body="Create your first campaign to see spend, impressions, and CTR here."
           actionLabel="Create a campaign"
           onAction={onCreate}
         />
@@ -67,7 +67,7 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
         <>
           <AdvStats
             items={[
-              { label: 'Total spend', value: formatCents(totals.spend), hint: 'sum of campaign spendCents' },
+              { label: 'Total spend', value: formatCents(totals.spend), hint: 'across all campaigns' },
               { label: 'Active campaigns', value: String(totals.active), hint: `${campaigns.length} total` },
               { label: 'Impressions', value: totals.impressions.toLocaleString('en-US') },
               { label: 'Clicks', value: totals.clicks.toLocaleString('en-US') },
@@ -127,11 +127,11 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
                 <tbody>
                   {recent.map((c) => (
                     <tr key={c.id}>
-                      <td>{c.name}</td>
-                      <td><span className="adv-pill">{c.status}</span></td>
-                      <td>{c.audienceLabel}</td>
-                      <td className="mono">{formatCents(c.spendCents)}</td>
-                      <td className="mono">{ctrPct(c.clicks, c.impressions).toFixed(2)}%</td>
+                      <td data-label="Campaign">{c.name}</td>
+                      <td data-label="Status"><span className="adv-pill">{c.status}</span></td>
+                      <td data-label="Audience">{c.audienceLabel}</td>
+                      <td className="mono" data-label="Spend">{formatCents(c.spendCents)}</td>
+                      <td className="mono" data-label="CTR">{ctrPct(c.clicks, c.impressions).toFixed(2)}%</td>
                     </tr>
                   ))}
                 </tbody>

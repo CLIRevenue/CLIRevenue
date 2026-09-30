@@ -28,22 +28,22 @@ export default function AdvertiserBilling({ campaigns, loading, error, onRetry }
         index="A4"
         label="Advertiser · Billing"
         title="What delivery has cost so far."
-        body="Billing API is not available in the backend yet. This page derives spend from campaign rows and never claims a payment succeeded."
+        body="Spend totals come from your campaigns. Payments aren't connected yet."
       />
       <AdvError message={error} onRetry={onRetry} />
       {loading ? <AdvLoading /> : (
         <>
           <AdvStats
             items={[
-              { label: 'Current spend', value: formatCents(derived.spend), hint: 'sum of spendCents' },
-              { label: 'Committed budget', value: formatCents(derived.budget), hint: 'sum of budgetCents' },
+              { label: 'Current spend', value: formatCents(derived.spend), hint: 'across all campaigns' },
+              { label: 'Committed budget', value: formatCents(derived.budget), hint: 'across all campaigns' },
               { label: 'Remaining budget', value: formatCents(derived.remaining) },
             ]}
           />
           <div className="adv-grid adv-grid--2">
             <section className="panel adv-panel" aria-label="Transaction history">
               <h4 className="adv-panel__title">Transaction history</h4>
-              <p className="adv-panel__sub">Derived from campaign delivery. No invoices endpoint exists yet.</p>
+              <p className="adv-panel__sub">Spend recorded as campaigns deliver.</p>
               {derived.rows.length === 0 ? (
                 <AdvEmpty title="No spend yet" body="Transactions appear once campaigns record delivery." />
               ) : (
@@ -60,16 +60,16 @@ export default function AdvertiserBilling({ campaigns, loading, error, onRetry }
             <div className="adv-stack">
               <Panel className="adv-panel">
                 <h4 className="adv-panel__title">Payment information</h4>
-                <p className="adv-panel__sub">MISSING_BACKEND: no payment-method API. This stays disconnected.</p>
-                <div className="adv-note adv-note--warn">No card is stored. Do not enter real payment details in this prototype.</div>
-                <button className="btn btn--primary" type="button" disabled aria-disabled="true" title="Unavailable: billing API missing">
-                  Add payment method (unavailable)
+                <p className="adv-panel__sub">Payments aren't connected yet.</p>
+                <div className="adv-note adv-note--warn">No card is stored. Do not enter real payment details.</div>
+                <button className="btn btn--primary" type="button" disabled aria-disabled="true" title="Payments aren't connected yet">
+                  Add payment method
                 </button>
               </Panel>
               <Panel className="adv-panel">
                 <h4 className="adv-panel__title">Invoices</h4>
-                <p className="adv-panel__sub">MISSING_BACKEND: no invoices endpoint.</p>
-                <AdvEmpty title="No invoices" body="Invoice download will appear when the backend supports it." />
+                <p className="adv-panel__sub">Invoices aren't connected yet.</p>
+                <AdvEmpty title="No invoices" body="Invoices will appear here once available." />
               </Panel>
             </div>
           </div>

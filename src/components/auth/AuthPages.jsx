@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { supabaseConfigured } from '../../lib/api.js'
 import { useAuth, roleHome } from './authState.js'
 import { navigateApp } from '../../hooks/useAppRoute.js'
 import { sendPasswordReset } from '../../lib/authPassword.js'
+import { AUTH_ERROR, authErrorMessage, normalizeAuthError } from '../../lib/authErrors.js'
 import {
   COMMON_FIELDS,
+  EMAIL_RE,
   allFieldNames,
   roleFields,
   validateSignup,
@@ -12,6 +15,26 @@ import {
 function FieldError({ message }) {
   if (!message) return null
   return <p className="form__error" role="alert">{message}</p>
+}
+
+const RESET_SENT_MESSAGE =
+  'Password reset email sent. Open the link from any tab — it lands back inside the app.'
+
+/**
+ * Email prefill from the query string (?email=…). Used when signup
+ * detects an already-registered address and hands the user to login or
+ * password reset without making them retype it. Only ever an email —
+ * passwords never travel through URLs.
+ */
+function readEmailParam() {
+  if (typeof window === 'undefined') return ''
+  const { search, hash } = window.location
+  const query = search || (hash.includes('?') ? hash.slice(hash.indexOf('?')) : '')
+  try {
+    return new URLSearchParams(query).get('email') || ''
+  } catch {
+    return ''
+  }
 }
 
 function TextField({ label, name, value, onChange, required, autoComplete, type = 'text', inputMode, placeholder, area = false, min }) {
@@ -86,7 +109,9 @@ export function AuthShell({ eyebrow, title, body, children, footer, backHref = '
 
 export function LoginPage() {
   const { signIn, role, isAuthenticated, loading } = useAuth()
-  const [email, setEmail] = useState('')
+  // Prefilled when signup detects an existing account and navigates here
+  // with /login?email=… — the user never retypes their address.
+  const [email, setEmail] = useState(() => readEmailParam())
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
@@ -113,34 +138,74 @@ export function LoginPage() {
       await signIn(email.trim(), password)
       // role resolution happens in provider refresh; redirect via effect on next render.
     } catch (err) {
-      setError(err.message || 'Sign in failed.')
+      setError(authErrorMessage(normalizeAuthError(err, 'login')))
     } finally {
       setBusy(false)
     }
   }
 
-  async function onForgot() {
-    setError('')
-    setInfo('')
-    if (!email.trim()) {
-      setError('Enter your email first, then use forgot password.')
-      return
-    }
+  /** Shared reset request — pure I/O, no state writes, so both the
+   *  button handler and the one-shot auto-send effect can use it. */
+  const requestPasswordReset = useCallback(async (target) => {
+    const { error } = await sendPasswordReset(target)
+    if (error) throw error
+  }, [])
+
+  const onForgot = useCallback(
+    async (overrideEmail) => {
+      const target = typeof overrideEmail === 'string' ? overrideEmail : email
+      setError('')
+      setInfo('')
+      if (!target.trim()) {
+        setError('Enter your email first, then use forgot password.')
+        return
+      }
+      try {
+        await requestPasswordReset(target)
+        setInfo(RESET_SENT_MESSAGE)
+      } catch (err) {
+        setError(authErrorMessage(normalizeAuthError(err, 'reset')))
+      }
+    },
+    [email, requestPasswordReset],
+  )
+
+  // ?reset=1 arrives from the signup "Reset password" action: the existing
+  // forgot-password flow runs once with the email prefilled. The query is
+  // stripped afterwards so a browser Back cannot silently re-send emails.
+  const resetRequested = useMemo(() => {
+    if (typeof window === 'undefined') return false
+    const { search, hash } = window.location
+    const query = search || (hash.includes('?') ? hash.slice(hash.indexOf('?')) : '')
     try {
-      const { error } = await sendPasswordReset(email)
-      if (error) throw error
-      setInfo('Password reset email sent if this project has email templates enabled.')
-    } catch (err) {
-      setError(err.message || 'Could not send reset email.')
+      return new URLSearchParams(query).get('reset') === '1'
+    } catch {
+      return false
     }
-  }
+  }, [])
+  const autoResetFired = useRef(false)
+  useEffect(() => {
+    if (busy || loading || !resetRequested || autoResetFired.current) return
+    const candidate = readEmailParam()
+    if (!candidate.trim() || !EMAIL_RE.test(candidate.trim())) return
+    // The email field is already initialised from the same query param,
+    // so no state write is needed here — just run the existing flow once
+    // and strip the query so Back cannot silently re-send the email.
+    autoResetFired.current = true
+    window.history.replaceState({}, '', '/login')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    requestPasswordReset(candidate).then(
+      () => setInfo(RESET_SENT_MESSAGE),
+      (err) => setError(authErrorMessage(normalizeAuthError(err, 'reset'))),
+    )
+  }, [busy, loading, resetRequested, requestPasswordReset])
 
   return (
     <AuthShell
       eyebrow="CLIRevenue · Login"
       title="Welcome back."
-      body="Sign in with Supabase Auth. Your dashboard is chosen by public.profiles.role — never by a manual picker."
-      footer="Forgot-password email reset is available if Supabase Auth email templates are enabled for this project."
+      body="Sign in to reach your console. Your role on the account decides which one opens."
+      footer="Lost access to your email? Use forgot password above to recover it."
     >
       <form className="form adv-form" onSubmit={onSubmit} noValidate>
         <label className="field">
@@ -166,10 +231,12 @@ export function LoginPage() {
 
 const EMPTY_VALUES = Object.fromEntries(allFieldNames().map((n) => [n, '']))
 
+const RESEND_COOLDOWN_SECONDS = 60
+
 export function SignupPage() {
-  const { signUp, role, isAuthenticated, loading } = useAuth()
+  const { signUp, resendConfirmation, role, isAuthenticated, loading } = useAuth()
   const [step, setStep] = useState(1)
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => readEmailParam())
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [accountType, setAccountType] = useState(null)
@@ -178,13 +245,28 @@ export function SignupPage() {
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
+  // null = normal form flow. Once set, the panel becomes the
+  // confirmation screen instead of the form continuing.
+  const [confirmation, setConfirmation] = useState(null)
+  const [resendState, setResendState] = useState({ busy: false, error: '', secondsLeft: 0 })
 
   useEffect(() => {
+    if (confirmation) return undefined
     if (!loading && isAuthenticated && role) {
       const home = roleHome(role)
       if (home) navigateApp(home)
     }
-  }, [loading, isAuthenticated, role])
+    return undefined
+  }, [loading, isAuthenticated, role, confirmation])
+
+  useEffect(() => {
+    if (resendState.secondsLeft <= 0) return undefined
+    const id = window.setInterval(() => {
+      setResendState((s) => ({ ...s, secondsLeft: s.secondsLeft - 1 }))
+    }, 1000)
+    return () => window.clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resendState.secondsLeft > 0])
 
   // Errors are DERIVED from live values on every render — never stored — so
   // correcting an input removes its error (and any disabled state) on the
@@ -202,13 +284,20 @@ export function SignupPage() {
   function goStep1(e) {
     e.preventDefault()
     setStep(1)
+    // Fresh step, fresh validation state: no errors until the user acts.
+    setAttempted(false)
   }
 
   function continueToStep2(e) {
     e.preventDefault()
     setAttempted(true)
     setError('')
-    if (errorCount === 0) setStep(2)
+    if (errorCount === 0) {
+      setStep(2)
+      // Reveal step 2 with a clean slate — otherwise every empty required
+      // profile field screams before the user has typed a character.
+      setAttempted(false)
+    }
   }
 
   async function onSubmit(e) {
@@ -226,24 +315,130 @@ export function SignupPage() {
         setInfo('Account created. Opening your dashboard…')
       } else {
         // Email confirmation required: no session yet. Profile fields are
-        // parked and flush on the first authenticated refresh.
-        setInfo('Check your email to confirm, then log in. Your profile details are saved and applied then.')
+        // parked and flush on the first authenticated refresh. The user
+        // stays right here — no new tab, no dead end — and returns to this
+        // tab after clicking the email link (which opens the app callback
+        // and routes into the dashboard).
+        setConfirmation({ email: email.trim() })
+        setResendState((s) => ({ ...s, secondsLeft: RESEND_COOLDOWN_SECONDS }))
       }
     } catch (err) {
-      setError(err.message || 'Signup failed.')
+      const kind = normalizeAuthError(err, 'signup')
+      if (kind === AUTH_ERROR.EMAIL_ALREADY_REGISTERED) {
+        // Tell the user plainly and hand them the two ways forward. Form
+        // values (except passwords) stay exactly where they are.
+        setConfirmation({
+          email: email.trim(),
+          existing: true,
+        })
+      } else {
+        setError(authErrorMessage(kind))
+      }
     } finally {
       setBusy(false)
     }
   }
 
+  async function onResend() {
+    if (resendState.busy || resendState.secondsLeft > 0) return
+    setResendState({ busy: true, error: '', secondsLeft: 0 })
+    try {
+      await resendConfirmation(email.trim())
+      setResendState({ busy: false, error: '', secondsLeft: RESEND_COOLDOWN_SECONDS })
+    } catch (err) {
+      setResendState({
+        busy: false,
+        error: authErrorMessage(normalizeAuthError(err, 'resend')),
+        secondsLeft: 0,
+      })
+    }
+  }
+
   const activeRoleFields = accountType ? roleFields(accountType) : []
+
+  // Confirmation-required and existing-account screens replace the form
+  // entirely: no dead ends, and no re-submission of the same form.
+  if (confirmation) {
+    return (
+      <AuthShell
+        eyebrow="CLIRevenue · Signup"
+        title={confirmation.existing ? 'Email already in use.' : 'Check your email.'}
+        body={
+          confirmation.existing
+            ? 'An account with this email already exists. Log in with your password, or reset it if you have forgotten it.'
+            : `We sent a confirmation link to ${confirmation.email}. Open the email, click the link, and return here — this tab stays open and the link lands back inside the app.`
+        }
+        footer={
+          confirmation.existing
+            ? 'Passwords are never shown or sent anywhere. Reset only reaches your own account.'
+            : 'No account is active until the email is confirmed. Resend if it has not arrived.'
+        }
+      >
+        <p className="confirm__email mono">{confirmation.email}</p>
+
+        {confirmation.existing ? (
+            <div className="confirm__actions">
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={() => navigateApp(`/login?email=${encodeURIComponent(confirmation.email)}`)}
+              >
+                Log in
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() =>
+                  navigateApp(`/login?email=${encodeURIComponent(confirmation.email)}&reset=1`)
+                }
+              >
+                Reset password
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="confirm__actions">
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={onResend}
+                  disabled={resendState.busy || resendState.secondsLeft > 0}
+                >
+                  {resendState.busy
+                    ? 'Sending…'
+                    : resendState.secondsLeft > 0
+                      ? `Resend available in ${resendState.secondsLeft}s`
+                      : 'Resend confirmation email'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={() => navigateApp('/login')}
+                >
+                  Back to login
+                </button>
+              </div>
+              <FieldError message={resendState.error} />
+              <p className="form__note">
+                Open the confirmation link from any tab — the app completes
+                sign-in and opens the right dashboard. Nothing to close
+                manually.
+              </p>
+              <p className="form__note">
+                Wrong address? <button type="button" className="adv-link" onClick={() => setConfirmation(null)}>Go back</button>
+              </p>
+            </>
+          )}
+      </AuthShell>
+    )
+  }
 
   return (
     <AuthShell
       eyebrow="CLIRevenue · Signup"
       title="Create your account."
-      body="Advertiser and Developer are the only public options. Admin is never offered here. Your dashboard is assigned by the role stored on your profile."
-      footer="Profiles are created through RLS-safe trigger/RPC paths only. No service-role key is used in the browser."
+      body="Two steps: your login, then who you are. Choose Advertiser or Developer — your console follows your role, not a picker."
+      footer="Your role is set once at signup and decides which console you can reach."
     >
       <form className="form adv-form" onSubmit={onSubmit} noValidate>
         <p className="form__note" aria-hidden="true">
@@ -342,5 +537,103 @@ export function SignupPage() {
         </p>
       </form>
     </AuthShell>
+  )
+}
+
+/**
+ * Landing target of the signup confirmation (and password-recovery)
+ * email links. Supabase detects the `?code=…` PKCE param and exchanges
+ * it for a session during client init; this page then routes the user
+ * by their server-side profile role. No manual token parsing, no
+ * second auth system, no URL/localStorage role.
+ */
+export function AuthCallbackPage() {
+  const { loading, isAuthenticated, role, error: authError, refresh } = useAuth()
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    if (!loading) return
+    // No session after a generous settle window means the exchange did
+    // not complete (expired/used link, or the code was already consumed
+    // in another tab). Surface the human error state, not a blank page.
+    const id = window.setTimeout(() => {
+      if (!supabaseConfigured) setFailed(true)
+      else refresh().catch(() => setFailed(true))
+    }, 4000)
+    return () => window.clearTimeout(id)
+  }, [loading, refresh])
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      const id = window.setTimeout(() => setFailed(true), 1500)
+      return () => window.clearTimeout(id)
+    }
+    return undefined
+  }, [loading, isAuthenticated])
+
+  if (!failed && (loading || !isAuthenticated)) {
+    return (
+      <section className="adv-shell" aria-label="Confirming your email">
+        <div className="adv-shell__inner adv-shell__inner--narrow">
+          <p className="eyebrow eyebrow--plain">CLIRevenue · Email confirmation</p>
+          <h2 className="block__title">Confirming your email…</h2>
+          <p className="block__body">
+            One moment while your session is established.
+          </p>
+        </div>
+      </section>
+    )
+  }
+
+  if (failed || (!loading && !isAuthenticated) || authError) {
+    return (
+      <section className="adv-shell" aria-label="Confirmation problem">
+        <div className="adv-shell__inner adv-shell__inner--narrow">
+          <p className="eyebrow eyebrow--plain">CLIRevenue · Email confirmation</p>
+          <h2 className="block__title">Email confirmation could not be completed.</h2>
+          <p className="block__body">
+            The link may have expired or already been used. Request a new
+            email by signing in, or try again.
+          </p>
+          <div className="confirm__actions">
+            <button type="button" className="btn btn--primary" onClick={() => navigateApp('/login')}>
+              Return to login
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => {
+                setFailed(false)
+                refresh()
+              }}
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (role) {
+    return (
+      <section className="adv-shell" aria-label="Email confirmed">
+        <div className="adv-shell__inner adv-shell__inner--narrow">
+          <p className="eyebrow eyebrow--plain">CLIRevenue · Email confirmed</p>
+          <h2 className="block__title">Your account is ready.</h2>
+          <p className="block__body">Opening your dashboard…</p>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="adv-shell" aria-label="Email confirmed">
+      <div className="adv-shell__inner adv-shell__inner--narrow">
+        <p className="eyebrow eyebrow--plain">CLIRevenue · Email confirmed</p>
+        <h2 className="block__title">Your account is ready.</h2>
+        <p className="block__body">Resolving your role…</p>
+      </div>
+    </section>
   )
 }

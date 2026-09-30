@@ -3,7 +3,7 @@ import { navigateApp } from '../../hooks/useAppRoute.js'
 
 export function AdvPageHead({ index, label, title, body }) {
   return (
-    <SectionHead index={index} label={label} title={title} body={body} level="h2" />
+    <SectionHead index={index} label={label} title={title} body={body} level="h2" eyebrow />
   )
 }
 

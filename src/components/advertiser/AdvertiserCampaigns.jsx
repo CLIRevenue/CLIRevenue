@@ -125,7 +125,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
         index="A2"
         label="Advertiser · Campaigns"
         title="Briefs, budgets, and delivery state."
-        body="Reads and writes go through the campaigns Edge Function. Draft is the safe default; activation is an explicit server-side select."
+        body="Every campaign starts as a draft. Activation is an explicit step, so nothing goes live by accident."
       />
       <AdvError message={error} onRetry={onRetry} />
       {notice ? <div className="adv-notice" role="status">{notice}</div> : null}
@@ -154,7 +154,11 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
             </select>
           </div>
           {loading ? <AdvLoading label="Loading campaigns…" /> : filtered.length === 0 ? (
-            <AdvEmpty title="No campaigns match" body="Adjust search or filters, or create a new brief." />
+            campaigns.length === 0 ? (
+              <AdvEmpty title="No campaigns yet" body="Start your first brief in the New campaign form." />
+            ) : (
+              <AdvEmpty title="No campaigns match" body="Adjust search or filters, or create a new brief." />
+            )
           ) : (
             <div className="adv-tablewrap">
               <table className="adv-table">
@@ -171,15 +175,15 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                 <tbody>
                   {filtered.map((c) => (
                     <tr key={c.id} data-active={c.id === selectedId}>
-                      <td>
+                      <td data-label="Campaign">
                         <div className="adv-cell__name">{c.name}</div>
                         <div className="adv-cell__sub">{c.audienceLabel} · {formatCents(c.budgetCents)} budget</div>
                       </td>
-                      <td><span className="adv-pill">{c.status}</span></td>
-                      <td className="mono">{formatCents(c.spendCents)}</td>
-                      <td className="mono">{c.impressions.toLocaleString('en-US')}</td>
-                      <td className="mono">{ctrPct(c.clicks, c.impressions).toFixed(2)}%</td>
-                      <td>
+                      <td data-label="Status"><span className="adv-pill">{c.status}</span></td>
+                      <td className="mono" data-label="Spend">{formatCents(c.spendCents)}</td>
+                      <td className="mono" data-label="Impr.">{c.impressions.toLocaleString('en-US')}</td>
+                      <td className="mono" data-label="CTR">{ctrPct(c.clicks, c.impressions).toFixed(2)}%</td>
+                      <td data-label=" ">
                         <button type="button" className="btn btn--ghost" onClick={() => { setSelectedId(c.id); setNotice(''); setDetailError('') }}>
                           Details
                         </button>
@@ -196,7 +200,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
           <Panel className="adv-panel">
             <h4 className="adv-panel__title">{selected ? 'Campaign details' : 'New campaign'}</h4>
             <p className="adv-panel__sub">
-              {selected ? 'Edit the brief or change delivery state. PATCH writes only supplied fields.' : 'POST creates a draft. No card is charged.'}
+              {selected ? 'Edit the brief or change delivery state — only the fields you touch are saved.' : 'Start a new draft. Nothing is charged until a campaign is active.'}
             </p>
             {selected ? (
               <div className="adv-detail__actions">
@@ -260,7 +264,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
               <button className="btn btn--primary" type="submit" disabled={saving}>
                 {saving ? 'Saving…' : selected ? 'Save changes' : 'Create campaign'}
               </button>
-              <p className="form__note">Demo only. Creates/updates a campaign row; no billing happens here.</p>
+              <p className="form__note">Nothing is charged. Campaigns save to your account only.</p>
             </form>
           </Panel>
         </div>

@@ -159,7 +159,7 @@ function PasswordSection() {
     <Panel className="adv-panel">
       <h4 className="adv-panel__title">Change password</h4>
       <p className="adv-panel__sub">
-        Verified against your current password, then updated through Supabase Auth. Nothing is stored locally.
+        We confirm your current password first, then replace it. Your password is never stored on this device.
       </p>
       <form className="form adv-form" onSubmit={onSubmit} noValidate>
         <label className="field">
@@ -195,16 +195,44 @@ function DeleteModal({ busy, error, onConfirm, onCancel }) {
   const [typed, setTyped] = useState('')
   const [understood, setUnderstood] = useState(false)
   const inputRef = useRef(null)
+  const modalRef = useRef(null)
 
+  // Focus the confirm input on mount; Escape cancels; Tab is trapped
+  // inside the dialog while it is open.
   useEffect(() => {
     inputRef.current?.focus()
-  }, [])
+    function onKeyDown(e) {
+      if (e.key === 'Escape') {
+        if (!busy) onCancel()
+        return
+      }
+      if (e.key !== 'Tab' || !modalRef.current) return
+      const nodes = modalRef.current.querySelectorAll(
+        'button:not([disabled]), input:not([disabled]), [href], select, textarea, [tabindex]:not([tabindex="-1"])',
+      )
+      const list = Array.from(nodes).filter((n) => n.offsetParent !== null)
+      if (!list.length) return
+      const first = list[0]
+      const last = list[list.length - 1]
+      const active = document.activeElement
+      const inside = modalRef.current.contains(active)
+      if (e.shiftKey && (!inside || active === first)) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && (!inside || active === last)) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [busy, onCancel])
 
   const armed = typed.trim().toUpperCase() === 'DELETE' && understood && !busy
 
   return (
     <div className="dangertz-overlay" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel() }}>
-      <div className="dangertz-modal" role="dialog" aria-modal="true" aria-labelledby="dangertz-title">
+      <div className="dangertz-modal" role="dialog" aria-modal="true" aria-labelledby="dangertz-title" ref={modalRef}>
         <h4 className="adv-panel__title" id="dangertz-title">Delete this account permanently?</h4>
         <p className="block__body">
           This removes your sign-in, profile, and role data. Records that must survive for the
@@ -254,7 +282,7 @@ function DangerZone() {
       // Local session is now dead; clear provider state and leave the app.
       await signOut('/')
     } catch (err) {
-      setState({ busy: false, error: err.message || 'Deletion failed. If the Edge Function is not deployed yet, deploy delete_account and retry.' })
+      setState({ busy: false, error: err.message || 'Deletion failed. Please try again, or contact support if it keeps failing.' })
     }
   }
 
@@ -262,8 +290,8 @@ function DangerZone() {
     <Panel className="adv-panel dangertz">
       <h4 className="adv-panel__title">Danger zone</h4>
       <p className="adv-panel__sub">
-        Deletion happens server-side through an authenticated Edge Function. Your browser never
-        holds, sends, or sees any privileged key.
+        Confirm first, then we delete your account and its data from our servers.
+        Nothing privileged lives in your browser.
       </p>
       <button className="btn btn--danger" type="button" onClick={() => setOpen(true)} disabled={state.busy}>
         Delete account
@@ -288,7 +316,7 @@ function PreferencesSection() {
     <Panel className="adv-panel">
       <h4 className="adv-panel__title">Preferences</h4>
       <p className="adv-panel__sub">
-        Local-only until a preferences endpoint ships. Nothing is persisted to the database yet.
+        Saved to this device only. Nothing is sent to the server yet.
       </p>
       {Object.entries({ spend: 'Spend alerts', status: 'Status changes', weekly: 'Weekly summary' }).map(([k, label]) => (
         <label key={k} className="adv-check">
@@ -382,7 +410,7 @@ export default function AccountPage({ role, email, userId, headlineIndex, roleLa
   if (loadState.loading) {
     return (
       <div className="adv-page">
-        <AdvPageHead index={headlineIndex} label={roleLabel} title="Account." body="Loading your account from the database…" />
+        <AdvPageHead index={headlineIndex} label={roleLabel} title="Account." body="Loading your account…" />
         <AdvLoading label="Loading account…" />
       </div>
     )
@@ -403,7 +431,7 @@ export default function AccountPage({ role, email, userId, headlineIndex, roleLa
         index={headlineIndex}
         label={`${roleLabel} · Account`}
         title="Profile, security, and account controls."
-        body="Identity comes from Supabase Auth and your own rows in the database. Writes are owner-scoped by row level security."
+        body="Your details, your rows, your rules — you can edit everything here and changes save to your account only."
       />
 
       <div className="adv-grid adv-grid--2">

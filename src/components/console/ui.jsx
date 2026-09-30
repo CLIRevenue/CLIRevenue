@@ -2,11 +2,11 @@ import { useId } from 'react'
 
 /** Small shared pieces of the console's visual system. */
 
-export function SectionHead({ index, label, title, body, level = 'h3' }) {
+export function SectionHead({ index, label, title, body, level = 'h3', eyebrow = false }) {
   const id = useId()
   return (
     <header className="block__head">
-      <p className="eyebrow eyebrow--plain">{`${index} — ${label}`}</p>
+      {eyebrow ? <p className="eyebrow eyebrow--plain">{`${index} — ${label}`}</p> : null}
       {level === 'h2' ? (
         <h2 className="block__title" id={id}>
           {title}

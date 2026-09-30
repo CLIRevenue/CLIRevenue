@@ -57,8 +57,6 @@ function Atmosphere() {
         <i style={{ left: '73%' }} />
         <i style={{ left: '92%' }} />
       </div>
-      <div className="atmos__depth atmos__depth--a" />
-      <div className="atmos__depth atmos__depth--b" />
     </div>
   )
 }
