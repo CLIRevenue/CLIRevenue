@@ -1,6 +1,6 @@
 {
   "name": "@clirevenue/sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Browser SDK for CLIRevenue: ad delivery, viewability-gated impressions, click and conversion tracking. Zero runtime dependencies.",
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",

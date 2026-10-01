@@ -60,7 +60,7 @@ function measureHost(root: Element): AdContainer {
   return { width, height };
 }
 
-export const SDK_VERSION = "1.0.0";
+export const SDK_VERSION = "1.0.1";
 export const SDK_VERSION_HEADER = "X-CLIRevenue-SDK-Version";
 export const DEFAULT_BASE_URL = "https://api.clirevenue.com";
 
