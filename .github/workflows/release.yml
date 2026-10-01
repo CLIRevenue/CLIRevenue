@@ -11,19 +11,15 @@ name: release
 #     tag or a manual dispatch, so ordinary development can never publish.
 #
 # EXTERNAL SETUP REQUIRED BEFORE THE FIRST RELEASE (one time, done by a human)
-#   1. npm:  Settings -> Trusted Publishers -> add
-#            package:    @clirevenue/sdk
-#            repository: <the real repository URL>
-#            workflow:   .github/workflows/release.yml
-#            environment: (leave blank unless one is configured in this repo)
-#   2. GitHub: Settings -> Actions -> General -> Workflow permissions ->
-#            "Read repository contents and packages permissions" = read-only.
-#            Trusted Publishing does not need a PAT.
-#   3. The package must exist on npm and the version must not already be
-#      published; otherwise the publish step fails and nothing changes.
-#   4. The repository needs a real LICENSE file and the `repository`, `homepage`
-#      and `bugs` fields set to real URLs in packages/sdk/package.json. Those
-#      cannot be invented, so they are deliberately left unset for now.
+#   1. npm: Configure a Trusted Publisher for @clirevenue/sdk:
+#            provider: GitHub Actions
+#            organization/user: CLIRevenue
+#            repository: CLIRevenue
+#            workflow filename: release.yml
+#            environment: npm
+#   2. GitHub: the workflow below grants id-token: write for npm OIDC.
+#   3. The package version must not already be published.
+#   4. The SDK package contains the real LICENSE and repository metadata.
 
 on:
   # Intentional triggers only. Never `push`.
@@ -40,6 +36,7 @@ on:
 # Least privilege. The job needs no write access to this repository at all.
 permissions:
   contents: read
+  id-token: write
 
 # A newer release tag always wins over an in-flight one.
 concurrency:
@@ -59,9 +56,12 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '22.14.0'
           # No registry token is registered. Trusted Publishing uses OIDC only.
           registry-url: 'https://registry.npmjs.org'
+
+      - name: Set up npm for Trusted Publishing
+        run: npm install --global npm@11.5.1
 
       - name: Install dependencies
         working-directory: packages/sdk
