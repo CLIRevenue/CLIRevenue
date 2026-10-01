@@ -2,7 +2,7 @@
   "name": "@clirevenue/sdk",
   "version": "1.0.0",
   "description": "Browser SDK for CLIRevenue: ad delivery, viewability-gated impressions, click and conversion tracking. Zero runtime dependencies.",
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",
@@ -45,5 +45,13 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CLIRevenue/CLIRevenue.git"
+  },
+  "homepage": "https://github.com/CLIRevenue/CLIRevenue",
+  "bugs": {
+    "url": "https://github.com/CLIRevenue/CLIRevenue/issues"
   }
 }
