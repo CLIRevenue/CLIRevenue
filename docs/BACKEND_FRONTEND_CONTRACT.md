@@ -73,7 +73,10 @@ The frontend is responsible for handling user authentication via Supabase Auth (
 
 ### Get Active Campaign (Any Authenticated User)
 - **Endpoint**: `GET /api/active-campaign`
-- **Description**: Returns the campaign currently selected as active by the advertiser (global active campaign).
+- **Description**: Returns an eligible campaign to serve. Selection is over the **eligible set**, not a single global pointer — eligibility is status, schedule, remaining budget, and optional audience match, resolved against the campaign row itself. Candidates are ordered deterministically (`created_at ASC`, then `id ASC`) within a 25-campaign window. There is no longer a platform-wide "active campaign" that one advertiser's click could change for everyone else.
+- **Query Parameters**:
+  - `audience`: `string` (optional) — restrict candidates to this audience.
+  - `campaign_id`: `string (uuid)` (optional) — delivery context. If this campaign is not eligible, the response is 404 with a reason, which is distinguishable from "nothing eligible".
 - **Response**:
   ```json
   {
@@ -93,16 +96,19 @@ The frontend is responsible for handling user authentication via Supabase Auth (
     "updated_at": "string (ISO timestamp)"
   }
   ```
-  Returns 404 if no active campaign is set.
+  Returns 404 with `NO_FILL` if no campaign is eligible for the request.
 
-### Set Active Campaign (Advertiser)
+### Select Campaign (Advertiser)
 - **Endpoint**: `POST /api/campaigns/:id/select`
-- **Description**: Sets the specified campaign (must belong to the advertiser) as the active campaign for the platform.
+- **Description**: Validates that `:id` belongs to the authenticated advertiser and echoes the campaign back. **This no longer writes any server state** — campaign selection is per-advertiser local UI state, and the frontend keeps it in `activeCampaignId`. This endpoint previously wrote a single global `platform_settings.active_campaign_id`, which meant the last advertiser to press "select" decided what every publisher on the network was served. The route is retained so stale callers get a correct answer rather than a 404.
 - **Parameters**: `:id` is the campaign UUID.
+- **Errors**: 404 if the campaign does not exist or is not owned by the caller.
 - **Response** (200 OK):
   ```json
   {
-    "active_campaign_id": "string (uuid)"
+    "campaign": { "...": "campaign object, same shape as the list" },
+    "selected": true,
+    "global": false
   }
   ```
 

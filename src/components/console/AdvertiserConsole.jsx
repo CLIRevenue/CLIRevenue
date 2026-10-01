@@ -13,7 +13,7 @@ import { DemoTag, SectionHead } from './ui.jsx'
 import SponsoredSlot from './SponsoredSlot.jsx'
 import { AUDIENCES } from '../../data/economy.js'
 import { campaignMetrics, ctr, cvr, formatMoney, percent, parseBudget, toCents } from '../../lib/economy.js'
-import { createCampaign, recordQualifyingEvent, selectCampaign } from '../../lib/economyStore.js'
+import { createCampaign, selectCampaign } from '../../lib/economyStore.js'
 
 const COLUMNS = [
   { key: 'name', label: 'Campaign' },
@@ -68,13 +68,6 @@ function AdvertiserConsole({ economy }) {
     setError('')
   }
 
-  /* The preview is not a second economy: pressing its call to action records
-     the same qualifying event on the selected campaign that the workbench
-     slot records, so the console and the terminal are reading one ledger. */
-  const handlePreviewActivate = () => {
-    recordQualifyingEvent(active.id)
-  }
-
   return (
     <div className="block advertiser" id="advertiser">
       <SectionHead
@@ -112,12 +105,12 @@ function AdvertiserConsole({ economy }) {
               campaign={active}
               connected={economy.account.connected}
               hidden={false}
-              onActivate={handlePreviewActivate}
             />
             <p className="adpreview__note">
               What the developer would see in the reserved region: it sits beside the
-              output, never inside it. Nothing is delivered anywhere — the impression,
-              the interaction and the reward are simulated.
+              output, never inside it. This is the advertiser's own creative, rendered
+              locally — it is not delivered and records nothing. The live, delivered slot
+              is the one in the workbench above, and it is served by the CLIRevenue SDK.
             </p>
           </div>
 

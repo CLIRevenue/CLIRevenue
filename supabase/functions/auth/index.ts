@@ -1,73 +1,57 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/**
+ * auth — the signed-in user's own session identity.
+ *
+ * The previous implementation called `supabaseUser.auth.setAuth(token)`,
+ * which was removed in supabase-js v2, so it answered
+ * 500 {"details":"supabaseUser.auth.setAuth is not a function"} for every
+ * request (verifiable on the deployed project). It also leaked
+ * `err.message` and sent no CORS headers.
+ *
+ * Now: the caller is resolved with getUser(token) through the shared
+ * helper, only the caller's own id/email/role are returned, and failures
+ * are logged server-side and returned as a generic, controlled error.
+ */
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serveWithCors } from "../_shared/http.ts";
+import { adminClient, getJwtUser } from "../_shared/auth.ts";
+import { apiError, json, optionsResponse } from "../_shared/http.ts";
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-const supabaseUser = createClient(supabaseUrl, supabaseAnonKey);
-
-serve(async (req) => {
-  // Only allow GET requests
+const handler = serveWithCors(async (req) => {
+  if (req.method === "OPTIONS") return optionsResponse(req);
   if (req.method !== "GET") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" } });
+    return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
   }
 
+  const authed = await getJwtUser(req);
+  if ("error" in authed && authed.error) return authed.error;
+  const user = authed.user!;
+
   try {
-    // Get the Authorization header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Missing or invalid Authorization header" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
-    }
-    const accessToken = authHeader.substring(7); // Remove 'Bearer '
-
-    // Set the user client's auth
-    supabaseUser.auth.setAuth(accessToken);
-
-    // Get the user
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
-    if (userError) {
-      return new Response(
-        JSON.stringify({ error: "Invalid token" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Get the user's profile
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const admin = adminClient();
+    const { data: profile, error } = await admin
       .from("profiles")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (profileError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch profile" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
+    if (error) {
+      console.error("auth profile lookup failed:", error.message);
+      return apiError("INTERNAL_ERROR", "Could not load the account.", 500);
     }
 
-    return new Response(
-      JSON.stringify({
-        user: {
-          id: user.id,
-          email: user.email,
-          role: profile.role,
-        },
-        connected: true, // If we have a valid token, we consider the account connected
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+    return json({
+      user: {
+        id: user.id,
+        email: user.email ?? null,
+        role: profile?.role ?? null,
+      },
+      // A valid token is what "connected" means in the console.
+      connected: true,
+    });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: "Internal server error", details: err.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    console.error("auth error:", err instanceof Error ? err.message : err);
+    return apiError("INTERNAL_ERROR", "Internal server error.", 500);
   }
 });
+
+serve(handler);

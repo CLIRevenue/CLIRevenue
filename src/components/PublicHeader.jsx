@@ -22,6 +22,9 @@ export default function PublicHeader() {
         CLI<em>Revenue</em>
       </button>
       <nav className="sitehead__nav" aria-label="Account">
+        <a className="sitehead__nav-link" href="/developer">
+          Developer
+        </a>
         {loading ? null : isAuthenticated ? (
           <>
             <button
@@ -55,7 +58,7 @@ export default function PublicHeader() {
             )}
           </>
         )}
-      </nav>
+    </nav>
     </header>
   )
 }

@@ -1,0 +1,49 @@
+{
+  "name": "@clirevenue/sdk",
+  "version": "1.0.0",
+  "description": "Browser SDK for CLIRevenue: ad delivery, viewability-gated impressions, click and conversion tracking. Zero runtime dependencies.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "clirevenue",
+    "ads",
+    "advertising",
+    "ad-server",
+    "impression-tracking",
+    "viewability",
+    "publisher",
+    "browser-sdk",
+    "esm"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

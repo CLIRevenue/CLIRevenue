@@ -159,6 +159,20 @@ measures it perfectly.
   `12 issues`, `exit 0` — is the sample output of a stand-in host application, not
   a claim about anything.
 
+## Developer documentation
+
+The public SDK onboarding page and the full reference are in the repository:
+
+- `http://localhost:5173/developer` — the SDK landing page (install, key,
+  placements, render, events, sizing, FAQ).
+- `docs/developer/` — getting-started, installation, sdk, placements,
+  ad-slots, configuration, analytics, authorization, troubleshooting,
+  faq.
+
+The SDK surface is the `packages/sdk` workstream. Where the API is still
+settling, this documentation marks the integration point and tracks it in
+`docs/AI_HANDOFF.md`.
+
 ## Status
 
 **Early concept.** Looking for developers, advertisers, and CLI users.

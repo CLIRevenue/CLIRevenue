@@ -12,17 +12,11 @@
 import { useEffect, useRef, useState } from 'react'
 
 import Terminal from '../Terminal.jsx'
-import SponsoredSlot from './SponsoredSlot.jsx'
+import ServedAdSlot from './ServedAdSlot.jsx'
 import { SectionHead } from './ui.jsx'
 import usePrefersReducedMotion from '../../hooks/usePrefersReducedMotion.js'
-import { AGENT_RUN, REWARD_PER_INTERACTION_CENTS } from '../../data/economy.js'
+import { AGENT_RUN } from '../../data/economy.js'
 import { runDuration, sampleRun, slotIndex } from '../../lib/run.js'
-import { formatMoney } from '../../lib/economy.js'
-import {
-  getActiveCampaign,
-  recordImpression,
-  recordQualifyingEvent,
-} from '../../lib/economyStore.js'
 
 const SLOT_AT = slotIndex(AGENT_RUN)
 
@@ -81,16 +75,12 @@ function sameFrame(a, b) {
   )
 }
 
-function Workbench({ economy }) {
+function Workbench() {
   const reduced = usePrefersReducedMotion()
   const hostRef = useRef(null)
   const elapsedRef = useRef(0)
   const [onScreen, setOnScreen] = useState(false)
   const [liveSample, setSample] = useState(() => sampleRun(AGENT_RUN, 0))
-  const [signal, setSignal] = useState(null)
-
-  const campaign = getActiveCampaign(economy)
-  const connected = economy.account.connected
 
   /* Only stream while the workbench can actually be seen — a run that
      loops off-screen is a timer nobody asked for. */
@@ -123,35 +113,6 @@ function Workbench({ economy }) {
 
   const sample = reduced ? STATIC_SAMPLE : liveSample
 
-  /* The advertiser's side of the story: a slot that rendered counted. */
-  useEffect(() => {
-    if (!onScreen) return
-    recordImpression(campaign.id)
-  }, [onScreen, campaign.id])
-
-  useEffect(() => {
-    if (!signal) return undefined
-    const id = window.setTimeout(() => setSignal(null), 5000)
-    return () => window.clearTimeout(id)
-  }, [signal])
-
-  const handleActivate = () => {
-    recordQualifyingEvent(campaign.id)
-    setSignal(
-      connected
-        ? {
-            tone: 'ok',
-            text: `Interaction recorded · ${formatMoney(
-              REWARD_PER_INTERACTION_CENTS,
-            )} pending · settles in 5s`,
-          }
-        : {
-            tone: 'warn',
-            text: 'Interaction recorded for the advertiser · connect CLIRevenue to earn',
-          },
-    )
-  }
-
   const frame = {
     command: sample.command,
     lines: [],
@@ -179,23 +140,20 @@ function Workbench({ economy }) {
           frame={frame}
           foot={<span>demo workspace · simulated output · loops</span>}
         >
-          <Transcript
-            campaign={campaign}
-            connected={connected}
-            visible={sample.visible}
-            onActivate={handleActivate}
-          />
+          <Transcript visible={sample.visible} />
         </Terminal>
 
-        <p className="workbench__signal" data-tone={signal ? signal.tone : 'idle'} aria-live="polite">
-          {signal ? signal.text : 'Select the call to action to record a qualifying event.'}
+        <p className="workbench__signal" data-tone="idle" aria-live="polite">
+          Sponsored content is delivered by the CLIRevenue SDK from the placement below. An
+          impression is recorded by the SDK once half of the slot has been on screen for one
+          second.
         </p>
       </div>
     </div>
   )
 }
 
-function Transcript({ campaign, connected, visible, onActivate }) {
+function Transcript({ visible }) {
   return AGENT_RUN.lines.map((line, index) => {
     const state = index < visible ? 'printed' : 'pending'
     if (index === SLOT_AT) {
@@ -207,15 +165,7 @@ function Transcript({ campaign, connected, visible, onActivate }) {
          as a broken panel rather than as output still arriving. It is
          visible for the whole demonstration, exactly as the film's own
          slot is. */
-      return (
-        <SponsoredSlot
-          key="slot"
-          campaign={campaign}
-          connected={connected}
-          hidden={false}
-          onActivate={onActivate}
-        />
-      )
+      return <ServedAdSlot key="slot" hidden={false} />
     }
     return <Line key={index} line={line} state={state} />
   })

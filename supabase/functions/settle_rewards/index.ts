@@ -1,93 +1,111 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/**
+ * settle_rewards — accrued -> available.
+ *
+ * SECURITY: this endpoint moves money in the reward ledger, so it is not
+ * publicly callable. It previously accepted any request, including a bare
+ * anonymous JWT, and updated a `settledAt` column that does not exist
+ * (the column is `settled_at`), so settlement silently failed 500 for
+ * every caller. Both are fixed here:
+ *
+ *   1. A caller must be one of
+ *        - a signed-in developer, in which case only that developer's own
+ *          accrued rewards are eligible (`p_developer_id` is derived from
+ *          the JWT, never from the body); or
+ *        - a holder of the SETTLEMENT_SECRET header, which may settle
+ *          platform-wide. The secret path is disabled entirely when the
+ *          env var is unset, so a misconfigured deploy fails closed.
+ *   2. The transition happens inside public.apply_settlement(), a
+ *      SECURITY DEFINER RPC that locks the rows it flips and writes the
+ *      audit trail in the same transaction.
+ *
+ * Settling early is not an accounting loss — the settlement window is
+ * enforced server-side against reward_ledger.created_at — but it must
+ * never be an unauthenticated, unlogged mutation.
+ */
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serveWithCors } from "../_shared/http.ts";
+import { adminClient, getJwtUser, requireDeveloper } from "../_shared/auth.ts";
+import { apiError, isUuid, json, optionsResponse } from "../_shared/http.ts";
+import { constantTimeEqual } from "../_shared/secrets.ts";
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const DEFAULT_SETTLEMENT_MS = 5000;
 
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+function settlementMs(): number {
+  const raw = Number.parseInt(Deno.env.get("SETTLEMENT_MS") ?? "", 10);
+  if (!Number.isFinite(raw) || raw < 0) return DEFAULT_SETTLEMENT_MS;
+  return raw;
+}
 
-// Settlement period in milliseconds (default 5000ms = 5 seconds)
-// Can be overridden by setting the SETTLEMENT_MS environment variable
-const SETTLEMENT_MS = parseInt(Deno.env.get("SETTLEMENT_MS") || "5000", 10);
+/** Constant-time check of the privileged settlement secret.
+ *  Returns false when no secret is configured (fail closed). */
+function hasSettlementSecret(req: Request): boolean {
+  const expected = Deno.env.get("SETTLEMENT_SECRET");
+  if (!expected) return false;
+  return constantTimeEqual(expected, req.headers.get("x-settlement-secret") ?? "");
+}
 
-serve(async (req) => {
-  // Only allow POST requests (to prevent accidental triggering)
+const handler = serveWithCors(async (req) => {
+  if (req.method === "OPTIONS") return optionsResponse(req);
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
+    return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+  }
+
+  let scopeDeveloperId: string | null = null;
+  let platformWide = false;
+
+  if (hasSettlementSecret(req)) {
+    platformWide = true;
+  } else {
+    const authed = await getJwtUser(req);
+    if ("error" in authed && authed.error) {
+      return apiError(
+        "UNAUTHENTICATED",
+        "Settlement requires a signed-in developer or a settlement secret.",
+        401,
+      );
+    }
+    const admin = adminClient();
+    const dev = await requireDeveloper(admin, authed.user!.id);
+    if ("error" in dev && dev.error) return dev.error;
+    // Never trust a developer id from the body — only the token's own.
+    scopeDeveloperId = dev.developer!.id;
   }
 
   try {
-    // Calculate the cutoff time: now - SETTLEMENT_MS
-    const cutoffTime = new Date(Date.now() - SETTLEMENT_MS).toISOString();
-
-    // 1. Find accrued rewards that are older than the cutoff time
-    const { data: rewardsToSettle, error: selectError } = await supabaseAdmin
-      .from("reward_ledger")
-      .select("id, campaign_id, amount_cents, created_at")
-      .eq("status", "accrued")
-      .lt("created_at", cutoffTime);
-
-    if (selectError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch rewards to settle" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
+    // An explicit body scope='all' is accepted only on the secret path.
+    if (platformWide) {
+      try {
+        const body = await req.json();
+        if (body && typeof body === "object" && isUuid((body as { developer_id?: unknown }).developer_id)) {
+          scopeDeveloperId = String((body as { developer_id: string }).developer_id);
+          platformWide = false;
+        }
+      } catch {
+        // No body: platform-wide pass, which is what cron wants.
+      }
     }
 
-    if (rewardsToSettle.length === 0) {
-      return new Response(
-        JSON.stringify({ settled_count: 0, message: "No rewards to settle" }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
+    const admin = adminClient();
+    const { data, error } = await admin.rpc("apply_settlement", {
+      p_settlement_ms: settlementMs(),
+      p_developer_id: platformWide ? null : scopeDeveloperId,
+    });
+    if (error) {
+      console.error("apply_settlement failed:", error.message);
+      return apiError("INTERNAL_ERROR", "Could not run the settlement pass.", 500);
     }
 
-    // 2. Update each reward to 'available' and set settled_at
-    const rewardIds = rewardsToSettle.map((r) => r.id);
-    const { error: updateError } = await supabaseAdmin
-      .from("reward_ledger")
-      .update({ status: "available", settledAt: new Date().toISOString() })
-      .in("id", rewardIds);
-
-    if (updateError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to update rewards" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
+    const settledCount = Number(data?.settled_count ?? 0);
+    return json({
+      settled_count: settledCount,
+      settled_cents: Number(data?.settled_cents ?? 0),
+      scope: platformWide ? "platform" : "developer",
+    });
+} catch (err) {
+      // Log detail server-side; never return it to the caller.
+      console.error("settle_rewards error:", err instanceof Error ? err.message : err);
+      return apiError("INTERNAL_ERROR", "Internal server error.", 500);
     }
+  });
 
-    // 3. Insert ledger events for each settled reward
-    const ledgerEventsToInsert = rewardsToSettle.map((reward) => ({
-      type: "reward_available",
-      amount_cents: reward.amount_cents,
-      label: "Reward available",
-      detail: `${reward.campaign_id} · withdrawable`, // We could fetch the campaign name, but for simplicity we use the ID
-      simulated: false,
-    }));
-
-    const { error: ledgerError } = await supabaseAdmin
-      .from("ledger_events")
-      .insert(ledgerEventsToInsert);
-
-    if (ledgerError) {
-      console.error("Failed to insert ledger events for settled rewards:", ledgerError);
-      // We don't fail the request because the rewards were updated successfully
-    }
-
-    // 4. Return success
-    return new Response(
-      JSON.stringify({
-        settled_count: rewardsToSettle.length,
-        message: `Successfully settled ${rewardsToSettle.length} rewards`,
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ error: "Internal server error", details: err.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
-});
+serve(handler);

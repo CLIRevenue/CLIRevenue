@@ -1,9 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serveWithCors } from "../_shared/http.ts";
 import { adminClient, getJwtUser, requireAdvertiser } from "../_shared/auth.ts";
 import { apiError, isUuid, json, optionsResponse } from "../_shared/http.ts";
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return optionsResponse();
+const handler = serveWithCors(async (req) => {
+  if (req.method === "OPTIONS") return optionsResponse(req);
   if (req.method !== "POST") {
     return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
   }
@@ -29,19 +30,13 @@ serve(async (req) => {
   if (campaignError) return apiError("INTERNAL_ERROR", "Could not load campaign.", 500);
   if (!campaign) return apiError("CAMPAIGN_NOT_FOUND", "Campaign not found.", 404);
 
-  const { data: settings, error: settingsError } = await admin
-    .from("platform_settings")
-    .select("id")
-    .maybeSingle();
-  if (settingsError || !settings) {
-    return apiError("INTERNAL_ERROR", "Failed to fetch platform settings.", 500);
-  }
-  const { data: updated, error: updateError } = await admin
-    .from("platform_settings")
-    .update({ active_campaign_id: campaignId })
-    .eq("id", settings.id)
-    .select("active_campaign_id")
-    .single();
-  if (updateError) return apiError("INTERNAL_ERROR", "Failed to update active campaign.", 500);
-  return json({ active_campaign_id: updated.active_campaign_id });
+  /* Deprecated. This used to write the global
+     platform_settings.active_campaign_id, so one advertiser selecting a
+     campaign decided what every publisher was served. Selection is local UI
+     state now and there is no shared pointer to write. Ownership was proven
+     by the advertiser_id filter above, so this echoes the caller's own
+     campaign and changes nothing for anyone else. */
+  return json({ campaign: { id: campaign.id }, selected: true, global: false });
 });
+
+serve(handler);

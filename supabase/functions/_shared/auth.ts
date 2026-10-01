@@ -91,6 +91,7 @@ export function rpcCodeFromError(err: { message?: string } | null): string | nul
     "BUDGET_EXCEEDED",
     "DUPLICATE_EVENT",
     "INVALID_EVENT",
+    "CLICK_WITHOUT_IMPRESSION",
   ];
   return codes.find((c) => msg.includes(c)) || null;
 }

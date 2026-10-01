@@ -1,67 +1,125 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+/**
+ * get_active_campaign — public ad delivery read.
+ *
+ * This is the delivery surface the SDK will consume, so it stays
+ * unauthenticated (deploy with `--no-verify-jwt`, since the gateway
+ * otherwise rejects anonymous callers before the handler runs) and it is
+ * CORS-open.
+ *
+ * Two things it must not do:
+ *   1. Leak advertiser accounting. It used to return budget_cents,
+ *      spend_milli_cents and the impression/click/conversion counters to
+ *      any caller. Delivery needs a creative and an eligibility verdict,
+ *      not the advertiser's ledger, so the payload is now limited to the
+ *      creative plus the identity needed to render an honest label.
+ *   2. Fill when the campaign is not eligible. Eligibility (status,
+ *      schedule, remaining budget, optional audience match) is decided
+ *      here, server-side, and every failure returns the same generic
+ *      no-fill response so callers cannot probe another advertiser's
+ *      state. No-fill cases: draft, pending_review, rejected, paused,
+ *      completed, archived, before starts_at, after ends_at, over budget,
+ *      audience mismatch, or no eligible campaign.
+ *
+ * Selection is over the eligible *set*, not a single global pointer. A
+ * platform-wide `active_campaign_id` made the last advertiser to press
+ * "select" decide what every publisher on the network saw; eligibility now
+ * lives on the campaign row it describes, and the pointer is gone (see
+ * docs/MULTI_TENANT_CAMPAIGN_SELECTION.md). Ordering is created_at, then id:
+ * stable, so identical requests resolve identically, and deterministic, so
+ * nothing about delivery depends on shared state. Fairness/rotation/bidding
+ * are deliberately out of scope for MVP.
+ */
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serveWithCors } from "../_shared/http.ts";
 import { adminClient } from "../_shared/auth.ts";
-import { apiError, json, optionsResponse } from "../_shared/http.ts";
+import { apiError, corsFor, json, optionsResponse } from "../_shared/http.ts";
+import { CANDIDATE_WINDOW, pickEligible } from "../_shared/eligibility.ts";
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return optionsResponse();
+function noFill(req?: Request): Response {
+  // A no-fill is a normal delivery outcome, not an exceptional one. The
+  // publisher has to be able to read it, so it carries the real request's
+  // origin rather than the first allow-listed one.
+  return apiError("NO_FILL", "No campaign is eligible for this request.", 404, {}, req);
+}
+
+const handler = serveWithCors(async (req) => {
+  if (req.method === "OPTIONS") return optionsResponse(req);
   if (req.method !== "GET") {
-    return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+    return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405, {}, req);
   }
+
   try {
+    const url = new URL(req.url);
+    const requestedAudience = url.searchParams.get("audience");
+
+    /*
+     * There is deliberately no `campaign_id` parameter here any more.
+     *
+     * It was an optional filter that let any caller pin delivery to one
+     * specific advertiser's campaign. It could not spend money -- this
+     * endpoint records no impression, and impressions are only accepted
+     * through ads/impression against a signed serve record -- but it let a
+     * third party target and enumerate individual campaigns, which is exactly
+     * "the client chooses the campaign" that the serve-record architecture
+     * exists to prevent. Audience stays: it is a targeting hint, not a
+     * pointer at a particular advertiser.
+     */
+
     const admin = adminClient();
-    const { data: settings, error: settingsError } = await admin
-      .from("platform_settings")
-      .select("active_campaign_id")
-      .maybeSingle();
-    if (settingsError) {
-      return apiError("INTERNAL_ERROR", "Failed to fetch platform settings.", 500);
-    }
-    if (!settings?.active_campaign_id) {
-      return apiError("CAMPAIGN_NOT_FOUND", "No active campaign set.", 404);
-    }
-    const { data: campaign, error: campaignError } = await admin
+    let query = admin
       .from("campaigns")
       .select(
-        "id, name, headline, description, cta, audience_id, budget_cents, spend_milli_cents, impressions_count, clicks_count, conversions_count, status, starts_at, ends_at, created_at, updated_at",
+        "id, name, headline, description, cta, audience_id, status, starts_at, ends_at, budget_cents, spend_milli_cents",
       )
-      .eq("id", settings.active_campaign_id)
-      .maybeSingle();
-    if (campaignError || !campaign) {
-      return apiError("CAMPAIGN_NOT_FOUND", "Active campaign not found.", 404);
+      .eq("status", "active")
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(CANDIDATE_WINDOW);
+    if (requestedAudience) query = query.eq("audience_id", requestedAudience);
+
+    const { data: candidates, error: candidatesError } = await query;
+    if (candidatesError) {
+      console.error("get_active_campaign query failed:", candidatesError.message);
+      return apiError("INTERNAL_ERROR", "Delivery is unavailable.", 500, {}, req);
     }
-    const servable =
-      campaign.status === "active" &&
-      (campaign.starts_at == null || new Date(campaign.starts_at).getTime() <= Date.now()) &&
-      (campaign.ends_at == null || new Date(campaign.ends_at).getTime() >= Date.now()) &&
-      campaign.spend_milli_cents < campaign.budget_cents * 1000;
-    if (!servable) {
-      return apiError("CAMPAIGN_NOT_SERVABLE", "The selected campaign is not eligible to serve.", 404);
-    }
+
+    const now = Date.now();
+    // Generic T is inferred from the row type, so the selected campaign keeps
+    // its name/headline/cta/audience fields for the delivery payload below.
+    const campaign = pickEligible(candidates ?? [], now);
+    if (!campaign) return noFill(req);
+
     const { data: audience } = await admin
       .from("audiences")
       .select("label")
       .eq("id", campaign.audience_id)
       .maybeSingle();
-    const spendCents = Math.floor(campaign.spend_milli_cents / 1000);
-    return json({
+
+    // Delivery payload only: no budget, spend, or counters.
+    const body = JSON.stringify({
       id: campaign.id,
       name: campaign.name,
       headline: campaign.headline,
       description: campaign.description,
       cta: campaign.cta,
       audience_id: campaign.audience_id,
-      audience: audience?.label || campaign.audience_id,
-      budgetCents: campaign.budget_cents,
-      spendCents,
-      impressions: campaign.impressions_count,
-      clicks: campaign.clicks_count,
-      conversions: campaign.conversions_count,
-      status: campaign.status,
-      createdAt: campaign.created_at,
-      updatedAt: campaign.updated_at,
+      audience: audience?.label ?? campaign.audience_id,
+      simulated: false,
+    });
+
+    return new Response(body, {
+      status: 200,
+      headers: {
+        ...corsFor(req),
+        "Content-Type": "application/json",
+        // A fill decision is per-request; never cache it.
+        "Cache-Control": "no-store",
+      },
     });
   } catch (err) {
-    console.error(err);
-    return apiError("INTERNAL_ERROR", "Internal server error.", 500);
+    console.error("get_active_campaign error:", err instanceof Error ? err.message : err);
+    return json({ error: { code: "INTERNAL_ERROR", message: "Delivery is unavailable." } }, 500, req);
   }
 });
+
+serve(handler);

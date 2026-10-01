@@ -31,3 +31,16 @@ dist-ssr
 # come back through a checkout.
 scripts/fix-economy-store.py
 scripts/orbit-probe.mjs
+
+# Local OpenCode state, logs, dependencies, and RAG data
+.opencode/
+
+# Local Supabase CLI state
+supabase/.temp/
+
+# Local SDK consumer validation harness
+packages/sdk-consumer-smoke/
+
+# Local-only Supabase test Edge Functions
+supabase/functions/test_edge/
+supabase/functions/test_secret/

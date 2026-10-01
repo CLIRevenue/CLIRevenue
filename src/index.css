@@ -390,8 +390,14 @@ html.intro-lock body {
   background:
     linear-gradient(180deg, var(--glass-hi), transparent 34%),
     var(--glass-bg);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.08);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.08);
+  /* The instrument sheen is baked into the background stack below
+     rather than sampled from the page behind it. A backdrop-filter
+     re-blurs everything underneath on every frame in which anything
+     underneath moves, which during a scroll is every frame; and
+     against this app's near-black background a 14px blur of near-black
+     is not something the eye can separate from a static gradient, so
+     the blur was cost with no visible return. `--glass-blur` is kept
+     for any future surface that genuinely sits over moving imagery. */
   border: var(--border-w) solid var(--glass-edge);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),

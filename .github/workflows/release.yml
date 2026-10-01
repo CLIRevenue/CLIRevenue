@@ -1,0 +1,156 @@
+name: release
+
+# Publishes @clirevenue/sdk to npm.
+#
+# SECURITY POSTURE
+#   * No npm token exists anywhere in this repository. Authentication is npm
+#     Trusted Publishing (OIDC): GitHub mints a short-lived identity token and
+#     npm trusts it because a Trusted Publisher is configured for this package
+#     on npmjs.com. There is nothing to leak because nothing is stored.
+#   * This workflow does NOT run on push. It runs only on an explicit release
+#     tag or a manual dispatch, so ordinary development can never publish.
+#
+# EXTERNAL SETUP REQUIRED BEFORE THE FIRST RELEASE (one time, done by a human)
+#   1. npm:  Settings -> Trusted Publishers -> add
+#            package:    @clirevenue/sdk
+#            repository: <the real repository URL>
+#            workflow:   .github/workflows/release.yml
+#            environment: (leave blank unless one is configured in this repo)
+#   2. GitHub: Settings -> Actions -> General -> Workflow permissions ->
+#            "Read repository contents and packages permissions" = read-only.
+#            Trusted Publishing does not need a PAT.
+#   3. The package must exist on npm and the version must not already be
+#      published; otherwise the publish step fails and nothing changes.
+#   4. The repository needs a real LICENSE file and the `repository`, `homepage`
+#      and `bugs` fields set to real URLs in packages/sdk/package.json. Those
+#      cannot be invented, so they are deliberately left unset for now.
+
+on:
+  # Intentional triggers only. Never `push`.
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Verify the package without publishing (recommended for a first run).'
+        type: boolean
+        default: true
+
+# Least privilege. The job needs no write access to this repository at all.
+permissions:
+  contents: read
+
+# A newer release tag always wins over an in-flight one.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-and-publish:
+    name: Verify and publish
+    runs-on: ubuntu-latest
+    environment: npm  # add npm's trusted publisher entry with this same name
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          # No registry token is registered. Trusted Publishing uses OIDC only.
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        working-directory: packages/sdk
+        run: npm ci
+
+      - name: Test
+        working-directory: packages/sdk
+        run: npm test
+
+      - name: Typecheck
+        working-directory: packages/sdk
+        run: npm run typecheck
+
+      - name: Build
+        working-directory: packages/sdk
+        run: npm run build
+
+      # Fail loudly rather than shipping an unexpected artifact. The allowlist
+      # is the complete set of files a consumer may receive.
+      - name: Verify package contents
+        working-directory: packages/sdk
+        run: |
+          set -euo pipefail
+          npm pack --dry-run --json > pack.json
+          node -e '
+            const files = require("./pack.json")[0].files.map(f => f.path).sort();
+            const allowed = new Set([
+              "README.md",
+              "package.json",
+              "dist/cache.d.ts", "dist/cache.js",
+              "dist/errors.d.ts", "dist/errors.js",
+              "dist/http.d.ts", "dist/http.js",
+              "dist/index.d.ts", "dist/index.js",
+              "dist/layout.d.ts", "dist/layout.js",
+              "dist/queue.d.ts", "dist/queue.js",
+              "dist/viewability.d.ts", "dist/viewability.js",
+            ]);
+            const unexpected = files.filter(f => !allowed.has(f));
+            const missing = [...allowed].filter(f => !files.includes(f));
+            if (unexpected.length || missing.length) {
+              console.error("Package contents are not as expected.");
+              if (unexpected.length) console.error("Unexpected:", unexpected.join(", "));
+              if (missing.length)    console.error("Missing:", missing.join(", "));
+              process.exit(1);
+            }
+            console.log("Package contents verified:", files.length, "files");
+          '
+
+      - name: Confirm version and tag agree
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./packages/sdk/package.json').version")"
+          echo "package.json version: $version"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            tag="${GITHUB_REF#refs/tags/v}"
+            if [ "$tag" != "$version" ]; then
+              echo "Refusing to publish: tag $tag does not match version $version."
+              exit 1
+            fi
+          fi
+
+      - name: Verify the SDK version constant matches
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./packages/sdk/package.json').version")"
+          grep -q "SDK_VERSION = \"$version\"" packages/sdk/src/index.ts \
+            || { echo "SDK_VERSION in src/index.ts does not match package.json ($version)."; exit 1; }
+          echo "SDK_VERSION matches package.json: $version"
+
+      # Default path. This is what a first run should do: it proves the
+      # artifact is correct without creating anything.
+      - name: Dry run (pack only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        working-directory: packages/sdk
+        run: |
+          set -euo pipefail
+          echo "Dry run: the package is verified but not published."
+          echo "Re-run with dry_run=false only once Trusted Publishing is configured."
+          npm pack
+
+      - name: Publish to npm (Trusted Publishing, no token)
+        if: ${{ github.event_name == 'push' || inputs.dry_run == false }}
+        working-directory: packages/sdk
+        id: publish
+        run: |
+          set -euo pipefail
+          npm publish --access public --provenance
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          echo "### @clirevenue/sdk ${{ steps.publish.outputs.published == 'true' && 'published' || 'packaged' }}" >> "$GITHUB_STEP_SUMMARY"

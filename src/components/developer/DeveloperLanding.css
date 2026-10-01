@@ -1,0 +1,877 @@
+/* =============================================================
+   CLIRevenue — public SDK landing page
+   -------------------------------------------------------------
+   Three colours, hairlines, zero radius: the product's material exactly.
+   No new token, no new curve, no shadow invented here. The one borrowed
+   device is the film terminal's hard offset plate, which is what makes
+   the hero code block read as an artifact rather than as a box.
+
+   Families, in document order, so nothing repeats twice in a row:
+   masthead · asymmetric hero spread · numbered step rail · hairline
+   specimen tables · open two-column distribution spread · code-led flow
+   rows · nine-cell anchor schematic · six-cell state grid · two-column
+   FAQ. The rail is the only sticky element below the masthead.
+
+   This file is imported by DeveloperLanding.jsx. Importing it from the
+   component is what keeps it with the page it belongs to; it previously
+   shipped unimported, so none of these rules were ever applied.
+   ============================================================= */
+
+/* ---------- page ---------- */
+
+.sdk-page {
+  position: relative;
+  z-index: 1;
+  display: block;
+  background: var(--void);
+  padding: 0 var(--gutter) clamp(64px, 10vh, 120px);
+}
+
+.sdk-page__inner {
+  width: 100%;
+  max-width: calc(var(--measure) + var(--gutter) * 2);
+  margin: 0 auto;
+}
+
+/* One offset for every anchor on this page: the masthead is sticky, so
+   a jumped-to heading has to clear it. */
+.sdk-page [id] {
+  scroll-margin-top: 88px;
+}
+
+/* ---------- masthead ----------
+   The site header is not mounted on /developer, so the page carries its
+   own: identity on the left, the two jumps that survive once the rail is
+   hidden, and the single account action. Full-bleed, one line, and
+   compacted rather than wrapped under 640. */
+
+.sdk-top {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 11px var(--gutter);
+  border-bottom: 1px solid var(--hair);
+  background: var(--glass-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.sdk-top__brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.sdk-top__brand em {
+  font-style: normal;
+  color: var(--amber);
+}
+
+/* The path indicator wears the site header's own navigation control — the
+   same box as the homepage's Developer / Log in / Sign up — instead of a
+   chip of its own. This rule only sets the label treatment on top of it. */
+.sdk-top__path {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: default;
+}
+
+.sdk-top__nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  /* Identity on the left, the account action on the right: the nav takes
+     the slack itself rather than the header spreading three children. */
+  margin-left: auto;
+}
+
+.sdk-top__link {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+  transition: color var(--dur-fast) var(--ease-ui), border-color var(--dur-fast) var(--ease-ui);
+}
+
+.sdk-top__link:hover,
+.sdk-top__link:focus-visible {
+  color: var(--ink);
+  border-bottom-color: var(--signal);
+}
+
+/* ---------- hero ----------
+   Asymmetric on purpose: the statement is given the wider column and the
+   integration plate sits beside it. No framed hero box and no decorative
+   red wash — the plate itself is the red-flagged artifact. */
+
+.sdk-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: clamp(28px, 4.5vw, 72px);
+  align-items: center;
+  padding: clamp(36px, 6vh, 76px) 0 clamp(40px, 6vh, 72px);
+}
+
+.sdk-hero__lede {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  justify-items: start;
+}
+
+.sdk-hero__title {
+  margin: 0;
+  max-width: 20ch;
+  font-size: clamp(32px, 3.5vw, 54px);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: var(--track-head);
+  text-wrap: balance;
+  color: var(--ink);
+}
+
+/* The accent line is the flag: one sentence in red, the way the film's
+   closing statement carries its second line. */
+.sdk-hero__accent {
+  display: block;
+  color: var(--signal-text);
+}
+
+.sdk-hero__body {
+  margin: 0;
+  max-width: 48ch;
+  font-size: clamp(14.5px, 1.3vw, 16px);
+  line-height: 1.65;
+  color: var(--ink-3);
+  text-wrap: pretty;
+}
+
+.sdk-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+/* ---------- code plate ----------
+   One frame, one bar, one red rule. The copy control sits in the bar,
+   outside the <pre>, so nothing interactive is nested inside the code. */
+
+.sdk-code,
+.sdk-plate {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--hair);
+  border-left: var(--border-w-2) solid var(--signal);
+  background: var(--panel);
+}
+
+.sdk-code__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 12px 7px 14px;
+  border-bottom: 1px solid var(--hair);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sdk-code__tag {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.sdk-code__pre {
+  margin: 0;
+  padding: 15px 16px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.72;
+  color: var(--ink-2);
+}
+
+.sdk-code__pre code {
+  font-family: inherit;
+  color: inherit;
+  white-space: pre;
+}
+
+/* The hero plate keeps the film terminal's hard offset: the device the
+   product already uses to say "artifact, not panel". */
+.sdk-plate {
+  box-shadow: 10px 10px 0 0 rgba(255, 255, 255, 0.045);
+}
+
+.sdk-plate__meta {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: var(--ink-4);
+}
+
+/* Copy control. The compound selectors outrank the shared .btn--ghost /
+   .btn--sm classes the button also carries, so the success state really
+   does invert rather than losing to the later sheet. */
+.sdk-code .sdk-copy {
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sdk-code .sdk-copy--done,
+.sdk-code .sdk-copy--done:hover:not(:disabled) {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+}
+
+/* ---------- inline technical reference ---------- */
+
+.sdk-inline {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--hair);
+  padding: 0 5px;
+  white-space: nowrap;
+}
+
+
+/* ---------- body: rail + main column ---------- */
+
+.sdk-body {
+  display: grid;
+  grid-template-columns: 188px minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 64px);
+  align-items: start;
+  margin-top: clamp(20px, 3vh, 40px);
+  padding-top: clamp(28px, 4vh, 52px);
+  border-top: 1px solid var(--hair);
+}
+
+.sdk-rail {
+  position: sticky;
+  top: 76px;
+  display: grid;
+  gap: 10px;
+}
+
+.sdk-rail__label {
+  padding-left: 12px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.sdk-rail__list {
+  display: grid;
+  gap: 2px;
+}
+
+.sdk-rail__link {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0 6px 12px;
+  border-left: 1px solid var(--hair);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-ui), border-color var(--dur-fast) var(--ease-ui);
+}
+
+.sdk-rail__link:hover,
+.sdk-rail__link:focus-visible {
+  color: var(--ink);
+  border-left-color: var(--signal);
+}
+
+.sdk-rail__n {
+  font-size: 9.5px;
+  color: var(--ink-4);
+}
+
+.sdk-main {
+  display: grid;
+  gap: clamp(34px, 5vh, 64px);
+  min-width: 0;
+}
+
+.sdk-block {
+  min-width: 0;
+}
+
+/* Two rows, two different splits. The pairs are deliberately unequal:
+   an even 50/50 grid of cards is the shape this page is being taken out
+   of, and unequal pairs keep the reading edge uneven. */
+.sdk-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: clamp(24px, 3vw, 40px);
+  align-items: start;
+}
+
+.sdk-row--b {
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+}
+
+/* ---------- section heads ---------- */
+
+.sdk-head {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.sdk-head__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.22;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+}
+
+.sdk-head--lg .sdk-head__title {
+  max-width: 40ch;
+  font-size: clamp(23px, 2.3vw, 30px);
+  letter-spacing: var(--track-head);
+  text-wrap: balance;
+}
+
+.sdk-head__sub {
+  margin: 0;
+  max-width: 56ch;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+/* ---------- panel ----------
+   Panel renders `panel sdk-panel`, and `.panel` carries no rule anywhere
+   in the product, so the card's material is stated here. */
+
+.sdk-panel {
+  position: relative;
+  padding: 24px;
+  border: 1px solid var(--hair);
+  background: var(--panel);
+}
+
+/* ---------- prose ---------- */
+
+.sdk-p {
+  max-width: 68ch;
+  font-size: 15.5px;
+  line-height: 1.62;
+  color: var(--ink-3);
+}
+
+.sdk-p + .sdk-p {
+  margin-top: 14px;
+}
+
+.sdk-note {
+  max-width: 74ch;
+  margin-top: 18px;
+  font-size: 12.5px;
+  line-height: 1.62;
+  color: var(--ink-4);
+}
+
+.sdk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+/* ---------- specimen table ----------
+   Label over value, hairline-separated. This replaces the fixed 26px
+   chips the old markup used: a mark that had to hold words like
+   "Placement key" could only ever overflow it. */
+
+.sdk-spec {
+  margin-top: 20px;
+  border-top: 1px solid var(--hair);
+}
+
+.sdk-spec__row {
+  display: grid;
+  grid-template-columns: minmax(0, 152px) minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.sdk-spec__key {
+  padding-top: 2px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.sdk-spec__value {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.sdk-spec--card {
+  margin-top: 0;
+  padding: 2px 18px;
+  border: 1px solid var(--hair);
+}
+
+.sdk-spec--card .sdk-spec__row:last-child {
+  border-bottom: 0;
+}
+
+/* ---------- version strip ---------- */
+
+.sdk-version {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.sdk-version__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--hair-strong);
+  color: var(--ink-2);
+}
+
+.sdk-version__label {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+/* The one number the page shows is the flag. */
+.sdk-version__value {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--signal-text);
+}
+
+/* ---------- open two-column spread (distribution) ---------- */
+
+.sdk-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(22px, 3vw, 40px);
+  align-items: start;
+}
+
+.sdk-split__main {
+  min-width: 0;
+}
+
+
+/* ---------- quickstart: numbered step rail ---------- */
+
+.sdk-qs__steps {
+  display: grid;
+}
+
+.sdk-qs__step {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 20px;
+  padding: 22px 0;
+  border-top: 1px solid var(--hair);
+}
+
+.sdk-qs__step:last-child {
+  padding-bottom: 0;
+}
+
+.sdk-qs__n {
+  padding-top: 2px;
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink-4);
+}
+
+.sdk-qs__body {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sdk-qs__title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+}
+
+/* ---------- flow rows (rendering) ---------- */
+
+.sdk-flow {
+  display: grid;
+}
+
+.sdk-flow__row {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  gap: 20px;
+  padding: 20px 0;
+  border-top: 1px solid var(--hair);
+}
+
+.sdk-flow__row:last-child {
+  padding-bottom: 0;
+}
+
+.sdk-flow__n {
+  padding-top: 3px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--signal-text);
+}
+
+.sdk-flow__body {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sdk-flow__text {
+  max-width: 72ch;
+  font-size: 13.5px;
+  line-height: 1.62;
+  color: var(--ink-2);
+}
+
+/* ---------- anchor schematic (sizing) ----------
+   Nine cells drawn as a hairline lattice: 1px gap over a hairline
+   background is the technique the rest of the product uses for grids.
+   Only the three anchors the copy names are labelled. */
+
+.sdk-geometry {
+  display: grid;
+  gap: clamp(20px, 3vw, 30px);
+  margin-top: 20px;
+}
+
+.sdk-anchors {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.sdk-anchors__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  width: 100%;
+  max-width: 460px;
+  border: 1px solid var(--hair);
+  background: var(--hair);
+}
+
+.sdk-anchors__cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 58px;
+  background: var(--panel);
+}
+
+.sdk-anchors__cell--flag {
+  outline: 1px solid var(--signal);
+  outline-offset: -1px;
+}
+
+.sdk-anchors__name {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.sdk-anchors__cell--flag .sdk-anchors__name {
+  color: var(--signal-text);
+}
+
+.sdk-anchors__legend {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+/* ---------- lifecycle: six-cell state grid ---------- */
+
+.sdk-states {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  border: 1px solid var(--hair);
+  background: var(--hair);
+}
+
+.sdk-states__cell {
+  padding: 18px 20px 20px;
+  background: var(--panel);
+}
+
+.sdk-states__id {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.sdk-states__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hair-strong);
+}
+
+/* Ready is the only live state: red dot, red label, and the same glow the
+   demo tag uses for a live marker. */
+.sdk-states__cell--live .sdk-states__dot {
+  background: var(--signal);
+  box-shadow: 0 0 8px var(--amber-glow);
+}
+
+.sdk-states__cell--live .sdk-states__id {
+  color: var(--signal-text);
+}
+
+.sdk-states__label {
+  display: block;
+  margin-top: 10px;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+}
+
+.sdk-states__body {
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+/* ---------- FAQ: hairline dividers, two columns ---------- */
+
+.sdk-faq {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(24px, 4vw, 56px);
+  align-items: start;
+}
+
+/* The vertical space lives on the <summary>, not on the item: the whole
+   44–48px band is then part of the disclosure's hit area, and the spacing
+   between questions is unchanged. */
+.sdk-faq__item {
+  border-top: 1px solid var(--hair);
+}
+
+.sdk-faq__item[open] {
+  border-top-color: var(--hair-amber);
+}
+
+.sdk-faq__q {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  list-style: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+  padding: 13px 0;
+}
+
+.sdk-faq__q::-webkit-details-marker {
+  display: none;
+}
+
+.sdk-faq__sign {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1;
+  color: var(--ink-4);
+}
+
+.sdk-faq__sign::before {
+  content: '+';
+}
+
+.sdk-faq__item[open] .sdk-faq__sign {
+  color: var(--signal-text);
+}
+
+.sdk-faq__item[open] .sdk-faq__sign::before {
+  content: '−';
+}
+
+.sdk-faq__a {
+  margin: 0 0 13px;
+  max-width: 74ch;
+  font-size: 13px;
+  line-height: 1.62;
+  color: var(--ink-3);
+}
+
+/* ---------- responsive ----------
+   Collapse points follow the product's existing set: 1080 (the rail and
+   every pair), 900 (the FAQ), 760 (the internal step and row grids),
+   640 (the masthead compacts rather than wrapping to a second line). */
+
+@media (max-width: 1080px) {
+  .sdk-body {
+    grid-template-columns: 1fr;
+  }
+
+  .sdk-rail {
+    display: none;
+  }
+
+  .sdk-hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .sdk-row,
+  .sdk-row--b {
+    grid-template-columns: 1fr;
+  }
+
+  .sdk-split {
+    grid-template-columns: 1fr;
+  }
+
+  .sdk-states {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .sdk-faq {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .sdk-hero__actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sdk-hero__actions .btn {
+    width: 100%;
+  }
+
+  .sdk-qs__step,
+  .sdk-flow__row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .sdk-spec__row {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .sdk-plate {
+    box-shadow: 6px 6px 0 0 rgba(255, 255, 255, 0.045);
+  }
+
+  .sdk-page [id] {
+    scroll-margin-top: 72px;
+  }
+}
+
+@media (max-width: 640px) {
+  .sdk-top {
+    padding: 9px var(--gutter);
+  }
+
+  .sdk-top__link {
+    display: none;
+  }
+
+  .sdk-panel {
+    padding: 20px;
+  }
+
+  .sdk-states {
+    grid-template-columns: 1fr;
+  }
+
+  /* Code is the one thing that cannot reflow. A smaller step keeps most
+     lines inside the plate at phone widths instead of relying on a
+     horizontal scroll for every one of them. */
+  .sdk-code__pre {
+    font-size: 11.5px;
+    padding: 13px 14px;
+  }
+}
+
+/* ---------- reduced motion ----------
+   Nothing here animates on its own. The transitions are colour and border
+   only, and the global prefers-reduced-motion block already takes every
+   duration to zero: no infinite loop, no scroll listener, no transform
+   left waiting. */

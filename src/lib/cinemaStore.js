@@ -46,11 +46,38 @@ export function subscribe(listener) {
     listeners.delete(listener)
   }
 }
-
 export function publishSceneProgress(id, value) {
-  if (snapshot[id] === value) return
+  const totalStart = performance.now()
+  const earlyReturnStart = performance.now()
+  if (snapshot[id] === value) {
+    const earlyReturnDuration = performance.now() - earlyReturnStart
+    if (!window.__cascadeTimings) window.__cascadeTimings = []
+    window.__cascadeTimings.push({ stage: 'publish-early-return', id, duration: earlyReturnDuration, scrollY: window.scrollY })
+    return
+  }
+  const earlyReturnDuration = performance.now() - earlyReturnStart
+
+  const snapshotStart = performance.now()
   snapshot = { ...snapshot, [id]: value }
-  notify()
+  const snapshotDuration = performance.now() - snapshotStart
+
+  const notifyStart = performance.now()
+  if (!window.__cinemaStoreNoop) notify()
+  const notifyDuration = performance.now() - notifyStart
+
+  const totalDuration = performance.now() - totalStart
+
+  if (!window.__cascadeTimings) window.__cascadeTimings = []
+  window.__cascadeTimings.push({
+    stage: 'publish-full',
+    id,
+    earlyReturnDuration,
+    snapshotDuration,
+    notifyDuration,
+    totalDuration,
+    listeners: listeners.size,
+    scrollY: window.scrollY
+  })
 }
 
 export function publishAll(value) {

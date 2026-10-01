@@ -1,217 +1,106 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/**
+ * payouts — developer payout requests against the demo rail.
+ *
+ * SECURITY / ACCOUNTING
+ * The previous implementation:
+ *   - called `supabaseUser.auth.setAuth(...)`, removed in supabase-js v2,
+ *     so every request answered 500 without ever authenticating;
+ *   - computed the balance with `const reserved = 0; // TODO`, so the same
+ *     settled rewards could be paid out over and over;
+ *   - inserted the payout and the transaction as two unrelated
+ *     round-trips, so two concurrent requests both saw the full balance;
+ *   - returned `err.message` to the caller.
+ *
+ * Now: the caller is resolved from their JWT, the developer id is never
+ * read from the body, and the whole debit + payout insert runs inside the
+ * public.request_payout() RPC — a single transaction that locks the
+ * spendable reward rows FOR UPDATE and consumes them, so a second
+ * concurrent request blocks and then fails rather than double-spending.
+ */
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serveWithCors } from "../_shared/http.ts";
+import { adminClient, getJwtUser, requireDeveloper } from "../_shared/auth.ts";
+import { apiError, json, optionsResponse, restPath } from "../_shared/http.ts";
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+const DEFAULT_PROVIDER = "demo-ledger";
+const MAX_PAYOUT_CENTS = 10_000_000;
 
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-const supabaseUser = createClient(supabaseUrl, supabaseAnonKey);
-
-serve(async (req) => {
-  // Only allow POST requests
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" } });
+function mapRpcError(message: string) {
+  if (message.includes("INSUFFICIENT_BALANCE")) {
+    return apiError("INSUFFICIENT_BALANCE", "Not enough settled balance for that payout.", 400);
   }
+  if (message.includes("INVALID_AMOUNT")) {
+    return apiError("INVALID_AMOUNT", "Amount must be a positive integer (cents).", 400);
+  }
+  if (message.includes("INVALID_PROVIDER")) {
+    return apiError("INVALID_PROVIDER", "Unknown payout provider.", 400);
+  }
+  return apiError("INTERNAL_ERROR", "Could not create the payout.", 500);
+}
+
+const handler = serveWithCors(async (req) => {
+  if (req.method === "OPTIONS") return optionsResponse(req);
+  if (req.method !== "POST") {
+    return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+  }
+
+  // /payouts and /payouts/request are the same operation.
+  const rest = restPath(new URL(req.url).pathname, "payouts");
+  if (rest.length > 1 || (rest.length === 1 && rest[0] !== "request")) {
+    return apiError("NOT_FOUND", "Not found.", 404);
+  }
+
+  const authed = await getJwtUser(req);
+  if ("error" in authed && authed.error) return authed.error;
+  const admin = adminClient();
+  const dev = await requireDeveloper(admin, authed.user!.id);
+  if ("error" in dev && dev.error) return dev.error;
+  // Ownership comes from the token, never from the request body.
+  const developerId = dev.developer!.id;
+
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return apiError("INVALID_BODY", "JSON body required.", 400);
+  }
+  if (!body || typeof body !== "object") {
+    return apiError("INVALID_BODY", "JSON body required.", 400);
+  }
+
+  const rawAmount = body.amount_cents ?? body.amountCents;
+  if (typeof rawAmount !== "number" || !Number.isInteger(rawAmount) || rawAmount <= 0) {
+    return apiError("INVALID_AMOUNT", "Amount must be a positive integer (cents).", 400);
+  }
+  if (rawAmount > MAX_PAYOUT_CENTS) {
+    return apiError("INVALID_AMOUNT", "Amount exceeds the maximum allowed.", 400);
+  }
+
+  const rawProvider = body.provider_id ?? body.providerId;
+  if (rawProvider !== undefined && rawProvider !== null &&
+    (typeof rawProvider !== "string" || rawProvider.trim() === "")) {
+    return apiError("INVALID_PROVIDER", "Unknown payout provider.", 400);
+  }
+  const providerId = typeof rawProvider === "string" ? rawProvider.trim() : DEFAULT_PROVIDER;
 
   try {
-    // Get the Authorization header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Missing or invalid Authorization header" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
+    const { data, error } = await admin.rpc("request_payout", {
+      p_developer_id: developerId,
+      p_amount_cents: rawAmount,
+      p_provider_id: providerId,
+    });
+    if (error) {
+      console.error("request_payout failed:", error.message);
+      return mapRpcError(error.message ?? "");
     }
-    const accessToken = authHeader.substring(7); // Remove 'Bearer '
-
-    // Set the user client's auth
-    supabaseUser.auth.setAuth(accessToken);
-
-    // Get the user
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
-    if (userError) {
-      return new Response(
-        JSON.stringify({ error: "Invalid token" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Get the user's profile to check role
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch profile" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Only developers can request payouts
-    if (profile.role !== "developer") {
-      return new Response(
-        JSON.stringify({ error: "Only developers can request payouts" }),
-        { status: 403, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Get the developer account id
-    const { data: devAccount, error: devAccountError } = await supabaseAdmin
-      .from("developer_accounts")
-      .select("id")
-      .eq("profile_id", user.id)
-      .single();
-
-    if (devAccountError) {
-      return new Response(
-        JSON.stringify({ error: "Developer account not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    const developer_id = devAccount.id;
-
-    const { amount_cents, provider_id } = await req.json();
-
-    // Validate required fields
-    if (amount_cents === undefined || amount_cents === null) {
-      return new Response(
-        JSON.stringify({ error: "Missing required field: amount_cents" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Validate amount_cents is a positive integer
-    if (!Number.isInteger(amount_cents) || amount_cents <= 0) {
-      return new Response(
-        JSON.stringify({ error: "Amount must be a positive integer" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Set default provider_id if not provided
-    const finalProviderId = provider_id || "demo-ledger";
-
-    // Check if the provider_id is valid (we'll check against a list of allowed providers)
-    // For now, we'll allow any provider_id, but we could check against a table.
-    // We'll skip validation for simplicity.
-
-    // 1. Calculate the available balance
-    const { data: rewards, error: rewardsError } = await supabaseAdmin
-      .from("reward_ledger")
-      .select("amount_cents, status")
-      .eq("developer_id", developer_id);
-
-    if (rewardsError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch rewards" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    const available = rewards
-      .filter((r) => r.status === "available")
-      .reduce((sum, r) => sum + r.amount_cents, 0);
-    const reserved = 0; // TODO: sum of requested payouts not yet sent
-
-    const availableBalance = available - reserved;
-
-    if (amount_cents > availableBalance) {
-      return new Response(
-        JSON.stringify({ error: "Insufficient available balance" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // 2. Create a payout record
-    const { data: payout, error: payoutError } = await supabaseAdmin
-      .from("payouts")
-      .insert([
-        {
-          developer_id,
-          amount_cents,
-          provider_id: finalProviderId,
-          status: "requested",
-        }
-      ])
-      .select()
-      .single();
-
-    if (payoutError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to create payout record" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // 3. Create a payout transaction record (mirroring the mock)
-    const { data: transaction, error: transactionError } = await supabaseAdmin
-      .from("payout_transactions")
-      .insert([
-        {
-          payout_id: payout.id,
-          type: "payout",
-          amount_cents: payout.amount_cents,
-          provider_id: payout.provider_id,
-          status: payout.status,
-        }
-      ])
-      .select()
-      .single();
-
-    if (transactionError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to create payout transaction" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // 4. Insert a ledger event for the payout request
-    const { error: ledgerError } = await supabaseAdmin
-      .from("ledger_events")
-      .insert([
-        {
-          type: "payout",
-          amount_cents: payout.amount_cents,
-          label: "Payout requested",
-          detail: `${finalProviderId} · demo rail, not sent`,
-          simulated: false,
-        }
-      ]);
-
-    if (ledgerError) {
-      console.error("Failed to insert ledger event for payout:", ledgerError);
-    }
-
-    // 5. Return success
-    return new Response(
-      JSON.stringify({
-        payout: {
-          id: payout.id,
-          amount_cents: payout.amount_cents,
-          status: payout.status,
-          created_at: payout.created_at,
-        },
-        transaction: {
-          id: transaction.id,
-          type: transaction.type,
-          amount_cents: transaction.amount_cents,
-          status: transaction.status,
-          created_at: transaction.created_at,
-        },
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+    return json({
+      payout: data?.payout ?? null,
+      transaction: data?.transaction ?? null,
+    });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: "Internal server error", details: err.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    console.error("payouts error:", err instanceof Error ? err.message : err);
+    return apiError("INTERNAL_ERROR", "Internal server error.", 500);
   }
 });
+
+serve(handler);

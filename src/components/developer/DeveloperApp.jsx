@@ -3,6 +3,7 @@ import { AdvBarChart, AdvEmpty, AdvError, AdvLoading, AdvPageHead, AdvStats } fr
 import { Panel } from '../console/ui.jsx'
 import { supabase } from '../../lib/api.js'
 import DeveloperAccount from './DeveloperAccount.jsx'
+import SdkSetup from './SdkSetup.jsx'
 
 function trimBase(raw) {
   return String(raw || '').replace(/\/+$/, '')
@@ -132,6 +133,7 @@ export default function DeveloperApp() {
   const TABS = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'earnings', label: 'Earnings' },
+    { id: 'sdk', label: 'SDK setup' },
     { id: 'integrations', label: 'Integrations' },
     { id: 'analytics', label: 'Analytics' },
     { id: 'account', label: 'Account' },
@@ -148,9 +150,9 @@ export default function DeveloperApp() {
           ))}
         </nav>
 
-        {/* The account tab renders its own D5 page head — showing this
-            one too would stack two eyebrows and two headlines. */}
-        {tab !== 'account' ? (
+        {/* The account and SDK tabs render their own page head — showing
+            this one too would stack two eyebrows and two headlines. */}
+        {tab !== 'account' && tab !== 'sdk' ? (
           <AdvPageHead
             index="D1"
             label="Developer"
@@ -160,14 +162,21 @@ export default function DeveloperApp() {
                 dashboard: 'Every figure below is read live from your account — real reward balances and delivery, never estimates.',
                 earnings: 'Balances and rewards as they land, straight from your account.',
                 integrations: 'Which CLIs you\'ve connected and how each one reads.',
+                sdk: 'Ad delivery, end to end.',
                 analytics: 'A quick look at what you\'ve earned so far.',
                 account: 'Your details, security, and account controls.',
               }[tab]
             }
           />
         ) : null}
-        {error ? <AdvError message={error} onRetry={refresh} /> : null}
-        {loading ? <AdvLoading label="Loading developer rewards…" /> : (
+        {/* The rewards banner is suppressed on the SDK tab: it describes a
+            failure the SDK page has nothing to do with, and the SDK page
+            reports its own status honestly. */}
+        {error && tab !== 'sdk' ? <AdvError message={error} onRetry={refresh} /> : null}
+        {/* SDK setup needs no account data, so it sits outside the loading
+            gate on purpose: a rewards endpoint that has not been deployed
+            yet must not hide the one page that explains how to integrate. */}
+        {tab === 'sdk' ? <SdkSetup /> : loading ? <AdvLoading label="Loading developer rewards…" /> : (
           <>
             {(tab === 'dashboard' || tab === 'earnings') && (
               <>

@@ -1,9 +1,12 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serveWithCors } from "../_shared/http.ts";
 import { handleImpression } from "../_shared/events.ts";
 import { apiError, optionsResponse } from "../_shared/http.ts";
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return optionsResponse();
+const handler = serveWithCors(async (req) => {
+  if (req.method === "OPTIONS") return optionsResponse(req);
   if (req.method !== "POST") return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
   return handleImpression(req);
 });
+
+serve(handler);

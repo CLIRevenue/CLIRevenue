@@ -5,6 +5,7 @@ import Console from './components/console/Console.jsx'
 import Conversion from './components/conv/Conversion.jsx'
 import AdvertiserApp from './components/advertiser/AdvertiserApp.jsx'
 import DeveloperApp from './components/developer/DeveloperApp.jsx'
+import DeveloperLanding from './components/developer/DeveloperLanding.jsx'
 import { AuthProvider } from './components/auth/AuthProvider.jsx'
 import { LoginPage, SignupPage, AuthCallbackPage } from './components/auth/AuthPages.jsx'
 import { RequireRole, AuthLoadingScreen } from './components/auth/RequireAuth.jsx'
@@ -85,6 +86,18 @@ function Routes() {
         <RequireRole allow={['developer']}>
           <DeveloperApp />
         </RequireRole>
+      </>
+    )
+  }
+
+  // Public SDK onboarding. No role gate: install does not require an
+  // account, and a developer must be able to understand the product
+  // before they sign in.
+  if (clean === '/developer' || clean.startsWith('/developer/')) {
+    return (
+      <>
+        <Atmosphere />
+        <DeveloperLanding />
       </>
     )
   }

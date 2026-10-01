@@ -1,4 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serveWithCors } from "../_shared/http.ts";
 import { adminClient, getJwtUser, requireAdvertiser } from "../_shared/auth.ts";
 import {
   canTransition,
@@ -8,20 +9,15 @@ import {
   patchUnknownFields,
   requireNonEmptyString,
 } from "../_shared/campaignRules.ts";
-import { apiError, isUuid, json, optionsResponse } from "../_shared/http.ts";
+import { apiError, isUuid, json, optionsResponse, restPath } from "../_shared/http.ts";
 
 type AudienceRow = { id: string; label: string };
 
-function parsePath(pathname: string): string[] {
-  const parts = pathname.split("/").filter(Boolean);
-  if (parts[0] === "campaigns") parts.shift();
-  if (parts[0] === "api" && parts[1] === "campaigns") {
-    parts.splice(0, 2);
-  } else if (parts[0] === "api") {
-    parts.shift();
-  }
-  return parts;
-}
+/* Routing note: the gateway hands the function the path it was invoked
+   on, so `/functions/v1/campaigns/...`, `/campaigns/...` and the legacy
+   `/api/campaigns/...` all have to resolve identically. restPath() does
+   that; assuming a stripped prefix made every real request 400 with
+   "Malformed campaign id". */
 
 function formatCampaign(row: Record<string, unknown>, audienceMap: Record<string, string>) {
   const audienceId = String(row.audience_id || "");
@@ -112,8 +108,8 @@ async function archiveCampaign(
   return { campaign: data };
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return optionsResponse();
+const handler = serveWithCors(async (req) => {
+  if (req.method === "OPTIONS") return optionsResponse(req);
 
   const authed = await getJwtUser(req);
   if ("error" in authed && authed.error) return authed.error;
@@ -121,7 +117,7 @@ serve(async (req) => {
   const adv = await requireAdvertiser(admin, authed.user!.id);
   if ("error" in adv && adv.error) return adv.error;
   const advertiserId = adv.advertiser!.id;
-  const rest = parsePath(new URL(req.url).pathname);
+  const rest = restPath(new URL(req.url).pathname, "campaigns");
   const method = req.method;
 
   try {
@@ -223,21 +219,22 @@ serve(async (req) => {
       }
 
       if (method === "POST" && rest.length === 2 && rest[1] === "select") {
-        const { data: settings, error: settingsError } = await admin
-          .from("platform_settings")
-          .select("id")
-          .maybeSingle();
-        if (settingsError || !settings) {
-          return apiError("INTERNAL_ERROR", "Could not update active campaign.", 500);
-        }
-        const { data: updated, error: updateError } = await admin
-          .from("platform_settings")
-          .update({ active_campaign_id: campaignId })
-          .eq("id", settings.id)
-          .select("active_campaign_id")
-          .single();
-        if (updateError) return apiError("INTERNAL_ERROR", "Could not update active campaign.", 500);
-        return json({ active_campaign_id: updated.active_campaign_id });
+        /* Selection is local UI state. This used to write the single
+           global platform_settings.active_campaign_id, which meant the
+           last advertiser to press "select" decided what every publisher
+           on the network was served — one advertiser's click on their own
+           campaign changed what another advertiser's campaign could be
+           delivered as. There is no shared pointer to write any more; the
+           row this reaches has already been resolved through
+           loadOwnedCampaign, so the caller's ownership is proven and the
+           request has no cross-tenant effect. Kept as a route so stale
+           callers get a correct answer instead of a 404. */
+        const map = await audienceMap(admin);
+        return json({
+          campaign: formatCampaign(existing, map),
+          selected: true,
+          global: false,
+        });
       }
 
       if (method === "PATCH" && rest.length === 1) {
@@ -328,3 +325,5 @@ serve(async (req) => {
     return apiError("INTERNAL_ERROR", "Internal server error.", 500);
   }
 });
+
+serve(handler);

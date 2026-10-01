@@ -1783,6 +1783,22 @@ function OrbitRing() {
     let alive = true
     let fontsRepaint = false
 
+    /* Frame gating. Everything the GPU is handed — camera position, rig
+       scale, drum rotation and the reveal uniform — is a pure function
+       of `p`, `angle` and `reveal`, and `angle` snaps to `target` once
+       the damping gap is negligible. So when those three numbers are
+       unchanged the frame is provably identical to the one already on
+       screen, and submitting it again buys nothing but a full WebGL
+       draw at rest. The loop keeps running: the damping, the reveal
+       ramp and the print sync all live there. Only the submit is
+       skipped. `dirty` covers the things that change the image without
+       changing those numbers — the first frame, a resize, and the
+       font-settle atlas re-upload. */
+    let dirty = true
+    let lastP = NaN
+    let lastAngle = NaN
+    let lastReveal = NaN
+
     /* Scroll instrument state: written only when a value changes. */
     const progressEl = progressRef.current
     const fillCache = new Array(SURFACES.length).fill(-1)
@@ -1845,7 +1861,16 @@ function OrbitRing() {
       drum.rotation.y = angle
       surfaceProgram.uniforms.uReveal.value = reveal
 
-      renderer.render({ scene, camera })
+      /* Submit only when the frame can differ from the one already
+         composited. The canvas keeps presenting its last frame, so a
+         skipped submit is invisible. */
+      if (dirty || p !== lastP || angle !== lastAngle || reveal !== lastReveal) {
+        renderer.render({ scene, camera })
+        lastP = p
+        lastAngle = angle
+        lastReveal = reveal
+        dirty = false
+      }
 
       /* The terminal print and the scroll instrument follow the
          DAMPED angle — exactly the rotation on screen, so lines and
@@ -1916,6 +1941,9 @@ function OrbitRing() {
       height = h
       renderer.setSize(w, h)
       camera.perspective({ fov: 42, aspect, near: 0.1, far: 60 })
+      /* A new viewport means the same scene renders differently, so the
+         next frame must reach the GPU even if nothing else moved. */
+      dirty = true
       /* Reduced motion never runs the loop, so the one hand-placed
          frame is redrawn here whenever the box changes. */
       if (reduced) draw(STATIC_P, 0)
@@ -1954,6 +1982,9 @@ function OrbitRing() {
           )
           gl.generateMipmap(gl.TEXTURE_2D)
           gl.bindTexture(gl.TEXTURE_2D, prev)
+          /* The atlas holds different glyphs now, so the frame on screen
+             is stale even though `p`, `angle` and `reveal` are not. */
+          dirty = true
           if (reduced) draw(STATIC_P, 0)
         })
         .catch((error) =>

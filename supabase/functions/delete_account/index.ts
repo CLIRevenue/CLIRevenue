@@ -1,71 +1,57 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+/**
+ * delete_account — self-service account deletion.
+ *
+ * The caller is resolved from their own JWT only; the body is never
+ * consulted for a user id, so an account can only ever delete itself.
+ * The service-role key is used solely here, inside the Edge Function, for
+ * the authenticated caller's own id; auth.users deletion cascades to
+ * public.profiles and every role/ledger row beneath it.
+ *
+ * Hardened while rewriting: shared CORS headers (honours APP_ORIGINS),
+ * controlled error bodies instead of `err.message`, and a generic failure
+ * message for the delete itself.
+ */
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serveWithCors } from "../_shared/http.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { apiError, json, optionsResponse } from "../_shared/http.ts";
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+const handler = serveWithCors(async (req) => {
+  if (req.method === "OPTIONS") return optionsResponse(req);
+  if (req.method !== "POST") {
+    return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
   }
 
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return apiError("UNAUTHENTICATED", "Sign in is required.", 401);
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Missing or invalid Authorization header" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const accessToken = authHeader.substring(7);
+    const url = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Resolve the caller from their JWT only. The request body is never
-    // consulted for a user id: an account can only delete itself.
-    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
+    const supabaseUser = createClient(url, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return apiError("UNAUTHENTICATED", "Invalid or expired session.", 401);
     }
 
-    // Service-role key is used ONLY here, inside the Edge Function, for the
-    // authenticated caller's own id. auth.users deletion cascades to
-    // public.profiles (ON DELETE CASCADE) and every role/ledger row below it.
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAdmin = createClient(url, serviceKey);
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
     if (deleteError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to delete account", details: deleteError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      console.error("delete_account failed:", deleteError.message);
+      return apiError("INTERNAL_ERROR", "Could not delete the account.", 500);
     }
 
-    return new Response(JSON.stringify({ deleted: true, user_id: user.id }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ deleted: true, user_id: user.id }, 200, req);
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: "Internal server error", details: err?.message || String(err) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    console.error("delete_account error:", err instanceof Error ? err.message : err);
+    return apiError("INTERNAL_ERROR", "Internal server error.", 500);
   }
 });
+
+serve(handler);

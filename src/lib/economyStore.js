@@ -14,17 +14,23 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
    snapshot starts on the demo seed instead of an empty object that
    makes consumers read properties of undefined. */
 let snapshot = {
-  account: { id: '', email: '', connected: false },
+  account: { id: "", email: "", org: "", handle: "", connected: false },
   campaigns: SEED_CAMPAIGNS,
   activeCampaignId: DEFAULT_CAMPAIGN_ID,
   rewards: [],
   payouts: [],
   ledger: [],
   impressionsRecorded: {},
-  payoutDraft: { amountCents: 0, providerId: 'demo-ledger', open: false },
+  payoutDraft: { amountCents: 0, providerId: "demo-ledger", open: false },
   lastEventId: null,
 }
 let listeners = new Set()
+
+/* Settlement request bookkeeping: at most one settle pass in flight, and
+   at most one per settlement window, so the console's one-second interval
+   cannot hammer the backend. */
+let settleInFlight = false
+let lastSettleAt = 0
 
 // Initialize the store
 async function initializeStore() {
@@ -37,7 +43,10 @@ async function initializeStore() {
     // An empty list (API up but zero rows, or unreachable) must not
     // starve the ad surfaces — fall back to the demo seed.
     const campaigns = fetched && fetched.length ? fetched : SEED_CAMPAIGNS
-    const activeCampaignId = session ? await fetchActiveCampaignId() : DEFAULT_CAMPAIGN_ID
+    // Selection is local UI state scoped to the caller's own campaigns, so
+    // it is derived from the list we just fetched rather than read from a
+    // platform-wide pointer. See docs/MULTI_TENANT_CAMPAIGN_SELECTION.md.
+    const activeCampaignId = campaigns[0]?.id ?? DEFAULT_CAMPAIGN_ID
     const rewards = session ? await fetchRewards() : []
     // For now, we'll keep payouts empty as we don't have a list endpoint
     const payouts = []
@@ -57,18 +66,18 @@ async function initializeStore() {
     }
   } catch (error) {
     console.error('Failed to initialize economy store:', error)
-    // Set to empty state on error
-    snapshot = {
-      account: { id: '', email: '', connected: false },
-      campaigns: SEED_CAMPAIGNS,
-      activeCampaignId: DEFAULT_CAMPAIGN_ID,
-      rewards: [],
-      payouts: [],
-      ledger: [],
-      impressionsRecorded: {},
-      payoutDraft: { amountCents: 0, providerId: 'demo-ledger', open: false },
-      lastEventId: null,
-    }
+  // Set to empty state on error
+  snapshot = {
+    account: { id: "", email: "", org: "", handle: "", connected: false },
+    campaigns: SEED_CAMPAIGNS,
+    activeCampaignId: DEFAULT_CAMPAIGN_ID,
+    rewards: [],
+    payouts: [],
+    ledger: [],
+    impressionsRecorded: {},
+    payoutDraft: { amountCents: 0, providerId: "demo-ledger", open: false },
+    lastEventId: null,
+  }
   }
   publish()
 }
@@ -151,32 +160,12 @@ function campaignsCandidates() {
 }
 
 /**
- * Candidates for a sub-route of one campaign, e.g. '<id>/select'.
- */
-function campaignResourceCandidates(id, suffix) {
-  return campaignBases().map((base) => `${base}/${id}/${suffix}`)
-}
-
-/**
  * GET with fail-through on routing errors only (404/405), so auth and
  * validation errors surface to the caller instead of being swallowed by
  * the fallback chain.
  */
 async function apiGetCampaigns() {
   return await apiRequestCandidates(campaignsCandidates(), { method: 'GET' })
-}
-
-async function apiGetActiveCampaign() {
-  return await apiRequestCandidates(
-    [API_BASE ? `${API_BASE}/get_active_campaign` : '/api/active-campaign'],
-    { method: 'GET' },
-  )
-}
-
-async function updateActiveCampaignInAPI(id) {
-  return await apiRequestCandidates(campaignResourceCandidates(id, 'select'), {
-    method: 'POST',
-  })
 }
 
 async function createCampaignInAPI(campaignData) {
@@ -186,17 +175,26 @@ async function createCampaignInAPI(campaignData) {
   })
 }
 
+/**
+ * Select which of *this advertiser's* campaigns the console is showing.
+ *
+ * This is local UI state and nothing else. It used to POST to
+ * /campaigns/:id/select, which wrote a single platform-wide
+ * active_campaign_id — so one advertiser choosing a campaign decided what
+ * every publisher was served. That pointer is gone
+ * (docs/MULTI_TENANT_CAMPAIGN_SELECTION.md), so no request is made.
+ *
+ * The id is checked against the caller's own campaign list: a selection can
+ * never point the console at a row this advertiser does not own, which is
+ * what the server-side advertiser_id filter used to guarantee for us.
+ */
 export function selectCampaign(id) {
-  // Call API to set active campaign
-  updateActiveCampaignInAPI(id)
-    .then(() => {
-      // Update snapshot after success
-      replace({ activeCampaignId: id })
-    })
-    .catch(error => {
-      console.error('Failed to select campaign:', error)
-      // Optionally, show a notification to the user
-    })
+  const owned = (snapshot.campaigns || []).some(c => c.id === id)
+  if (!owned) {
+    console.error('Refusing to select a campaign this account does not own:', id)
+    return
+  }
+  replace({ activeCampaignId: id })
 }
 
 export function createCampaign(input) {
@@ -231,7 +229,7 @@ export function createCampaign(input) {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
-function isCampaignUuid(value) {
+export function isCampaignUuid(value) {
   return typeof value === 'string' && UUID_RE.test(value)
 }
 
@@ -244,7 +242,7 @@ function isCampaignUuid(value) {
  * cookies), which is safe — it only weakens dedupe within that tab.
  */
 const EVENT_SESSION_STORAGE_KEY = 'clirevenue.eventSessionId'
-const eventSessionId = (() => {
+export const eventSessionId = (() => {
   const fallback = () =>
     `sess_${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`
   try {
@@ -422,16 +420,34 @@ export function recordQualifyingEvent(data) {
 /* ------------------------------------------------------------------ *
  * Rewards and balance
  * ------------------------------------------------------------------ */
-export function economyBalances() {
-  // Compute from the snapshot's rewards and payouts
-  const available = snapshot.rewards
+/**
+ * Balance arithmetic, as a pure function of the ledger rows.
+ *
+ * Extracted so the money rules can be tested without a live backend, and
+ * so every consumer reads the same definition of "spendable":
+ *   - spendable cents are the server's `remaining_cents` (a partially or
+ *     fully consumed reward is worth less than it was minted for);
+ *   - `available` and `pending` never count a consumed row;
+ *   - `lifetime` is every reward ever minted, consumed or not;
+ *   - `reserved` is payouts requested but not yet sent, reported for
+ *     display only — those cents already left `available` when the server
+ *     consumed them, so it must not be subtracted a second time.
+ * Integer cents throughout; no floating point touches money.
+ */
+export function summarizeRewards(rewards = [], payouts = []) {
+  const spendable = (r) =>
+    typeof r.remainingCents === 'number' ? r.remainingCents : r.amountCents
+
+  const available = rewards
     .filter(r => r.status === 'available')
-    .reduce((sum, r) => sum + r.amountCents, 0)
-  const pending = snapshot.rewards
+    .reduce((sum, r) => sum + spendable(r), 0)
+  const pending = rewards
     .filter(r => r.status === 'accrued')
-    .reduce((sum, r) => sum + r.amountCents, 0)
-  const lifetime = snapshot.rewards.reduce((sum, r) => sum + r.amountCents, 0)
-  const reserved = snapshot.payouts.reduce((sum, p) => sum + p.amountCents, 0) // Assuming payouts have amountCents
+    .reduce((sum, r) => sum + spendable(r), 0)
+  const lifetime = rewards.reduce((sum, r) => sum + r.amountCents, 0)
+  const reserved = payouts
+    .filter(p => p.status === 'requested' || p.status === 'processing')
+    .reduce((sum, p) => sum + p.amountCents, 0)
 
   return {
     availableCents: available,
@@ -439,6 +455,10 @@ export function economyBalances() {
     lifetimeCents: lifetime,
     reservedCents: reserved,
   }
+}
+
+export function economyBalances() {
+  return summarizeRewards(snapshot.rewards, snapshot.payouts)
 }
 
 /* Activity-row labels for the console. */
@@ -461,8 +481,18 @@ export function getActiveCampaign(snap = snapshot) {
 
 /**
  * Pending -> available. Driven by the single console-level interval
- * (Console.jsx) so wallet, activity list and ledger move off one
- * clock — a local settlement simulation against SETTLEMENT_MS.
+ * (Console.jsx) so the wallet, activity list and ledger move off one
+ * clock.
+ *
+ * The transition itself is NOT simulated here. Settlement is a server
+ * operation (public.apply_settlement, reached through the settle_rewards
+ * function): a reward the backend still holds as `accrued` must never be
+ * presented as spendable in the browser, or a payout the UI offers would
+ * be rejected by the server. This only decides *when* it is worth asking,
+ * then reflects whatever the server reports.
+ *
+ * Returns the number of locally-due rewards it asked about (0 when there
+ * was nothing to do), which is what the caller's counter expects.
  */
 export function settlePending(now = Date.now()) {
   const due = (snapshot.rewards || []).filter(
@@ -471,29 +501,39 @@ export function settlePending(now = Date.now()) {
       now - Date.parse(r.createdAt || 0) >= SETTLEMENT_MS,
   )
   if (!due.length) return 0
-  const dueIds = new Set(due.map((r) => r.id))
-  replace((prev) => ({
-    rewards: prev.rewards.map((r) =>
-      dueIds.has(r.id)
-        ? { ...r, status: 'available', settledAt: new Date(now).toISOString() }
-        : r,
-    ),
-  }))
+  // No backend, or nobody signed in: never fabricate availability locally.
+  if (!API_BASE || !snapshot.account.connected) return 0
+  if (settleInFlight || now - lastSettleAt < SETTLEMENT_MS) return 0
+
+  settleInFlight = true
+  lastSettleAt = now
+  settleRewardsInAPI()
+    .then(() => refreshRewards())
+    .catch((error) => console.error('Failed to settle rewards:', error))
+    .finally(() => {
+      settleInFlight = false
+    })
   return due.length
 }
 
 export function rewardActivity(limit = 6) {
   const rows = [
-    ...snapshot.rewards.map(r => ({
-      id: r.id,
-      kind: 'reward',
-      title: 'Sponsored interaction',
-      meta: getCampaignNameById(r.campaignId),
-      amountCents: r.amountCents,
-      status: r.status,
-      at: r.createdAt,
-      simulated: false,
-    })),
+    ...snapshot.rewards
+      // A consumed reward is already represented by the payout row that
+      // spent it; listing both would double-count the same money.
+      .filter(r => r.status !== 'consumed')
+      .map(r => ({
+        id: r.id,
+        kind: 'reward',
+        title: 'Sponsored interaction',
+        meta: r.campaignName || getCampaignNameById(r.campaignId),
+        amountCents: r.amountCents,
+        status: r.status,
+        // Numeric, so the sort below is a real chronology instead of
+        // comparing NaN whenever the field is an ISO string.
+        at: Date.parse(r.createdAt || 0) || 0,
+        simulated: false,
+      })),
     ...snapshot.payouts.map(p => ({
       id: p.id,
       kind: 'payout',
@@ -501,7 +541,7 @@ export function rewardActivity(limit = 6) {
       meta: getProviderLabel(p.providerId),
       amountCents: -p.amountCents,
       status: p.status,
-      at: p.createdAt,
+      at: p.at ?? (Date.parse(p.createdAt || 0) || 0),
       simulated: false,
     })),
   ]
@@ -560,19 +600,33 @@ export function requestPayout() {
     payoutDraft: { amountCents: 0, providerId: prev.payoutDraft.providerId, open: false },
   }))
 
-  // Now make the API call to persist it
-  requestPayoutInAPI({ amountCents, providerId })
+  // The API contract is snake_case (see BACKEND_FRONTEND_CONTRACT.md):
+  // the payouts function reads amount_cents / provider_id. Sending
+  // camelCase made every request fail validation with
+  // "Missing required field: amount_cents".
+  requestPayoutInAPI({ amount_cents: amountCents, provider_id: providerId })
     .then(result => {
-      // Replace the temporary payout with the real one
+      const server = result?.payout
+        ? {
+            id: result.payout.id,
+            accountId: snapshot.account.id,
+            amountCents: result.payout.amount_cents,
+            providerId: result.payout.provider_id ?? providerId,
+            status: result.payout.status,
+            at: Date.parse(result.payout.created_at || 0) || Date.now(),
+            createdAt: result.payout.created_at,
+            simulated: false,
+          }
+        : null
       replace(prev => ({
-        payouts: prev.payouts.map(p =>
-          p.id === tempId ? result.payout : p
-        ),
-        // We don't store transactions in the snapshot, so we don't need to update them here.
-        // The ledger will be updated via a separate mechanism? We don't have a ledger endpoint.
-        // We'll add a ledger event for the payout if we had a ledger endpoint, but we don't.
-        // For now, we'll leave the ledger as is.
+        payouts: server
+          ? prev.payouts.map(p => (p.id === tempId ? server : p))
+          : prev.payouts.filter(p => p.id !== tempId),
       }))
+      // The server consumed the reward rows this payout debited; re-read
+      // them so the wallet shows the real remaining balance instead of the
+      // stale pre-payout total.
+      return refreshRewards()
     })
     .catch(error => {
       console.error('Failed to request payout:', error)
@@ -633,29 +687,25 @@ async function fetchCampaigns() {
   }
 }
 
-async function fetchActiveCampaignId() {
-  try {
-    const active = await apiGetActiveCampaign()
-    return active?.id ?? active?.campaign?.id ?? null
-  } catch (error) {
-    // If no active campaign is set, the API returns 404
-    if (error.message.includes('404')) {
-      return null
-    }
-    // Unreachable API: fall back to the seeded default so consumers
-    // resolve a real campaign instead of undefined.
-    console.error('Failed to fetch active campaign:', error)
-    return DEFAULT_CAMPAIGN_ID
-  }
-}
-
 async function fetchRewards() {
   try {
-    const rewards = await apiGetRewards()
-    return rewards.map(r => ({
+    const payload = await apiGetRewards()
+    // The rewards function answers { rewards: [...] }; an optional
+    // campaigns list is also tolerated so either shape lands intact.
+    const rows = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.rewards)
+        ? payload.rewards
+        : []
+    return rows.map(r => ({
       id: r.id,
       campaignId: r.campaign_id,
+      campaignName: r.campaign_name ?? null,
       amountCents: r.amount_cents,
+      // Server-authoritative spendable amount. `consumed` rows are kept so
+      // lifetimeCents stays honest; economyBalances() nets them out.
+      remainingCents:
+        typeof r.remaining_cents === 'number' ? r.remaining_cents : r.amount_cents,
       status: r.status,
       createdAt: r.created_at,
       settledAt: r.settled_at,
@@ -665,6 +715,13 @@ async function fetchRewards() {
     console.error('Failed to fetch rewards:', error)
     return []
   }
+}
+
+/** Re-read the reward ledger and mirror it into the snapshot. The server
+ *  is authoritative for status, remaining balance and settlement. */
+async function refreshRewards() {
+  const rewards = await fetchRewards()
+  replace({ rewards })
 }
 
 async function fetchAccount() {
@@ -690,10 +747,9 @@ async function fetchAccount() {
 /* ------------------------------------------------------------------ *
  * API wrapper functions
  *
- * apiGetCampaigns / apiGetActiveCampaign / createCampaignInAPI and
- * updateActiveCampaignInAPI live with the campaign section above, where the
- * candidate-route helpers they use are defined. These are the reward, auth
- * and event wrappers.
+ * apiGetCampaigns and createCampaignInAPI live with the campaign section
+ * above, where the candidate-route helpers they use are defined. These are
+ * the reward, auth and event wrappers.
  * ------------------------------------------------------------------ */
 
 async function apiGetRewards() {
@@ -707,6 +763,17 @@ async function apiGetAuthStatus() {
   return await apiRequestCandidates(
     [API_BASE ? `${API_BASE}/auth` : '/api/auth/status'],
     { method: 'GET' },
+  )
+}
+
+/** Ask the server to run a settlement pass. Authenticated as the signed-in
+ *  developer, so it only ever settles that developer's own accrued rewards;
+ *  the platform-wide pass needs the settlement secret and is never called
+ *  from a browser. */
+async function settleRewardsInAPI() {
+  return await apiRequestCandidates(
+    [API_BASE ? `${API_BASE}/settle_rewards` : '/api/settle'],
+    { method: 'POST' },
   )
 }
 

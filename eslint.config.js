@@ -18,4 +18,13 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    // The database integration harness runs under Node, not the browser, so
+    // it needs `process`. The other tests import describe/it/expect from
+    // vitest explicitly and need no globals.
+    files: ['tests/db/**/*.js'],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
 ])

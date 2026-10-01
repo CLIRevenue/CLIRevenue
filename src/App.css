@@ -3560,3 +3560,195 @@ body {
   .glass::after {
     display: none;
   }}
+
+/* -------------------------------------------------------------
+   SDK setup — the developer integration page.
+
+   New classes only. It borrows the palette and the type scale
+   from the rest of the system and introduces no colour of its
+   own: black ground, white ink, red as the single accent, mono
+   for anything that is a literal rather than a sentence.
+   ------------------------------------------------------------- */
+
+.setup {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.setup__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--border-w);
+  counter-reset: none;
+}
+
+.setup__step {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 16px;
+  align-items: start;
+  padding: 20px 0;
+  border-top: var(--border-w) solid var(--hair);
+}
+
+/* The step number is set in mono at the weight the transcript uses
+   for its own line numbers, so the list reads as part of the same
+   terminal rather than as a marketing feature grid. */
+.setup__n {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--signal);
+}
+
+.setup__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setup__step-title {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.3;
+  color: var(--ink-2);
+}
+
+.setup__where {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.setup__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink-2);
+  max-width: 68ch;
+}
+
+.setup__note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  max-width: 68ch;
+}
+
+/* Code is a quoted literal, so it gets the neutral rule the
+   transcript uses for output — never the red top border, which is
+   reserved for the ad slot. */
+.setup__code {
+  margin: 4px 0 0;
+  padding: 12px 14px;
+  background: var(--panel-2);
+  border: var(--border-w) solid var(--hair);
+  border-radius: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  overflow-x: auto;
+  white-space: pre;
+  max-width: 100%;
+}
+
+.setup__facts {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1px;
+  background: var(--hair);
+  border: var(--border-w) solid var(--hair);
+}
+
+.setup__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--panel);
+}
+
+.setup__fact-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.setup__fact-value {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.setup__fact-value[data-ok='no'] {
+  color: var(--signal);
+}
+
+.setup__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.setup__status {
+  margin: 0;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--panel-2);
+  border: var(--border-w) solid var(--hair);
+  border-left: var(--border-w-2) solid var(--signal);
+}
+
+.setup__status-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.setup__status-headline {
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+
+.setup__status-detail {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  max-width: 68ch;
+}
+
+/* No-fill is a normal answer and must not look like a warning. */
+.setup__status[data-tone='nofill'],
+.setup__status[data-tone='idle'] {
+  border-left-color: var(--hair-strong);
+}
+
+@media (max-width: 720px) {
+  .setup__step {
+    grid-template-columns: 40px 1fr;
+    gap: 12px;
+  }
+}

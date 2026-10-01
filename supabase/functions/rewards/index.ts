@@ -1,185 +1,112 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/**
+ * rewards — the signed-in developer's own reward ledger and balances.
+ *
+ * SECURITY / CORRECTNESS
+ * The previous implementation resolved the caller with
+ * `supabaseUser.auth.setAuth(...)` (removed in supabase-js v2) and routed
+ * on `pathParts[0] === "api"`, which never matched the real gateway path
+ * `/functions/v1/rewards` — so it answered 500 for a signed-in call and
+ * 404 for anything else. Its balance also hardcoded `reserved = 0` and it
+ * returned `err.message` in the body.
+ *
+ * Now: caller resolved from the JWT, routes resolved through restPath(),
+ * every figure computed by public.reward_balance() against
+ * reward_ledger.remaining_cents (so consumed rewards are gone from the
+ * spendable total), and no internal error text is ever returned.
+ */
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serveWithCors } from "../_shared/http.ts";
+import { adminClient, getJwtUser, requireDeveloper } from "../_shared/auth.ts";
+import { apiError, json, optionsResponse, restPath } from "../_shared/http.ts";
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 100;
 
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-const supabaseUser = createClient(supabaseUrl, supabaseAnonKey);
+function parseInteger(raw: string | null, fallback: number): number {
+  const value = Number.parseInt(raw ?? "", 10);
+  return Number.isFinite(value) ? value : fallback;
+}
 
-serve(async (req) => {
-  // Get the Authorization header
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return new Response(
-      JSON.stringify({ error: "Missing or invalid Authorization header" }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
-    );
-  }
-  const accessToken = authHeader.substring(7); // Remove 'Bearer '
-
-  // Set the user client's auth
-  supabaseUser.auth.setAuth(accessToken);
-
-  // Get the user
-  const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
-  if (userError) {
-    return new Response(
-      JSON.stringify({ error: "Invalid token" }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
-  // Get the user's profile to check role
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError) {
-    return new Response(
-      JSON.stringify({ error: "Failed to fetch profile" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+const handler = serveWithCors(async (req) => {
+  if (req.method === "OPTIONS") return optionsResponse(req);
+  if (req.method !== "GET") {
+    return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
   }
 
-  // Only developers can access rewards
-  if (profile.role !== "developer") {
-    return new Response(
-      JSON.stringify({ error: "Only developers can access rewards" }),
-      { status: 403, headers: { "Content-Type": "application/json" } }
-    );
-  }
+  const authed = await getJwtUser(req);
+  if ("error" in authed && authed.error) return authed.error;
+  const admin = adminClient();
+  const dev = await requireDeveloper(admin, authed.user!.id);
+  if ("error" in dev && dev.error) return dev.error;
+  // Every query below is scoped to the token's own developer account.
+  const developerId = dev.developer!.id;
 
-  // Get the developer account id
-  const { data: devAccount, error: devAccountError } = await supabaseAdmin
-    .from("developer_accounts")
-    .select("id")
-    .eq("profile_id", user.id)
-    .single();
-
-  if (devAccountError) {
-    return new Response(
-      JSON.stringify({ error: "Developer account not found" }),
-      { status: 404, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
-  const developer_id = devAccount.id;
-
-  // Parse the URL
   const url = new URL(req.url);
-  const pathParts = url.pathname.split("/").filter((part) => part !== "");
-  // Expected paths:
-  //   /api/rewards/balance
-  //   /api/rewards
-  const method = req.method;
+  const rest = restPath(url.pathname, "rewards");
 
-  // Helper to handle errors
-  const handleError = (error: any, status = 500, message = "Internal server error") => {
-    return new Response(
-      JSON.stringify({ error: message, details: error?.message || error }),
-      { status, headers: { "Content-Type": "application/json" } }
-    );
-  };
-
-  // GET /api/rewards/balance
-  if (method === "GET" && pathParts.length === 3 && pathParts[0] === "api" && pathParts[1] === "rewards" && pathParts[2] === "balance") {
-    try {
-      // Calculate balances from reward_ledger and payouts (if we have a payouts table)
-      // We don't have a payouts table yet; we'll create one later or use a mock.
-      // For now, we'll compute:
-      //   available_cents = sum of amount_cents where status = 'available'
-      //   pending_cents = sum of amount_cents where status = 'accrued'
-      //   lifetime_cents = sum of all amount_cents
-      //   reserved_cents = 0 (since we don't have payouts yet)
-
-      const { data: rewards, error: rewardsError } = await supabaseAdmin
-        .from("reward_ledger")
-        .select("amount_cents, status")
-        .eq("developer_id", developer_id);
-
-      if (rewardsError) {
-        return handleError(rewardsError, 500, "Failed to fetch rewards");
+  try {
+    if (rest.length === 1 && rest[0] === "balance") {
+      const { data, error } = await admin.rpc("reward_balance", {
+        p_developer_id: developerId,
+      });
+      if (error) {
+        console.error("reward_balance failed:", error.message);
+        return apiError("INTERNAL_ERROR", "Could not load the balance.", 500);
       }
-
-      const available = rewards
-        .filter((r) => r.status === "available")
-        .reduce((sum, r) => sum + r.amount_cents, 0);
-      const pending = rewards
-        .filter((r) => r.status === "accrued")
-        .reduce((sum, r) => sum + r.amount_cents, 0);
-      const lifetime = rewards.reduce((sum, r) => sum + r.amount_cents, 0);
-      const reserved = 0; // TODO: implement payouts table
-
-      return new Response(
-        JSON.stringify({
-          available_cents: available,
-          pending_cents: pending,
-          lifetime_cents: lifetime,
-          reserved_cents: reserved,
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
-    } catch (err) {
-      return handleError(err);
+      return json({
+        available_cents: Number(data?.available_cents ?? 0),
+        pending_cents: Number(data?.pending_cents ?? 0),
+        lifetime_cents: Number(data?.lifetime_cents ?? 0),
+        reserved_cents: Number(data?.reserved_cents ?? 0),
+      });
     }
-  }
 
-  // GET /api/rewards
-  if (method === "GET" && pathParts.length === 2 && pathParts[0] === "api" && pathParts[1] === "rewards") {
-    try {
-      const limit = parseInt(url.searchParams.get("limit") || "10", 10);
-      const offset = parseInt(url.searchParams.get("offset") || "0", 10);
+    if (rest.length === 0) {
+      const limit = Math.min(Math.max(parseInteger(url.searchParams.get("limit"), DEFAULT_LIMIT), 1), MAX_LIMIT);
+      const offset = Math.max(parseInteger(url.searchParams.get("offset"), 0), 0);
 
-      const { data: rewards, error: rewardsError } = await supabaseAdmin
+      const { data, error } = await admin
         .from("reward_ledger")
-        .select(`
-          id,
-          campaign_id,
-          amount_cents,
-          status,
-          created_at,
-          settled_at
-        `)
-        .eq("developer_id", developer_id)
+        .select("id, campaign_id, amount_cents, remaining_cents, status, created_at, settled_at")
+        .eq("developer_id", developerId)
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
-      if (rewardsError) {
-        return handleError(rewardsError, 500, "Failed to fetch rewards");
+      if (error) {
+        console.error("reward_ledger select failed:", error.message);
+        return apiError("INTERNAL_ERROR", "Could not load rewards.", 500);
       }
 
-      // Enrich with campaign name
-      const rewardsWithCampaign = await Promise.all(
-        rewards.map(async (reward) => {
-          const { data: campaignData, error: campaignError } = await supabaseAdmin
-            .from("campaigns")
-            .select("name")
-            .eq("id", reward.campaign_id)
-            .single();
+      const rows = data ?? [];
+      const campaignIds = [...new Set(rows.map((row) => row.campaign_id).filter(Boolean))];
+      const names: Record<string, string> = {};
+      if (campaignIds.length) {
+        const { data: campaigns } = await admin
+          .from("campaigns")
+          .select("id, name")
+          .in("id", campaignIds);
+        for (const campaign of campaigns ?? []) names[campaign.id] = campaign.name;
+      }
 
-          return {
-            ...reward,
-            campaign_name: campaignData ? campaignData.name : null,
-          };
-        })
-      );
-
-      return new Response(
-        JSON.stringify({ rewards: rewardsWithCampaign }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
-    } catch (err) {
-      return handleError(err);
+      return json({
+        rewards: rows.map((row) => ({
+          id: row.id,
+          campaign_id: row.campaign_id,
+          campaign_name: names[row.campaign_id] ?? null,
+          amount_cents: row.amount_cents,
+          remaining_cents: row.remaining_cents,
+          status: row.status,
+          created_at: row.created_at,
+          settled_at: row.settled_at,
+        })),
+      });
     }
-  }
 
-  // If none of the above matched, return 404
-  return new Response(
-    JSON.stringify({ error: "Not found" }),
-    { status: 404, headers: { "Content-Type": "application/json" } }
-  );
+    return apiError("NOT_FOUND", "Not found.", 404);
+  } catch (err) {
+    console.error("rewards error:", err instanceof Error ? err.message : err);
+    return apiError("INTERNAL_ERROR", "Internal server error.", 500);
+  }
 });
+
+serve(handler);

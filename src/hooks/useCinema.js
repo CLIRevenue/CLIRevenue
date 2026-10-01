@@ -110,7 +110,13 @@ export function useCinema(stageRef) {
     window.__clirLenis = lenis
 
     /* One direction only. Lenis reports, ScrollTrigger reads. */
-    const onLenisScroll = () => ScrollTrigger.update()
+    const onLenisScroll = () => {
+      const start = performance.now()
+      ScrollTrigger.update()
+      const duration = performance.now() - start
+      if (!window.__cascadeTimings) window.__cascadeTimings = []
+      window.__cascadeTimings.push({ stage: 'scrolltrigger-update', duration, scrollY: window.scrollY })
+    }
     lenis.on('scroll', onLenisScroll)
 
     /* Both on the same clock. `lagSmoothing(0)` is required, not
@@ -118,7 +124,13 @@ export function useCinema(stageRef) {
        would leave Lenis's clock running ahead of the frame the film
        was drawn on, and the two would drift apart for as long as the
        tab stayed busy. */
-    const raf = (time) => lenis.raf(time * 1000)
+    const raf = (time) => {
+      const start = performance.now()
+      lenis.raf(time * 1000)
+      const duration = performance.now() - start
+      if (!window.__cascadeTimings) window.__cascadeTimings = []
+      window.__cascadeTimings.push({ stage: 'lenis-raf', duration, scrollY: window.scrollY })
+    }
     gsap.ticker.add(raf)
     gsap.ticker.lagSmoothing(0)
 
@@ -156,46 +168,68 @@ export function useCinema(stageRef) {
          Each chapter is handed its own local 0..1 clock, so scenes
          are never told about time that belongs to somebody else. */
       timeline.eventCallback('onUpdate', () => {
+        const start = performance.now()
         const time = timeline.time()
-        stage.style.setProperty('--film-p', timeline.progress().toFixed(4))
+        const gsapStart = performance.now()
+        const progress = timeline.progress().toFixed(4)
+        const gsapDuration = performance.now() - gsapStart
+
+        const domStart = performance.now()
+        stage.style.setProperty('--film-p', progress)
+        const domDuration = performance.now() - domStart
+
+        const chapterStart = performance.now()
         for (const chapter of chapters) {
+          const localStart = performance.now()
           const local = chapter.local(time)
+          const localDuration = performance.now() - localStart
+
+          const publishStart = performance.now()
           publishSceneProgress(chapter.id, local)
+          const publishDuration = performance.now() - publishStart
 
           if (!flowing && chapter.id === 'money' && local > 0.5) {
             flowing = true
+            const particleStart = performance.now()
             particles.forEach((loop) => loop.play(0))
+            const particleDuration = performance.now() - particleStart
+            if (!window.__cascadeTimings) window.__cascadeTimings = []
+            window.__cascadeTimings.push({ stage: 'particles-play', duration: particleDuration, scrollY: window.scrollY })
           }
 
-          /* The activity stream is the only thing in the film the
-             viewer is meant to believe is still running, and so the
-             only one that must not stop when the viewer does. Scroll
-             decides *whether* the agent is working, never how far
-             along it is — the cycle itself runs on a clock, and this
-             is only the gate that starts and stops it.
-
-             Reversible, unlike the money latch above. A one-shot latch
-             is right for particles that are meant to keep moving
-             forever; this one is scoped to its chapter, so scrolling
-             back up has to pause it again or the agent would still be
-             working on a scene the viewer has already scrolled past. */
           if (chapter.id === 'wait') {
-            /* The gate opens at the top of the chapter rather than a
-               tenth of the way in. The opening scene is the hero, and
-               at scroll position zero the claim on screen is that the
-               agent is working *right now* — a stream that stayed dark
-               until the viewer nudged the scrollbar would be a hero
-               with a dead panel in it. */
             const active = local < 0.84
             if (active && !working) {
               working = true
+              const workStart = performance.now()
               workLoop?.play()
+              const workDuration = performance.now() - workStart
+              if (!window.__cascadeTimings) window.__cascadeTimings = []
+              window.__cascadeTimings.push({ stage: 'workLoop-play', duration: workDuration, scrollY: window.scrollY })
             } else if (!active && working) {
               working = false
+              const workStart = performance.now()
               workLoop?.pause()
+              const workDuration = performance.now() - workStart
+              if (!window.__cascadeTimings) window.__cascadeTimings = []
+              window.__cascadeTimings.push({ stage: 'workLoop-pause', duration: workDuration, scrollY: window.scrollY })
             }
           }
+
+          if (!window.__cascadeTimings) window.__cascadeTimings = []
+          window.__cascadeTimings.push({ stage: 'chapter-iteration', chapterId: chapter.id, localDuration, publishDuration, scrollY: window.scrollY })
         }
+        const chapterDuration = performance.now() - chapterStart
+        const duration = performance.now() - start
+        if (!window.__cascadeTimings) window.__cascadeTimings = []
+        window.__cascadeTimings.push({
+          stage: 'timeline-onUpdate',
+          duration,
+          gsapDuration,
+          domDuration,
+          chapterDuration,
+          scrollY: window.scrollY
+        })
       })
 
       ScrollTrigger.create({

@@ -41,15 +41,19 @@ function Console() {
             Demo environment. Campaigns, rewards and settlements shown here are
             simulated and do not involve real money.
           </p>
-          <Workbench economy={economy} />
+          <Workbench />
           <AdvertiserConsole economy={economy} />
           <RewardsPanel economy={economy} />
           <EconomicLoop economy={economy} />
 
           <div className="console__foot">
             <p className="console__foot-line">
-              CLIRevenue is a prototype. Every campaign, impression, reward, balance, and
-              payout in this console is DEMO/TEST data held in page memory.
+              CLIRevenue is a prototype. Every campaign, reward, balance, and payout in this
+              console is DEMO/TEST data held in page memory.
+            </p>
+            <p className="console__foot-line">
+              The one exception is the sponsored slot in the workbench above: it is delivered
+              live by the CLIRevenue SDK, and its impression is counted on the server.
             </p>
             <p className="console__foot-line">
               No real financial transactions · no KYC · no payout processing · no
