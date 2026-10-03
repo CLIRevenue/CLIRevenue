@@ -60,9 +60,9 @@ function measureHost(root: Element): AdContainer {
   return { width, height };
 }
 
-export const SDK_VERSION = "1.0.1";
+export const SDK_VERSION = "1.0.2";
 export const SDK_VERSION_HEADER = "X-CLIRevenue-SDK-Version";
-export const DEFAULT_BASE_URL = "https://api.clirevenue.com";
+export const DEFAULT_BASE_URL = "https://api.clirevenue.in";
 
 /** A key is a capability. Reject an obviously wrong one before any network. */
 const KEY_RE = /^pk_(live|test)_[A-Za-z0-9_-]{32,}$/;
