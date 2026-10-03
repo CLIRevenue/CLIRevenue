@@ -73,7 +73,7 @@ public by design — it identifies the publisher and nothing more. See
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `baseUrl` | `https://api.clirevenue.com` | Gateway base URL. Point this at your own deployment. |
+| `baseUrl` | `https://api.clirevenue.in` | Gateway base URL. Point this at your own deployment. |
 | `timeoutMs` | `8000` | Per-request timeout. |
 | `maxRetries` | `2` | Retries for retryable failures (5xx and network errors). |
 | `retryBaseMs` | `300` | Base delay for exponential backoff. |
@@ -634,9 +634,9 @@ Disposes observers and removes the global `online` listener. Idempotent.
 
 | Export | Value |
 | --- | --- |
-| `SDK_VERSION` | `"1.0.0"` |
+| `SDK_VERSION` | `"1.0.2"` |
 | `SDK_VERSION_HEADER` | `"X-CLIRevenue-SDK-Version"` |
-| `DEFAULT_BASE_URL` | `"https://api.clirevenue.com"` |
+| `DEFAULT_BASE_URL` | `"https://api.clirevenue.in"` |
 
 ### Types
 

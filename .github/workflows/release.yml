@@ -90,6 +90,7 @@ jobs:
             const files = require("./pack.json")[0].files.map(f => f.path).sort();
             const allowed = new Set([
               "README.md",
+              "LICENSE",
               "package.json",
               "dist/cache.d.ts", "dist/cache.js",
               "dist/errors.d.ts", "dist/errors.js",

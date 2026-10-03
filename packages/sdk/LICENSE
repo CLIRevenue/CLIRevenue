@@ -1,0 +1,397 @@
+CLIRevenue SDK PROPRIETARY LICENSE
+Version 1.0
+Effective Date: October 1, 2026
+
+Copyright © 2026 CLIRevenue. All rights reserved.
+
+IMPORTANT NOTICE
+
+The CLIRevenue SDK is proprietary software. It is provided to developers
+under the limited rights described in this License.
+
+CLIRevenue wants developers to be able to use the SDK freely in their
+software, including commercial software, while retaining ownership and
+control of the CLIRevenue SDK and its underlying technology.
+
+By downloading, installing, copying, accessing, or using the Software,
+you agree to the terms of this License.
+
+1. DEFINITIONS
+
+1.1 "CLIRevenue", "we", "us", or "our" means CLIRevenue, the owner and
+    licensor of the Software.
+
+1.2 "Licensee", "you", or "your" means the individual or legal entity
+    exercising rights under this License.
+
+1.3 "Software" means the CLIRevenue SDK and the materials distributed
+    with it by CLIRevenue, including source code, compiled code,
+    package distributions, documentation, examples, and related
+    proprietary materials.
+
+1.4 "Application" means software, websites, services, applications,
+    developer tools, or other products created by Licensee that
+    integrate, depend upon, or otherwise use the Software.
+
+2. LICENSE GRANT
+
+Subject to your continued compliance with this License, CLIRevenue
+grants you a limited, non-exclusive, worldwide, royalty-free license
+to:
+
+a. download and install the Software;
+
+b. use the Software for personal, educational, internal, testing,
+   development, and commercial purposes;
+
+c. integrate the Software into Applications;
+
+d. use the Software in production Applications; and
+
+e. distribute Applications that use the Software, subject to the
+   restrictions in this License.
+
+No license fee is required for the rights expressly granted above.
+
+This License does not transfer ownership of the Software or any
+intellectual-property rights in the Software to you.
+
+3. COMMERCIAL USE
+
+Commercial use of the Software is expressly permitted.
+
+You may use the Software in Applications that are sold, licensed,
+hosted, monetized, distributed, or otherwise operated for commercial
+purposes.
+
+You do not owe CLIRevenue a royalty merely because your Application
+uses the Software.
+
+This permission does not grant you the right to sell, license,
+redistribute, or commercially exploit the Software itself except as
+expressly permitted by this License.
+
+4. PROPRIETARY STATUS
+
+The Software is proprietary software owned by CLIRevenue.
+
+The Software is not released under an open-source license.
+
+All rights in the Software that are not expressly granted by this
+License are reserved by CLIRevenue.
+
+Nothing in this License grants you ownership of:
+
+a. the Software;
+
+b. CLIRevenue's source code;
+
+c. CLIRevenue's SDK architecture or implementation;
+
+d. CLIRevenue trademarks, names, logos, or branding;
+
+e. CLIRevenue's advertising, monetization, delivery, analytics, or
+   infrastructure technology; or
+
+f. any other intellectual property owned by CLIRevenue.
+
+5. PERMITTED APPLICATION DISTRIBUTION
+
+You may distribute an Application that uses the Software.
+
+For example, you may distribute a website, desktop application,
+developer tool, terminal application, or other software product that
+includes or depends upon the Software.
+
+You may not represent the Software itself as your own software product.
+
+Your Application remains your property, subject to third-party rights
+and the terms of this License.
+
+This License does not require you to open-source your Application.
+
+6. RESTRICTIONS
+
+Except where expressly permitted by this License or required by
+applicable law, you must not:
+
+a. sell, rent, lease, sublicense, or otherwise transfer the Software
+   itself as a standalone product;
+
+b. redistribute the Software as a standalone SDK, library, package,
+   repository, or download;
+
+c. publish or mirror substantial portions of the Software's source
+   code for the purpose of redistribution;
+
+d. repackage or rebrand the Software as another SDK, library, or
+   competing software product;
+
+e. remove, obscure, or alter copyright, proprietary, attribution, or
+   license notices contained in the Software;
+
+f. modify, adapt, or create a derivative version of the Software for
+   distribution as a separate SDK, library, or replacement product;
+
+g. use the Software or substantial portions of its proprietary
+   implementation to create a substantially similar replacement SDK
+   or advertising/monetization infrastructure intended to substitute
+   for CLIRevenue;
+
+h. use the Software or substantial portions of its proprietary
+   implementation to reproduce or reconstruct CLIRevenue's
+   proprietary implementation for the purpose of creating a
+   competing product;
+
+i. make the Software available through a hosted service, API, package
+   registry, download service, or other distribution mechanism whose
+   primary purpose is to provide the Software itself or a substantially
+   equivalent replacement to third parties; or
+
+j. claim that you own the Software or that CLIRevenue has transferred
+   ownership of the Software to you.
+
+These restrictions are intended to protect CLIRevenue's proprietary
+software and technology. They are not intended to prevent you from
+independently developing software that does not copy or improperly use
+CLIRevenue's proprietary implementation.
+
+7. REVERSE ENGINEERING
+
+To the maximum extent permitted by applicable law, you must not
+reverse engineer, decompile, disassemble, or otherwise attempt to
+derive the source code, proprietary algorithms, internal architecture,
+or implementation of the Software.
+
+Nothing in this section prohibits activity that applicable law
+expressly permits despite a contractual restriction.
+
+Where applicable law grants a mandatory right to perform a particular
+form of reverse engineering or interoperability analysis, this
+License does not attempt to remove that mandatory right.
+
+8. INDEPENDENT DEVELOPMENT
+
+Nothing in this License prevents you from independently creating
+software that performs similar functions, provided that you do not
+use, copy, reconstruct, disclose, or otherwise improperly exploit
+CLIRevenue's proprietary Software or confidential information.
+
+The existence of similar functionality alone does not establish
+ownership by CLIRevenue of that functionality.
+
+This License protects CLIRevenue's Software and proprietary
+implementation, not an entire field of technology.
+
+9. INTELLECTUAL PROPERTY
+
+CLIRevenue and its licensors retain all right, title, and interest in
+the Software and associated intellectual property.
+
+No rights are granted by implication, estoppel, or otherwise.
+
+Nothing in this License grants you any right to use CLIRevenue's
+trademarks, trade names, logos, or branding except where separately
+authorized.
+
+10. THIRD-PARTY COMPONENTS
+
+The Software may include, depend upon, or interact with third-party
+software or services.
+
+Third-party components may be subject to separate licenses.
+
+Where a third-party license applies to a component, that license
+governs the applicable rights and obligations for that component.
+
+Nothing in this License removes or limits rights that cannot lawfully
+be restricted by CLIRevenue.
+
+11. UPDATES AND NEW VERSIONS
+
+CLIRevenue may release updates, improvements, modifications, fixes,
+new versions, or successor versions of the Software.
+
+CLIRevenue may also discontinue or modify the availability of any
+version of the Software.
+
+Unless CLIRevenue expressly states otherwise, this License applies to
+the version of the Software with which it is distributed.
+
+A later version of the Software may be accompanied by different
+license terms. Those terms will apply only where expressly stated.
+
+12. LICENSE TERM
+
+The license granted under this License begins when you lawfully obtain
+or use the Software and continues until terminated in accordance with
+this License.
+
+13. TERMINATION
+
+This License will terminate automatically if you materially breach
+its terms and fail to cure the breach within a reasonable period
+after receiving written notice from CLIRevenue, where the breach is
+reasonably capable of being cured.
+
+Where a breach is not reasonably capable of being cured, termination
+may take effect upon written notice.
+
+CLIRevenue may seek immediate legal or equitable relief where
+reasonably necessary to prevent continuing unauthorized use,
+unauthorized distribution, disclosure of proprietary material, or
+irreparable harm.
+
+Upon termination, you must cease exercising the rights granted by
+this License and, where reasonably applicable, remove standalone
+copies of the Software from systems under your control.
+
+Termination does not affect rights or obligations that accrued before
+termination.
+
+14. ENFORCEMENT AND GOOD-FAITH RESOLUTION
+
+CLIRevenue values legitimate use of the Software and intends this
+License to enable developers to build and ship software while
+protecting CLIRevenue's proprietary technology.
+
+Where reasonably appropriate, CLIRevenue will attempt to resolve an
+alleged violation through written notice and a reasonable opportunity
+to cure before pursuing formal legal remedies.
+
+This does not prevent CLIRevenue from seeking immediate relief where
+necessary to protect intellectual property, confidential information,
+or other rights, or to prevent continuing unauthorized use or
+distribution.
+
+Nothing in this section limits any legal remedy available under
+applicable law.
+
+15. DISCLAIMER OF WARRANTIES
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS
+PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTIES OF ANY KIND,
+EXPRESS OR IMPLIED.
+
+CLIRevenue DISCLAIMS, TO THE MAXIMUM EXTENT PERMITTED BY LAW, IMPLIED
+WARRANTIES INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE, TITLE, NON-INFRINGEMENT, AND ANY WARRANTY ARISING FROM
+COURSE OF DEALING OR USAGE OF TRADE.
+
+CLIRevenue does not warrant that the Software will:
+
+a. operate without interruption;
+
+b. be completely error-free;
+
+c. satisfy every particular requirement;
+
+d. remain available indefinitely; or
+
+e. be compatible with every environment, platform, dependency, or
+   future software version.
+
+16. LIMITATION OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, CLIRevenue SHALL
+NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL,
+EXEMPLARY, OR PUNITIVE DAMAGES ARISING OUT OF OR RELATING TO THE
+SOFTWARE OR THIS LICENSE.
+
+This includes, where permitted by law, loss of profits, revenue,
+business opportunities, data, goodwill, or business interruption.
+
+Nothing in this License excludes or limits liability that cannot
+lawfully be excluded or limited.
+
+17. INDEMNIFICATION
+
+To the extent permitted by applicable law, Licensee is responsible for
+its use of the Software and for Applications developed using the
+Software.
+
+Licensee agrees to comply with applicable laws and third-party rights
+when using and distributing Applications incorporating the Software.
+
+Any separate indemnification obligations must be established by a
+separate written agreement.
+
+18. PRIVACY AND DATA
+
+This License does not by itself grant CLIRevenue access to personal
+data, confidential information, or other information processed by an
+Application.
+
+Licensee remains responsible for its own legal and regulatory
+obligations relating to data processed by its Application.
+
+Where the Software communicates with CLIRevenue services, additional
+terms, policies, documentation, or service agreements may apply.
+
+19. EXPORT AND LEGAL COMPLIANCE
+
+You are responsible for complying with laws and regulations applicable
+to your use, distribution, and operation of Applications using the
+Software.
+
+You must not use the Software in violation of applicable law.
+
+20. ASSIGNMENT
+
+You may not assign or transfer this License or the rights granted
+under it to another party without the prior written consent of
+CLIRevenue, except where such restriction is prohibited by applicable
+law.
+
+CLIRevenue may assign this License in connection with a merger,
+reorganization, acquisition, sale of substantially all relevant
+assets, or similar corporate transaction.
+
+21. GOVERNING LAW
+
+This License shall be governed by and interpreted in accordance with
+the laws of India and the applicable laws of the State of Uttar
+Pradesh, without regard to conflict-of-law principles to the extent
+permitted by applicable law.
+
+22. EXCLUSIVE JURISDICTION
+
+Subject to applicable law, the courts of competent jurisdiction at
+Lucknow, Uttar Pradesh shall have exclusive jurisdiction over
+disputes arising out of or relating to this License or the Software.
+
+Where the Lucknow Bench of the High Court of Judicature at Allahabad
+has jurisdiction over a matter, such matter shall be subject to the
+jurisdiction of that Bench.
+
+Nothing in this License is intended to prevent a party from seeking
+urgent interim, injunctive, or protective relief from a court having
+lawful jurisdiction where such relief is necessary to protect
+intellectual property, confidential information, or other rights.
+
+23. SEVERABILITY
+
+If any provision of this License is determined to be invalid,
+unenforceable, or unlawful, that provision shall be enforced to the
+maximum extent permitted by law and the remaining provisions shall
+continue in full force and effect.
+
+24. NO WAIVER
+
+Failure by CLIRevenue to enforce any provision of this License does
+not constitute a waiver of its right to enforce that provision later.
+
+A waiver is effective only if made in writing by an authorized
+representative of CLIRevenue.
+
+25. ENTIRE AGREEMENT
+
+This License constitutes the agreement between CLIRevenue and
+Licensee concerning the Software unless the parties enter into a
+separate written agreement that expressly supersedes or modifies this
+License.
+
+26. CONTACT
+
+CLIRevenue
+GitHub: https://github.com/CLIRevenue/CLIRevenue
