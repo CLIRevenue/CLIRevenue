@@ -774,160 +774,28 @@
 
 /* -------------------------------------------------------------
    scene 3 — revenue flow diagram
+
+   The diagram is one centred column now: four plates, three
+   connectors, one travelling pulse, and a stage breakdown that
+   says the same four things once. Its canvas, its plates, its
+   connectors and its breakdown are all declared in RevenueFlow.css,
+   which the component imports and which wins on specificity.
+
+   Nothing is declared here. The earlier copy of these rules here
+   still positioned the plates absolutely and centred them with
+   `transform: translate(-50%, -50%)`, and the old per-wire particle
+   here ran its own infinite keyframe loop; both contradicted the
+   component. Leaving a second, divergent set of rules behind is how
+   the diagram ended up with dead space and stray motion in the
+   first place, so the block is gone rather than merely overridden.
    ------------------------------------------------------------- */
 
-.flow {
-  position: relative;
-  width: 100%;
-  max-width: 780px;
-  margin: 0 auto;
-  aspect-ratio: 4 / 3;
-}
-
-.flow__wires {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.flow__wire {
-  fill: none;
-  stroke: var(--hair-strong);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-
-.flow__wire--active {
-  stroke: var(--hair-amber);
-}
-
-.flow__arrowhead {
-  fill: context-stroke;
-}
-
-.flow__particle {
-  fill: var(--amber);
-}
-
-.flow__node {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  width: 27%;
-  padding: 12px 10px;
-  text-align: center;
-  background: var(--panel-2);
-  border: 1px solid var(--hair-strong);
-  /* the same top-edge light catch the terminal carries, so the diagram
-     and the interface it describes are lit from above by one source */
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  transform: translate(-50%, -50%);
-}
-
-.flow__node--hub {
-  width: 28%;
-  border-color: var(--border-strong);
-  background: var(--paper);
-  /* a hard offset, not a glow: the palette has rules and shadows, not
-     halos, and the platform node is the one plate on this diagram that
-     is lit rather than merely outlined */
-  box-shadow: 5px 5px 0 0 var(--signal);
-}
-
-.flow__node-icon {
-  color: var(--ink-3);
-}
-
-.flow__node--hub .flow__node-icon {
-  color: var(--signal);
-}
-
-.flow__node-icon svg {
-  width: 15px;
-  height: 15px;
-}
-
-.flow__node-label {
-  font-family: var(--mono);
-  font-size: clamp(9px, 0.95vw, 10.5px);
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink);
-  white-space: nowrap;
-}
-
-/* the label sits on an inverted plate, so it inverts with it */
-.flow__node--hub .flow__node-label {
-  color: var(--bg);
-}
-
-.flow__flowlabel {
-  position: absolute;
-  padding: 2px 7px;
-  transform: translate(-50%, -50%);
-  background: var(--stage);
-  font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink-4);
-  white-space: nowrap;
-}
-
-.flow__legends {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 1px;
-  margin-top: 44px;
-  background: var(--hair);
-  border: 1px solid var(--hair);
-}
-
-.flow__legend {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 20px 22px;
-  background: var(--stage);
-}
-
-.flow__legend-icon {
-  flex: 0 0 auto;
-  margin-top: 1px;
-  color: var(--ink-4);
-}
-
-.flow__legend-icon svg {
-  width: 15px;
-  height: 15px;
-}
-
-.flow__legend--hub .flow__legend-icon {
-  color: var(--amber);
-}
-
-.flow__legend-label {
-  display: block;
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-
-.flow__legend-blurb {
-  display: block;
-  margin-top: 5px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--ink-3);
-}
+/* The old four-up participant legend below the diagram is gone: the
+   diagram and its stage breakdown now say the same four things once
+   (`.flow__timeline` / `.flow__stage` in RevenueFlow.css). The element
+   still carries the `flow__legends` class as a hook — `useCinema`
+   reveals `.flow__legends` when the money scene enters — so the class
+   stays even though it no longer carries any styling here. */
 
 /* -------------------------------------------------------------
    scene 4 — annotations
@@ -1366,7 +1234,23 @@
   color: var(--ink-2);
 }
 
+/* Ghost controls are the public-site entry points in the header
+   (Developer, Advertiser, Log in). Raised/focus/hover must read as
+   the same in-palette plate their siblings do — a warm amber wash
+   with a white hairline, never a grey outline. */
 .btn--ghost:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--hair-amber);
+  background: var(--amber-wash);
+}
+
+.btn--ghost:focus-visible {
+  border-color: var(--hair-amber);
+  background: var(--amber-wash);
+  box-shadow: 0 0 0 2px var(--signal-text), 0 0 0 6px var(--amber-wash);
+}
+
+.btn--ghost:active {
   color: var(--ink);
   border-color: var(--hair-amber);
   background: var(--amber-wash);
@@ -1543,6 +1427,23 @@
    region of the window rather than a card floating in the text. */
 .workbench .adslot--workbench {
   margin: 14px -24px;
+}
+
+/* Film-scene sponsored slots share the same breakout treatment: they
+   sit inside the terminal's output area (rendered as children of the
+   Terminal component by ServedAdSlot), so they need the same negative
+   horizontal margins to span the full terminal width. */
+[data-scene="ad"] .adslot,
+[data-scene="experience"] .adslot {
+  margin: 14px -24px;
+}
+
+@media (max-width: 760px) {
+  [data-scene="ad"] .adslot,
+  [data-scene="experience"] .adslot {
+    margin-left: -16px;
+    margin-right: -16px;
+  }
 }
 
 .workbench__signal {
@@ -2940,7 +2841,11 @@
    slot rules above — the sheet, not the shell, carries the paint. */
 
 /* Controls lift into a hard shadow rather than fading: the offset is
-   the affordance, and it is reversible by pressing. */
+   the affordance, and it is reversible by pressing. The public header's
+   Developer / Advertiser anchors are NOT listed here — they carry
+   .btn.btn--ghost.btn--sm outright, so they inherit this lift, this
+   timing, and .btn--ghost's focus ring from the single definition
+   below instead of re-declaring a parallel copy of them. */
 .btn,
 .adslot__cta,
 .switcher__btn {
@@ -3151,18 +3056,29 @@
    5. the boot overlay
    ------------------------------------------------------------- */
 
+/* `contain: layout paint` is the boot's single biggest cheap win. The
+   overlay is fixed and full-viewport, so every style the timeline
+   writes was invalidating paint for the whole document underneath it —
+   six scenes and a syntax-highlighted hero terminal. Containing the
+   overlay keeps the boot's writes inside its own box. `size` is
+   deliberately left out: the element is sized by `inset: 0`, not by
+   its content, and `contain: size` would collapse it to nothing. */
 .intro {
   position: fixed;
   inset: 0;
   z-index: 9999;
   pointer-events: none;
+  contain: layout paint;
 }
 
+/* The cover translates for the whole lift, so it is promoted once and
+   the lift is then composited rather than repainted. */
 .intro__cover {
   position: absolute;
   inset: 0;
   background: var(--bg);
   overflow: hidden;
+  will-change: transform;
 }
 
 /* The grid is drawn as five rules rather than painted as a pattern,
@@ -3181,6 +3097,7 @@
   bottom: 0;
   width: 1px;
   transform-origin: 50% 0;
+  will-change: transform;
 }
 
 .intro__corner {
@@ -3223,22 +3140,87 @@
   gap: 18px;
 }
 
-.intro__word {
-  font-family: var(--font-display);
-  font-size: min(13svh, 15vw);
-  font-weight: 700;
-  line-height: 0.9;
-  letter-spacing: var(--track-display);
-  text-transform: uppercase;
-  color: var(--paper);
+/* The approved CLIRevenue brand files — the logo mark and the
+   wordmark, served from `public/brand` exactly as supplied. Neither
+   is redrawn, re-typed or approximated here.
+
+   Both files carry a large uniform black margin and both sit on the
+   cover's own black, so that margin is invisible. Which means the
+   element has to be sized by the artwork inside the file rather than
+   by the file: each rule below divides the size we want the visible
+   mark to occupy by the artwork's share of its canvas. `height: auto`
+   then keeps the file's own proportions, so nothing is ever stretched
+   or squashed.
+
+   They share a single grid slot, and the timeline holds one at a time:
+   the mark arrives, settles, clears, and only then does the wordmark
+   resolve. Stacked, the two read as a loading screen; in sequence they
+   read as the brand introducing itself.
+
+   The slot is the positioning context for the red boot line, so the
+   line can be hung off the wordmark rather than off the column. */
+.intro__brand {
+  position: relative;
+  display: grid;
+  place-items: center;
+  /* The line used to be a sibling of this slot, and the flex gap it
+     lived in is 4px of rule plus 18px of gap. The slot takes that back
+     so the brand does not shift on screen when the line moves into
+     it. */
+  margin-bottom: 22px;
 }
 
-.intro__bar {
+.intro__mark,
+.intro__wordmark {
+  grid-area: 1 / 1;
   display: block;
-  width: min(46vw, 520px);
+  height: auto;
+  /* Both are scaled and faded by the timeline. Promoting them means a
+     scale step composites an existing texture instead of asking the
+     rasteriser to re-render a 1.5-megapixel source at every step. */
+  will-change: opacity, transform;
+}
+
+.intro__mark {
+  /* Taken out of flow so the wordmark alone sets the height of the
+     slot. If the mark contributed to it, the two files would disagree
+     about the centre at narrow widths — the mark's canvas is square
+     and the wordmark's is nearly 3:1 — and anything measured as a
+     fraction of the slot would drift with the viewport. It keeps its
+     `grid-area` and the slot's centring, so it lands in the same
+     place it always did. */
+  position: absolute;
+  /* 1254px square canvas; the artwork occupies 45.37% of its width. */
+  width: min(calc(clamp(52px, 7.6vw, 96px) / 0.4537), 100%);
+}
+
+.intro__wordmark {
+  /* 2164x727 canvas; the artwork occupies 47.27% of its width. */
+  width: min(calc(min(38vw, 360px) / 0.4727), 100%);
+}
+
+/* The red boot line. It belongs to the wordmark, so it is positioned
+   against the slot the wordmark defines rather than stacked after it —
+   the file's own black margin is most of its box, and a gap measured
+   from the box would land the line ~120px below the visible mark.
+
+   `top` is the bottom edge of the wordmark's artwork (407 of the file's
+   727 rows) plus a small, deliberate gap. `left`/`right` with auto
+   margins centre it without a transform, because the timeline animates
+   the transform and would overwrite one. The width matches the
+   wordmark's artwork exactly, so the sweep draws the wordmark's width. */
+.intro__bar {
+  position: absolute;
+  top: calc(55.98% + clamp(10px, 1.6vh, 18px));
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  display: block;
+  width: min(38vw, 360px);
   height: 4px;
   background: var(--signal);
-  transform-origin: 0 50%;
+  transform-origin: 50% 50%;
+  will-change: transform;
 }
 
 .intro__status {
@@ -3308,6 +3290,27 @@ body {
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+
+/* Drum ad overlay: the real CLIRevenue ad surface positioned by
+   the render loop. The overlay is absolutely positioned inside the
+   orbit__frame (which establishes the containing block for the
+   canvas). The render loop writes transform/width/height/display
+   inline, so this rule only sets the base positioning and ensures
+   pointer events pass through to the ad. */
+.orbit__ad {
+  position: absolute;
+  /* transform/width/height/display set by the render loop */
+  pointer-events: auto;
+  z-index: 10;
+}
+
+/* The SDK watches the .servedad element for viewability. It must
+   fill the positioned overlay so the intersection observer sees the
+   same area the user sees. */
+.orbit__ad .servedad {
+  width: 100%;
+  height: 100%;
 }
 
 /* Only ever rendered when the browser has no WebGL: a flat strip in
@@ -3752,3 +3755,110 @@ body {
     gap: 12px;
   }
 }
+
+
+/* =============================================================
+   scene 3 — revenue flow
+   ------------------------------------------------------------- */
+
+/* The diagram is one centred column now: four plates, three
+   connectors, one travelling pulse, and a stage breakdown that says
+   the same four things once. Its canvas, its plates, its connectors
+   and its breakdown are all declared in RevenueFlow.css, which the
+   component imports and which wins on specificity.
+
+   Nothing about the plates is declared here any more. This block used
+   to carry a second, divergent copy — `width: 28%` on the CLIRevenue
+   plate, and a `color` on its sub-line that tied with the component's
+   and so depended on stylesheet order. A rule that only sometimes wins
+   is not a rule; the plates live in one place now. What remains below
+   is the arrow head, which is palette rather than geometry.
+
+   The `--hub` class still carries one thing App.css owns and the
+   component cannot: the slow centre-node pulse, which the sheet's
+   reduced-motion block near `.adslot__cta` already mutes.
+   ------------------------------------------------------------- */
+
+/* The old "live" status flag above the central node is gone. The
+   diagram no longer advertises that it is running — CLIRevenue is
+   simply the second stage of the chain, and the travelling pulse is
+   the only thing on this canvas that moves. */
+
+/* One wire per hand-off, drawn by `useCinema`. The old per-wire
+   particle is gone: the travelling pulse now lives on the diagram's
+   own timeline so a single dot can follow the chain end to end, which
+   CSS keyframes on independent wires could never express. The arrow
+   head and the hairline stroke are palette only. */
+.flow__arrowhead {
+  fill: context-stroke;
+}
+
+/* Button — public-site ghost controls: raised/hover/focus must not
+   draw grey. The in-palette treatment matches the siblings: amber
+   wash, white hairline, and a red ring for keyboard focus. */
+.btn--ghost {
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--hair-amber);
+  background: var(--amber-wash);
+}
+
+.btn--ghost:focus-visible {
+  border-color: var(--hair-amber);
+  background: var(--amber-wash);
+  box-shadow: 0 0 0 2px var(--signal-text), 0 0 0 6px var(--amber-wash);
+}
+
+.btn--ghost:active {
+  color: var(--ink);
+  border-color: var(--hair-amber);
+  background: var(--amber-wash);
+}
+
+
+/* --- Publisher key plate ---
+/* The one place a publishable key is shown. It borrows the setup
+   vocabulary rather than inventing a new one: same mono scale, same
+   hairline, red reserved for the one word that matters. The masked
+   state is dimmed so a fragment never reads as a full key. */
+.setup__keyplate {
+  margin: 0 0 20px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--panel);
+  border: var(--border-w) solid var(--hair);
+  border-left: var(--border-w-2) solid var(--signal);
+}
+.setup__keyrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.setup__keyvalue {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.setup__keyvalue[data-masked="yes"] {
+  color: var(--ink-3);
+}
+.setup__keyactions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.setup__copy {
+  white-space: nowrap;
+}
+

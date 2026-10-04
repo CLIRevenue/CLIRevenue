@@ -21,7 +21,7 @@ point, and the copy stays conceptual on purpose.
 
 ## How the SDK works
 
-The SDK is a single Ember client — `@clirevenue/sdk`. It:
+The SDK is a single ESM client — `@clirevenue/sdk`. It:
 
 1. asks the CLIRevenue gateway for an ad for a **placement**,
 2. renders it into a DOM element you give it,

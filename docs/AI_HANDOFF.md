@@ -215,16 +215,25 @@ Lint classification: `profile-page.js` line 1:22 `'require' is not defined` and 
 
 ## Human decisions required
 
-1. **LICENSE.** No license file exists (`ls LICENSE* COPYING*` → nothing). `package.json` says `license: "UNLICENSED"`, which is the truthful value. A human must choose the license before any public publish. Not fabricated here.
-2. **git remote / `repository` / `homepage` / `bugs`.** `git remote -v` is empty and no GitHub URL appears anywhere in the repo. Those three fields are therefore **absent**, not invented. A human must create the remote and supply real URLs.
+1. **LICENSE.** ~~No license file exists.~~ **RESOLVED 2026-10-01:** a proprietary
+   LICENSE now exists at the repo root (`CLIRevenue SDK PROPRIETARY LICENSE`),
+   `packages/sdk/package.json` carries `license: "SEE LICENSE IN LICENSE"`, and
+   the SDK lockfile metadata is synced (commit `6c6fdca`).
+2. **git remote / `repository` / `homepage` / `bugs`.** ~~Both absent.~~
+   **RESOLVED 2026-10-01:** `origin` points at
+   `https://github.com/CLIRevenue/CLIRevenue.git`, and the SDK `package.json`
+   sets `repository`, `homepage` and `bugs` to matching GitHub URLs.
+   Verify the GitHub repository actually exists and is reachable before
+   relying on those URLs.
 3. **npm Trusted Publisher entry.** Must be created on npm for `@clirevenue/sdk`, naming this workflow filename and the environment `npm`.
 4. **GitHub Actions workflow permissions** must be set to read-only in repository settings.
 5. The package must exist on npm before Trusted Publishing can target it.
 
 ## Remaining release blockers
 
-1. LICENSE decision (human).
-2. git remote plus real `repository` / `homepage` / `bugs` URLs (human).
+1. ~~LICENSE decision (human).~~ **Resolved** — proprietary LICENSE committed.
+2. ~~git remote plus real `repository` / `homepage` / `bugs` URLs (human).~~
+   **Resolved** — origin + package metadata now set.
 3. npm Trusted Publisher entry + GitHub environment `npm` (human/account action).
 4. GitHub Actions workflow permissions set to read-only (human/account action).
 5. Package must exist on npm before publish (consequence of 3).

@@ -4,6 +4,7 @@ import { Panel } from '../console/ui.jsx'
 import { supabase } from '../../lib/api.js'
 import DeveloperAccount from './DeveloperAccount.jsx'
 import SdkSetup from './SdkSetup.jsx'
+import { LogoutButton } from '../auth/LogoutButton.jsx'
 
 function trimBase(raw) {
   return String(raw || '').replace(/\/+$/, '')
@@ -148,6 +149,7 @@ export default function DeveloperApp() {
               {t.label}
             </button>
           ))}
+          <LogoutButton />
         </nav>
 
         {/* The account and SDK tabs render their own page head — showing

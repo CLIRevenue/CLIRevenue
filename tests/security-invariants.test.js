@@ -143,3 +143,56 @@ describe('error responses do not leak internals', () => {
     }
   })
 })
+
+// ---------- admin authorization ---------------------------------------
+
+describe('admin authorization invariants', () => {
+  it('no admin file hardcodes an admin email or password', () => {
+    const adminFiles = [
+      'src/lib/adminApi.js',
+      'supabase/functions/admin/index.ts',
+      'supabase/functions/_shared/auth.ts',
+    ]
+    for (const f of adminFiles) {
+      const src = readFileSync(join(ROOT, f), 'utf8')
+      expect(src, `${f} must not contain hardcoded admin credentials`).not.toMatch(
+        /ADMIN_EMAIL|ADMIN_PASSWORD|admin@|ADMIN_USER/
+      )
+    }
+  })
+
+  it('no admin file stores isAdmin in localStorage or sessionStorage', () => {
+    const adminFiles = [
+      'src/lib/adminApi.js',
+      'src/components/admin/AdminConsole.jsx',
+    ]
+    for (const f of adminFiles) {
+      const src = readFileSync(join(ROOT, f), 'utf8')
+      expect(src, `${f} must not use localStorage/sessionStorage isAdmin`).not.toMatch(
+        /localStorage\.(set|get)Item.*isAdmin|sessionStorage\.(set|get)Item.*isAdmin/
+      )
+    }
+  })
+
+  it('requireAdmin rejects non-admin with 403 (source-level)', () => {
+    const src = readFileSync(join(ROOT, 'supabase/functions/_shared/auth.ts'), 'utf8')
+    const fnStart = src.indexOf('export async function requireAdmin')
+    expect(fnStart).toBeGreaterThan(-1)
+    const fnBody = src.slice(fnStart)
+    expect(fnBody).toMatch(/FORBIDDEN/)
+    expect(fnBody).toMatch(/Admin access required/)
+    expect(fnBody).toMatch(/admin_emails/)
+    expect(fnBody).toMatch(/role\s*!==\s*['"]admin['"]/)
+  })
+
+  it('admin Edge Function never accepts email from request body', () => {
+    const src = readFileSync(join(ROOT, 'supabase/functions/admin/index.ts'), 'utf8')
+    expect(src).not.toMatch(/req\.json\(\)/)
+    expect(src).not.toMatch(/body\.email/)
+  })
+
+  it('admin Edge Function never accepts isAdmin from query string', () => {
+    const src = readFileSync(join(ROOT, 'supabase/functions/admin/index.ts'), 'utf8')
+    expect(src).not.toMatch(/isAdmin|admin=true/)
+  })
+})

@@ -91,6 +91,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@clirevenue/sdk@^1.0.1",
         "npm:@electric-sql/pglite@~0.5.8",
         "npm:@eslint/js@^10.0.1",
         "npm:@supabase/supabase-js@^2.39.0",

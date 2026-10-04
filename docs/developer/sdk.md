@@ -27,7 +27,7 @@ The ambient exports are:
 | `CLIRevenueConfigError` | class | Bad key / missing selector / unknown placement. |
 | `CLIRevenueTimeoutError` | class | A request exceeded `timeoutMs`. |
 | `CLIRevenueNetworkError` | class | The request never reached the gateway. |
-| `CLIRevenueHttpError` | class | The gateway answered 4xx/5xx. Carries `.status` and `.body`. |
+| `CLIRevenueHttpError` | class | The gateway answered 4xx/5xx. Carries `.status` and `.code`. |
 | `ServedAd` | type | The value `getAd()` / `render()` can return. |
 | `CLIRevenueOptions` | type | The options accepted by `init()`. |
 
@@ -37,7 +37,7 @@ Constants:
 |---|---|
 | `SDK_VERSION` | The published version, e.g. `"1.0.0"`. |
 | `SDK_VERSION_HEADER` | `"X-CLIRevenue-SDK-Version"`. |
-| `DEFAULT_BASE_URL` | `"https://api.clirevenue.com"`. Point `baseUrl` at your own deployment. |
+| `DEFAULT_BASE_URL` | `"https://api.clirevenue.in"`. Point `baseUrl` at your own deployment. |
 
 ## Initialize
 
@@ -52,11 +52,11 @@ public by design — it identifies the publisher and nothing more.
 
 | Option | Default | Meaning |
 |---|---|---|
-| `baseUrl` | `https://api.clirevenue.com` | Gateway base URL. Point this at your own deployment. |
-| `timeoutMs` | `8000` | Per-request timeout. |
+| `baseUrl` | `https://api.clirevenue.in` | Gateway base URL. Point this at your own deployment. |
+| `timeoutMs` | `5000` | Per-request timeout. |
 | `maxRetries` | `2` | Retries for retryable failures (5xx and network errors). |
-| `retryBaseMs` | `300` | Base delay for exponential backoff. |
-| `retryMaxMs` | `4000` | Ceiling for a single backoff delay. |
+| `fetchImpl` | ambient `fetch` | Override for tests or exotic environments. |
+| `storage` | ambient `sessionStorage` | Override or `null` to disable the offline queue. |
 | `ObserverImpl` | ambient `IntersectionObserver` | Override for tests or exotic environments. |
 
 A malformed key throws `CLIRevenueConfigError` **before any network request**
@@ -89,7 +89,7 @@ type ServedAd = {
     headline: string
     description: string | null
     cta: string | null
-    audience: string | null
+    audience: string
     landingUrl: string | null // the only destination you should link to; may be absent
   }
 }
@@ -388,7 +388,7 @@ Every error the SDK raises extends `CLIRevenueError` and carries a `.name`:
 | `CLIRevenueConfigError` | Bad publisher key, missing placement key, unknown selector, unknown request id. |
 | `CLIRevenueTimeoutError` | A request exceeded `timeoutMs`. |
 | `CLIRevenueNetworkError` | The request never reached the gateway (offline, DNS, blocked). |
-| `CLIRevenueHttpError` | The gateway answered with a 4xx or 5xx. Carries `.status` and `.body`. |
+| `CLIRevenueHttpError` | The gateway answered with a 4xx or 5xx. Carries `.status` and `.code`. |
 
 ```js
 import { init, CLIRevenueHttpError } from '@clirevenue/sdk'
@@ -413,12 +413,12 @@ degrades to your own fallback in a `catch`.
 
 ## Timeouts and retries
 
-- Every request has a timeout (`timeoutMs`, default 8s). A request that
+- Every request has a timeout (`timeoutMs`, default 5s). A request that
   exceeds it rejects with `CLIRevenueTimeoutError`.
 - Retryable failures are retried: **5xx responses and network errors**.
   **4xx responses are never retried** — a rejected publisher key or an
   unknown placement will fail identically every time.
-- Backoff is exponential with **full jitter** and is capped (`retryMaxMs`),
+- Backoff is exponential with **full jitter** and is capped (30 seconds),
   so a burst of clients does not synchronise into a thundering herd.
 - Each serve keeps **one idempotency key across all of its retries**, so a
   retried `getAd` cannot create two serves.

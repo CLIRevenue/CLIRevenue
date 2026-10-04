@@ -1,0 +1,855 @@
+/* =============================================================
+   CLIRevenue — public advertiser landing (/advertiser)
+   -------------------------------------------------------------
+   The same three colours, hairlines, zero radius, and no gradient as
+   the /developer page: this file deliberately invents no token, no
+   curve, and no shadow the product does not already own. The shell
+   grammar (masthead, asymmetric hero, plate, heads, notes) mirrors
+   the developer page so the two read as siblings; the body families
+   borrow the advertiser console's own vocabulary — lattice grids,
+   hairline spec rows, status pills, disclosure columns — so the page
+   feels like the campaign product rather than a second SDK page.
+
+   Families, in document order: sticky masthead · asymmetric hero
+   spread with a brief plate · five-cell step ladder · status strip +
+   transition ledger · audience lattice + two panels · brief spec +
+   destination panel · metric ledger · split safety panels ·
+   two-column FAQ · closing CTA band. Nothing repeats twice in a row.
+
+   This file is imported by AdvertiserLanding.jsx, which keeps it
+   with the page it belongs to.
+   ============================================================= */
+
+/* ---------- page ---------- */
+
+.advx-page {
+  position: relative;
+  z-index: 1;
+  display: block;
+  background: var(--void);
+  padding: 0 var(--gutter) clamp(64px, 10vh, 120px);
+}
+
+.advx-page__inner {
+  width: 100%;
+  max-width: calc(var(--measure) + var(--gutter) * 2);
+  margin: 0 auto;
+}
+
+/* One offset for every anchor on this page: the masthead is sticky,
+   so a jumped-to heading has to clear it. */
+.advx-page [id] {
+  scroll-margin-top: 88px;
+}
+
+/* ---------- masthead ----------
+   Carried by the page itself (the site header is not mounted on this
+   route): identity left, this page's jumps and the one account action
+   right, full-bleed, one line, compacted rather than wrapped under
+   640. The path chip wears the site header's navigation control — the
+   same box as the homepage's Developer / Log in / Sign up — and is a
+   span, so it never joins the hard-lift hover group. */
+
+.advx-top {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 11px var(--gutter);
+  border-bottom: 1px solid var(--hair);
+  background: var(--glass-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.advx-top__brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.advx-top__brand em {
+  font-style: normal;
+  color: var(--amber);
+}
+
+.advx-top__path {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: default;
+}
+
+.advx-top__nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+}
+
+.advx-top__link {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+  transition: color var(--dur-fast) var(--ease-ui), border-color var(--dur-fast) var(--ease-ui);
+}
+
+.advx-top__link:hover,
+.advx-top__link:focus-visible {
+  color: var(--ink);
+  border-bottom-color: var(--signal);
+}
+/* ---------- hero ----------
+   The sibling of the developer hero: statement left, real artifact
+   right. No framed box and no red wash — the plate itself is the
+   red-flagged artifact. */
+
+.advx-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: clamp(28px, 4.5vw, 72px);
+  align-items: center;
+  padding: clamp(36px, 6vh, 76px) 0 clamp(40px, 6vh, 72px);
+}
+
+.advx-hero__lede {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  justify-items: start;
+}
+
+.advx-hero__title {
+  margin: 0;
+  max-width: 22ch;
+  font-size: clamp(32px, 3.5vw, 54px);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: var(--track-head);
+  text-wrap: balance;
+  color: var(--ink);
+}
+
+/* The accent line is the flag — one sentence in red, the way the
+   developer hero and the film's closing statement carry theirs. */
+.advx-hero__accent {
+  display: block;
+  color: var(--signal-text);
+}
+
+.advx-hero__body {
+  margin: 0;
+  max-width: 52ch;
+  font-size: clamp(14.5px, 1.3vw, 16px);
+  line-height: 1.65;
+  color: var(--ink-3);
+  text-wrap: pretty;
+}
+
+.advx-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+/* ---------- code plate ----------
+   One frame, one bar, one red rule — the developer page's material,
+   restated under this page's prefix. The copy control lives in the
+   bar, outside the <pre>, so nothing interactive is nested in the
+   code. */
+
+.advx-code,
+.advx-plate {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--hair);
+  border-left: var(--border-w-2) solid var(--signal);
+  background: var(--panel);
+}
+
+.advx-code__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 12px 7px 14px;
+  border-bottom: 1px solid var(--hair);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.advx-code__tag {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+/* Three children in the bar: the meta takes the slack so it rides
+   with the copy control against the trailing edge. */
+.advx-plate__meta {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: var(--ink-4);
+}
+
+.advx-code__pre {
+  margin: 0;
+  padding: 15px 16px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.72;
+  color: var(--ink-2);
+}
+
+.advx-code__pre code {
+  font-family: inherit;
+  color: inherit;
+  white-space: pre;
+}
+
+/* The hero plate keeps the film terminal's hard offset: the device
+   that says "artifact, not panel". */
+.advx-plate {
+  box-shadow: 10px 10px 0 0 rgba(255, 255, 255, 0.045);
+}
+
+/* Copy control. The compound selectors outrank the shared
+   .btn--ghost / .btn--sm classes the button also carries, so the
+   success state really does invert rather than losing to the later
+   sheet — the same rule the developer page's copy control reads. */
+.advx-code .advx-copy {
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.advx-code .advx-copy--done,
+.advx-code .advx-copy--done:hover:not(:disabled) {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+}
+/* ---------- body ---------- */
+
+.advx-main {
+  display: grid;
+  gap: clamp(34px, 5vh, 64px);
+  margin-top: clamp(20px, 3vh, 40px);
+  padding-top: clamp(28px, 4vh, 52px);
+  border-top: 1px solid var(--hair);
+}
+
+.advx-block {
+  min-width: 0;
+}
+
+/* ---------- section heads ---------- */
+
+.advx-head {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.advx-head__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.22;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+}
+
+.advx-head--lg .advx-head__title {
+  max-width: 46ch;
+  font-size: clamp(23px, 2.3vw, 30px);
+  letter-spacing: var(--track-head);
+  text-wrap: balance;
+}
+
+.advx-head__sub {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+/* ---------- panel ----------
+   Panel renders `panel advx-panel`, and `.panel` carries no rule
+   anywhere in the product, so the card's material is stated here. */
+
+.advx-panel {
+  position: relative;
+  padding: 24px;
+  border: 1px solid var(--hair);
+  background: var(--panel);
+}
+
+.advx-panel__title {
+  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+}
+
+/* ---------- prose ---------- */
+
+.advx-p {
+  max-width: 68ch;
+  margin: 0 0 12px;
+  font-size: 14.5px;
+  line-height: 1.62;
+  color: var(--ink-3);
+}
+
+.advx-note {
+  max-width: 74ch;
+  margin: 18px 0 0;
+  font-size: 12.5px;
+  line-height: 1.62;
+  color: var(--ink-4);
+}
+
+/* Inline technical reference — the developer page's `.sdk-inline`
+   restated for this page. */
+.advx-inline {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--hair);
+  padding: 0 5px;
+  white-space: nowrap;
+}
+
+/* ---------- how it works: five-cell step ladder ----------
+   One row of five, hairline lattice over a hairline background —
+   the grid technique the design system prescribes. The numeral is
+   instrumentation, not decoration: mono, small, red. */
+
+.advx-ladder {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+}
+
+.advx-ladder__cell {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+  padding: 18px 18px 20px;
+  background: var(--panel);
+}
+
+.advx-ladder__n {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--signal-text);
+}
+
+.advx-ladder__title {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+}
+
+.advx-ladder__body {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+/* ---------- campaign workflow: status strip + transition ledger ----------
+   The five states as one instrument line (the live one carries the
+   red dot and the red label), then the truth table under it in the
+   console's own table treatment. */
+
+.advx-statusline {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 22px;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--hair);
+  background: var(--panel);
+}
+
+.advx-statusline__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.advx-statusline__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hair-strong);
+}
+
+/* Active is the only live state: red dot, red label, the same glow
+   the demo tag uses for a live marker. */
+.advx-statusline__item[data-live='true'] {
+  color: var(--signal-text);
+}
+
+.advx-statusline__item[data-live='true'] .advx-statusline__dot {
+  background: var(--signal);
+  box-shadow: 0 0 8px var(--amber-glow);
+}
+
+/* Allowed-next cells read as a run of arrows, not as badges. */
+.advx-next {
+  display: inline-block;
+  margin: 0 10px 4px 0;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+}
+
+.advx-next--end {
+  color: var(--ink-4);
+}
+
+/* ---------- targeting: audience lattice ---------- */
+
+.advx-audiences {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+}
+
+.advx-audiences__cell {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  min-width: 0;
+  padding: 16px 16px 18px;
+  background: var(--panel);
+}
+
+.advx-audiences__id {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--signal-text);
+}
+
+.advx-audiences__label {
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+}
+
+.advx-audiences__note {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+/* ---------- split rows ----------
+   Two panels side by side: equal pairs for the checklists, an
+   unequal pair for brief-vs-destination so the reading edge stays
+   uneven. */
+
+.advx-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(22px, 3vw, 40px);
+  align-items: start;
+}
+
+.advx-split--brief {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+}
+
+/* ---------- brief: hairline spec rows ---------- */
+
+.advx-spec {
+  margin: 0;
+  border-top: 1px solid var(--hair);
+}
+
+.advx-spec__row {
+  display: grid;
+  grid-template-columns: minmax(0, 150px) minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.advx-spec__key {
+  padding-top: 2px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.advx-spec__value {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* ---------- check lists ----------
+   A hairline dash per row — no icons, no new dependency. */
+
+.advx-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.advx-checks li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.advx-checks li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 8px;
+  height: 1px;
+  background: var(--signal);
+}
+
+.advx-checks strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+/* ---------- measurement: metric ledger ----------
+   Name, formula, explanation — one hairline row per metric, like a
+   specification of what each number means. */
+
+.advx-metrics {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--hair);
+}
+
+.advx-metric {
+  display: grid;
+  grid-template-columns: minmax(0, 165px) minmax(0, 235px) minmax(0, 1fr);
+  gap: 8px 24px;
+  align-items: baseline;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.advx-metric__name {
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+}
+
+/* The formula is the flag on the row — red names the computation. */
+.advx-metric__formula {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--signal-text);
+}
+
+.advx-metric__body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+/* ---------- FAQ: hairline disclosures, two columns ---------- */
+
+.advx-faq {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(24px, 4vw, 56px);
+  align-items: start;
+}
+
+/* The vertical space lives on the <summary>, not on the item: the
+   whole band is part of the disclosure's hit area. */
+.advx-faq__item {
+  border-top: 1px solid var(--hair);
+}
+
+.advx-faq__item[open] {
+  border-top-color: var(--hair-amber);
+}
+
+.advx-faq__q {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  list-style: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+  padding: 13px 0;
+}
+
+.advx-faq__q::-webkit-details-marker {
+  display: none;
+}
+
+.advx-faq__sign {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1;
+  color: var(--ink-4);
+}
+
+.advx-faq__sign::before {
+  content: '+';
+}
+
+.advx-faq__item[open] .advx-faq__sign {
+  color: var(--signal-text);
+}
+
+.advx-faq__item[open] .advx-faq__sign::before {
+  content: '−';
+}
+
+.advx-faq__a {
+  margin: 0 0 13px;
+  max-width: 74ch;
+  font-size: 13px;
+  line-height: 1.62;
+  color: var(--ink-3);
+}
+
+/* ---------- final CTA ----------
+   The one band that asks for the account: a bordered plate with the
+   red left rule the product uses to mark the thing that matters. */
+
+.advx-cta {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+  padding: clamp(28px, 4vw, 44px);
+  border: 1px solid var(--hair);
+  border-left: var(--border-w-2) solid var(--signal);
+  background: var(--panel);
+}
+
+.advx-cta__title {
+  margin: 0;
+  font-size: clamp(26px, 2.6vw, 38px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: var(--track-head);
+  color: var(--ink);
+}
+
+.advx-cta__body {
+  margin: 0;
+  max-width: 58ch;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--ink-3);
+}
+
+.advx-cta__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.advx-cta__aside {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-4);
+}
+/* ---------- responsive ----------
+   Collapse points follow the product's existing set: 1080 (the hero
+   and every pair), 900 (the FAQ), 760 (the internal grids, the spec
+   rows, the metric rows), 640 (the masthead compacts rather than
+   wrapping to a second line). */
+
+@media (max-width: 1080px) {
+  .advx-hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  /* Five cells become a 2-up walk; the orphan (the fifth) takes the
+     full row rather than half of it. */
+  .advx-ladder,
+  .advx-audiences {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .advx-ladder__cell:last-child,
+  .advx-audiences__cell:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .advx-split,
+  .advx-split--brief {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .advx-faq {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .advx-hero__actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .advx-hero__actions .btn {
+    width: 100%;
+  }
+
+  .advx-spec__row {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .advx-metric {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .advx-plate {
+    box-shadow: 6px 6px 0 0 rgba(255, 255, 255, 0.045);
+  }
+
+  .advx-page [id] {
+    scroll-margin-top: 72px;
+  }
+}
+
+@media (max-width: 640px) {
+  .advx-top {
+    padding: 9px var(--gutter);
+  }
+
+  /* The jumps are the first thing to go: the sections are a single
+     column now, so scrolling is the rail. */
+  .advx-top__link {
+    display: none;
+  }
+
+  .advx-panel {
+    padding: 20px;
+  }
+
+  .advx-ladder,
+  .advx-audiences {
+    grid-template-columns: 1fr;
+  }
+
+  /* Code is the one thing that cannot reflow. A smaller step keeps
+     most lines inside the plate at phone widths instead of relying
+     on a horizontal scroll for every one of them. */
+  .advx-code__pre {
+    font-size: 11.5px;
+    padding: 13px 14px;
+  }
+
+  .advx-cta {
+    padding: 22px 18px;
+  }
+
+  .advx-cta__actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .advx-cta__actions .btn {
+    width: 100%;
+  }
+}
+
+/* Below 480 the plate bar's meta would sit against the copy control
+   with no slack left; the tag and the action are the load-bearing
+   children. */
+@media (max-width: 480px) {
+  .advx-plate__meta {
+    display: none;
+  }
+}
+
+/* ---------- reduced motion ----------
+   Nothing here animates on its own. The transitions are colour,
+   border, transform (the shared .btn hard-lift), and the details
+   flip — no infinite loop, no scroll listener, and the global
+   prefers-reduced-motion block already takes every duration to
+   zero. */

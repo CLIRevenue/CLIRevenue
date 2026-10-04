@@ -3,8 +3,11 @@ import { useEffect, useState } from 'react'
 function getPath() {
   if (typeof window === 'undefined') return '/'
   const { pathname, hash, search } = window.location
-  // Hash fallback for static hosts: #/login, #/signup, #/app/... mirror pathnames.
-  if (hash && (hash.startsWith('#/app') || hash.startsWith('#/login') || hash.startsWith('#/signup'))) return hash.slice(1)
+  // Hash fallback for static hosts: #/login, #/signup, #/auth/callback,
+  // #/app/... mirror pathnames. /auth/callback MUST be listed here — it
+  // is where every confirmation email lands, and a host that routes by
+  // hash would otherwise serve the homepage instead of the callback.
+  if (hash && (hash.startsWith('#/app') || hash.startsWith('#/login') || hash.startsWith('#/signup') || hash.startsWith('#/auth/callback'))) return hash.slice(1)
   return `${pathname || '/'}${search || ''}`
 }
 

@@ -11,14 +11,20 @@
    the thing that turns that into a recorded impression.
    ============================================================= */
 
-import { useCallback } from 'react'
+import { useCallback, forwardRef } from 'react'
 
 import SponsoredSlot from './SponsoredSlot.jsx'
 import useServedAd, { activationReportsClick, AD_STATE } from '../../hooks/useServedAd.js'
 import { PLACEMENTS } from '../../data/placements.js'
 import { getClient } from '../../lib/clirevenue.js'
 
-export default function ServedAdSlot({ placementId = 'consoleWorkbench', hidden = false }) {
+/* Forward the ref to the inner .servedad div so callers (like the
+   drum overlay) can position the exact element the SDK watches for
+   viewability. */
+const ServedAdSlot = forwardRef(function ServedAdSlot(
+  { placementId = 'consoleWorkbench', hidden = false, surface },
+  forwardedRef,
+) {
   const placement = PLACEMENTS[placementId] || null
   const { state, served, containerRef, retry, headline, support } = useServedAd(placementId)
 
@@ -45,8 +51,13 @@ export default function ServedAdSlot({ placementId = 'consoleWorkbench', hidden 
     Promise.resolve(client.recordClick(served)).catch(() => {})
   }, [state, served, retry])
 
+  /* Merge the forwarded ref with the internal containerRef so the
+     SDK's viewability observer watches the same element the caller
+     positions. */
+  const mergedRef = forwardedRef ?? containerRef
+
   return (
-    <div ref={containerRef} className="servedad">
+    <div ref={mergedRef} className="servedad">
       <SponsoredSlot
         served={served}
         state={state}
@@ -56,7 +67,12 @@ export default function ServedAdSlot({ placementId = 'consoleWorkbench', hidden 
         ctaHref={landingUrl}
         hidden={hidden}
         onActivate={handleActivate}
+        surface={surface}
       />
     </div>
   )
-}
+})
+
+ServedAdSlot.displayName = 'ServedAdSlot'
+
+export default ServedAdSlot

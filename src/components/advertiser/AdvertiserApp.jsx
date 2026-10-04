@@ -1,6 +1,7 @@
 import useAdvertiserCampaigns from '../../hooks/useAdvertiserCampaigns.js'
 import useAppRoute, { navigateApp } from '../../hooks/useAppRoute.js'
 import { useAuth } from '../auth/authState.js'
+import { LogoutButton } from '../auth/LogoutButton.jsx'
 import AdvertiserOverview from './AdvertiserOverview.jsx'
 import AdvertiserCampaigns from './AdvertiserCampaigns.jsx'
 import AdvertiserAnalytics from './AdvertiserAnalytics.jsx'
@@ -50,6 +51,7 @@ export default function AdvertiserApp() {
               {t.label}
             </button>
           ))}
+          <LogoutButton />
         </nav>
 
         {auth.role === null ? (

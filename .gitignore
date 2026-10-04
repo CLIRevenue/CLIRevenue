@@ -44,3 +44,20 @@ packages/sdk-consumer-smoke/
 # Local-only Supabase test Edge Functions
 supabase/functions/test_edge/
 supabase/functions/test_secret/
+
+# Temporary audit / deployment probe output
+.probe-pages.mjs
+probe.err
+probe.out
+tests-run.out
+tests-vitest.out
+vitest-help.out
+vitest-run.err
+vitest-run.out
+vitest-tests.out
+vitest.err
+vitest.out
+vitest2.out
+tmp/
+tmpconfig/
+

@@ -8,7 +8,7 @@ function TheMoney() {
       id="money"
       label={ecosystem.eyebrow}
       title="One ecosystem, four participants."
-      body="The platform provides the infrastructure and takes a service fee. A share flows back to the users and developers who built the terminal experience."
+      body="An advertiser runs a campaign and pays CLIRevenue. CLIRevenue operates the ad network and delivers the campaign to the developer who integrated it into their app or site, which serves the advertisement to the user."
     >
       <RevenueFlow />
     </Scene>

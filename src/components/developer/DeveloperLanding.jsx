@@ -39,10 +39,10 @@
        literal `<code>` used to reach the reader as visible text.
    ============================================================= */
 
-import { useCallback, useState } from 'react'
 import { navigateApp } from '../../hooks/useAppRoute.js'
 
 import { Panel } from '../console/ui.jsx'
+import CopyButton from '../CopyButton.jsx'
 import clirevenue from '../../lib/clirevenue.js'
 import './DeveloperLanding.css'
 
@@ -132,53 +132,14 @@ function CodeBlock({ children, label = 'js', action = null }) {
 }
 
 /* ------------------------------------------------------------------
-   Copy-to-clipboard button. Desktop and < 760px both work with the
-   keyboard alone: it is a real <button> with an accessible label and a
-   visible focus ring. Success is cosmetic and never asserts anything
-   about the network or the account.
+   Copy-to-clipboard button. The behavior lives in the shared
+   CopyButton module so /developer and /advertiser cannot drift apart;
+   it still renders as a real <button> in the plate's bar — never
+   inside the <pre> — with an accessible label and a visible focus
+   ring. Success is cosmetic and never asserts anything about the
+   network or the account. The `sdk-copy` base is this page's styling
+   hook in DeveloperLanding.css.
    ------------------------------------------------------------------ */
-
-function CopyButton({ text }) {
-  const [copied, setCopied] = useState(false)
-
-  const copy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(text)
-    } catch {
-      /* `navigator.clipboard` is undefined on http:// origins before a
-         secure context, or when the clipboard API is unavailable. Fall
-         back to the legacy path rather than fail the install flow. */
-      const ta = document.createElement('textarea')
-      ta.value = text
-      ta.setAttribute('readonly', '')
-      ta.style.position = 'absolute'
-      ta.style.left = '-9999px'
-      document.body.appendChild(ta)
-      ta.select()
-      try {
-        document.execCommand('copy')
-      } catch {
-        /* If even the legacy path refuses, the plate still shows the
-           command the developer can type or paste by hand. */
-      }
-      document.body.removeChild(ta)
-    }
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1600)
-  }, [text])
-
-  return (
-    <button
-      type="button"
-      className={`btn btn--ghost btn--sm sdk-copy${copied ? ' sdk-copy--done' : ''}`}
-      onClick={copy}
-      aria-label={copied ? 'Copied' : 'Copy npm install command to clipboard'}
-      title={copied ? 'Copied' : 'Copy command'}
-    >
-      {copied ? 'Copied' : 'Copy'}
-    </button>
-  )
-}
 
 /* ------------------------------------------------------------------
    Distribution. The section deliberately does NOT invent a URL: the SDK
@@ -224,7 +185,9 @@ function DownloadSection() {
 
         <CodeBlock
           label="shell"
-          action={<CopyButton text={`npm install ${PACKAGE_NAME}`} />}
+          action={
+            <CopyButton text={`npm install ${PACKAGE_NAME}`} label="npm install command" />
+          }
         >
           {`npm install ${PACKAGE_NAME}`}
         </CodeBlock>
@@ -309,7 +272,17 @@ function Quickstart() {
             </span>
             <div className="sdk-qs__body">
               <h4 className="sdk-qs__title">{step.title}</h4>
-              <CodeBlock label={step.lang}>{step.code}</CodeBlock>
+              <CodeBlock
+                label={step.lang}
+                action={
+                  <CopyButton
+                    text={step.code}
+                    label={step.lang === 'shell' ? 'shell command' : 'code snippet'}
+                  />
+                }
+              >
+                {step.code}
+              </CodeBlock>
             </div>
           </li>
         ))}
@@ -509,6 +482,18 @@ function Faq() {
    numbered rail, specimen tables and code-led flows.
    ------------------------------------------------------------------ */
 
+/* The hero plate's snippet, hoisted so the copy control and the <pre>
+   cannot disagree about the raw text — one source for both. */
+const HERO_SNIPPET = `import { init } from '${PACKAGE_NAME}'
+
+const PLACEMENT = 'console-workbench'
+const cli = init(key, { baseUrl })
+
+const { served } = await cli.render(
+  PLACEMENT,
+  '#ad-region',
+)`
+
 export default function DeveloperLanding() {
   return (
     <section className="sdk-page" aria-label="CLIRevenue SDK">
@@ -566,17 +551,10 @@ export default function DeveloperLanding() {
             <div className="sdk-code__bar">
               <span className="sdk-code__tag">integration</span>
               <span className="sdk-plate__meta">{PACKAGE_NAME}</span>
+              <CopyButton text={HERO_SNIPPET} label="integration snippet" />
             </div>
             <pre className="sdk-code__pre">
-              <code>{`import { init } from '${PACKAGE_NAME}'
-
-const PLACEMENT = 'console-workbench'
-const cli = init(key, { baseUrl })
-
-const { served } = await cli.render(
-  PLACEMENT,
-  '#ad-region',
-)`}</code>
+              <code>{HERO_SNIPPET}</code>
             </pre>
           </div>
         </div>
@@ -790,7 +768,9 @@ function Delivery() {
               <p className="sdk-flow__text">
                 <Rich>{step.body}</Rich>
               </p>
-              <CodeBlock label="js">{step.code}</CodeBlock>
+              <CodeBlock label="js" action={<CopyButton text={step.code} label="code snippet" />}>
+                {step.code}
+              </CodeBlock>
             </div>
           </li>
         ))}

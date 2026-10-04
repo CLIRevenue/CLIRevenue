@@ -1,62 +1,67 @@
 /* =============================================================
    CLIRevenue — SDK setup
    -------------------------------------------------------------
-   The ten steps between "I want ads in my app" and "my app is
-   earning", in the order they actually have to happen, plus a live
-   self-test that asks the real delivery endpoint for an ad through
-   the real SDK.
+   Provisioning first, then the ten steps between "I want ads in
+   my app" and "my app is earning", in the order they actually
+   have to happen, plus a live self-test that asks the real
+   delivery endpoint for an ad through the real SDK.
 
-   Two rules this page obeys without exception:
+   Three rules this page obeys without exception:
 
-   1. It never prints a publisher key. Not the full value, not a
-      longer prefix than the hint, never in a copyable block. The
-      key lives in the build environment and this page only reports
-      whether one is present.
-   2. It never invents a number. There is no impression count, no
+   1. It never prints a publisher key it did not receive. The key
+      below is shown only because this page asked the
+      provision_publisher Edge Function for it and that request
+      genuinely minted it. Every other view of a key is the
+      12-character fragment the server chose to keep, and the
+      self-test keeps reporting the build-time key instead.
+   2. It says the key is shown once, because it is. Only the
+      SHA-256 hash is stored, so a key cannot be re-derived from
+      the database and this page will not pretend otherwise.
+   3. It never invents a number. There is no impression count, no
       revenue figure, no fill rate on this page. Where the backend
       has no endpoint yet, it says so instead of showing a zero
       that reads like a real measurement.
    ============================================================= */
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { Panel } from '../console/ui.jsx'
 import { AdvEmpty, AdvPageHead } from '../advertiser/AdvertiserUI.jsx'
+import CopyButton from '../CopyButton.jsx'
 import clirevenue, { disposeClient, getClient } from '../../lib/clirevenue.js'
+import { provisionPublisher } from '../../lib/publisherApi.js'
 import { DELIVERED_PLACEMENT_KEYS } from '../../data/placements.js'
 
 /* The order matters and it is not negotiable: a key cannot be
    created before a publisher exists, a placement cannot exist
    before a key can sign for it, and nothing can be delivered before
    a placement exists. Each step names the only place that step can
-   happen, so a reader who is looking for the answer in a UI finds
-   out that there is no UI for it yet. */
+   happen. Steps 1 and 2 now happen here — no operator, no SQL —
+   and step 3 still does not, which the step itself says. */
 const STEPS = [
   {
     n: 1,
     title: 'Create a publisher',
-    where: 'CLIRevenue operations · service-role SQL',
+    where: 'This page · done for you',
     body:
-      'A publisher is the account the whole integration hangs off. It owns the keys, the placements and the delivery log.',
-    note: 'No self-service route exists yet. See the blockers below.',
+      'A publisher is the account the whole integration hangs off. It owns the keys, the placements and the delivery log. Signing in provisions one for you and reuses it on every later visit.',
+    note: 'Provisioning is idempotent: refreshing this page will not create a second publisher, and it never takes one away.',
   },
   {
     n: 2,
     title: 'Issue a publishable publisher key',
-    where: 'CLIRevenue operations · service-role SQL',
+    where: 'This page · done for you',
     body:
-      'You get pk_live_… or pk_test_…. Only a SHA-256 hash is stored; the plaintext is shown once at issue time. Revoke it and issue a new one whenever a machine changes hands.',
-    code: 'INSERT INTO publisher_keys (publisher_id, key_hash, key_prefix) VALUES (…);',
-    note: 'There is no issue or revoke API. A key cannot currently be rotated without an operator.',
+      'You get a pk_test_… key. Only a SHA-256 hash is stored, so the plaintext exists in exactly one response — the one that minted it — and the panel above is showing you that response.',
+    note: 'Reopening this page will not issue another key. Rotation is a deliberate separate action and is not wired up yet.',
   },
   {
     n: 3,
     title: 'Create a placement',
-    where: 'CLIRevenue operations · service-role SQL',
+    where: 'CLIRevenue operations · one row per surface',
     body:
       'A placement is a placement key plus the host surface it belongs to. The key is your own readable slug — "console-workbench" — not a generated identifier, because you will type it into your own config.',
-    code: "INSERT INTO placements (publisher_id, placement_key, enabled) VALUES (…, 'console-workbench', true);",
-    note: 'A delivery request for a placement that does not exist is rejected with INVALID_PLACEMENT.',
+    note: `A delivery request for a placement that does not exist is rejected with INVALID_PLACEMENT. This app's own surfaces are already registered: ${DELIVERED_PLACEMENT_KEYS.join(', ')}.`,
   },
   {
     n: 4,
@@ -117,11 +122,13 @@ if (ad) cli.render('console-workbench', '#ad-region')`,
   },
 ]
 
-/* Steps that currently require a human with database access. Stated
-   plainly rather than presented as UI the developer can click. */
+/* What is still not self-serve. Steps 1 and 2 came off this list
+   when provisioning landed; what remains is stated plainly rather
+   than presented as UI the developer can click. */
 const BLOCKERS = [
-  'No API to create a publisher, issue or revoke a publisher key, or create a placement — all four are service-role SQL today.',
-  'No publisher-facing delivery reporting endpoint, so steps 1, 2, 3 and 10 cannot be completed from this dashboard.',
+  'No API to revoke or rotate a publisher key. Provisioning will not do it for you: minting a second key instead of replacing the first would leave a live capability nobody is tracking.',
+  'No self-service placement management, so step 3 still needs an operator with database access.',
+  'No publisher-facing delivery reporting endpoint, so step 10 cannot be completed from this dashboard.',
 ]
 
 /* Status vocabulary mirrors src/hooks/useServedAd.js. Keeping the
@@ -133,6 +140,146 @@ const OUTCOME = {
   ready: { tone: 'ok', label: 'Ad delivered' },
   nofill: { tone: 'idle', label: 'No fill — normal' },
   failed: { tone: 'warn', label: 'Request failed' },
+}
+
+const MASK = '•'.repeat(16)
+
+/**
+ * Ask for the publisher account without touching React state, so the mount
+ * effect and the retry button can share one request path.
+ */
+async function readProvisioning() {
+  try {
+    return { ok: true, result: await provisionPublisher() }
+  } catch (error) {
+    return {
+      ok: false,
+      message: error?.message || 'The publisher account could not be read.',
+    }
+  }
+}
+
+/* The publisher account, requested on mount. Deliberately not cached
+   across reloads: the raw key cannot be re-derived, and pretending a
+   second request would bring it back would be a lie about the
+   storage model. A reload therefore re-checks and reports the
+   fragment, which is all the server kept. */
+function Provisioning() {
+  const [state, setState] = useState('checking')
+  const [result, setResult] = useState(null)
+  const [message, setMessage] = useState(null)
+  const [revealed, setRevealed] = useState(false)
+
+  const settle = useCallback((outcome) => {
+    if (!outcome.ok) {
+      setState('error')
+      setMessage(outcome.message)
+      return
+    }
+    setResult(outcome.result)
+    setRevealed(false)
+    setState('ready')
+  }, [])
+
+  // The first render already reads "checking", so the effect has nothing to
+  // set synchronously: the request resolves first, then the outcome lands.
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const outcome = await readProvisioning()
+      if (cancelled) return
+      settle(outcome)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [settle])
+
+  const retry = useCallback(() => {
+    setState('checking')
+    setMessage(null)
+    void (async () => {
+      settle(await readProvisioning())
+    })()
+  }, [settle])
+
+  const raw = result?.key?.publishableKey || null
+  const fragment = result?.key?.prefix || null
+  const display = raw
+    ? revealed
+      ? raw
+      : `${raw.slice(0, 8)}${MASK}`
+    : `${fragment || 'pk_test_'}${MASK}`
+
+  return (
+    <section className="panel adv-panel" aria-label="Publisher provisioning">
+      <h4 className="adv-panel__title">SDK setup</h4>
+      <p className="adv-panel__sub">
+        Your publisher account and a test publishable key, requested from the server the
+        first time you open this page. No operator, no SQL, no approval queue.
+      </p>
+
+      <p className="setup__status" data-tone={state === 'error' ? 'warn' : 'ok'} aria-live="polite">
+        <span className="setup__status-label">
+          {state === 'checking' ? 'Checking' : state === 'error' ? 'Unavailable' : 'Ready'}
+        </span>
+        <span className="setup__status-headline">
+          {state === 'checking'
+            ? 'Checking your publisher account…'
+            : state === 'error'
+              ? 'Provisioning is unavailable'
+              : 'Your publisher account is ready.'}
+        </span>
+        {state === 'error' ? <span className="setup__status-detail">{message}</span> : null}
+        {state === 'ready' ? (
+          <span className="setup__status-detail">
+            {result.publisher.created
+              ? `Created ${result.publisher.name} just now.`
+              : `Reusing ${result.publisher.name}, which already existed.`}{' '}
+            Test key {result.key.created ? 'issued just now' : 'already in use'},{' '}
+            {result.key.env === 'live' ? 'live' : 'test'} environment.
+          </span>
+        ) : null}
+      </p>
+
+      {state === 'ready' ? (
+        <div className="setup__keyplate">
+          <span className="setup__fact-label">Publishable key</span>
+          <div className="setup__keyrow">
+            <code className="setup__keyvalue" data-masked={raw && !revealed ? 'yes' : 'no'}>
+              {display}
+            </code>
+            {raw ? (
+              <span className="setup__keyactions">
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => setRevealed((v) => !v)}
+                  aria-expanded={revealed}
+                >
+                  {revealed ? 'Hide key' : 'Reveal key'}
+                </button>
+                <CopyButton text={raw} label="key" baseClass="setup__copy" />
+              </span>
+            ) : null}
+          </div>
+          <p className="setup__note">
+            {raw
+              ? 'Copy it now. Only the SHA-256 hash is stored, so this is the one time the full value exists outside your browser — a reload of this page will bring back the fragment, not the key.'
+              : `The full key was shown once, when it was first issued, and only its SHA-256 hash is stored, so it cannot be recovered here. The fragment above is the 12-character display value the server kept. Issuing a replacement is a deliberate action that does not exist yet.`}
+          </p>
+        </div>
+      ) : null}
+
+      {state === 'error' ? (
+        <div className="setup__actions">
+          <button type="button" className="btn btn--ghost btn--sm" onClick={retry}>
+            Try again
+          </button>
+        </div>
+      ) : null}
+    </section>
+  )
 }
 
 function Step({ step }) {
@@ -160,7 +307,7 @@ function SelfTest() {
       setResult({
         headline: 'Publisher key is not configured',
         detail:
-          'VITE_CLIREVENUE_PUBLISHABLE_KEY is not set in this build, so there is no publisher to request an ad for. Nothing was sent.',
+          'VITE_CLIREVENUE_PUBLISHABLE_KEY is not set in this build, so there is no publisher to request an ad for. Nothing was sent. The key provisioned above is a different key: this test reads the one baked into the bundle at build time.',
       })
       return
     }
@@ -268,8 +415,10 @@ export default function SdkSetup() {
         index="D2"
         label="SDK"
         title="Ad delivery, end to end."
-        body="Ten steps, in order, with the only place each one can happen. Four of them still need an operator with database access; that is stated rather than hidden behind a button that would fail."
+        body="Your publisher account and a test key first, then the ten steps, in order, with the only place each one can happen. The two steps that used to need an operator with database access now happen on this page; the two that still do say so."
       />
+
+      <Provisioning />
 
       <ol className="setup__steps">
         {STEPS.map((step) => (
@@ -282,9 +431,11 @@ export default function SdkSetup() {
       <Panel className="adv-panel">
         <h4 className="adv-panel__title">What the browser is allowed to hold</h4>
         <p className="adv-panel__sub">
-          The publishable key is an identifier, not a credential. It authorises delivery
-          for one publisher and nothing else — it cannot create a publisher, issue a key,
-          or move money.
+          The publishable key is an identifier, not a credential. It authorises delivery for
+          one publisher and nothing else — it cannot create a publisher, issue a key, or
+          move money. Provisioning is the exception that proves the rule: the account is
+          created behind the server's own bearer check, from the session token and never
+          from a field the browser can set.
         </p>
         <ul className="adv-activity">
           <li className="adv-activity__row">
@@ -313,9 +464,7 @@ export default function SdkSetup() {
 
       <Panel className="adv-panel">
         <h4 className="adv-panel__title">Blockers</h4>
-        <p className="adv-panel__sub">
-          What stops steps 1, 2, 3 and 10 being done from this dashboard today.
-        </p>
+        <p className="adv-panel__sub">What still needs an operator, stated rather than hidden.</p>
         <ul className="adv-activity">
           {BLOCKERS.map((b) => (
             <li key={b} className="adv-activity__row">

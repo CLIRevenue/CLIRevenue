@@ -15,7 +15,7 @@ server-side and is never something the browser configures.
 ## Sizing
 
 Ad size is configured with `size` on the layout object passed to
-`render()` (or to `getAd()`, via `layout.display`). The SDK clamps any size
+`render()`. The SDK clamps any size
 to a safe band and normalises the result:
 
 | Setting | Value |

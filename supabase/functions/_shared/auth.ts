@@ -83,6 +83,41 @@ export async function requireDeveloper(admin: SupabaseClient, userId: string) {
   return { profile, developer };
 }
 
+export async function requireAdmin(admin: SupabaseClient, userId: string, email: string) {
+  // Two-factor admin check:
+  //   1. profiles.role = 'admin' (canonical per-user signal)
+  //   2. admin_emails.email in allowlist (RLS-safe, avoids circular profiles→profiles)
+  const { data: profile, error: profileError } = await admin
+    .from("profiles")
+    .select("id, role, created_at")
+    .eq("id", userId)
+    .maybeSingle();
+  if (profileError) {
+    return { error: apiError("INTERNAL_ERROR", "Could not load profile.", 500) };
+  }
+  if (!profile || profile.role !== "admin") {
+    return { error: apiError("FORBIDDEN", "Admin access required.", 403) };
+  }
+
+  const normalizedEmail = String(email || '').toLowerCase().trim()
+  if (!normalizedEmail) {
+    return { error: apiError("FORBIDDEN", "Admin access required.", 403) };
+  }
+
+  const { data: emailRow, error: emailError } = await admin
+    .from("admin_emails")
+    .select("email")
+    .eq("email", normalizedEmail)
+    .maybeSingle();
+  if (emailError) {
+    return { error: apiError("INTERNAL_ERROR", "Could not verify admin status.", 500) };
+  }
+  if (!emailRow) {
+    return { error: apiError("FORBIDDEN", "Admin access required.", 403) };
+  }
+  return { profile };
+}
+
 export function rpcCodeFromError(err: { message?: string } | null): string | null {
   const msg = err?.message || "";
   const codes = [

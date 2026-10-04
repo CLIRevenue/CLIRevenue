@@ -278,12 +278,22 @@ function DangerZone() {
     setState({ busy: true, error: '' })
     try {
       await deleteOwnAccount()
-      // Edge Function deleted the auth user (service role, server side).
-      // Local session is now dead; clear provider state and leave the app.
-      await signOut('/')
     } catch (err) {
+      // Deletion did not happen — the account is intact and the user is
+      // still signed in, so this is a real, reportable failure.
       setState({ busy: false, error: err.message || 'Deletion failed. Please try again, or contact support if it keeps failing.' })
+      return
     }
+    // The Edge Function deleted the auth user (service role, server side),
+    // so the local session is already dead. signOut clears provider state
+    // and navigates before it re-throws, which means a failed sign-out
+    // call here is not a failed deletion — never report it as one.
+    try {
+      await signOut('/')
+    } catch {
+      // Session cleared and navigated away regardless.
+    }
+    setState({ busy: false, error: '' })
   }
 
   return (

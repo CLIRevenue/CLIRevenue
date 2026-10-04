@@ -82,13 +82,14 @@ describe('migrations apply to a real Postgres', () => {
     expect(rows).toHaveLength(0)
   })
 
-  it('defines the four money-moving functions plus the two event RPCs', async () => {
+  it('defines the four money-moving functions plus the event and provisioning RPCs', async () => {
     const { rows } = await db.query(`
       SELECT p.proname FROM pg_proc p
       JOIN pg_namespace n ON n.oid = p.pronamespace
       WHERE n.nspname = 'public'
         AND p.proname IN ('reward_balance','request_payout','apply_settlement',
-                          'apply_interaction','apply_impression','ensure_own_profile')
+                          'apply_interaction','apply_impression','ensure_own_profile',
+                          'provision_publisher_slot')
       ORDER BY p.proname;
     `)
     expect(rows.map((r) => r.proname)).toEqual([
@@ -96,8 +97,23 @@ describe('migrations apply to a real Postgres', () => {
       'apply_interaction',
       'apply_settlement',
       'ensure_own_profile',
+      'provision_publisher_slot',
       'request_payout',
       'reward_balance',
     ])
+  })
+
+  it('exposes the provisioning RPC to service_role only', async () => {
+    // The browser holds the Supabase anon key, which is public. If this
+    // function were callable by anon or authenticated, anyone could provision
+    // a publisher for an arbitrary profile id and mint themselves a key.
+    const { rows } = await db.query(`
+      SELECT has_function_privilege('anon', 'public.provision_publisher_slot(uuid,text)', 'EXECUTE')   AS anon_exec,
+             has_function_privilege('authenticated', 'public.provision_publisher_slot(uuid,text)', 'EXECUTE') AS auth_exec,
+             has_function_privilege('service_role', 'public.provision_publisher_slot(uuid,text)', 'EXECUTE') AS svc_exec
+    `)
+    expect(rows[0].anon_exec).toBe(false)
+    expect(rows[0].auth_exec).toBe(false)
+    expect(rows[0].svc_exec).toBe(true)
   })
 })

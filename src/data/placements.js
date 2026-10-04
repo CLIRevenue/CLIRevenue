@@ -62,6 +62,118 @@ export const PLACEMENTS = {
     },
   },
 
+  /* The film's ad and experience scenes each carry a real placement.
+     Both are SDK-backed delivery surfaces with their own keys. They sit
+     inside narrative scenes but they are not narrative content: each
+     requests from the real delivery service, records impressions through
+     the SDK, and supports click tracking.
+
+     The ServedAdSlot for each is rendered as a child of the Terminal
+     component, inside the output area, so the selector targets the
+     .adslot element inside the scene's terminal output stream. */
+  filmAd: {
+    key: 'film-ad',
+    surface: 'film · TheAd scene terminal slot',
+    selector: '[data-scene="ad"] .terminal__out .adslot',
+    owner: 'src/components/scenes/TheAd.jsx',
+    dimensions: {
+      width: 'fluid — inside the film terminal output column',
+      height: 'content-driven — one rail row plus a 44px logo row',
+    },
+    viewability: { threshold: 0.5, dwellMs: 1000 },
+    loading: {
+      headline: 'Requesting placement',
+      support: 'CLIRevenue delivery in flight for this slot.',
+    },
+    noFill: {
+      headline: 'No ad for this slot right now',
+      support: 'No fill is a normal outcome. Nothing is imputed and nothing is charged.',
+    },
+    error: {
+      headline: 'Placement request failed',
+      support: 'The delivery endpoint rejected or could not answer the request.',
+    },
+    offline: {
+      headline: 'Offline',
+      support: 'Recorded events are queued and flush when the connection returns.',
+    },
+    disabled: {
+      headline: 'Placement not configured',
+      support: 'No publisher key is present in this build, so no ad is requested.',
+    },
+  },
+
+  filmExperience: {
+    key: 'film-experience',
+    surface: 'film · TheExperience scene terminal slot',
+    selector: '[data-scene="experience"] .terminal__out .adslot',
+    owner: 'src/components/scenes/TheExperience.jsx',
+    dimensions: {
+      width: 'fluid — inside the film terminal output column',
+      height: 'content-driven — one rail row plus a 44px logo row',
+    },
+    viewability: { threshold: 0.5, dwellMs: 1000 },
+    loading: {
+      headline: 'Requesting placement',
+      support: 'CLIRevenue delivery in flight for this slot.',
+    },
+    noFill: {
+      headline: 'No ad for this slot right now',
+      support: 'No fill is a normal outcome. Nothing is imputed and nothing is charged.',
+    },
+    error: {
+      headline: 'Placement request failed',
+      support: 'The delivery endpoint rejected or could not answer the request.',
+    },
+    offline: {
+      headline: 'Offline',
+      support: 'Recorded events are queued and flush when the connection returns.',
+    },
+    disabled: {
+      headline: 'Placement not configured',
+      support: 'No publisher key is present in this build, so no ad is requested.',
+    },
+  },
+
+  /* The drum's reserved ad surface on the LOCAL/SELF-HOSTED panel.
+     It sits inside the rotating WebGL cylinder and is positioned by
+     the drum's animation loop via CSS transform. The ad lifecycle
+     (delivery, viewability, click, cleanup) is owned entirely by
+     DrumAdSlot.jsx, which delegates to the same useServedAd hook the
+     other homepage slots use. The drum never touches delivery state.
+     ============================================================= */
+  consoleDrum: {
+    key: 'console-drum',
+    surface: 'console · drum LOCAL/SELF-HOSTED panel band',
+    selector: '.orbit__ad .servedad',
+    owner: 'src/components/console/DrumAdSlot.jsx',
+    dimensions: {
+      width: 'projected from the drum\'s reserved 428×100 tile band',
+      height: 'projected — matches the painted band at the current angle',
+    },
+    viewability: { threshold: 0.5, dwellMs: 1000 },
+    loading: {
+      headline: 'Requesting placement',
+      support: 'CLIRevenue delivery in flight for this slot.',
+    },
+    noFill: {
+      headline: 'No ad for this slot right now',
+      support: 'No fill is a normal outcome. Nothing is imputed and nothing is charged.',
+    },
+    error: {
+      headline: 'Placement request failed',
+      support: 'The delivery endpoint rejected or could not answer the request.',
+    },
+    offline: {
+      headline: 'Offline',
+      support: 'Recorded events are queued and flush when the connection returns.',
+    },
+    disabled: {
+      headline: 'Placement not configured',
+      support: 'No publisher key is present in this build, so no ad is requested.',
+    },
+  },
+
   /* The film's own slot is a scripted beat in a narrative scene, not
      a delivery surface: it has no campaign behind it, nothing to
      attribute, and it must keep working in a build with no publisher

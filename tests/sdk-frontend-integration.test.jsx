@@ -150,7 +150,7 @@ describe('publisher initialization boundary', () => {
 
   it('falls back to the SDK default base URL', async () => {
     const { clirevenue } = await loadBoundary({ VITE_CLIREVENUE_PUBLISHABLE_KEY: KEY })
-    expect(clirevenue.baseUrl).toBe('https://api.clirevenue.com')
+    expect(clirevenue.baseUrl).toBe('https://api.clirevenue.in')
   })
 
   it('accepts live keys as well as test keys', async () => {
@@ -321,12 +321,12 @@ describe('delivery through the real SDK', () => {
 /* ------------------------------------------------- 3. placement registry */
 
 describe('placement registry', () => {
-  it('delivers exactly one surface, by a readable key', () => {
-    expect(DELIVERED_PLACEMENT_KEYS).toEqual(['console-workbench'])
-    expect(DELIVERED_PLACEMENTS).toHaveLength(1)
+  it('delivers four surfaces, each by a readable key', () => {
+    expect(DELIVERED_PLACEMENT_KEYS).toEqual(['console-workbench', 'film-ad', 'film-experience', 'console-drum'])
+    expect(DELIVERED_PLACEMENTS).toHaveLength(4)
   })
 
-  it('describes the slot, its dimensions and every non-happy state', () => {
+  it('describes the workbench slot, its dimensions and every non-happy state', () => {
     const placement = PLACEMENTS.consoleWorkbench
     expect(placement.key).toBe('console-workbench')
     expect(placement.surface).toBeTruthy()
@@ -341,7 +341,23 @@ describe('placement registry', () => {
     }
   })
 
-  it('marks the film slot as narrative, with no key and no request', () => {
+  it('describes the film scene slots, each with a real key and full state copy', () => {
+    for (const id of ['filmAd', 'filmExperience']) {
+      const placement = PLACEMENTS[id]
+      expect(placement).toBeDefined()
+      expect(placement.key).toMatch(/^[a-z0-9][a-z0-9-]{2,47}$/)
+      expect(placement.delivery).not.toBe(false)
+      expect(placement.owner).toMatch(/scenes\/The(Ad|Experience)\.jsx$/)
+      for (const field of ['loading', 'noFill', 'error', 'offline', 'disabled']) {
+        expect(typeof placement[field].headline).toBe('string')
+        expect(placement[field].headline.length).toBeGreaterThan(0)
+        expect(typeof placement[field].support).toBe('string')
+        expect(placement[field].support.length).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('marks the narrative film slot documentation as non-delivery', () => {
     const film = PLACEMENTS.filmSlot
     expect(film.key).toBeNull()
     expect(film.delivery).toBe(false)
@@ -527,6 +543,8 @@ const OWNED_FILES = [
   'src/components/console/SponsoredSlot.jsx',
   'src/components/console/ServedAdSlot.jsx',
   'src/components/console/Workbench.jsx',
+  'src/components/scenes/TheAd.jsx',
+  'src/components/scenes/TheExperience.jsx',
   'src/hooks/useServedAd.js',
   'src/lib/clirevenue.js',
   'src/data/placements.js',
@@ -644,7 +662,7 @@ describe('nothing secret reaches the client', () => {
   it('the SDK talks to one host and sends no PII', () => {
     const sdk = SRC_FILES.filter((f) => f.rel.startsWith('packages/sdk/src'))
     for (const { rel, text } of sdk) {
-      expect(text, rel).not.toMatch(/https?:\/\/(?!api\.clirevenue\.com)[a-z0-9.-]+\.[a-z]{2,}/i)
+      expect(text, rel).not.toMatch(/https?:\/\/(?!api\.clirevenue\.in)[a-z0-9.-]+\.[a-z]{2,}/i)
       expect(text, rel).not.toMatch(/['"]?(email|userId|fingerprint)['"]?\s*:/)
     }
   })

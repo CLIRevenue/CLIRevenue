@@ -40,7 +40,7 @@ read.
 ## CORS / network issues
 
 - `CLIRevenueNetworkError` means the request never reached the gateway.
-  Check the base URL. In development, `https://api.clirevenue.com` is the
+  Check the base URL. In development, `https://api.clirevenue.in` is the
   default; point `baseUrl` at your own deployment.
 - A 5xx answers the request, is retried with backoff, and then throws
   `CLIRevenueHttpError` if it still fails. Do not retry a 5xx again with a

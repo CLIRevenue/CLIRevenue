@@ -49,6 +49,15 @@ import {
 
 import usePrefersReducedMotion from '../../hooks/usePrefersReducedMotion.js'
 import { adSlot } from '../../data/demo.js'
+import DrumAdSlot from './DrumAdSlot.jsx'
+import {
+  DRUM_AD_PANEL,
+  DRUM_AD_BAND,
+  DRUM_AD_FACE_WINDOW_DEG,
+  DRUM_AD_SAMPLES,
+  projectToScreen,
+  panelFacingDeg,
+} from './drumSurface.js'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -1636,6 +1645,7 @@ function OrbitRing() {
   const hostRef = useRef(null)
   const canvasRef = useRef(null)
   const progressRef = useRef(null)
+  const drumAdRef = useRef(null)
   const readyRef = useRef(false)
   const [failed, setFailed] = useState(false)
   const [ready, setReady] = useState(false)
@@ -1861,6 +1871,72 @@ function OrbitRing() {
       drum.rotation.y = angle
       surfaceProgram.uniforms.uReveal.value = reveal
 
+      /* Position the drum ad overlay. The drum owns presentation:
+         it projects the reserved band through the same authoritative
+         angle/camera and writes a CSS transform. The ad component
+         (DrumAdSlot) owns delivery/viewability/clicks and knows
+         nothing about this math. */
+      const drumAdEl = drumAdRef.current
+      if (drumAdEl) {
+        const facingDeg = panelFacingDeg(angle, DRUM_AD_PANEL)
+        if (facingDeg <= DRUM_AD_FACE_WINDOW_DEG) {
+          /* Sample the band's top and bottom edges to find the
+             projected bounding box. The band is an arc on the
+             cylinder, so corners are not the extremes. */
+          const { x, y, w, h } = DRUM_AD_BAND
+          let minX = Infinity
+          let minY = Infinity
+          let maxX = -Infinity
+          let maxY = -Infinity
+          let anyVisible = false
+          for (let i = 0; i < DRUM_AD_SAMPLES; i += 1) {
+            const t = i / (DRUM_AD_SAMPLES - 1)
+            const top = projectToScreen(
+              [x + t * w, y],
+              drum.worldMatrix,
+              camera.viewMatrix,
+              camera.projectionMatrix,
+              width,
+              height,
+            )
+            const bottom = projectToScreen(
+              [x + t * w, y + h],
+              drum.worldMatrix,
+              camera.viewMatrix,
+              camera.projectionMatrix,
+              width,
+              height,
+            )
+            if (top) {
+              anyVisible = true
+              if (top[0] < minX) minX = top[0]
+              if (top[1] < minY) minY = top[1]
+              if (top[0] > maxX) maxX = top[0]
+              if (top[1] > maxY) maxY = top[1]
+            }
+            if (bottom) {
+              anyVisible = true
+              if (bottom[0] < minX) minX = bottom[0]
+              if (bottom[1] < minY) minY = bottom[1]
+              if (bottom[0] > maxX) maxX = bottom[0]
+              if (bottom[1] > maxY) maxY = bottom[1]
+            }
+          }
+          if (anyVisible && isFinite(minX)) {
+            const ow = Math.max(1, Math.round(maxX - minX))
+            const oh = Math.max(1, Math.round(maxY - minY))
+            drumAdEl.style.display = 'block'
+            drumAdEl.style.transform = `translate(${Math.round(minX)}px, ${Math.round(minY)}px)`
+            drumAdEl.style.width = `${ow}px`
+            drumAdEl.style.height = `${oh}px`
+          } else {
+            drumAdEl.style.display = 'none'
+          }
+        } else {
+          drumAdEl.style.display = 'none'
+        }
+      }
+
       /* Submit only when the frame can differ from the one already
          composited. The canvas keeps presenting its last frame, so a
          skipped submit is invisible. */
@@ -2055,8 +2131,21 @@ function OrbitRing() {
               ))}
             </div>
           ) : (
+          <>
             <canvas className="orbit__canvas" ref={canvasRef} aria-hidden="true" />
-          )}
+            {/* Drum ad overlay: positioned by the render loop via
+                drumSurface.js projection math. The ad lifecycle is
+                entirely inside DrumAdSlot; the drum only positions it. */}
+            <div
+              className="orbit__ad"
+              ref={drumAdRef}
+              style={{ display: 'none', position: 'absolute', pointerEvents: 'auto' }}
+              aria-hidden="true"
+            >
+              <DrumAdSlot />
+            </div>
+          </>
+        )}
         </div>
         {/* Scroll-position instrument: one row per drum surface,
             white track, white fill, red only on the surface

@@ -5,6 +5,12 @@ import { navigateApp } from '../../hooks/useAppRoute.js'
 import { sendPasswordReset } from '../../lib/authPassword.js'
 import { AUTH_ERROR, authErrorMessage, normalizeAuthError } from '../../lib/authErrors.js'
 import {
+  CALLBACK_STATE,
+  FAILED_LINK_MESSAGE,
+  classifyCallback,
+  readCallbackParams,
+} from './authCallback.js'
+import {
   COMMON_FIELDS,
   EMAIL_RE,
   allFieldNames,
@@ -546,32 +552,107 @@ export function SignupPage() {
  * it for a session during client init; this page then routes the user
  * by their server-side profile role. No manual token parsing, no
  * second auth system, no URL/localStorage role.
+ *
+ * The session is the authority; this component only decides where to go
+ * once it exists, and gives a recoverable answer when it never does.
  */
 export function AuthCallbackPage() {
   const { loading, isAuthenticated, role, error: authError, refresh } = useAuth()
-  const [failed, setFailed] = useState(false)
+  const home = roleHome(role)
+  const [asyncFailure, setAsyncFailure] = useState(null)
 
+  // Read the URL once, at mount, before any navigation can rewrite it.
+  const params = useMemo(
+    () => readCallbackParams(typeof window === 'undefined' ? '' : window.location.href),
+    [],
+  )
+  const urlVerdict = useMemo(() => classifyCallback(params), [params])
+
+  // Single-fire guard: the effect below must navigate exactly once even
+  // though role resolution re-renders this component a few times first.
+  const navigated = useRef(false)
+
+  // Failures the URL or the environment already explains are *derived*, not
+  // stored: computing them at render time avoids a pointless state write and
+  // a cascading re-render. Only a genuinely asynchronous outcome (the
+  // settle-window exchange never producing a session) needs state.
+  const immediateFailure =
+    params.error || params.errorCode || params.errorDescription
+      ? urlVerdict
+      : !supabaseConfigured && !loading && !isAuthenticated
+        ? {
+            state: CALLBACK_STATE.FAILED,
+            message: FAILED_LINK_MESSAGE,
+            detail: 'Supabase environment variables are missing.',
+          }
+        : null
+  const failure = immediateFailure || asyncFailure
+
+  // The whole point of this route: a confirmed account lands in its
+  // dashboard. Without this effect the session is established and then
+  // the user is left staring at a confirmation screen forever.
   useEffect(() => {
-    if (!loading) return
-    // No session after a generous settle window means the exchange did
-    // not complete (expired/used link, or the code was already consumed
-    // in another tab). Surface the human error state, not a blank page.
+    if (loading || !isAuthenticated || navigated.current) return
+    navigated.current = true
+    navigateApp(home || '/app')
+  }, [loading, isAuthenticated, home])
+
+  // No session after a generous settle window means the exchange did not
+  // complete (expired/used link, no stored PKCE verifier, or the code was
+  // already consumed in another tab). Say which, and offer a way forward.
+  useEffect(() => {
+    if (loading || isAuthenticated) return undefined
+    if (failure) return undefined
     const id = window.setTimeout(() => {
-      if (!supabaseConfigured) setFailed(true)
-      else refresh().catch(() => setFailed(true))
+      refresh().catch(() =>
+        setAsyncFailure({ state: CALLBACK_STATE.FAILED, message: FAILED_LINK_MESSAGE, detail: '' }),
+      )
     }, 4000)
     return () => window.clearTimeout(id)
-  }, [loading, refresh])
+  }, [loading, isAuthenticated, failure, refresh])
 
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      const id = window.setTimeout(() => setFailed(true), 1500)
-      return () => window.clearTimeout(id)
-    }
-    return undefined
-  }, [loading, isAuthenticated])
+  if (failure) {
+    const verdict = failure
+    return (
+      <section className="adv-shell" aria-label="Confirmation problem">
+        <div className="adv-shell__inner adv-shell__inner--narrow">
+          <p className="eyebrow eyebrow--plain">CLIRevenue · Email confirmation</p>
+          <h2 className="block__title">
+            {verdict.state === CALLBACK_STATE.EXPIRED
+              ? 'That confirmation link has expired.'
+              : 'Email confirmation could not be completed.'}
+          </h2>
+          <p className="block__body">{verdict.message}</p>
+          <div className="confirm__actions">
+            <button type="button" className="btn btn--primary" onClick={() => navigateApp('/login')}>
+              Return to login
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => navigateApp('/signup')}
+            >
+              Resend confirmation
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => {
+                setAsyncFailure(null)
+                refresh().catch(() =>
+                  setAsyncFailure({ state: CALLBACK_STATE.FAILED, message: FAILED_LINK_MESSAGE, detail: '' }),
+                )
+              }}
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
-  if (!failed && (loading || !isAuthenticated)) {
+  if (loading || !isAuthenticated) {
     return (
       <section className="adv-shell" aria-label="Confirming your email">
         <div className="adv-shell__inner adv-shell__inner--narrow">
@@ -585,54 +666,15 @@ export function AuthCallbackPage() {
     )
   }
 
-  if (failed || (!loading && !isAuthenticated) || authError) {
-    return (
-      <section className="adv-shell" aria-label="Confirmation problem">
-        <div className="adv-shell__inner adv-shell__inner--narrow">
-          <p className="eyebrow eyebrow--plain">CLIRevenue · Email confirmation</p>
-          <h2 className="block__title">Email confirmation could not be completed.</h2>
-          <p className="block__body">
-            The link may have expired or already been used. Request a new
-            email by signing in, or try again.
-          </p>
-          <div className="confirm__actions">
-            <button type="button" className="btn btn--primary" onClick={() => navigateApp('/login')}>
-              Return to login
-            </button>
-            <button
-              type="button"
-              className="btn btn--ghost"
-              onClick={() => {
-                setFailed(false)
-                refresh()
-              }}
-            >
-              Try again
-            </button>
-          </div>
-        </div>
-      </section>
-    )
-  }
-
-  if (role) {
-    return (
-      <section className="adv-shell" aria-label="Email confirmed">
-        <div className="adv-shell__inner adv-shell__inner--narrow">
-          <p className="eyebrow eyebrow--plain">CLIRevenue · Email confirmed</p>
-          <h2 className="block__title">Your account is ready.</h2>
-          <p className="block__body">Opening your dashboard…</p>
-        </div>
-      </section>
-    )
-  }
-
   return (
     <section className="adv-shell" aria-label="Email confirmed">
       <div className="adv-shell__inner adv-shell__inner--narrow">
         <p className="eyebrow eyebrow--plain">CLIRevenue · Email confirmed</p>
         <h2 className="block__title">Your account is ready.</h2>
-        <p className="block__body">Resolving your role…</p>
+        <p className="block__body">
+          {role ? 'Opening your dashboard…' : 'Resolving your role…'}
+        </p>
+        {authError ? <p className="block__body">{authError}</p> : null}
       </div>
     </section>
   )

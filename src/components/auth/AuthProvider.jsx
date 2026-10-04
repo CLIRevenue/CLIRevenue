@@ -1,8 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../lib/api.js'
 import { fetchAuthStatus } from '../../lib/advertiserApi.js'
 import { flushPendingProfile, parkPendingProfile } from '../../lib/authPassword.js'
+import { navigateApp } from '../../hooks/useAppRoute.js'
+import { readCallbackParams } from './authCallback.js'
 import { AuthContext, roleHome } from './authState.js'
+
+/** The single, complete "nobody is signed in" state. Every path that ends
+ *  a session writes exactly this object, so the navigation can never be
+ *  left showing a half-cleared user. */
+const ANONYMOUS = {
+  loading: false,
+  session: null,
+  user: null,
+  profile: null,
+  role: null,
+  advertiser: null,
+  developerAccount: null,
+  error: '',
+}
 
 function userIdFromSession(session) {
   return session?.user?.id || null
@@ -76,33 +92,65 @@ export function AuthProvider({ children }) {
     error: '',
   })
 
+  // Monotonic generation. Every refresh captures the current value and
+  // bails out before writing if it moved on. signOut bumps it too, so an
+  // in-flight refresh that started before logout can never write a stale
+  // session back afterwards — that race is what left the header rendering
+  // a dashboard + user chip after the user had already logged out.
+  const generation = useRef(0)
+
   const refresh = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true, error: '' }))
+    const mine = ++generation.current
+    const stale = () => generation.current !== mine
+
+    // Enter the loading state only when there is a session to revalidate.
+    // Re-entering it while already anonymous blanks Login/Signup for one
+    // network round trip: signOut fires SIGNED_OUT, the listener calls
+    // refresh() again, and a logged-out visitor would briefly have no way
+    // back in. The initial mount is unaffected — that state already has
+    // loading: true.
+    setState((s) => (s.session ? { ...s, loading: true, error: '' } : { ...s, error: '' }))
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      if (sessionError) throw sessionError
+      const initial = await supabase.auth.getSession()
+      if (stale()) return
+      if (initial?.error) throw initial.error
+      let session = initial?.data?.session || null
+
+      // The SDK exchanges a PKCE ?code= for a session on client init
+      // (detectSessionInUrl). That pass is silent and yields nothing when
+      // the link is opened in a browser/device that never stored the code
+      // verifier. Retry the exchange explicitly, exactly once, before
+      // declaring a valid-looking confirmation link dead.
+      let exchangeError = ''
       if (!session) {
-        setState({
-          loading: false,
-          session: null,
-          user: null,
-          profile: null,
-          role: null,
-          advertiser: null,
-          developerAccount: null,
-          error: '',
-        })
+        const { code } = readCallbackParams(
+          typeof window !== 'undefined' ? window.location.href : '',
+        )
+        if (code && typeof supabase.auth.exchangeCodeForSession === 'function') {
+          const exchanged = await supabase.auth.exchangeCodeForSession(code)
+          if (stale()) return
+          session = exchanged?.data?.session || null
+          exchangeError = exchanged?.error?.message || ''
+        }
+      }
+
+      if (!session) {
+        setState({ ...ANONYMOUS, error: exchangeError })
         return
       }
+
       const { data: { user } } = await supabase.auth.getUser()
+      if (stale()) return
       const uid = user?.id || userIdFromSession(session)
       const resolved = await resolveProfile(uid)
+      if (stale()) return
       // Signup can park profile fields (email-confirmation flow leaves the
       // user anonymous at signup time). Now that an authenticated RLS write
       // is possible, flush them once; re-read account rows if anything was
       // written so the dashboards see the data immediately.
       const flush = await flushPendingProfile(uid, user?.email)
       const rows = flush.flushed ? await readAccountRows(uid) : resolved
+      if (stale()) return
       setState({
         loading: false,
         session,
@@ -114,6 +162,7 @@ export function AuthProvider({ children }) {
         error: flush.errors?.length ? `Profile save failed: ${flush.errors.join('; ')}` : '',
       })
     } catch (e) {
+      if (stale()) return
       // Keep any existing session so refresh does not flash the public site,
       // but surface the resolver error for onboarding/missing-role states.
       setState((s) => ({
@@ -214,21 +263,25 @@ export function AuthProvider({ children }) {
     if (error) throw error
   }, [])
 
+  /** End the session and return to the logged-out navigation.
+   *
+   *  The generation is bumped BEFORE the network round trip and the state
+   *  is cleared even when signOut reports an error. Account deletion
+   *  deletes the auth user server-side first, so a failure here means the
+   *  session is already dead — leaving it in place would strand the user
+   *  on a dashboard they can no longer use. */
   const signOut = useCallback(async (next = '/') => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-    const { navigateApp: go } = await import('../../hooks/useAppRoute.js')
-    setState({
-      loading: false,
-      session: null,
-      user: null,
-      profile: null,
-      role: null,
-      advertiser: null,
-      developerAccount: null,
-      error: '',
-    })
-    go(next)
+    generation.current += 1
+    let failure = null
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) failure = error
+    } catch (e) {
+      failure = e
+    }
+    setState(ANONYMOUS)
+    navigateApp(next)
+    if (failure) throw failure
   }, [])
 
   const value = useMemo(() => ({

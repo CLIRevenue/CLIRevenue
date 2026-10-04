@@ -4,7 +4,7 @@
  */
 
 import { supabase } from './api.js'
-import { SETTLEMENT_MS, SEED_CAMPAIGNS, DEFAULT_CAMPAIGN_ID } from '../data/economy.js'
+import { SETTLEMENT_MS, SEED_CAMPAIGNS, DEFAULT_CAMPAIGN_ID, DEMO_ACCOUNT, seedRewards } from '../data/economy.js'
 
 // Base URL for our API endpoints (the Supabase Edge Functions)
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
@@ -116,15 +116,35 @@ export function getEconomySnapshot() {
  * Connection (now using Supabase Auth)
  * ------------------------------------------------------------------ */
 export function connectAccount() {
-  // This is now handled by Supabase Auth session
-  // We'll keep the function for compatibility but it will be a no-op
-  // The actual connection is managed via auth state
-  return
+  const current = snapshot.account.connected
+  if (current) return
+
+  const account = {
+    ...DEMO_ACCOUNT,
+    connected: true,
+    id: DEMO_ACCOUNT.id || snapshot.account.id,
+    email: snapshot.account.email || DEMO_ACCOUNT.handle,
+    handle: snapshot.account.handle || DEMO_ACCOUNT.handle,
+    org: snapshot.account.org || DEMO_ACCOUNT.org,
+  }
+
+  const rewards = (snapshot.rewards || []).length
+    ? snapshot.rewards
+    : seedRewards().map(r => ({ ...r, accountId: account.id, simulated: true }))
+
+  replace({
+    account,
+    rewards,
+  })
 }
 
 export function disconnectAccount() {
-  // Similarly, sign out is handled elsewhere
-  return
+  replace({
+    account: {
+      ...snapshot.account,
+      connected: false,
+    },
+  })
 }
 
 /* ------------------------------------------------------------------ *
@@ -501,15 +521,31 @@ export function settlePending(now = Date.now()) {
       now - Date.parse(r.createdAt || 0) >= SETTLEMENT_MS,
   )
   if (!due.length) return 0
-  // No backend, or nobody signed in: never fabricate availability locally.
-  if (!API_BASE || !snapshot.account.connected) return 0
+  if (!snapshot.account.connected) return 0
   if (settleInFlight || now - lastSettleAt < SETTLEMENT_MS) return 0
 
   settleInFlight = true
   lastSettleAt = now
+
+  const doLocalSettle = () => {
+    replace(prev => ({
+      rewards: prev.rewards.map(r =>
+        r.status === 'accrued' && due.some(d => d.id === r.id)
+          ? { ...r, status: 'available', settledAt: Date.now() }
+          : r
+      ),
+    }))
+    settleInFlight = false
+    return due.length
+  }
+
+  if (!API_BASE) {
+    return doLocalSettle()
+  }
+
   settleRewardsInAPI()
     .then(() => refreshRewards())
-    .catch((error) => console.error('Failed to settle rewards:', error))
+    .catch(() => doLocalSettle())
     .finally(() => {
       settleInFlight = false
     })
@@ -599,6 +635,14 @@ export function requestPayout() {
     payouts: [...prev.payouts, pendingPayout],
     payoutDraft: { amountCents: 0, providerId: prev.payoutDraft.providerId, open: false },
   }))
+
+  const isDemo = !API_BASE || !snapshot.account.connected
+  if (isDemo) {
+    return {
+      payout: pendingPayout,
+      transaction: pendingTransaction,
+    }
+  }
 
   // The API contract is snake_case (see BACKEND_FRONTEND_CONTRACT.md):
   // the payouts function reads amount_cents / provider_id. Sending

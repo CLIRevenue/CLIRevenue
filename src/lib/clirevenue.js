@@ -36,7 +36,7 @@ import { DEFAULT_BASE_URL, SDK_VERSION, init } from '@clirevenue/sdk'
    here means a typo in a deploy variable produces a truthful
    "misconfigured" state in the interface instead of an exception on
    first paint. */
-const PUBLISHABLE_KEY_PATTERN = /^pk_(live|test)_[A-Za-z0-9_-]{32,}$/
+export const PUBLISHABLE_KEY_PATTERN = /^pk_(live|test)_[A-Za-z0-9_-]{32,}$/
 
 const readEnv = (name) => {
   /* `import.meta.env` is replaced at build time; guarding keeps this

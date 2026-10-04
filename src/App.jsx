@@ -2,10 +2,12 @@ import { useEffect } from 'react'
 import Atmosphere from './components/Atmosphere.jsx'
 import Cinema from './components/Cinema.jsx'
 import Console from './components/console/Console.jsx'
+import AdminConsole from './components/admin/AdminConsole.jsx'
 import Conversion from './components/conv/Conversion.jsx'
 import AdvertiserApp from './components/advertiser/AdvertiserApp.jsx'
 import DeveloperApp from './components/developer/DeveloperApp.jsx'
 import DeveloperLanding from './components/developer/DeveloperLanding.jsx'
+import AdvertiserLanding from './components/advertiser/AdvertiserLanding.jsx'
 import { AuthProvider } from './components/auth/AuthProvider.jsx'
 import { LoginPage, SignupPage, AuthCallbackPage } from './components/auth/AuthPages.jsx'
 import { RequireRole, AuthLoadingScreen } from './components/auth/RequireAuth.jsx'
@@ -102,18 +104,25 @@ function Routes() {
     )
   }
 
+  // Public advertiser onboarding — the counterpart to /developer. Same
+  // rule: understanding campaigns, targeting, and measurement must not
+  // require an account. It is not the role-gated /app/advertiser
+  // dashboard, which is matched above and owns the real campaign writes.
+  if (clean === '/advertiser' || clean.startsWith('/advertiser/')) {
+    return (
+      <>
+        <Atmosphere />
+        <AdvertiserLanding />
+      </>
+    )
+  }
+
   if (clean === '/app/admin' || clean.startsWith('/app/admin/')) {
     return (
       <>
         <Atmosphere />
         <RequireRole allow={['admin']}>
-          <section className="adv-shell" aria-label="Admin">
-            <div className="adv-shell__inner adv-shell__inner--narrow">
-              <p className="eyebrow eyebrow--plain">Admin</p>
-              <h2 className="block__title">No admin app ships in this repo yet.</h2>
-              <p className="block__body">Signed in as admin. Admin UI is out of scope for this change.</p>
-            </div>
-          </section>
+          <AdminConsole />
         </RequireRole>
       </>
     )

@@ -1,0 +1,356 @@
+/* =============================================================
+   CLIRevenue — RevenueFlow (scene 3: the money)
+
+   One chain, drawn top to bottom:
+
+     Advertiser --pays--> CLIRevenue --delivers--> Developer --serves--> User
+
+   The plate is a single centred column of four nodes with one
+   connector per adjacent pair, so there is no branching, no crossing
+   and no second destination to read. Everything here is scoped under
+   .revenue-flow so it wins over the older App.css diagram rules
+   without needing !important.
+
+   Geometry is not expressed in this file. The node positions, the
+   connector paths and the pulse's travel are all measured off the
+   rendered plates by the component and fed to the SVG as one pixel
+   viewBox, which is why the line and the dot cannot come apart at any
+   width. What lives here is only the surface.
+   ============================================================= */
+
+/* ---- container ------------------------------------------------ */
+/* No aspect-ratio box: the column is exactly as tall as four plates
+   and three gaps need, so there is no empty band beside or below it. */
+
+.revenue-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.revenue-flow .flow {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+}
+
+.revenue-flow .flow__wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.revenue-flow .flow__stages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ---- wires ---------------------------------------------------- */
+/* Hairline, round-capped, ending in a marker so the direction of the
+   money is unambiguous. The dash values are a fallback only — the
+   cinema timeline draws these with DrawSVG when it is running. The
+   viewBox is in pixels, so these lengths are pixels too. */
+
+.revenue-flow .flow__wire {
+  fill: none;
+  stroke: var(--hair-strong);
+  stroke-width: 1;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 0;
+  transition: stroke 0.45s ease;
+}
+
+.revenue-flow .flow__wire.is-lit {
+  stroke: var(--signal);
+}
+
+.revenue-flow .flow__arrowhead {
+  fill: context-stroke;
+}
+
+/* ---- the pulse ------------------------------------------------ */
+/* A single dot, r=2.4, opacity driven entirely by the component's own
+   timeline. CSS keeps it invisible until that timeline plays, so it
+   can never sit parked on a plate while the scene is off screen. */
+
+.revenue-flow .flow__pulse {
+  fill: var(--signal);
+  opacity: 0;
+  filter: drop-shadow(0 0 3px var(--amber-glow));
+}
+
+/* ---- nodes ---------------------------------------------------- */
+/* Centred by flexbox rather than by a percentage transform: the
+   cinema timeline animates these nodes with x/y, and a transform that
+   was already doing layout work would be applied twice. */
+
+.revenue-flow .flow__node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: min(100%, 300px);
+  padding: 15px 18px;
+  text-align: center;
+  background: var(--panel-2);
+  border: 1px solid var(--hair-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: border-color 0.45s ease;
+}
+
+.revenue-flow .flow__node.is-active {
+  border-color: var(--signal);
+}
+
+/* CLIRevenue carries one step more weight than the other three: a
+   brighter rule and a red underline. Nothing louder — the scene is
+   about the chain, not about the hub. */
+
+.revenue-flow .flow__node--hub {
+  border-color: var(--border-strong);
+}
+
+.revenue-flow .flow__node--hub::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--signal);
+}
+
+.revenue-flow .flow__node-icon {
+  color: var(--ink-3);
+}
+
+.revenue-flow .flow__node--hub .flow__node-icon {
+  color: var(--signal);
+}
+
+.revenue-flow .flow__node-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.revenue-flow .flow__node-label {
+  font-family: var(--mono);
+  font-size: clamp(11px, 1.05vw, 12.5px);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.revenue-flow .flow__node--hub .flow__node-label {
+  color: var(--ink);
+}
+
+.revenue-flow .flow__node-sub {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+/* ---- connectors ----------------------------------------------- */
+/* A gap row, not a drawn line: the wire is the SVG path above it and
+   the two are measured from the same numbers. The verb starts 16px to
+   the right of the centre line so it sits beside the connector and
+   never over it. */
+
+.revenue-flow .flow__connector {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: clamp(58px, 8vh, 92px);
+}
+
+.revenue-flow .flow__flowlabel {
+  position: relative;
+  display: inline-block;
+  margin-left: calc(50% + 16px);
+  padding: 3px 8px;
+  background: var(--stage);
+  border: 1px solid var(--hair);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  white-space: nowrap;
+  transition: color 0.45s ease, border-color 0.45s ease;
+}
+
+.revenue-flow .flow__connector.is-lit .flow__flowlabel {
+  color: var(--amber);
+  border-color: var(--hair-amber);
+}
+
+/* ---- stage timeline ------------------------------------------- */
+/* The four sentences, in the same order as the plates above them, and
+   driven from the same active-stage index as the pulse — so the stage
+   being described is always the stage being animated. */
+
+.revenue-flow .flow__timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  max-width: 720px;
+  margin: 52px auto 0;
+  padding: 0;
+  list-style: none;
+  background: none;
+  border: 1px solid var(--hair);
+  border-top-color: var(--hair-amber);
+}
+
+.revenue-flow .flow__stage {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  align-items: start;
+  gap: 16px;
+  padding: 15px 18px;
+  background: var(--stage);
+  border-bottom: 1px solid var(--hair);
+  animation: clir-stage-in 0.5s ease both;
+  transition: background-color 0.45s ease;
+}
+
+.revenue-flow .flow__stage:last-child {
+  border-bottom: 0;
+}
+
+.revenue-flow .flow__stage:nth-child(2) { animation-delay: 0.08s; }
+.revenue-flow .flow__stage:nth-child(3) { animation-delay: 0.16s; }
+.revenue-flow .flow__stage:nth-child(4) { animation-delay: 0.24s; }
+
+.revenue-flow .flow__stage.is-active {
+  background: rgba(255, 31, 45, 0.07);
+}
+
+.revenue-flow .flow__stage-mark {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--ink-4);
+}
+
+.revenue-flow .flow__stage-index {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  transition: color 0.45s ease;
+}
+
+.revenue-flow .flow__stage-icon svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
+.revenue-flow .flow__stage-label {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  transition: color 0.45s ease;
+}
+
+.revenue-flow .flow__stage.is-active .flow__stage-mark,
+.revenue-flow .flow__stage.is-active .flow__stage-index {
+  color: var(--signal);
+}
+
+.revenue-flow .flow__stage.is-active .flow__stage-label {
+  color: var(--ink-2);
+}
+
+@keyframes clir-stage-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- narrow viewports ----------------------------------------- */
+/* Same four stages, same order, same connectors — only the measure
+   changes, so the chain reads identically on a phone. */
+
+@media (max-width: 760px) {
+  .revenue-flow .flow {
+    max-width: 380px;
+  }
+
+  .revenue-flow .flow__node {
+    width: min(100%, 260px);
+    gap: 5px;
+    padding: 12px 14px;
+  }
+
+  .revenue-flow .flow__connector {
+    height: clamp(50px, 7vh, 74px);
+  }
+
+  .revenue-flow .flow__flowlabel {
+    margin-left: calc(50% + 12px);
+    padding: 2px 6px;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+  }
+
+  .revenue-flow .flow__timeline {
+    margin-top: 40px;
+  }
+
+  .revenue-flow .flow__stage {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 13px 14px;
+  }
+
+  .revenue-flow .flow__stage-label {
+    font-size: 13px;
+  }
+}
+
+/* ---- reduced motion ------------------------------------------- */
+/* The component drops the pulse and never advances a stage under
+   reduced motion, so what is left to settle here is only the surface:
+   no stagger, no colour fades. Wires are already fully drawn by the
+   dash values above. */
+
+@media (prefers-reduced-motion: reduce) {
+  .revenue-flow .flow__stage {
+    animation: none;
+  }
+
+  .revenue-flow .flow__wire,
+  .revenue-flow .flow__flowlabel,
+  .revenue-flow .flow__node,
+  .revenue-flow .flow__stage,
+  .revenue-flow .flow__stage-mark,
+  .revenue-flow .flow__stage-index,
+  .revenue-flow .flow__stage-label {
+    transition: none;
+  }
+}

@@ -2,11 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Tab branding: the approved CLIRevenue logo, not the wordmark and not
+         the retired terminal glyph. The approved asset is a raster PNG, so the
+         icon links declare raster types rather than image/svg+xml. Sizes are
+         declared per candidate so the browser picks by size instead of by
+         document order; favicon.ico carries 16/32/48 for legacy tab and
+         bookmark fallbacks. All variants are derived from
+         /brand/clirevenue-logo.png with its aspect ratio and opaque black
+         field intact. -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#000000" />
     <link rel="stylesheet" href="/fonts/fonts.css" />
+    <!-- The boot's two brand files, preloaded. They are the first thing
+         the opening sequence shows, and without this the request for
+         ~800KB of PNG cannot start until the bundle has parsed and React
+         has mounted — by which point the timeline is already running.
+         Declaring them here starts both fetches during HTML parse, in
+         parallel with the bundle, so each asset is resident and decoded
+         well before its beat. `fetchpriority="high"` matches the order
+         they appear in: the mark lands first, the wordmark second. -->
+    <link rel="preload" as="image" href="/brand/clirevenue-logo.png" fetchpriority="high" />
+    <link rel="preload" as="image" href="/brand/clirevenue-wordmark.png" />
     <meta
       name="description"
       content="CLIRevenue — a dedicated advertising slot above the command line, with shared revenue for advertisers, users, developers, and the platform."

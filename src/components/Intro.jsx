@@ -7,6 +7,15 @@
    the moment it finishes it hands the page back and reports
    itself done through `introStore`.
 
+   The brand itself is the content of this sequence. The mark is
+   the approved CLIRevenue logo file and the name is the approved
+   CLIRevenue wordmark file, served from `public/brand` — nothing
+   here redraws, approximates or re-types the identity. They are
+   shown in sequence rather than together: the mark arrives and
+   settles, clears, and only then does the wordmark resolve. One
+   asset at a time reads as a brand reveal; both at once reads as
+   a loading screen.
+
    The hero's own entrance is animated from here rather than from
    the cinema hook, for two reasons. The film's playhead is the
    scrollbar, and at scrollbar zero the hero would have nowhere to
@@ -30,7 +39,24 @@ import { isIntroDone, markIntroComplete } from '../lib/introStore.js'
 
 gsap.registerPlugin(ScrambleTextPlugin)
 
-const WORD = 'CLIRevenue'
+/* The approved brand files, byte-for-byte from the supplied source
+   of truth. Intrinsic dimensions are declared so the browser reserves
+   the right box before either file lands.
+
+   Both are decoded asynchronously, and both are preloaded from
+   `index.html`. Decoding them synchronously put two 1.5-megapixel PNG
+   decodes on the critical path in front of the cover's very first
+   paint, which is what made the sequence appear to hang before it
+   started; `async` lets the cover paint the moment React commits while
+   the bitmaps finish in the background. The preload is what makes that
+   safe — the fetch starts during HTML parse, in parallel with the
+   bundle, instead of waiting for React to mount before it even begins. */
+const MARK_SRC = '/brand/clirevenue-logo.png'
+const WORDMARK_SRC = '/brand/clirevenue-wordmark.png'
+const MARK_SIZE = { width: 1254, height: 1254 }
+const WORDMARK_SIZE = { width: 2164, height: 727 }
+
+const STATUS = 'SYS/00 · READY'
 
 function Intro() {
   const rootRef = useRef(null)
@@ -74,6 +100,10 @@ function Intro() {
       gsap.set(heroBody, { clipPath: 'inset(100% 0% 0% 0%)' })
       gsap.set(vLines, { scaleY: 0 })
       gsap.set('.intro__bar', { scaleX: 0 })
+      /* Both brand files start absent. They share one slot, so the
+         mark has to be cleared before the wordmark is allowed in. */
+      gsap.set('.intro__mark', { opacity: 0, scale: 0.94 })
+      gsap.set('.intro__wordmark', { opacity: 0, scale: 0.97 })
 
       const tl = gsap.timeline({
         defaults: { ease: 'power3.out' },
@@ -87,70 +117,66 @@ function Intro() {
       /* 1 — the grid draws itself: verticals only, so the stage is
          measured out before anything is written on it. (Horizontal
          rules were removed with the rest of the band language.) */
-      tl.to(vLines, { scaleY: 1, duration: 0.6, stagger: 0.05, ease: 'power2.out' }, 0)
+      tl.to(vLines, { scaleY: 1, duration: 0.55, stagger: 0.05, ease: 'power2.out' }, 0)
 
       /* 2 — boot ticks. Scrambled rather than faded: this is text
          being resolved, not text arriving. */
       tl.fromTo(
         ticks,
         { opacity: 0, y: 8 },
-        { opacity: 1, y: 0, duration: 0.3, stagger: 0.07 },
-        0.08,
+        { opacity: 1, y: 0, duration: 0.28, stagger: 0.07 },
+        0.06,
       )
 
-      /* 3 — the name resolves out of noise. */
-      tl.fromTo(
-        '.intro__word',
-        { opacity: 0 },
-        { opacity: 1, duration: 0.2 },
-        0.5,
-      )
-      tl.to(
-        '.intro__word',
-        {
-          duration: 0.7,
-          ease: 'none',
-          scrambleText: { text: WORD, chars: 'upperCase', speed: 0.7 },
-        },
-        0.52,
-      )
+      /* 3 — the mark. The approved logo file, settling into place.
+         No glow, no particles: it arrives the way a printed mark
+         sits down on a page. */
+      tl.to('.intro__mark', { opacity: 1, scale: 1, duration: 0.5 }, 0.3)
 
-      /* 4 — the signal bar sweeps. The one saturated accent in the
+      /* 4 — the mark clears before the name arrives. Sequential, so
+         the identity is stated rather than stacked. */
+      tl.to('.intro__mark', { opacity: 0, scale: 1.03, duration: 0.32 }, 0.98)
+
+      /* 5 — the wordmark. The approved wordmark file, resolving
+         behind the mark's exit. */
+      tl.to('.intro__wordmark', { opacity: 1, scale: 1, duration: 0.5 }, 1.18)
+
+      /* 6 — the signal bar sweeps. The one saturated accent in the
          sequence, and it is a rule rather than a glow: the palette
          says rules, not halos. */
-      tl.to('.intro__bar', { scaleX: 1, duration: 0.5, ease: 'power4.inOut' }, 1.05)
+      tl.to('.intro__bar', { scaleX: 1, duration: 0.42, ease: 'power4.inOut' }, 1.78)
 
       tl.fromTo(
         '.intro__status',
         { opacity: 0 },
         { opacity: 1, duration: 0.3 },
-        1.25,
+        1.9,
       )
       tl.to(
         '.intro__status',
         {
-          duration: 0.45,
+          duration: 0.42,
           ease: 'none',
-          scrambleText: { text: 'SYS/00 · READY', chars: 'upperCase', speed: 0.6 },
+          scrambleText: { text: STATUS, chars: 'upperCase', speed: 0.6 },
         },
-        1.27,
+        1.92,
       )
 
-      /* 5 — the cover lifts, and the hero comes up behind it rather
+      /* 7 — the cover lifts, and the hero comes up behind it rather
          than after it, so the handover reads as one move. */
       tl.to(
         '.intro__cover',
-        { yPercent: -100, duration: 0.85, ease: 'power4.inOut' },
-        1.75,
+        { yPercent: -100, duration: 0.78, ease: 'power4.inOut' },
+        2.42,
       )
 
-      tl.to(heroTitle, { yPercent: 0, opacity: 1, duration: 0.9, stagger: 0.08 }, 2.0)
-      tl.to(heroBits, { y: 0, opacity: 1, duration: 0.55, stagger: 0.045 }, 2.25)
-      tl.to(heroTerminal, { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }, 2.15)
+      tl.to(heroTitle, { yPercent: 0, opacity: 1, duration: 0.85, stagger: 0.08 }, 2.62)
+      tl.to(heroBits, { y: 0, opacity: 1, duration: 0.55, stagger: 0.045 }, 2.84)
+      tl.to(heroTerminal, { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }, 2.75)
       tl.to(
         heroBody,
-        { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7, ease: 'power2.out' },
-        2.45,
+        { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.65, ease: 'power2.out' },
+        3.0,
       )
     }, document.getElementById('root'))
 
@@ -185,9 +211,33 @@ function Intro() {
         </div>
 
         <div className="intro__centre">
-          <span className="intro__word">{WORD}</span>
-          <span className="intro__bar" />
-          <span className="intro__status">SYS/00 · READY</span>
+          {/* The approved CLIRevenue brand files. Decorative: the cover
+              is aria-hidden and the page announces its own name. Both
+              sit in one slot so neither displaces the other.
+
+              The slot is also what the red boot line is positioned
+              against, so the line sits directly under the wordmark's
+              artwork instead of trailing the left-hand status column. */}
+          <span className="intro__brand">
+            <img
+              className="intro__mark"
+              src={MARK_SRC}
+              alt=""
+              width={MARK_SIZE.width}
+              height={MARK_SIZE.height}
+              decoding="async"
+            />
+            <img
+              className="intro__wordmark"
+              src={WORDMARK_SRC}
+              alt=""
+              width={WORDMARK_SIZE.width}
+              height={WORDMARK_SIZE.height}
+              decoding="async"
+            />
+            <span className="intro__bar" />
+          </span>
+          <span className="intro__status">{STATUS}</span>
         </div>
       </div>
     </div>

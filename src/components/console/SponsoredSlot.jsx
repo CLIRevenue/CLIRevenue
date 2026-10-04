@@ -46,6 +46,7 @@ export default function SponsoredSlot({
   connected,
   hidden,
   onActivate,
+  surface = 'workbench',
 }) {
   const [open, setOpen] = useState(false)
   const reduced = useReducedMotion()
@@ -140,9 +141,11 @@ export default function SponsoredSlot({
     transition: detail,
   }
 
+  const slotClass = surface === 'workbench' ? 'adslot adslot--workbench' : 'adslot'
+
   return (
     <aside
-      className="adslot adslot--workbench"
+      className={slotClass}
       aria-label="Sponsored advertisement"
       data-state={hidden ? 'pending' : 'printed'}
       data-visual={open ? 'opened' : 'visible'}

@@ -231,8 +231,11 @@
 
 /* Copy control. The compound selectors outrank the shared .btn--ghost /
    .btn--sm classes the button also carries, so the success state really
-   does invert rather than losing to the later sheet. */
-.sdk-code .sdk-copy {
+   does invert rather than losing to the later sheet. The hero plate's
+   bar carries a copy control too, so it joins the same two selectors —
+   one sizing rule, not a second one. */
+.sdk-code .sdk-copy,
+.sdk-plate .sdk-copy {
   padding: 4px 10px;
   font-family: var(--mono);
   font-size: 10px;
@@ -241,10 +244,19 @@
 }
 
 .sdk-code .sdk-copy--done,
-.sdk-code .sdk-copy--done:hover:not(:disabled) {
+.sdk-code .sdk-copy--done:hover:not(:disabled),
+.sdk-plate .sdk-copy--done,
+.sdk-plate .sdk-copy--done:hover:not(:disabled) {
   border-color: var(--ink);
   background: var(--ink);
   color: var(--bg);
+}
+
+/* The plate bar is a three-child flex row now: tag at the start, then
+   the package meta and the copy control packed against the trailing
+   edge (the meta takes the slack, the bar's gap separates the two). */
+.sdk-plate .sdk-plate__meta {
+  margin-left: auto;
 }
 
 /* ---------- inline technical reference ---------- */

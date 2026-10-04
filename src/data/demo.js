@@ -126,8 +126,16 @@ export const experienceScene = {
 
 /* -------------------------------------------------------------
    Scene 3 — the advertising ecosystem
-   advertiser pays → platform provides infrastructure
-   platform shares revenue → user and developer
+
+   One chain, read top to bottom:
+
+     Advertiser --pays--> CLIRevenue --delivers--> Developer --serves--> User
+
+   The advertiser funds a campaign. CLIRevenue runs the ad network and
+   hands the campaign to the developer who integrated it. The app or
+   site that developer ships is what puts the advertisement in front of
+   the user. Every stage has exactly one successor — nothing branches,
+   and CLIRevenue never reaches the user directly.
    ------------------------------------------------------------- */
 
 export const ecosystem = {
@@ -137,32 +145,42 @@ export const ecosystem = {
       id: 'advertiser',
       label: 'Advertiser',
       icon: Megaphone,
-      blurb: 'Reach technical users.',
+      sub: 'Campaign',
     },
     platform: {
       id: 'platform',
-      label: 'Platform',
+      label: 'CLIRevenue',
       icon: Network,
-      blurb: 'Provides the infrastructure.',
-    },
-    user: {
-      id: 'user',
-      label: 'User',
-      icon: Users,
-      blurb: 'Can earn rewards.',
+      sub: 'Ad Network',
     },
     developer: {
       id: 'developer',
       label: 'Developer',
       icon: Code2,
-      blurb: 'Monetize their CLI tools.',
+      sub: 'App / Site',
+    },
+    user: {
+      id: 'user',
+      label: 'User',
+      icon: Users,
+      sub: 'Sees Ad',
     },
   },
-  order: ['advertiser', 'platform', 'user', 'developer'],
+  order: ['advertiser', 'platform', 'developer', 'user'],
   flows: [
     { id: 'pay', from: 'advertiser', to: 'platform', label: 'pays' },
-    { id: 'user-share', from: 'platform', to: 'user', label: 'share' },
-    { id: 'dev-share', from: 'platform', to: 'developer', label: 'share' },
+    { id: 'deliver', from: 'platform', to: 'developer', label: 'delivers' },
+    { id: 'serve', from: 'developer', to: 'user', label: 'serves' },
+  ],
+  // The same four stages as the diagram above, in the same order, and
+  // each one pinned to the participant it belongs to. The list under
+  // the flow walks these in step with the pulse, so the sentence on
+  // screen always describes the stage being animated.
+  stages: [
+    { id: 'campaign', node: 'advertiser', label: 'Advertiser runs the campaign and pays CLIRevenue.' },
+    { id: 'network', node: 'platform', label: 'CLIRevenue operates the ad network and delivers the campaign.' },
+    { id: 'integrate', node: 'developer', label: 'Developer integrates CLIRevenue into their app or site.' },
+    { id: 'serve', node: 'user', label: 'The app or site serves the advertisement to the user.' },
   ],
 }
 

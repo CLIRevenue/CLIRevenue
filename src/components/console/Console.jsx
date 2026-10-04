@@ -48,16 +48,15 @@ function Console() {
 
           <div className="console__foot">
             <p className="console__foot-line">
-              CLIRevenue is a prototype. Every campaign, reward, balance, and payout in this
-              console is DEMO/TEST data held in page memory.
+              CLIRevenue ad delivery is real: the sponsored slot in the workbench above is
+              delivered by the CLIRevenue SDK, and its impression is counted server-side.
             </p>
             <p className="console__foot-line">
-              The one exception is the sponsored slot in the workbench above: it is delivered
-              live by the CLIRevenue SDK, and its impression is counted on the server.
+              CLIRevenue account features use Supabase. Campaign, reward, balance, and payout
+              figures in this console are simulated and do not involve real money.
             </p>
             <p className="console__foot-line">
-              No real financial transactions · no KYC · no payout processing · no
-              advertiser is billed · no provider is integrated yet.
+              No advertiser billing · no provider integration · no publisher payout · no KYC.
             </p>
           </div>
         </div>
