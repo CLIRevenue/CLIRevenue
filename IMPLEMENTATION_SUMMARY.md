@@ -46,7 +46,7 @@ All backend endpoints under `supabase/functions/` are now called by the frontend
 
 ### 6. Environment Variables Required
 Frontend (Vite) variables (must be prefixed with `VITE_`):
-- `VITE_API_BASE_URL` - Base URL for API endpoints (e.g., `https://your-project.supabase.co/functions/v1`)
+- `VITE_API_BASE_URL` - Base URL for API endpoints (e.g., `https://api.clirevenue.in`)
 - `VITE_SUPABASE_URL` - Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` - Supabase public anon key
 
