@@ -24,11 +24,11 @@
 export const PLACEMENTS = {
   /* The one surface that requests a real ad. It sits inside the
      agent-session transcript in the console workbench, framed by the
-     same `.adslot` markup as the film's scripted slot. */
+     same `.placement-slot` markup as the film's scripted slot. */
   consoleWorkbench: {
     key: 'console-workbench',
     surface: 'console · workbench sponsored slot',
-    selector: '.workbench .adslot--workbench',
+    selector: '.workbench .placement-slot--workbench',
     owner: 'src/components/console/ServedAdSlot.jsx',
     dimensions: {
       width: 'fluid — breaks out of the output column (margin 14px -24px)',
@@ -70,11 +70,11 @@ export const PLACEMENTS = {
 
      The ServedAdSlot for each is rendered as a child of the Terminal
      component, inside the output area, so the selector targets the
-     .adslot element inside the scene's terminal output stream. */
+     .placement-slot element inside the scene's terminal output stream. */
   filmAd: {
     key: 'film-ad',
     surface: 'film · TheAd scene terminal slot',
-    selector: '[data-scene="ad"] .terminal__out .adslot',
+    selector: '[data-scene="ad"] .terminal__out .placement-slot',
     owner: 'src/components/scenes/TheAd.jsx',
     dimensions: {
       width: 'fluid — inside the film terminal output column',
@@ -106,7 +106,7 @@ export const PLACEMENTS = {
   filmExperience: {
     key: 'film-experience',
     surface: 'film · TheExperience scene terminal slot',
-    selector: '[data-scene="experience"] .terminal__out .adslot',
+    selector: '[data-scene="experience"] .terminal__out .placement-slot',
     owner: 'src/components/scenes/TheExperience.jsx',
     dimensions: {
       width: 'fluid — inside the film terminal output column',
@@ -182,7 +182,7 @@ export const PLACEMENTS = {
   filmSlot: {
     key: null,
     surface: 'film · terminal slot (scenes/TheAd, scenes/TheExperience)',
-    selector: '.adslot',
+    selector: '.placement-slot',
     owner: 'src/components/AdSlot.jsx',
     delivery: false,
     reason:

@@ -1,5 +1,6 @@
 import { DemoTag, Panel, SectionHead, Stat } from '../console/ui.jsx'
 import { navigateApp } from '../../hooks/useAppRoute.js'
+import './dashboard.css'
 
 export function AdvPageHead({ index, label, title, body }) {
   return (
@@ -21,9 +22,10 @@ export function AdvError({ message, onRetry }) {
   )
 }
 
-export function AdvEmpty({ title, body, actionLabel, onAction, to }) {
+export function AdvEmpty({ title, body, actionLabel, onAction, to, mark = 'No records yet' }) {
   return (
     <Panel className="adv-empty">
+      <span className="adv-empty__mark">{mark}</span>
       <h4 className="adv-empty__title">{title}</h4>
       {body ? <p className="adv-empty__body">{body}</p> : null}
       {actionLabel ? (
@@ -42,11 +44,23 @@ export function AdvEmpty({ title, body, actionLabel, onAction, to }) {
   )
 }
 
+const SKELETON_CELLS = [0, 1, 2, 3]
+
 export function AdvLoading({ label = 'Loading advertiser data…' }) {
   return (
-    <Panel className="adv-loading" aria-live="polite">
-      <span className="adv-loading__dot" aria-hidden="true" />
-      {label}
+    <Panel className="adv-loading" aria-live="polite" aria-busy="true">
+      <span className="adv-loading__label">
+        <span className="adv-loading__dot" aria-hidden="true" />
+        {label}
+      </span>
+      <span className="adv-loading__grid" aria-hidden="true">
+        {SKELETON_CELLS.map((i) => (
+          <span key={i} className="adv-loading__cell">
+            <span className="adv-loading__bar adv-loading__bar--label" />
+            <span className="adv-loading__bar adv-loading__bar--value" />
+          </span>
+        ))}
+      </span>
     </Panel>
   )
 }
@@ -55,7 +69,14 @@ export function AdvStats({ items }) {
   return (
     <div className="adv-stats">
       {items.map((s) => (
-        <Stat key={s.label} label={s.label} value={s.value} hint={s.hint} tone={s.tone || 'plain'} />
+        <Stat
+          key={s.label}
+          label={s.label}
+          value={s.value}
+          hint={s.hint}
+          flag={s.flag}
+          tone={s.tone || 'plain'}
+        />
       ))}
     </div>
   )

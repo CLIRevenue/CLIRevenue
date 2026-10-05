@@ -16,6 +16,7 @@ import Workbench from './Workbench.jsx'
 import AdvertiserConsole from './AdvertiserConsole.jsx'
 import RewardsPanel from './RewardsPanel.jsx'
 import EconomicLoop from './EconomicLoop.jsx'
+import { PromoAd } from '../PromoAd.jsx'
 import useEconomy from '../../hooks/useEconomy.js'
 import { SETTLE_TICK_MS } from '../../data/economy.js'
 import { settlePending } from '../../lib/economyStore.js'
@@ -41,6 +42,11 @@ function Console() {
             Demo environment. Campaigns, rewards and settlements shown here are
             simulated and do not involve real money.
           </p>
+
+          <div className="console__promo">
+            <PromoAd index={1} variant="compact" />
+          </div>
+
           <Workbench />
           <AdvertiserConsole economy={economy} />
           <RewardsPanel economy={economy} />

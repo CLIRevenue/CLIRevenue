@@ -1,0 +1,253 @@
+/* ================================================================
+   CLIRevenue Admin Console — contact inbox
+   ================================================================ */
+
+.adm-contacts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adm-contacts__list {
+  flex: 1;
+  min-height: 300px;
+}
+
+.adm-contacts__row {
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-ui);
+}
+
+.adm-contacts__row:hover {
+  background: var(--adm-raised);
+}
+
+.adm-contacts__row--expanded {
+  background: var(--adm-raised);
+}
+
+.adm-contacts__name {
+  font-family: var(--adm-mono);
+  font-size: 12px;
+}
+
+.adm-contacts__empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--adm-muted);
+}
+
+.adm-contacts__message-block {
+  margin: 8px 0;
+}
+
+.adm-contacts__message-label {
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--adm-text-dim);
+  margin-bottom: 6px;
+}
+
+.adm-contacts__message {
+  font-family: var(--adm-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--adm-text);
+  background: var(--adm-bg-grid);
+  padding: 12px;
+  border: 1px solid var(--adm-border);
+  border-radius: 2px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.adm-contacts__actions {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adm-contacts__status-label {
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--adm-text-dim);
+}
+
+.adm-contacts__status-select {
+  background: var(--adm-bg);
+  border: 1px solid var(--adm-border);
+  color: var(--adm-text);
+  font-family: var(--adm-mono);
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 2px;
+}
+
+.adm-contacts__notes {
+  background: var(--adm-bg);
+  border: 1px solid var(--adm-border);
+  color: var(--adm-text);
+  font-family: var(--adm-mono);
+  font-size: 12px;
+  padding: 12px;
+  border-radius: 2px;
+  resize: vertical;
+}
+
+.adm-contacts__buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.adm-contacts__btn {
+  font-family: var(--adm-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 8px 16px;
+  border: 1px solid var(--adm-border);
+  border-radius: 2px;
+  background: var(--adm-bg);
+  color: var(--adm-text);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-ui);
+}
+
+.adm-contacts__btn:hover:not(:disabled) {
+  border-color: var(--adm-amber);
+  color: var(--adm-amber);
+}
+
+.adm-contacts__btn--save {
+  background: var(--adm-amber);
+  color: #000;
+  border-color: var(--adm-amber);
+}
+
+.adm-contacts__btn--save:hover:not(:disabled) {
+  background: var(--adm-amber-bright);
+  color: #000;
+}
+
+.adm-contacts__btn--delete {
+  background: var(--adm-red-bg);
+  color: var(--adm-red-bright);
+  border-color: var(--adm-red-dim);
+}
+
+.adm-contacts__btn--delete:hover:not(:disabled) {
+  background: var(--adm-red);
+  color: #fff;
+}
+
+.adm-contacts__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.adm-contacts__error {
+  color: var(--adm-red-bright);
+  font-size: 12px;
+  background: var(--adm-red-bg);
+  padding: 8px 12px;
+  border-radius: 2px;
+  border: 1px solid var(--adm-red-dim);
+}
+
+.adm-contacts__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.adm-contacts__meta-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.adm-contacts__label {
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--adm-muted-dim);
+  min-width: 80px;
+}
+
+.adm-contacts__value {
+  font-family: var(--adm-sans);
+  font-size: 13px;
+  color: var(--adm-text);
+}
+
+.adm-contacts__detail {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--adm-bg);
+  border-top: 1px solid var(--adm-border);
+  padding: 24px 32px;
+  max-height: 60vh;
+  overflow-y: auto;
+  z-index: 40;
+}
+
+.adm-contacts__detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.adm-contacts__detail-title {
+  font-family: var(--adm-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--adm-text);
+}
+
+.adm-contacts__detail-close {
+  background: transparent;
+  border: 1px solid var(--adm-border);
+  color: var(--adm-text-dim);
+  font-family: var(--adm-mono);
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.adm-contacts__detail-close:hover {
+  border-color: var(--adm-text);
+  color: var(--adm-text);
+}
+
+/* Mobile: detail takes full screen */
+@media (max-width: 900px) {
+  .adm-contacts__detail {
+    position: fixed;
+    inset: 0;
+    padding: 20px;
+    max-height: 100vh;
+  }
+
+  .adm-contacts__buttons {
+    flex-direction: column;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .adm-contacts__row {
+    transition: none;
+  }
+}

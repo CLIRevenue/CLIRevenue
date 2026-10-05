@@ -73,6 +73,16 @@ async function fetchBalanceAndRewards() {
   throw lastErr || new Error('Rewards endpoint not found.')
 }
 
+function rewardStatus(reward) {
+  const raw = String(reward?.status ?? '').trim().toLowerCase()
+  if (!raw) return { tone: 'pending', label: 'Pending' }
+  if (raw === 'settled' || raw === 'paid' || raw === 'complete' || raw === 'completed') {
+    return { tone: 'settled', label: 'Settled' }
+  }
+  if (raw === 'failed' || raw === 'reversed') return { tone: 'failed', label: 'Failed' }
+  return { tone: 'pending', label: raw.charAt(0).toUpperCase() + raw.slice(1) }
+}
+
 export default function DeveloperApp() {
   const [tab, setTab] = useState('dashboard')
   const [loading, setLoading] = useState(true)
@@ -117,12 +127,38 @@ export default function DeveloperApp() {
     })()
   }, [load])
 
+  const available = Number(balance?.availableCents ?? 0)
+  const pending = Number(balance?.pendingCents ?? 0)
+  const rewardsCount = rewards.length
+
   const stats = useMemo(() => ([
-    { label: 'Available', value: formatCents(balance?.availableCents), hint: 'withdrawable' },
-    { label: 'Pending', value: formatCents(balance?.pendingCents), hint: 'settling' },
-    { label: 'Lifetime', value: formatCents(balance?.lifetimeCents) },
-    { label: 'Reserved', value: formatCents(balance?.reservedCents), hint: 'payouts requested' },
-  ]), [balance])
+    {
+      label: 'Available',
+      value: formatCents(available),
+      hint: available > 0 ? 'withdrawable now' : 'nothing to withdraw yet',
+      flag: available > 0 ? 'live' : 'empty',
+      tone: available > 0 ? 'live' : 'zero',
+    },
+    {
+      label: 'Pending',
+      value: formatCents(pending),
+      hint: pending > 0 ? 'settling' : 'nothing in flight',
+      flag: pending > 0 ? 'settling' : 'idle',
+      tone: pending > 0 ? 'settling' : 'zero',
+    },
+    {
+      label: 'Lifetime',
+      value: formatCents(balance?.lifetimeCents),
+      hint: `${rewardsCount} ${rewardsCount === 1 ? 'entry' : 'entries'} in the ledger`,
+      tone: 'plain',
+    },
+    {
+      label: 'Reserved',
+      value: formatCents(balance?.reservedCents),
+      hint: Number(balance?.reservedCents ?? 0) > 0 ? 'payouts requested' : 'no payout requested',
+      tone: 'plain',
+    },
+  ]), [available, pending, balance, rewardsCount])
 
   const chartRows = useMemo(() => rewards.slice(0, 6).map((r) => ({
     id: r.id,
@@ -188,13 +224,23 @@ export default function DeveloperApp() {
                     <h4 className="adv-panel__title">Recent rewards</h4>
                     <p className="adv-panel__sub">Latest entries in your reward ledger.</p>
                     {rewards.length === 0 ? (
-                      <AdvEmpty title="No rewards yet" body="Try a sponsored slot on the home page to see rewards land here." />
+                      <AdvEmpty
+                        mark="Ledger empty"
+                        title="No rewards yet"
+                        body="Rewards land here the moment a sponsored slot in one of your CLIs is served. Integrate the SDK, then watch this fill."
+                        actionLabel="Set up the SDK"
+                        onAction={() => setTab('sdk')}
+                      />
                     ) : (
                       <ul className="adv-activity">
                         {rewards.slice(0, 6).map((r) => (
                           <li key={r.id} className="adv-activity__row">
-                            <span className="adv-activity__label">{r.campaign_name || r.campaign_id} · {r.status}</span>
-                            <span className="adv-activity__detail">{formatCents(r.amount_cents ?? r.amountCents ?? 0)}</span>
+                            <span className="adv-activity__label">
+                              {r.campaign_name || r.campaign_id || 'Reward'}
+                            </span>
+                            <span className="adv-activity__detail">
+                              {rewardStatus(r).label} · {formatCents(r.amount_cents ?? r.amountCents ?? 0)}
+                            </span>
                           </li>
                         ))}
                       </ul>
@@ -203,7 +249,15 @@ export default function DeveloperApp() {
                   <section className="panel adv-panel" aria-label="Reward mix">
                     <h4 className="adv-panel__title">Reward mix</h4>
                     <p className="adv-panel__sub">By campaign (latest entries).</p>
-                    {chartRows.length ? <AdvBarChart rows={chartRows} valueLabel="Rewards" /> : <AdvEmpty title="Nothing to chart" body="Rewards will appear here." />}
+                    {chartRows.length ? (
+                      <AdvBarChart rows={chartRows} valueLabel="Rewards" />
+                    ) : (
+                      <AdvEmpty
+                        mark="Nothing to chart"
+                        title="No rewards to compare"
+                        body="Once two or more campaigns pay out, this becomes a side-by-side breakdown of where your earnings come from."
+                      />
+                    )}
                   </section>
                 </div>
               </>
@@ -213,8 +267,14 @@ export default function DeveloperApp() {
                 <h4 className="adv-panel__title">Integrations</h4>
                 <p className="adv-panel__sub">Which CLIs you've connected, at a glance.</p>
                 <ul className="adv-activity">
-                  <li className="adv-activity__row"><span className="adv-activity__label">Claude Code</span><span className="adv-activity__detail">Read-only for now.</span></li>
-                  <li className="adv-activity__row"><span className="adv-activity__label">Codex / Cline / OpenCode</span><span className="adv-activity__detail">Same sponsored slot, one shared key.</span></li>
+                  <li className="adv-activity__row">
+                    <span className="adv-activity__label">Claude Code</span>
+                    <span className="adv-activity__detail">Sponsored slot supported · read-only in this build.</span>
+                  </li>
+                  <li className="adv-activity__row">
+                    <span className="adv-activity__label">Codex / Cline / OpenCode</span>
+                    <span className="adv-activity__detail">Same sponsored slot, one shared key.</span>
+                  </li>
                 </ul>
               </Panel>
             )}
@@ -223,10 +283,26 @@ export default function DeveloperApp() {
                 <h4 className="adv-panel__title">Analytics</h4>
                 <p className="adv-panel__sub">Straight from your reward ledger.</p>
                 <AdvStats items={[
-                  { label: 'Rewards seen', value: String(rewards.length) },
-                  { label: 'Available', value: formatCents(balance?.availableCents) },
-                  { label: 'Pending', value: formatCents(balance?.pendingCents) },
+                  {
+                    label: 'Rewards seen',
+                    value: String(rewards.length),
+                    hint: rewards.length === 1 ? 'one entry' : 'entries in the ledger',
+                    tone: rewards.length > 0 ? 'live' : 'zero',
+                  },
+                  { label: 'Available', value: formatCents(available), tone: available > 0 ? 'live' : 'zero' },
+                  { label: 'Pending', value: formatCents(pending), tone: pending > 0 ? 'settling' : 'zero' },
                 ]} />
+                {rewards.length === 0 ? (
+                  <AdvEmpty
+                    mark="No history"
+                    title="Analytics start after the first impression"
+                    body="This panel reads your reward ledger directly — no sampling, no estimates. Serve one sponsored slot and the numbers appear here."
+                    actionLabel="Integrate the SDK"
+                    onAction={() => setTab('sdk')}
+                  />
+                ) : (
+                  <AdvBarChart rows={chartRows} valueLabel="Rewards by campaign" />
+                )}
               </Panel>
             )}
             {tab === 'account' && <DeveloperAccount />}

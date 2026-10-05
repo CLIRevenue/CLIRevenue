@@ -9,6 +9,7 @@ import AdminPublishers from './AdminPublishers.jsx'
 import AdminPlacements from './AdminPlacements.jsx'
 import AdminEvents from './AdminEvents.jsx'
 import AdminSystem from './AdminSystem.jsx'
+import AdminContacts from './AdminContacts.jsx'
 import './AdminConsole.css'
 
 const PAGES = {
@@ -20,6 +21,7 @@ const PAGES = {
   placements: { label: 'Placements', icon: AdminPlacementsIcon },
   events:     { label: 'Events',     icon: AdminEventsIcon },
   system:     { label: 'System',     icon: AdminSystemIcon },
+  contacts:   { label: 'Contacts',   icon: AdminContactsIcon },
 }
 
 function IconSvg({ d, size = 14 }) {
@@ -48,6 +50,8 @@ function AdminPublishersIcon(){ return <IconSvg d="M21 16V8a2 2 0 0 0-1-1.73l-7-
 function AdminPlacementsIcon() { return <IconSvg d="M4 4h16v16H4zM4 12h16M12 4v16" /> }
 function AdminEventsIcon()     { return <IconSvg d="M22 12h-4l-3 9L9 3l-3 9H2" /> }
 function AdminSystemIcon()     { return <IconSvg d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /> }
+
+function AdminContactsIcon()   { return <IconSvg d="M4 4h16l-4 12H8z" /> }
 
 export default function AdminConsole() {
   const { user, role, session, signOut, loading } = useAuth()
@@ -90,6 +94,7 @@ export default function AdminConsole() {
     placements: AdminPlacements,
     events: AdminEvents,
     system: AdminSystem,
+    contacts: AdminContacts,
   }[page] : AdminOverview
 
   return (

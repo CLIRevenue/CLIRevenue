@@ -49,10 +49,53 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
     if (activityFilter !== 'all') rows = rows.filter((c) => c.status === activityFilter)
     return rows.slice(0, 6).map((c) => ({
       id: c.id,
-      label: `${c.name} · ${c.status}`,
+      name: c.name,
+      status: c.status,
       detail: `${c.impressions.toLocaleString('en-US')} impressions · ${c.clicks.toLocaleString('en-US')} clicks · ${formatCents(c.spendCents)} spend`,
     }))
   }, [campaigns, activityFilter])
+
+  const statItems = useMemo(() => ([
+    {
+      label: 'Total spend',
+      value: formatCents(totals.spend),
+      hint: totals.spend > 0 ? 'across all campaigns' : 'nothing spent yet',
+      flag: totals.spend > 0 ? 'live' : 'idle',
+      tone: totals.spend > 0 ? 'live' : 'zero',
+    },
+    {
+      label: 'Remaining budget',
+      value: formatCents(totals.remaining),
+      hint: 'budget minus spend',
+      flag: totals.remaining > 0 ? 'open' : 'exhausted',
+      tone: totals.remaining > 0 ? 'settling' : 'zero',
+    },
+    {
+      label: 'Active campaigns',
+      value: String(totals.active),
+      hint: `${campaigns.length} total`,
+      flag: totals.active > 0 ? 'live' : 'none active',
+      tone: totals.active > 0 ? 'live' : 'zero',
+    },
+    {
+      label: 'Impressions',
+      value: totals.impressions.toLocaleString('en-US'),
+      hint: 'sponsored slots served',
+      tone: totals.impressions > 0 ? 'plain' : 'zero',
+    },
+    {
+      label: 'Clicks',
+      value: totals.clicks.toLocaleString('en-US'),
+      hint: `CTR ${totals.ctr.toFixed(2)}%`,
+      tone: totals.clicks > 0 ? 'plain' : 'zero',
+    },
+    {
+      label: 'Conversions',
+      value: totals.conversions.toLocaleString('en-US'),
+      hint: 'reported actions',
+      tone: totals.conversions > 0 ? 'plain' : 'zero',
+    },
+  ]), [totals, campaigns.length])
 
   return (
     <div className="adv-page">
@@ -67,6 +110,7 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
         <AdvLoading />
       ) : campaigns.length === 0 ? (
         <AdvEmpty
+          mark="Ledger empty"
           title="No campaigns yet"
           body="Create your first campaign to see spend, impressions, and CTR here."
           actionLabel="Create a campaign"
@@ -74,22 +118,15 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
         />
       ) : (
         <>
-          <AdvStats
-            items={[
-              { label: 'Total spend', value: formatCents(totals.spend), hint: 'across all campaigns' },
-              { label: 'Remaining budget', value: formatCents(totals.remaining), hint: 'budget minus spend' },
-              { label: 'Active campaigns', value: String(totals.active), hint: `${campaigns.length} total` },
-              { label: 'Impressions', value: totals.impressions.toLocaleString('en-US') },
-              { label: 'Clicks', value: totals.clicks.toLocaleString('en-US') },
-              { label: 'CTR', value: `${totals.ctr.toFixed(2)}%`, hint: 'clicks / impressions' },
-              { label: 'Conversions', value: totals.conversions.toLocaleString('en-US') },
-            ]}
-          />
+          <AdvStats items={statItems} />
           <div className="adv-grid adv-grid--2">
             <section className="panel adv-panel" aria-label="Campaign performance">
               <h4 className="adv-panel__title">Campaign performance</h4>
               <p className="adv-panel__sub">Spend by campaign, from backend records.</p>
               <AdvBarChart rows={chartRows} valueLabel="Spend" />
+              {chartRows.length === 0 ? (
+                <AdvEmpty mark="No spend" title="Nothing to compare" body="Spend by campaign appears here once a campaign records a delivery." />
+              ) : null}
             </section>
             <section className="panel adv-panel" aria-label="Recent activity">
               <div className="adv-panel__row">
@@ -111,14 +148,29 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
                   <option value="archived">Archived</option>
                 </select>
               </div>
+              {activity.length === 0 ? (
+                <AdvEmpty
+                  mark={activityFilter === 'all' ? 'No updates' : `No ${activityFilter} campaigns`}
+                title={activityFilter === 'all' ? 'Nothing has changed yet' : `No ${activityFilter} campaigns`}
+                body={activityFilter === 'all'
+                  ? 'Campaign edits, budget changes, and delivery milestones show up here.'
+                  : 'Switch the filter back to all statuses to see the rest of your campaigns.'}
+                actionLabel={activityFilter === 'all' ? undefined : 'Show all statuses'}
+                onAction={activityFilter === 'all' ? undefined : () => setActivityFilter('all')}
+              />
+            ) : (
               <ul className="adv-activity">
                 {activity.map((a) => (
                   <li key={a.id} className="adv-activity__row">
-                    <span className="adv-activity__label">{a.label}</span>
+                    <span className="adv-activity__label">
+                      {a.name}
+                      <span className="adv-pill" data-status={a.status}>{a.status}</span>
+                    </span>
                     <span className="adv-activity__detail">{a.detail}</span>
                   </li>
                 ))}
               </ul>
+            )}
             </section>
           </div>
           <section className="panel adv-panel" aria-label="Recent campaigns">
@@ -138,7 +190,7 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
                   {recent.map((c) => (
                     <tr key={c.id}>
                       <td data-label="Campaign">{c.name}</td>
-                      <td data-label="Status"><span className="adv-pill">{c.status}</span></td>
+                      <td data-label="Status"><span className="adv-pill" data-status={c.status}>{c.status}</span></td>
                       <td data-label="Audience">{c.audienceLabel}</td>
                       <td className="mono" data-label="Spend">{formatCents(c.spendCents)}</td>
                       <td className="mono" data-label="CTR">{ctrPct(c.clicks, c.impressions).toFixed(2)}%</td>

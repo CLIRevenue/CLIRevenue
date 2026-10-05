@@ -50,7 +50,7 @@ function LoopExplainer() {
     >
       <SectionHead
         level="h2"
-        index="10"
+        index="11"
         label="How the money moves"
         title="Five steps, from brief to developer reward."
         body="The same loop the console above simulates, written out plainly and in order."

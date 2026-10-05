@@ -128,3 +128,27 @@ export async function fetchAdminSystemStatus() {
   const { data } = await tryCandidates([...urls.map(u => `${u}/system`)], { method: 'GET' })
   return data
 }
+
+export async function fetchAdminContacts() {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates([...urls.map(u => `${u}/contacts`)], { method: 'GET' })
+  return data ?? {}
+}
+
+export async function updateContactStatus(id, status, adminNotes = '') {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates(
+    [...urls.map(u => `${u}/contacts/${id}`)],
+    { method: 'PATCH', body: JSON.stringify({ status, admin_notes: adminNotes }) }
+  )
+  return data?.data ?? data
+}
+
+export async function deleteContact(id) {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates(
+    [...urls.map(u => `${u}/contacts/${id}`)],
+    { method: 'DELETE' }
+  )
+  return data?.data ?? data
+}

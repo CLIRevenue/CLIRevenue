@@ -535,6 +535,8 @@ function beatFor(id, timeline, { pick, at, span }) {
       return waitBeat(timeline, { pick, at, span })
     case 'ad':
       return adBeat(timeline, { pick, at, span })
+    case 'advertiserDemo':
+      return advertiserDemoBeat(timeline, { pick, at, span })
     case 'money':
       return moneyBeat(timeline, { pick, at, span })
     case 'experience':
@@ -586,6 +588,113 @@ function waitBeat(timeline, { pick, at, span }) {
     )
 }
 
+/* The advertiser console. This is the densest scene in the film — a
+   terminal, a creative preview, four annotated figures, a campaign
+   table, a delivery feed, a workflow and a ledger — and it is the
+   only one with no beat of its own, which left every panel below the
+   terminal at its natural opacity from the first frame. The generic
+   reveal covers `.scene__head` and `.terminal`, so the reader watched
+   the heading and the window animate and then found a fully
+   assembled dashboard sitting underneath them, already finished.
+
+   The panels are therefore staggered in reading order, and each is
+   given its own small entrance rather than one shared cross-fade:
+   the scene's argument is that these are separate surfaces of a
+   product, and a single simultaneous fade would state the opposite.
+
+   The creative preview goes first and on its own timing. It is the
+   artefact the rest of the scene is reporting on — the campaign table,
+   the spend figures and the delivery feed all describe *this* ad — so
+   it has to be readable before anything starts making claims about it,
+   and it fills its region the same way a reserved slot does in the ad
+   chapter rather than rising like a section heading. */
+function advertiserDemoBeat(timeline, { pick, at, span }) {
+  reveal(
+    timeline,
+    pick('.advertiser-demo__slot'),
+    { opacity: 0, y: -14, scaleY: 0.86 },
+    { opacity: 1, y: 0, scaleY: 1, duration: span(0.18), ease: 'power3.out' },
+    at(0.16),
+  )
+
+  /* The four figures directly under the terminal restate what the
+     output stream just scrolled past. They are a summary of the
+     scene above them, so they arrive as the stream settles. */
+  reveal(
+    timeline,
+    pick('.advertiser-demo__annotation'),
+    { opacity: 0, y: 12 },
+    {
+      opacity: 1,
+      y: 0,
+      duration: span(0.2),
+      ease: 'power2.out',
+      stagger: span(0.06),
+    },
+    at(0.3),
+  )
+
+  /* The two boards sit side by side and are read as one band, so they
+     rise together. Separating them would imply the delivery feed
+     depends on the campaign list, which is the opposite of the truth
+     this scene spends its whole length asserting. */
+  reveal(
+    timeline,
+    pick('.advertiser-demo__board'),
+    { opacity: 0, y: 16 },
+    { opacity: 1, y: 0, duration: span(0.24), ease: 'power2.out' },
+    at(0.46),
+  )
+
+  /* Rows inside the boards, not the boards themselves: the bands are
+     frames, and the data is what the chapter is actually about. */
+  reveal(
+    timeline,
+    pick('.advertiser-demo__td, .advertiser-demo__feed-row'),
+    { opacity: 0, y: 8 },
+    {
+      opacity: 1,
+      y: 0,
+      duration: span(0.14),
+      ease: 'power2.out',
+      stagger: span(0.035),
+    },
+    at(0.52),
+  )
+
+  reveal(
+    timeline,
+    pick('.advertiser-demo__flow-step'),
+    { opacity: 0, y: 10 },
+    {
+      opacity: 1,
+      y: 0,
+      duration: span(0.18),
+      ease: 'power2.out',
+      stagger: span(0.06),
+    },
+    at(0.66),
+  )
+
+  /* Last, because it is the conclusion: the same ledger, four
+     readers. It is also the one panel that refers back to parties
+     introduced in the very first scene, so it closes the loop the film
+     opened rather than adding to the middle of it. */
+  reveal(
+    timeline,
+    pick('.advertiser-demo__ledger-step'),
+    { opacity: 0, y: 10 },
+    {
+      opacity: 1,
+      y: 0,
+      duration: span(0.18),
+      ease: 'power2.out',
+      stagger: span(0.06),
+    },
+    at(0.76),
+  )
+}
+
 /* The whole point of this scene. The terminal is already on screen
    and busy by the time the slot arrives, so the slot gets its own
    entrance — dropping in from above with a slight vertical squash,
@@ -597,7 +706,7 @@ function waitBeat(timeline, { pick, at, span }) {
 function adBeat(timeline, { pick, at, span }) {
   reveal(
     timeline,
-    pick('.adslot'),
+    pick('.placement-slot'),
     { opacity: 0, y: -14, scaleY: 0.82 },
     { opacity: 1, y: 0, scaleY: 1, duration: span(0.18), ease: 'power3.out' },
     at(0.22),
@@ -691,7 +800,7 @@ function moneyBeat(timeline, { pick, at, span }) {
 function experienceBeat(timeline, { pick, at, span }) {
   reveal(
     timeline,
-    pick('.adslot'),
+    pick('.placement-slot'),
     { opacity: 0, y: -14, scaleY: 0.82 },
     { opacity: 1, y: 0, scaleY: 1, duration: span(0.18), ease: 'power3.out' },
     at(0.24),
@@ -774,6 +883,19 @@ function ctaBeat(timeline, { pick, at, span }) {
   rise('.closing__mark', 0.5)
   rise('.closing__status', 0.58)
   rise('.closing__ask', 0.64)
+
+  /* The two destinations are last, and they finish the chapter. They
+     arrive after the ask because the ask is what they are the answer
+     to, and finishing on them means the reader arrives at the last
+     frame of the film with the two things they can do already on
+     screen rather than having to notice them.
+
+     A shorter stagger than the mark's children above: this is the last
+     thing to happen, and the chapter has to be able to complete inside
+     its own scroll window. 0.7 plus 0.06 plus 0.24 lands at 1.0 of the
+     chapter, which is the furthest a reveal in this file is allowed to
+     reach. */
+  rise('.closing__action', 0.7)
 
   /* The amber half of the wordmark gets the one effect that belongs
      to a title card: the letters arrive out of noise and settle into

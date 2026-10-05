@@ -129,6 +129,29 @@
     );
 }
 
+/* the advertiser console is the densest room in the film — a terminal,
+   a creative preview, four figures, a campaign table, a delivery feed,
+   a workflow and a ledger, all at once. It sits directly between the
+   cool ad room and the warm money room, so its light is the neutral
+   midpoint between them: the same top light, and a floor that sits
+   closer to the house value than to either neighbour's. That keeps the
+   reader's eye on the data rather than on the lighting, and it makes
+   the money room's warmth read as the scene changing rather than as a
+   difference in how the stage is lit. */
+.scene[data-scene='advertiserDemo']::before {
+  background:
+    radial-gradient(
+      118% 72% at 50% 0%,
+      rgba(255, 255, 255, 0.024),
+      transparent 62%
+    ),
+    radial-gradient(
+      94% 62% at 50% 100%,
+      rgba(255, 31, 45, 0.028),
+      transparent 62%
+    );
+}
+
 /* the last frame: the top light and the floor light resolve into one
    source, centred, so the closing type is lit from behind rather than
    sitting on a floor */
@@ -435,12 +458,12 @@
 /* The shell is what GSAP animates: it carries the entrance transform
    and the pending/printed state. It owns no paint of its own, so the
    sheet inside stays free to move on hover. */
-.adslot {
+.placement-slot {
   position: relative;
   margin: 4px 0;
 }
 
-.adslot__plate {
+.placement-slot__plate {
   position: relative;
   overflow: hidden;
   background: var(--ad-fill);
@@ -459,14 +482,14 @@
 /* Hover and keyboard focus both lift the sheet: the offset shadow is
    the affordance, and it is the same affordance the rest of the
    interface uses, so the slot reads as a control rather than a card. */
-.adslot__plate:hover,
-.adslot:focus-within .adslot__plate {
+.placement-slot__plate:hover,
+.placement-slot:focus-within .placement-slot__plate {
   transform: translateY(-4px);
   box-shadow: 6px 6px 0 0 var(--signal);
   border-bottom-color: var(--border-strong);
 }
 
-.adslot__rail {
+.placement-slot__rail {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -475,7 +498,7 @@
   z-index: 1;
 }
 
-.adslot__label {
+.placement-slot__label {
   font-family: var(--mono);
   font-size: 9.5px;
   font-weight: 500;
@@ -484,7 +507,7 @@
   color: var(--signal-text);
 }
 
-.adslot__publisher {
+.placement-slot__publisher {
   font-family: var(--mono);
   font-size: 9.5px;
   letter-spacing: 0.14em;
@@ -492,14 +515,14 @@
   color: var(--ink-4);
 }
 
-.adslot__dot {
+.placement-slot__dot {
   width: 4px;
   height: 4px;
   border-radius: 50%;
   background: var(--ink-4);
 }
 
-.adslot__mark {
+.placement-slot__mark {
   margin-left: auto;
   font-family: var(--mono);
   font-size: 9px;
@@ -508,7 +531,7 @@
   color: var(--ink-4);
 }
 
-.adslot__disclosure {
+.placement-slot__disclosure {
   font-family: var(--mono);
   font-size: 9px;
   font-weight: 600;
@@ -519,7 +542,7 @@
   padding: 2px 6px;
 }
 
-.adslot__body {
+.placement-slot__body {
   display: flex;
   align-items: center;
   gap: 20px;
@@ -528,7 +551,7 @@
   z-index: 1;
 }
 
-.adslot__logo {
+.placement-slot__logo {
   flex: 0 0 auto;
   width: 44px;
   height: 44px;
@@ -544,7 +567,7 @@
   box-shadow: 4px 4px 0 0 rgba(255, 255, 255, 0.16);
 }
 
-.adslot__brand {
+.placement-slot__brand {
   display: block;
   margin-bottom: 4px;
   font-family: var(--font-display);
@@ -555,12 +578,12 @@
   color: var(--ink);
 }
 
-.adslot__copy {
+.placement-slot__copy {
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.adslot__headline {
+.placement-slot__headline {
   font-family: var(--sans);
   font-size: clamp(15px, 1.7vw, 18px);
   font-weight: 700;
@@ -569,7 +592,7 @@
   color: var(--ad-ink);
 }
 
-.adslot__support {
+.placement-slot__support {
   margin-top: 5px;
   max-width: 58ch;
   font-size: 12.5px;
@@ -577,7 +600,7 @@
   color: var(--ad-dim);
 }
 
-.adslot__meta {
+.placement-slot__meta {
   margin-top: 7px;
   font-family: var(--mono);
   font-size: 9.5px;
@@ -586,7 +609,7 @@
   color: var(--ink-4);
 }
 
-.adslot__cta {
+.placement-slot__cta {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -602,28 +625,28 @@
     background 0.22s var(--ease-ui), color 0.22s var(--ease-ui);
 }
 
-.adslot__cta:hover {
+.placement-slot__cta:hover {
   color: var(--ink);
   border-color: var(--hair-amber);
   background: var(--amber-wash);
 }
 
-.adslot__cta svg {
+.placement-slot__cta svg {
   width: 13px;
   height: 13px;
   transition: transform 0.22s var(--ease-ui);
 }
 
-.adslot__cta:hover svg {
+.placement-slot__cta:hover svg {
   transform: translate(2px, -2px);
 }
 
 /* the opened slot — clipped so the height can animate to zero */
-.adslot__detail {
+.placement-slot__detail {
   overflow: hidden;
 }
 
-.adslot__detail-inner {
+.placement-slot__detail-inner {
   display: grid;
   gap: 10px;
   max-width: 64ch;
@@ -631,14 +654,14 @@
   border-top: 1px solid var(--hair);
 }
 
-.adslot__detail-text {
+.placement-slot__detail-text {
   padding-top: 11px;
   font-size: 13px;
   line-height: 1.62;
   color: var(--ad-dim);
 }
 
-.adslot__detail-region {
+.placement-slot__detail-region {
   font-family: var(--mono);
   font-size: 9.5px;
   letter-spacing: 0.16em;
@@ -647,8 +670,8 @@
 }
 
 /* corner ticks mark the region as a reserved, owned surface */
-.adslot__plate::before,
-.adslot__plate::after {
+.placement-slot__plate::before,
+.placement-slot__plate::after {
   content: '';
   position: absolute;
   z-index: 2;
@@ -659,24 +682,24 @@
   transition: opacity var(--dur-fast) var(--ease-ui);
 }
 
-.adslot__plate::before {
+.placement-slot__plate::before {
   top: 8px;
   left: 5px;
   border-top: 1px solid;
   border-left: 1px solid;
 }
 
-.adslot__plate::after {
+.placement-slot__plate::after {
   right: 5px;
   bottom: 8px;
   border-right: 1px solid;
   border-bottom: 1px solid;
 }
 
-.adslot__plate:hover::before,
-.adslot__plate:hover::after,
-.adslot:focus-within .adslot__plate::before,
-.adslot:focus-within .adslot__plate::after {
+.placement-slot__plate:hover::before,
+.placement-slot__plate:hover::after,
+.placement-slot:focus-within .placement-slot__plate::before,
+.placement-slot:focus-within .placement-slot__plate::after {
   opacity: 1;
 }
 
@@ -1002,6 +1025,88 @@
   max-width: 40ch;
 }
 
+/* The two ways into the product. They are not `.btn` instances: a
+   button is a control, and this is a pair of destinations that each
+   carry a line of explanation with them, so they read as two entries
+   in a list rather than as two things to press. The hover behaviour is
+   deliberately the same amber wash the buttons use, so the closing
+   frame does not introduce a second interaction language at the exact
+   moment the viewer is deciding whether to leave the page. */
+.closing__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  width: 100%;
+  min-width: min(100%, 420px);
+  margin-top: 6px;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+  text-align: left;
+}
+
+.closing__action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--void);
+  color: var(--ink);
+  transition: background var(--dur-fast) var(--ease-ui);
+}
+
+.closing__action:hover {
+  background: var(--amber-wash);
+}
+
+.closing__action:focus-visible {
+  outline: 2px solid var(--signal-text);
+  outline-offset: -2px;
+  background: var(--amber-wash);
+}
+
+.closing__action-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.closing__action-label {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.closing__action-note {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--ink-4);
+}
+
+.closing__action-arrow {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--ink-4);
+  transition: transform var(--dur-fast) var(--ease-ui), color var(--dur-fast) var(--ease-ui);
+}
+
+.closing__action:hover .closing__action-arrow,
+.closing__action:focus-visible .closing__action-arrow {
+  color: var(--ink);
+  transform: translate(2px, -2px);
+}
+
+@media (max-width: 560px) {
+  .closing__actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* -------------------------------------------------------------
    responsive
    ------------------------------------------------------------- */
@@ -1036,7 +1141,7 @@
     font-size: 12px;
   }
 
-  .adslot__body {
+  .placement-slot__body {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
@@ -1199,6 +1304,7 @@
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
+  white-space: nowrap;
   transition:
     color 0.22s var(--ease-ui),
     border-color 0.22s var(--ease-ui),
@@ -1418,14 +1524,14 @@
    a reader and a viewer see the same transcript. Layout never moves,
    which is what keeps the sponsored slot pinned. */
 .workbench .out[data-state='pending'],
-.workbench .adslot[data-state='pending'] {
+.workbench .placement-slot[data-state='pending'] {
   opacity: 0;
   visibility: hidden;
 }
 
 /* The slot breaks out of the output padding so it reads as a reserved
    region of the window rather than a card floating in the text. */
-.workbench .adslot--workbench {
+.workbench .placement-slot--workbench {
   margin: 14px -24px;
 }
 
@@ -1433,14 +1539,14 @@
    sit inside the terminal's output area (rendered as children of the
    Terminal component by ServedAdSlot), so they need the same negative
    horizontal margins to span the full terminal width. */
-[data-scene="ad"] .adslot,
-[data-scene="experience"] .adslot {
+[data-scene="ad"] .placement-slot,
+[data-scene="experience"] .placement-slot {
   margin: 14px -24px;
 }
 
 @media (max-width: 760px) {
-  [data-scene="ad"] .adslot,
-  [data-scene="experience"] .adslot {
+  [data-scene="ad"] .placement-slot,
+  [data-scene="experience"] .placement-slot {
     margin-left: -16px;
     margin-right: -16px;
   }
@@ -1463,7 +1569,7 @@
   color: var(--amber);
 }
 
-.adslot__detail-earn {
+.placement-slot__detail-earn {
   padding-top: 11px;
   font-family: var(--mono);
   font-size: 11px;
@@ -1568,7 +1674,7 @@
   color: var(--ink-4);
 }
 
-.adpreview .adslot {
+.adpreview .placement-slot {
   margin: 0;
 }
 
@@ -2308,7 +2414,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .workbench .adslot--workbench {
+  .workbench .placement-slot--workbench {
     margin-left: -16px;
     margin-right: -16px;
   }
@@ -2436,6 +2542,21 @@
   letter-spacing: 0.08em;
   line-height: 1.75;
   color: var(--ink-4);
+}
+
+/* Native promotional ad in the console — demonstrates the ad system
+   while promoting CLIRevenue itself. It sits between the disclosure
+   and the workbench, so visitors see the ad format before the
+   interactive simulation. */
+.console__promo {
+  margin: clamp(16px, 2.4vh, 24px) 0;
+  max-width: 880px;
+}
+
+@media (max-width: 640px) {
+  .console__promo {
+    margin: clamp(12px, 1.8vh, 18px) 0;
+  }
 }
 
 .conv {
@@ -2847,7 +2968,7 @@
    timing, and .btn--ghost's focus ring from the single definition
    below instead of re-declaring a parallel copy of them. */
 .btn,
-.adslot__cta,
+.placement-slot__cta,
 .switcher__btn {
   text-decoration: none;
   transition:
@@ -2859,7 +2980,7 @@
 }
 
 .btn:hover:not(:disabled),
-.adslot__cta:hover,
+.placement-slot__cta:hover,
 .switcher__btn:hover {
   transform: translate(-2px, -2px);
   box-shadow: 4px 4px 0 0 var(--hair-strong);
@@ -2871,7 +2992,7 @@
 }
 
 .btn:active:not(:disabled),
-.adslot__cta:active {
+.placement-slot__cta:active {
   transform: translate(0, 0);
   box-shadow: none;
 }
@@ -2980,6 +3101,80 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+/* The revenue loop — a horizontal flow showing the four parties.
+   Not a card carousel, a single line that reads like a sentence. */
+.hero__loop {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.hero__loop-step {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.hero__loop-step--center {
+  position: relative;
+}
+
+.hero__loop-step--center::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -24px;
+  width: 48px;
+  height: 1px;
+  background: var(--hair-amber);
+  transform: translateY(-50%);
+}
+
+.hero__loop-icon {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--signal);
+}
+
+.hero__loop-label {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.hero__loop-note {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-4);
+}
+
+.hero__loop-arrow {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--signal);
+  align-self: center;
+}
+
+@media (max-width: 640px) {
+  .hero__loop {
+    gap: 12px;
+  }
+
+  .hero__loop-step {
+    min-width: 100px;
+  }
+
+  .hero__loop-step--center::after {
+    left: -16px;
+    width: 32px;
+  }
 }
 
 .hero__terminal .terminal {
@@ -3446,18 +3641,18 @@ body {
   50% { opacity: 0.55; }
 }
 
-.adslot__plate {
+.placement-slot__plate {
   background:
     linear-gradient(180deg, rgba(255, 255, 255,0.05), transparent 30%),
     var(--ad-fill);
 }
 
-.adslot__cta {
+.placement-slot__cta {
   position: relative;
   overflow: hidden;
 }
 
-.adslot__cta::after {
+.placement-slot__cta::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -3467,7 +3662,7 @@ body {
   pointer-events: none;
 }
 
-.adslot__cta:hover::after {
+.placement-slot__cta:hover::after {
   transform: translateX(120%);
 }
 
@@ -3559,9 +3754,15 @@ body {
     position: static;
     height: min(78vh, 720px);
   }
-  .adslot__cta::after,
+  .placement-slot__cta::after,
   .glass::after {
     display: none;
+  }
+  /* The closing actions keep their amber wash — that is a state, not a
+     transition — but the arrow stops travelling and simply changes
+     colour, so the affordance survives without the movement. */
+  .closing__action-arrow {
+    transform: none !important;
   }}
 
 /* -------------------------------------------------------------
@@ -3776,7 +3977,7 @@ body {
 
    The `--hub` class still carries one thing App.css owns and the
    component cannot: the slow centre-node pulse, which the sheet's
-   reduced-motion block near `.adslot__cta` already mutes.
+   reduced-motion block near `.placement-slot__cta` already mutes.
    ------------------------------------------------------------- */
 
 /* The old "live" status flag above the central node is gone. The
@@ -3862,3 +4063,262 @@ body {
   white-space: nowrap;
 }
 
+
+/* =============================================================
+   §27 — terminal emission & text shimmer
+   -------------------------------------------------------------
+   Two additions to the cinematic layer, both scoped to the film so
+   that nothing here reaches the console, the dashboards or the
+   conversion layer, which import this stylesheet too.
+
+   Neither introduces a colour. The particles draw from `--paper` and
+   `--signal`, which are the same two values the type uses, so the
+   layer cannot drift away from the palette if either token changes.
+   ============================================================= */
+
+/* -------------------------------------------------------------
+   1. the emission layer
+   -------------------------------------------------------------
+   One fixed canvas for the whole film, mounted by TerminalEmission
+   beside the stage.
+
+   `pointer-events: none` is not a nicety here: the canvas covers the
+   entire viewport, so without it every click, drag and text selection
+   on the page would land on a transparent rectangle. It sits above
+   the stage so escaped particles read as being in front of the
+   interface rather than behind it, and below the boot overlay, which
+   is the one thing that must never be occluded. */
+.emission {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  /* The canvas is transparent between frames and only ever has a few
+     dozen lit pixels on it. A canvas that repaints already gets its
+     own backing texture, so there is nothing for `will-change` to buy
+     here — and this element never moves or resizes between frames, so
+     a permanent promotion would hold a full-viewport texture for
+     nothing.
+
+     `contain` is layout/paint/style rather than `strict`: the size
+     half of `strict` would make the element size itself as though it
+     had no contents, which is fine today because the box is pinned
+     by `inset: 0` and explicit 100% dimensions — and is a trap the
+     day anyone gives it intrinsic sizing. The paint half is the
+     useful one: it clips the field at the viewport edge instead of
+     letting the compositor consider off-screen particles.
+  */
+  contain: layout paint style;
+}
+
+/* -------------------------------------------------------------
+   2. the shimmer
+   -------------------------------------------------------------
+   A luminance pass, not a glow. The cycle is long and, crucially,
+   mostly *flat*: from 0% to 62% the text-shadow is identical to its
+   resting value, so for roughly two thirds of every cycle the
+   computed style does not change and the browser has nothing to
+   repaint. The pass itself is a short, narrow, asymmetric peak — up,
+   over, and back down — which is what reads as a highlight moving
+   across a surface rather than as text that is permanently lit.
+
+   The peaks are deliberately small. At the values used here the
+   brightest frame adds a 10–14px white halo at low alpha; anything
+   stronger stops being a shimmer and becomes neon signage, which the
+   palette is explicitly not for. */
+@keyframes clr-shimmer {
+  0%,
+  62% {
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0);
+  }
+  72% {
+    text-shadow: 0 0 9px rgba(255, 255, 255, 0.14);
+  }
+  79% {
+    text-shadow:
+      0 0 14px rgba(255, 255, 255, 0.26),
+      0 0 3px rgba(255, 255, 255, 0.3);
+  }
+  87% {
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.08);
+  }
+  100% {
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0);
+  }
+}
+
+/* The accent words get the same pass in the accent colour, at a
+   lower ceiling: red at white's alpha reads far hotter than white
+   does, because it is already the loudest thing on the page. */
+@keyframes clr-shimmer-signal {
+  0%,
+  62% {
+    text-shadow: 0 0 6px rgba(255, 31, 45, 0);
+  }
+  72% {
+    text-shadow: 0 0 9px rgba(255, 31, 45, 0.16);
+  }
+  79% {
+    text-shadow:
+      0 0 14px rgba(255, 31, 45, 0.3),
+      0 0 3px rgba(255, 31, 45, 0.34);
+  }
+  87% {
+    text-shadow: 0 0 8px rgba(255, 31, 45, 0.1);
+  }
+  100% {
+    text-shadow: 0 0 6px rgba(255, 31, 45, 0);
+  }
+}
+
+/* The hero heading is the one place a text-shadow cannot be used.
+   Its lines are `overflow: hidden` spans, because the film reveals
+   them by clipping — so a shadow painted on the span would be
+   cropped to the line box along with the glyphs and the glow would
+   never be seen. `filter` is applied to the parent *after* its
+   children have been clipped, so the blur escapes the mask.
+
+   The cost of that is one extra layer on the largest text on the
+   page, which is why the cycle is long and the pass is short. */
+@keyframes clr-shimmer-drop {
+  0%,
+  62% {
+    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+  }
+  79% {
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
+  }
+  100% {
+    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+  }
+}
+
+/* Durations are long and deliberately co-prime-ish, so the film does
+   not pulse in unison. Negative delays start each element partway
+   through its own cycle, which spreads the passes across the
+   composition instead of firing them together. */
+.stage .hero__title {
+  animation: clr-shimmer-drop 13s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.stage .hero__body,
+.stage .hero__fact dd,
+.stage .scene__title,
+.stage .scene__body,
+.stage .terminal__title {
+  animation: clr-shimmer 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.stage .hero__body {
+  animation-delay: -4.5s;
+}
+.stage .hero__fact dd {
+  animation-delay: -7s;
+}
+.stage .scene__title {
+  animation-delay: -2.5s;
+}
+.stage .scene__body {
+  animation-delay: -6s;
+}
+.stage .terminal__title {
+  animation-delay: -9s;
+}
+
+/* Section labels and the wordmark. The eyebrow is small mono set at
+   wide tracking, so it takes the pass at the gentlest end of the
+   range — a label that flares is a label shouting. */
+.stage .eyebrow {
+  animation: clr-shimmer 14s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: -5.5s;
+}
+
+.stage .closing__headline,
+.stage .closing__verbs {
+  animation: clr-shimmer 12.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.stage .closing__headline {
+  animation-delay: -3s;
+}
+.stage .closing__verbs {
+  animation-delay: -8s;
+}
+
+/* The one accent display line in the film, and the accent half of
+   the wordmark.
+
+   These need the *full* shorthand rather than an `animation-name`
+   override: the parent's rule does not cascade into them, and an
+   `animation-name` with no duration resolves to a 0s animation,
+   which would silently never run. So the signal pass is declared
+   outright on each. */
+.stage .closing__headline span:last-child {
+  animation: clr-shimmer-signal 12.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: -3s;
+}
+.stage .closing__wordmark em {
+  animation: clr-shimmer-signal 13.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: -10s;
+}
+
+.stage .closing__wordmark,
+.stage .closing__ask,
+.stage .closing__status {
+  animation: clr-shimmer 13.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+/* The wordmark's white half keeps the parent's timing; only the
+   accent `em` inside it runs the signal pass. */
+.stage .closing__wordmark {
+  animation-delay: -1.5s;
+}
+.stage .closing__ask {
+  animation-delay: -6.5s;
+}
+.stage .closing__status {
+  animation-delay: -11s;
+}
+
+/* The specification strip under the hero: mono, tiny, and already the
+   quietest type on the page, so it gets the longest cycle of all. */
+.stage .hero__meta {
+  animation: clr-shimmer 15s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: -7.5s;
+}
+
+/* -------------------------------------------------------------
+   3. reduced motion
+   -------------------------------------------------------------
+   The layer is not mounted at all under reduced motion — the hook
+   returns null — so the canvas needs no rule here. These three
+   declarations cover the shimmer: the animations are removed rather
+   than paused, so the text carries its resting shadow and nothing
+   else. `animation: none` also drops the `filter` on the hero
+   heading, which matters because a `filter` is what promotes that
+   heading to its own compositor layer. */
+@media (prefers-reduced-motion: reduce) {
+  .stage .hero__title,
+  .stage .hero__body,
+  .stage .hero__fact dd,
+  .stage .scene__title,
+  .stage .scene__body,
+  .stage .terminal__title,
+  .stage .eyebrow,
+  .stage .closing__headline,
+  .stage .closing__headline span:last-child,
+  .stage .closing__verbs,
+  .stage .closing__wordmark,
+  .stage .closing__wordmark em,
+  .stage .closing__ask,
+  .stage .closing__status,
+  .stage .hero__meta {
+    animation: none !important;
+    text-shadow: none;
+    filter: none;
+  }
+
+  .emission {
+    display: none;
+  }
+}

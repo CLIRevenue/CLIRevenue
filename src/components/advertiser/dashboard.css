@@ -1,0 +1,375 @@
+/* =============================================================
+   CLIRevenue — dashboard surfaces
+   -------------------------------------------------------------
+   The dashboard shells (developer / advertiser / admin) reuse the
+   shared atoms in advertiser/AdvertiserUI.jsx and console/ui.jsx.
+   `.panel` carries no rule anywhere in the project, which meant
+   every `adv-panel` card rendered as bare padding on the void —
+   no surface, no edge, no separation between cards.
+
+   Everything here is scoped to `.adv-*` and `.panel.adv-*` so the
+   marketing landings (which style their own `sdk-panel` /
+   `advx-panel` surfaces) are unaffected.
+   ============================================================= */
+
+/* --- card surface ------------------------------------------------ */
+
+.panel.adv-panel {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  transition:
+    border-color var(--dur-fast) var(--ease-ui),
+    transform var(--dur-fast) var(--ease-ui);
+}
+
+.panel.adv-panel:hover {
+  border-color: var(--hair-strong);
+}
+
+.panel.adv-panel:focus-within {
+  border-color: var(--hair-amber);
+}
+
+.adv-panel__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* --- status pills ------------------------------------------------
+   `.adv-pill` was a single flat outline, so `active`, `paused`,
+   `draft`, and `archived` were indistinguishable. Tone them off
+   `data-status` so status is readable without parsing the word. */
+
+.adv-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  vertical-align: middle;
+  line-height: 1.5;
+}
+
+.adv-activity__label .adv-pill {
+  margin-left: 8px;
+}
+
+.adv-pill[data-status]::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.adv-pill[data-status='active'] {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 45%, transparent);
+  background: color-mix(in srgb, var(--ok) 8%, transparent);
+}
+
+.adv-pill[data-status='active']::before {
+  animation: clir-blink 2s step-end infinite;
+}
+
+.adv-pill[data-status='paused'] {
+  color: var(--amber-dim);
+  border-color: color-mix(in srgb, var(--amber) 45%, transparent);
+  background: color-mix(in srgb, var(--amber) 8%, transparent);
+}
+
+.adv-pill[data-status='draft'] {
+  color: var(--ink-3);
+}
+
+.adv-pill[data-status='completed'] {
+  color: var(--ink-2);
+  border-color: var(--hair-strong);
+}
+
+.adv-pill[data-status='archived'] {
+  color: var(--ink-4);
+  border-style: dashed;
+}
+
+/* --- stat cards -------------------------------------------------- */
+
+.adv-stats .stat {
+  position: relative;
+  transition: background var(--dur-fast) var(--ease-ui);
+}
+
+.adv-stats .stat:hover {
+  background: var(--panel-2);
+}
+
+.stat__flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.stat__flag::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.stat--live .stat__flag {
+  color: var(--ok);
+}
+
+.stat--live .stat__flag::before {
+  animation: clir-blink 2s step-end infinite;
+}
+
+.stat--settling .stat__flag {
+  color: var(--amber-dim);
+}
+
+.stat--locked .stat__flag {
+  color: var(--ink-4);
+}
+
+.stat--zero .stat__value {
+  color: var(--ink-3);
+}
+
+/* --- loading state ----------------------------------------------- */
+
+.panel.adv-loading {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+}
+
+.adv-loading__label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.adv-loading__dot {
+  width: 6px;
+  height: 6px;
+  background: var(--signal);
+  animation: clir-blink 1.6s step-end infinite;
+}
+
+.adv-loading__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+}
+
+.adv-loading__cell {
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  background: var(--panel);
+}
+
+.adv-loading__bar {
+  display: block;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  animation: clir-pulse 1.8s ease-in-out infinite;
+}
+
+.adv-loading__bar--label {
+  width: 42%;
+  height: 6px;
+}
+
+.adv-loading__bar--value {
+  width: 68%;
+  height: 20px;
+}
+
+@keyframes clir-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* --- empty state ------------------------------------------------- */
+
+.panel.adv-empty {
+  display: grid;
+  gap: 0;
+  align-content: center;
+  justify-items: start;
+  min-height: 180px;
+  background:
+    linear-gradient(var(--hair), var(--hair)) no-repeat 0 0 / 100% 1px,
+    var(--panel);
+  border: 1px solid var(--hair);
+}
+
+.adv-empty__mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 14px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.adv-empty__mark::before {
+  content: '';
+  width: 18px;
+  height: 1px;
+  background: var(--hair-strong);
+}
+
+/* --- error notice ------------------------------------------------ */
+
+.adv-notice.adv-notice--error {
+  position: relative;
+  padding-left: 32px;
+  background: rgba(255, 31, 45, 0.04);
+}
+
+.adv-notice.adv-notice--error::before {
+  content: '!';
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--signal-text);
+  font-family: var(--mono);
+  font-size: 9px;
+  line-height: 1;
+  color: var(--signal-text);
+}
+
+.adv-notice.adv-notice--error span:first-child {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* --- activity rows ----------------------------------------------- */
+
+.adv-activity .adv-activity__row {
+  position: relative;
+  padding-left: 14px;
+  transition:
+    background var(--dur-fast) var(--ease-ui),
+    padding-left var(--dur-fast) var(--ease-ui);
+}
+
+.adv-activity .adv-activity__row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  background: var(--hair-strong);
+  transition: background var(--dur-fast) var(--ease-ui);
+}
+
+.adv-activity .adv-activity__row:hover {
+  background: rgba(255, 255, 255, 0.022);
+}
+
+.adv-activity .adv-activity__row:hover::before {
+  background: var(--amber);
+}
+
+.adv-activity__detail {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+/* --- bar chart micro-interaction --------------------------------- */
+
+.adv-chart .adv-chart__row {
+  transition: opacity var(--dur-fast) var(--ease-ui);
+}
+
+.adv-chart .adv-chart__row:hover .adv-chart__name,
+.adv-chart .adv-chart__row:hover .adv-chart__value {
+  color: var(--ink);
+}
+
+.adv-chart .adv-chart__fill {
+  transition: background var(--dur-fast) var(--ease-ui);
+}
+
+.adv-chart .adv-chart__row:hover .adv-chart__fill {
+  background: var(--amber);
+}
+
+/* --- tab rail ---------------------------------------------------
+   Deliberately empty. `advertiser.css` already gives `.adv-nav` a
+   glass sticky rail with an inverted amber active plate, which is a
+   stronger affordance than an underline — overriding it here would
+   be a downgrade. */
+
+/* --- responsive -------------------------------------------------- */
+
+@media (max-width: 640px) {
+  .panel.adv-panel {
+    padding: 18px;
+  }
+
+  .adv-empty {
+    min-height: 150px;
+  }
+
+  .adv-activity .adv-activity__row {
+    padding-left: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .adv-loading__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- reduced motion ---------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .panel.adv-panel,
+  .adv-stats .stat,
+  .adv-activity .adv-activity__row,
+  .adv-activity .adv-activity__row::before,
+  .adv-chart .adv-chart__row,
+  .adv-chart .adv-chart__fill,
+  .stat--live .stat__flag::before {
+    transition: none;
+    animation: none;
+  }
+}

@@ -1,5 +1,6 @@
 import { useAuth, authNavState } from './auth/authState.js'
 import { navigateApp } from '../hooks/useAppRoute.js'
+import { ArrowUpRight } from 'lucide-react'
 
 /**
  * Site-wide public header. Auth controls live top-right and stay fixed
@@ -36,16 +37,13 @@ export default function PublicHeader() {
 
   return (
     <header className="sitehead glass" aria-label="Site">
-      <button type="button" className="sitehead__brand" onClick={() => navigateApp('/')}>
+      <button type="button" className="sitehead__brand" onClick={() => navigateApp('/')} aria-label="CLIRevenue home">
+        <span className="sitehead__mark" aria-hidden="true">▸</span>
         CLI<em>Revenue</em>
       </button>
       <nav className="sitehead__nav" aria-label="Account">
-        <a className="btn btn--ghost btn--sm" href="/developer">
-          Developer
-        </a>
-        <a className="btn btn--ghost btn--sm" href="/advertiser">
-          Advertiser
-        </a>
+        <a className="btn btn--ghost btn--sm" href="/developer">Developer</a>
+        <a className="btn btn--ghost btn--sm" href="/advertiser">Advertiser</a>
         {nav.showDashboard ? (
           <>
             <button
@@ -53,7 +51,8 @@ export default function PublicHeader() {
               className="btn btn--ghost btn--sm"
               onClick={() => navigateApp(nav.dashboardHref)}
             >
-              Open dashboard
+              <ArrowUpRight className="sitehead__icon" aria-hidden="true" />
+              Dashboard
             </button>
             <button
               type="button"

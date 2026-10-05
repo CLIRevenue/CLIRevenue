@@ -19,8 +19,10 @@ import { MotionConfig } from 'motion/react'
 
 import useCinema from '../hooks/useCinema.js'
 import Intro from './Intro.jsx'
+import TerminalEmission from './TerminalEmission.jsx'
 import Cta from './scenes/Cta.jsx'
 import TheAd from './scenes/TheAd.jsx'
+import AdvertiserDemo from './scenes/AdvertiserDemo.jsx'
 import TheExperience from './scenes/TheExperience.jsx'
 import TheIncentive from './scenes/TheIncentive.jsx'
 import TheMoney from './scenes/TheMoney.jsx'
@@ -52,11 +54,21 @@ function Cinema() {
       <main className="stage" ref={stageRef}>
         <TheWait />
         <TheAd />
+        <AdvertiserDemo />
         <TheMoney />
         <TheExperience />
         <TheIncentive />
         <Cta />
       </main>
+
+      {/* The particle layer sits beside the stage, not inside it, for
+          the two reasons the component documents: the stage carries a
+          scroll-driven transform, which would capture a fixed child,
+          and the master timeline's gsap.context is scoped to the
+          stage, so nothing out here is measured, animated or
+          reverted by chapter planning. It finds the terminals from the
+          DOM, which is why no scene above had to change. */}
+      <TerminalEmission />
     </MotionConfig>
   )
 }

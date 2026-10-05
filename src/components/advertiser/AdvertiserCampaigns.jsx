@@ -182,9 +182,9 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
           </div>
           {loading ? <AdvLoading label="Loading campaigns…" /> : filtered.length === 0 ? (
             campaigns.length === 0 ? (
-              <AdvEmpty title="No campaigns yet" body="Start your first brief in the New campaign form." />
+              <AdvEmpty mark="No campaigns" title="No campaigns yet" body="Start your first brief in the New campaign form." />
             ) : (
-              <AdvEmpty title="No campaigns match" body="Adjust search or filters, or create a new brief." />
+              <AdvEmpty mark="No matches" title="No campaigns match" body="Adjust search or filters, or create a new brief." />
             )
           ) : (
             <div className="adv-tablewrap">
@@ -206,7 +206,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                         <div className="adv-cell__name">{c.name}</div>
                         <div className="adv-cell__sub">{c.audienceLabel} · {formatCents(c.budgetCents)} budget</div>
                       </td>
-                      <td data-label="Status"><span className="adv-pill">{c.status}</span></td>
+                      <td data-label="Status"><span className="adv-pill" data-status={c.status}>{c.status}</span></td>
                       <td className="mono" data-label="Spend">{formatCents(c.spendCents)}</td>
                       <td className="mono" data-label="Impr.">{c.impressions.toLocaleString('en-US')}</td>
                       <td className="mono" data-label="CTR">{ctrPct(c.clicks, c.impressions).toFixed(2)}%</td>

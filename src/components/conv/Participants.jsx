@@ -40,7 +40,7 @@ function Participants() {
     >
       <SectionHead
         level="h2"
-        index="11"
+        index="12"
         label="The three participants"
         title="Three parties, one marketplace."
         body="What each side is here to do, in one sentence each."

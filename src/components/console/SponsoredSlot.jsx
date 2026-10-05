@@ -133,7 +133,7 @@ export default function SponsoredSlot({
   }
 
   const ctaProps = {
-    className: 'adslot__cta',
+    className: 'placement-slot__cta',
     onClick: handleToggle,
     'aria-expanded': open,
     'aria-controls': open ? panelId : undefined,
@@ -141,7 +141,7 @@ export default function SponsoredSlot({
     transition: detail,
   }
 
-  const slotClass = surface === 'workbench' ? 'adslot adslot--workbench' : 'adslot'
+  const slotClass = surface === 'workbench' ? 'placement-slot placement-slot--workbench' : 'placement-slot'
 
   return (
     <aside
@@ -156,27 +156,27 @@ export default function SponsoredSlot({
         advertisement, not output produced by the agent.
       </p>
 
-      <div className="adslot__plate">
+      <div className="placement-slot__plate">
 
-        <div className="adslot__rail">
-          <span className="adslot__label">{fields.railLabel}</span>
-          <span className="adslot__dot" aria-hidden="true" />
-          <span className="adslot__publisher">{fields.publisher}</span>
-          <span className="adslot__mark">Ad</span>
-          <span className="adslot__disclosure">{fields.disclosure}</span>
+        <div className="placement-slot__rail">
+          <span className="placement-slot__label">{fields.railLabel}</span>
+          <span className="placement-slot__dot" aria-hidden="true" />
+          <span className="placement-slot__publisher">{fields.publisher}</span>
+          <span className="placement-slot__mark">Ad</span>
+          <span className="placement-slot__disclosure">{fields.disclosure}</span>
         </div>
 
-        <div className="adslot__body">
+        <div className="placement-slot__body">
           {fields.showLogo ? (
-            <span className="adslot__logo" aria-hidden="true">
+            <span className="placement-slot__logo" aria-hidden="true">
               {fields.mark}
             </span>
           ) : null}
-          <div className="adslot__copy">
-            {fields.brand ? <span className="adslot__brand">{fields.brand}</span> : null}
-            <p className="adslot__headline">{fields.headline}</p>
-            {fields.support ? <p className="adslot__support">{fields.support}</p> : null}
-            <p className="adslot__meta">{fields.meta}</p>
+          <div className="placement-slot__copy">
+            {fields.brand ? <span className="placement-slot__brand">{fields.brand}</span> : null}
+            <p className="placement-slot__headline">{fields.headline}</p>
+            {fields.support ? <p className="placement-slot__support">{fields.support}</p> : null}
+            <p className="placement-slot__meta">{fields.meta}</p>
           </div>
           {fields.showCta ? (
             delivered && ctaHref ? (
@@ -203,36 +203,36 @@ export default function SponsoredSlot({
               id={panelId}
               role="region"
               aria-label={`Sponsored — ${fields.name}`}
-              className="adslot__detail"
+              className="placement-slot__detail"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={detail}
             >
-              <div className="adslot__detail-inner">
-                <p className="adslot__detail-text">
+              <div className="placement-slot__detail-inner">
+                <p className="placement-slot__detail-text">
                   {fields.description || fields.support}
                 </p>
                 {delivered ? (
                   <>
-                    <p className="adslot__detail-earn">
+                    <p className="placement-slot__detail-earn">
                       served by CLIRevenue · impression recorded at 50% viewability for one second
                     </p>
-                    <p className="adslot__detail-region">
+                    <p className="placement-slot__detail-region">
                       ui region · not stdout · {placementKey || 'placement'}
                     </p>
                   </>
                 ) : null}
                 {preview ? (
                   <>
-                    <p className="adslot__detail-earn">
+                    <p className="placement-slot__detail-earn">
                       {connected
                         ? `Interaction recorded · ${formatMoney(
                             REWARD_PER_INTERACTION_CENTS,
                           )} pending · demo`
                         : 'Interaction recorded for the advertiser · connect CLIRevenue to earn'}
                     </p>
-                    <p className="adslot__detail-region">
+                    <p className="placement-slot__detail-region">
                       ui region · not stdout · demo placement
                     </p>
                   </>

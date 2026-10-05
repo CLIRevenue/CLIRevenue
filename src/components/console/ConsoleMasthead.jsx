@@ -19,7 +19,7 @@ function ConsoleMasthead() {
   return (
     <div className="block masthead">
       <div className="masthead__lede">
-        <p className="eyebrow eyebrow--plain">07 — Product simulation</p>
+        <p className="eyebrow eyebrow--plain">08 — Product simulation</p>
         <h2 className="masthead__title" id="console-title">
           One loop.
           <br />

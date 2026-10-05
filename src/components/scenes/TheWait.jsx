@@ -1,6 +1,7 @@
 import Scene from '../Scene.jsx'
 import Terminal from '../Terminal.jsx'
 import AgentStream from '../AgentStream.jsx'
+import { PromoAd } from '../PromoAd.jsx'
 import { useSceneProgress } from '../../hooks/useSceneProgress.js'
 import { useTerminal } from '../../hooks/useTerminal.js'
 import { hostApp, waitScene } from '../../data/demo.js'
@@ -39,17 +40,44 @@ function TheWait() {
         <header className="hero__lead">
           <span className="eyebrow">01 — the wait</span>
           <h2 className="hero__title" id="wait-title">
-            <span>The slot above</span>
-            <span>the command line.</span>
+            <span>Turn terminal attention</span>
+            <span>into shared revenue.</span>
           </h2>
         </header>
 
         <div className="hero__grid">
           <div className="hero__copy">
             <p className="hero__body">
-              Output is sacred. The ad sits between transcript and prompt —
-              never in stdout — and shares what it earns.
+              Developers have CLI attention. Advertisers want developer attention.
+              CLIRevenue connects the two — a reserved slot above the command line,
+              delivered by the SDK, measured by the network, split four ways.
             </p>
+
+            <div className="hero__loop" aria-label="The revenue loop">
+              <div className="hero__loop-step">
+                <span className="hero__loop-icon" aria-hidden="true">▸</span>
+                <span className="hero__loop-label">Advertiser</span>
+                <span className="hero__loop-note">Funds the campaign</span>
+              </div>
+              <span className="hero__loop-arrow" aria-hidden="true">→</span>
+              <div className="hero__loop-step hero__loop-step--center">
+                <span className="hero__loop-icon" aria-hidden="true">▸</span>
+                <span className="hero__loop-label">CLIRevenue</span>
+                <span className="hero__loop-note">Operates the network</span>
+              </div>
+              <span className="hero__loop-arrow" aria-hidden="true">→</span>
+              <div className="hero__loop-step">
+                <span className="hero__loop-icon" aria-hidden="true">▸</span>
+                <span className="hero__loop-label">Developer</span>
+                <span className="hero__loop-note">Integrates the slot</span>
+              </div>
+              <span className="hero__loop-arrow" aria-hidden="true">→</span>
+              <div className="hero__loop-step">
+                <span className="hero__loop-icon" aria-hidden="true">▸</span>
+                <span className="hero__loop-label">User</span>
+                <span className="hero__loop-note">Sees the ad</span>
+              </div>
+            </div>
 
             <dl className="hero__facts">
               <div className="hero__fact">
@@ -67,13 +95,15 @@ function TheWait() {
             </dl>
 
             <div className="hero__cta">
-              <a className="btn btn--primary" href="#ad">
-                Read the concept
+              <a className="btn btn--primary" href="#advertiserDemo">
+                See the advertiser console
               </a>
               <a className="btn" href="#money">
-                See the split
+                See the revenue split
               </a>
             </div>
+
+            <PromoAd index={0} />
           </div>
 
           <div className="hero__terminal">
@@ -82,7 +112,7 @@ function TheWait() {
               live
               outHeight="tall"
               frame={frame}
-              foot="stdout · silent while the agent works"
+              foot="stdout · clean · ad slot reserved"
               hint="waiting"
             >
               <AgentStream />

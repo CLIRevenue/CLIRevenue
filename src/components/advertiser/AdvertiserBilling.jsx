@@ -35,9 +35,26 @@ export default function AdvertiserBilling({ campaigns, loading, error, onRetry }
         <>
           <AdvStats
             items={[
-              { label: 'Current spend', value: formatCents(derived.spend), hint: 'across all campaigns' },
-              { label: 'Committed budget', value: formatCents(derived.budget), hint: 'across all campaigns' },
-              { label: 'Remaining budget', value: formatCents(derived.remaining) },
+              {
+                label: 'Current spend',
+                value: formatCents(derived.spend),
+                hint: derived.spend > 0 ? 'across all campaigns' : 'nothing spent yet',
+                flag: derived.spend > 0 ? 'live' : 'idle',
+                tone: derived.spend > 0 ? 'live' : 'zero',
+              },
+              {
+                label: 'Committed budget',
+                value: formatCents(derived.budget),
+                hint: 'across all campaigns',
+                tone: 'plain',
+              },
+              {
+                label: 'Remaining budget',
+                value: formatCents(derived.remaining),
+                hint: derived.remaining > 0 ? 'still unspent' : 'fully committed',
+                flag: derived.remaining > 0 ? 'open' : 'exhausted',
+                tone: derived.remaining > 0 ? 'settling' : 'zero',
+              },
             ]}
           />
           <div className="adv-grid adv-grid--2">
@@ -45,7 +62,7 @@ export default function AdvertiserBilling({ campaigns, loading, error, onRetry }
               <h4 className="adv-panel__title">Transaction history</h4>
               <p className="adv-panel__sub">Spend recorded as campaigns deliver.</p>
               {derived.rows.length === 0 ? (
-                <AdvEmpty title="No spend yet" body="Transactions appear once campaigns record delivery." />
+                <AdvEmpty mark="No transactions" title="No spend yet" body="Transactions appear once campaigns record delivery." />
               ) : (
                 <ul className="adv-activity">
                   {derived.rows.map((r) => (
@@ -69,7 +86,7 @@ export default function AdvertiserBilling({ campaigns, loading, error, onRetry }
               <Panel className="adv-panel">
                 <h4 className="adv-panel__title">Invoices</h4>
                 <p className="adv-panel__sub">Invoices aren't connected yet.</p>
-                <AdvEmpty title="No invoices" body="Invoices will appear here once available." />
+                <AdvEmpty mark="Not issued" title="No invoices" body="Invoices will appear here once available." />
               </Panel>
             </div>
           </div>

@@ -30,12 +30,13 @@ export function DemoTag({ children = 'Demo data' }) {
   )
 }
 
-export function Stat({ label, value, hint, tone = 'plain' }) {
+export function Stat({ label, value, hint, flag, tone = 'plain' }) {
   return (
     <div className={`stat stat--${tone}`}>
       <span className="stat__label">{label}</span>
       <span className="stat__value">{value}</span>
       {hint ? <span className="stat__hint">{hint}</span> : null}
+      {flag ? <span className="stat__flag">{flag}</span> : null}
     </div>
   )
 }

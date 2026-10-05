@@ -54,7 +54,7 @@ function Questions() {
     >
       <SectionHead
         level="h2"
-        index="12"
+        index="13"
         label="Questions"
         title="The seven we get asked first."
         body="Answered as they stand today. Where something is simulated, this page says so."

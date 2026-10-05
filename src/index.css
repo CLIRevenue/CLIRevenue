@@ -519,7 +519,7 @@ html.intro-lock body {
    dashed border — the one styling a high-contrast user still reads as
    "this region is not part of the output". */
 @media (forced-colors: active) {
-  .adslot {
+  .placement-slot {
     border: 1px dashed CanvasText;
   }
 }

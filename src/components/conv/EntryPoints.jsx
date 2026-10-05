@@ -153,7 +153,7 @@ function EntryPoints() {
           <div className="conv__entry__lead">
             <SectionHead
               level="h2"
-              index="08"
+              index="09"
               label="For developers"
               title="Turn the attention you already give to AI coding tools into a share of the advertising revenue."
               body="A sponsored slot sits beside the output of the tool you are already reading. Interact with it and a reward accrues. Early access starts on the waitlist below."
@@ -247,7 +247,7 @@ function EntryPoints() {
           <div className="conv__entry__lead">
             <SectionHead
               level="h2"
-              index="09"
+              index="10"
               label="For advertisers"
               title="Reach developers directly inside the tools where they already build."
               body="One placement, in the moment a developer is already reading output from an AI coding tool. This form collects what would be needed to scope inventory, format and budget with you. Nothing is purchased here."

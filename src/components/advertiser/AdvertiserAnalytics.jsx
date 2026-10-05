@@ -63,17 +63,54 @@ export default function AdvertiserAnalytics({ campaigns, loading, error, onRetry
       />
       <AdvError message={error} onRetry={onRetry} />
       {loading ? <AdvLoading /> : campaigns.length === 0 ? (
-        <AdvEmpty title="No analytics yet" body="Analytics appear once campaigns exist and record delivery." actionLabel="Go to campaigns" to="/app/advertiser/campaigns" />
+        <AdvEmpty
+          mark="No delivery"
+          title="No analytics yet"
+          body="Analytics appear once campaigns exist and record delivery."
+          actionLabel="Go to campaigns"
+          to="/app/advertiser/campaigns"
+        />
       ) : (
         <>
           <AdvStats
             items={[
-              { label: 'Impressions', value: totals.impressions.toLocaleString('en-US') },
-              { label: 'Clicks', value: totals.clicks.toLocaleString('en-US') },
-              { label: 'CTR', value: `${totals.ctr.toFixed(2)}%` },
-              { label: 'Conversion rate', value: `${totals.cvr.toFixed(2)}%`, hint: 'conversions / clicks' },
-              { label: 'Conversions', value: totals.conversions.toLocaleString('en-US') },
-              { label: 'Spend', value: formatCents(totals.spend) },
+              {
+                label: 'Impressions',
+                value: totals.impressions.toLocaleString('en-US'),
+                hint: 'sponsored slots served',
+                tone: totals.impressions > 0 ? 'live' : 'zero',
+              },
+              {
+                label: 'Clicks',
+                value: totals.clicks.toLocaleString('en-US'),
+                hint: `CTR ${totals.ctr.toFixed(2)}%`,
+                tone: totals.clicks > 0 ? 'live' : 'zero',
+              },
+              {
+                label: 'CTR',
+                value: `${totals.ctr.toFixed(2)}%`,
+                hint: 'clicks / impressions',
+                tone: totals.impressions > 0 ? 'plain' : 'zero',
+              },
+              {
+                label: 'Conversion rate',
+                value: `${totals.cvr.toFixed(2)}%`,
+                hint: 'conversions / clicks',
+                tone: totals.clicks > 0 ? 'plain' : 'zero',
+              },
+              {
+                label: 'Conversions',
+                value: totals.conversions.toLocaleString('en-US'),
+                hint: 'reported actions',
+                tone: totals.conversions > 0 ? 'plain' : 'zero',
+              },
+              {
+                label: 'Spend',
+                value: formatCents(totals.spend),
+                hint: totals.spend > 0 ? 'recorded to date' : 'nothing spent yet',
+                flag: totals.spend > 0 ? 'live' : 'idle',
+                tone: totals.spend > 0 ? 'live' : 'zero',
+              },
             ]}
           />
           <div className="adv-grid adv-grid--2">

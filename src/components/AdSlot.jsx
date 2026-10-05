@@ -15,7 +15,7 @@
    behaviour the rest of the prototype describes.
 
    Motion owns this and GSAP owns the entrance: the reveal tween in
-   the cinema hook animates `.adslot`, never the control inside it, so
+   the cinema hook animates `.placement-slot`, never the control inside it, so
    the two never fight over the same transform.
 
    Opening the slot makes the stage about 117px taller, and the film
@@ -53,7 +53,7 @@ function AdSlot() {
 
   return (
     <aside
-      className="adslot"
+      className="placement-slot"
       aria-label="Sponsored advertisement"
       data-visual={open ? 'opened' : 'visible'}
     >
@@ -66,30 +66,30 @@ function AdSlot() {
           sheet owns hover, focus and paint. Splitting them is what
           keeps a scrubbed inline transform from permanently pinning the
           hover lift out of reach. */}
-      <div className="adslot__plate">
-        <div className="adslot__rail">
-          <span className="adslot__label">{adSlot.label}</span>
-          <span className="adslot__dot" />
-          <span className="adslot__publisher">{adSlot.advertiser}</span>
-          <span className="adslot__mark">Ad</span>
-          <span className="adslot__disclosure">{adSlot.disclosure}</span>
+      <div className="placement-slot__plate">
+        <div className="placement-slot__rail">
+          <span className="placement-slot__label">{adSlot.label}</span>
+          <span className="placement-slot__dot" />
+          <span className="placement-slot__publisher">{adSlot.advertiser}</span>
+          <span className="placement-slot__mark">Ad</span>
+          <span className="placement-slot__disclosure">{adSlot.disclosure}</span>
         </div>
 
-        <div className="adslot__body">
-          <span className="adslot__logo" aria-hidden="true">
+        <div className="placement-slot__body">
+          <span className="placement-slot__logo" aria-hidden="true">
             {adSlot.brand.slice(0, 1)}
           </span>
-          <div className="adslot__copy">
-            <span className="adslot__brand">{adSlot.brand}</span>
-            <p className="adslot__headline">{adSlot.headline}</p>
-            <p className="adslot__support">{adSlot.support}</p>
-            <p className="adslot__meta">
+          <div className="placement-slot__copy">
+            <span className="placement-slot__brand">{adSlot.brand}</span>
+            <p className="placement-slot__headline">{adSlot.headline}</p>
+            <p className="placement-slot__support">{adSlot.support}</p>
+            <p className="placement-slot__meta">
               {adSlot.category} · {adSlot.region} · {adSlot.disclosure}
             </p>
           </div>
           <motion.button
             type="button"
-            className="adslot__cta"
+            className="placement-slot__cta"
             onClick={() => setOpen((was) => !was)}
             aria-expanded={open}
             aria-controls={open ? panelId : undefined}
@@ -119,15 +119,15 @@ function AdSlot() {
             id={panelId}
             role="region"
             aria-label={`${adSlot.label} — ${adSlot.advertiser}`}
-            className="adslot__detail"
+            className="placement-slot__detail"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={detail}
           >
-            <div className="adslot__detail-inner">
-              <p className="adslot__detail-text">{adSlot.detail}</p>
-              <p className="adslot__detail-region">{adSlot.region}</p>
+            <div className="placement-slot__detail-inner">
+              <p className="placement-slot__detail-text">{adSlot.detail}</p>
+              <p className="placement-slot__detail-region">{adSlot.region}</p>
             </div>
           </motion.div>
         )}

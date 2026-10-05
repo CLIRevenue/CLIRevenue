@@ -31,6 +31,7 @@
 export const SCENES = [
   'wait',
   'ad',
+  'advertiserDemo',
   'money',
   'experience',
   'incentive',
