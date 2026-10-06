@@ -16,14 +16,26 @@
    ============================================================= */
 
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 
 const app = readFileSync(`${ROOT}src/App.css`, 'utf8')
 const demo = readFileSync(`${ROOT}src/components/scenes/AdvertiserDemo.css`, 'utf8')
 const promo = readFileSync(`${ROOT}src/components/PromoAd.css`, 'utf8')
+
+/** Every file under `dir` whose name matches `pattern`, recursively. */
+function listFiles(dir, pattern) {
+  const out = []
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry)
+    if (statSync(full).isDirectory()) out.push(...listFiles(full, pattern))
+    else if (pattern.test(entry)) out.push(full)
+  }
+  return out
+}
 
 /* The block of media queries at or below `width`, so an assertion can
    ask "does this surface collapse by 480px?" without matching an
@@ -122,5 +134,47 @@ describe('the film keeps its gutter', () => {
      narrowest phones. */
   it('sizes scene padding from the gutter token', () => {
     expect(app).toMatch(/^\.scene \{[\s\S]*?padding: 112px var\(--gutter\);/m)
+  })
+})
+
+/* =============================================================
+   Custom property integrity
+   -------------------------------------------------------------
+   `var(--x)` with no `--x` defined anywhere is not a build error and
+   not a runtime exception. It computes to nothing, so the declaration
+   that used it is simply dropped -- which is how a hover state can
+   silently lose its background and leave, say, black button text on
+   whatever happens to be behind it.
+
+   This caught `--adm-amber-bright`, used by the contact inbox save
+   button on hover and defined nowhere. It is a narrow check on
+   purpose: it only asks that a property a stylesheet names is
+   defined somewhere in src/, not that the values look right.
+   ============================================================= */
+
+describe('custom property integrity', () => {
+  const cssFiles = listFiles(join(ROOT, 'src'), /\.css$/)
+
+  it('finds the stylesheets to check', () => {
+    expect(cssFiles.length).toBeGreaterThan(8)
+  })
+
+  it('defines every custom property a stylesheet uses', () => {
+    const sources = cssFiles.map((file) => readFileSync(file, 'utf8'))
+    const defined = new Set()
+    for (const source of sources) {
+      for (const m of source.matchAll(/(--[a-z0-9-]+)\s*:/gi)) defined.add(m[1])
+    }
+
+    const missing = []
+    for (const [index, source] of sources.entries()) {
+      for (const m of source.matchAll(/var\(\s*(--[a-z0-9-]+)/gi)) {
+        if (!defined.has(m[1])) {
+          missing.push(`${m[1]} used in ${cssFiles[index].replace(ROOT, '')}`)
+        }
+      }
+    }
+
+    expect(missing, missing.join('\n')).toEqual([])
   })
 })

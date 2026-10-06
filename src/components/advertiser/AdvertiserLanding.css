@@ -180,6 +180,7 @@
   border: 1px solid var(--hair);
   border-left: var(--border-w-2) solid var(--signal);
   background: var(--panel);
+  border-radius: var(--radius-md);
 }
 
 .advx-code__bar {
@@ -306,6 +307,7 @@
   padding: 24px;
   border: 1px solid var(--hair);
   background: var(--panel);
+  border-radius: var(--radius-md);
 }
 
 .advx-panel__title {
@@ -360,6 +362,7 @@
   gap: 1px;
   background: var(--hair);
   border: 1px solid var(--hair);
+  border-radius: var(--radius-md);
 }
 
 .advx-ladder__cell {
@@ -408,6 +411,7 @@
   padding: 12px 16px;
   border: 1px solid var(--hair);
   background: var(--panel);
+  border-radius: var(--radius-md);
 }
 
 .advx-statusline__item {
@@ -465,6 +469,7 @@
   gap: 1px;
   background: var(--hair);
   border: 1px solid var(--hair);
+  border-radius: var(--radius-md);
 }
 
 .advx-audiences__cell {
@@ -698,6 +703,7 @@
   border: 1px solid var(--hair);
   border-left: var(--border-w-2) solid var(--signal);
   background: var(--panel);
+  border-radius: var(--radius-md);
 }
 
 .advx-cta__title {

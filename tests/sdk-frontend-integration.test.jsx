@@ -194,7 +194,18 @@ describe('delivery through the real SDK', () => {
     vi.resetModules()
     vi.stubGlobal('fetch', vi.fn())
     vi.stubGlobal('sessionStorage', memoryStorage())
-    sdk = await import('@clirevenue/sdk')
+    const real = await import('@clirevenue/sdk')
+    // This suite is about the ad pipeline. Telemetry is a separate lifecycle on
+    // its own endpoint with its own retry and queue, so it is switched off here
+    // rather than letting it share a call counter with delivery and make every
+    // assertion about "how many calls did this page make" ambiguous. The
+    // telemetry behaviour itself is asserted in packages/sdk/tests.
+    sdk = new Proxy(real, {
+      get: (target, prop) =>
+        prop === 'init'
+          ? (key, options) => target.init(key, { ...(options ?? {}), telemetry: false })
+          : target[prop],
+    })
   })
 
   afterEach(() => {
@@ -217,11 +228,15 @@ describe('delivery through the real SDK', () => {
     expect(init.headers[sdk.SDK_VERSION_HEADER]).toBe(sdk.SDK_VERSION)
 
     const body = JSON.parse(init.body)
+    // sessionId is the in-memory page-load id the server uses to file this
+    // delivery's lifecycle events under the page's session. It is minted per
+    // page load, never persisted, and never sent to another origin.
     expect(Object.keys(body).sort()).toEqual([
       'placementKey',
       'publisherKey',
       'referrer',
       'requestId',
+      'sessionId',
       'url',
     ])
     expect(body.publisherKey).toBe(KEY)
@@ -424,7 +439,7 @@ describe('sponsored slot renders every delivery state', () => {
   it('keeps its frame while loading, with no dead control', () => {
     const html = render({ state: 'loading' })
     expect(html).toContain('data-ad-state="loading"')
-    expect(html).toContain('adslot')
+    expect(html).toContain('placement-slot')
     expect(html).not.toContain('<button')
   })
 
@@ -474,23 +489,23 @@ describe('sponsored slot renders every delivery state', () => {
   it('keeps the established class contract for the stylesheet', () => {
     const html = render({ state: 'ready', served: SERVED, ctaHref: SERVED.ad.landingUrl })
     for (const className of [
-      'adslot',
-      'adslot--workbench',
-      'adslot__plate',
-      'adslot__rail',
-      'adslot__label',
-      'adslot__dot',
-      'adslot__publisher',
-      'adslot__mark',
-      'adslot__disclosure',
-      'adslot__body',
-      'adslot__logo',
-      'adslot__copy',
-      'adslot__brand',
-      'adslot__headline',
-      'adslot__support',
-      'adslot__meta',
-      'adslot__cta',
+      'placement-slot',
+      'placement-slot--workbench',
+      'placement-slot__plate',
+      'placement-slot__rail',
+      'placement-slot__label',
+      'placement-slot__dot',
+      'placement-slot__publisher',
+      'placement-slot__mark',
+      'placement-slot__disclosure',
+      'placement-slot__body',
+      'placement-slot__logo',
+      'placement-slot__copy',
+      'placement-slot__brand',
+      'placement-slot__headline',
+      'placement-slot__support',
+      'placement-slot__meta',
+      'placement-slot__cta',
     ]) {
       expect(html).toContain(className)
     }

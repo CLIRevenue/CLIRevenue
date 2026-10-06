@@ -10,7 +10,7 @@
  */
 import { describe, it, expect, afterAll, beforeEach } from 'vitest'
 import { migrate, close } from './pg.js'
-import { createUser, asRole, asService, uuid } from './fixtures.js'
+import { createUser, asRole, asService, asAnon, uuid } from './fixtures.js'
 
 let db
 let adminUser
@@ -529,5 +529,124 @@ describe('contact_submissions validation', () => {
     `)).resolves.not.toThrow()
     const { rows } = await db.query('SELECT admin_notes FROM public.contact_submissions WHERE name = $1', ['Ada'])
     expect(rows[0].admin_notes).toBeNull()
+  })
+})
+
+// ------------------------------------------------------------------
+// Complete end-to-end flow: anonymous -> service_role read -> update -> delete
+// ------------------------------------------------------------------
+describe('contact_submissions complete flow', () => {
+  beforeEach(async () => {
+    if (!db) {
+      const result = await migrate()
+      db = result.db
+    }
+  })
+
+  it('anonymous submission is readable and manageable by service_role (the admin Edge Function path)', async () => {
+    const id = uuid()
+    await asAnon(db, async (tx) => {
+      await tx.query(
+        `INSERT INTO public.contact_submissions (id, name, email, subject, message, category)
+         VALUES ($1, 'Anon', 'anon@example.com', 'Hello', 'Message body', 'other')`,
+        [id],
+      )
+    })
+
+    const { rows: readBack } = await asService(db, (tx) =>
+      tx.query('SELECT * FROM public.contact_submissions WHERE id = $1', [id]),
+    )
+    expect(readBack).toHaveLength(1)
+    expect(readBack[0].name).toBe('Anon')
+    expect(readBack[0].status).toBe('new')
+    expect(readBack[0].user_id).toBeNull()
+
+    await asService(db, (tx) =>
+      tx.query(
+        `UPDATE public.contact_submissions SET status = 'in_progress', admin_notes = 'Triage note' WHERE id = $1`,
+        [id],
+      ),
+    )
+
+    const { rows: updated } = await asService(db, (tx) =>
+      tx.query('SELECT status, admin_notes FROM public.contact_submissions WHERE id = $1', [id]),
+    )
+    expect(updated[0].status).toBe('in_progress')
+    expect(updated[0].admin_notes).toBe('Triage note')
+
+    await asService(db, (tx) =>
+      tx.query('DELETE FROM public.contact_submissions WHERE id = $1', [id]),
+    )
+
+    const { rows: afterDelete } = await asService(db, (tx) =>
+      tx.query('SELECT id FROM public.contact_submissions WHERE id = $1', [id]),
+    )
+    expect(afterDelete).toHaveLength(0)
+  })
+
+  it('authenticated submission is readable and manageable by service_role', async () => {
+    const devId = uuid()
+    await db.query(`
+      INSERT INTO auth.users (id, email, raw_user_meta_data)
+      VALUES ($1, $2, $3)
+    `, [devId, 'dev@example.com', JSON.stringify({ role: 'developer' })])
+
+    const id = uuid()
+    await asRole(db, 'authenticated', devId, async (tx) => {
+      await tx.query(
+        `INSERT INTO public.contact_submissions (id, name, email, subject, message, category, user_id)
+         VALUES ($1, 'Dev', 'dev@example.com', 'Subject', 'Body', 'developer', $2)`,
+        [id, devId],
+      )
+    })
+
+    const { rows: readBack } = await asService(db, (tx) =>
+      tx.query('SELECT * FROM public.contact_submissions WHERE id = $1', [id]),
+    )
+    expect(readBack).toHaveLength(1)
+    expect(readBack[0].user_id).toBe(devId)
+
+    await asService(db, (tx) =>
+      tx.query(
+        `UPDATE public.contact_submissions SET status = 'resolved', admin_notes = 'Resolved by admin' WHERE id = $1`,
+        [id],
+      ),
+    )
+
+    const { rows: updated } = await asService(db, (tx) =>
+      tx.query('SELECT status, admin_notes FROM public.contact_submissions WHERE id = $1', [id]),
+    )
+    expect(updated[0].status).toBe('resolved')
+    expect(updated[0].admin_notes).toBe('Resolved by admin')
+
+    await asService(db, (tx) =>
+      tx.query('DELETE FROM public.contact_submissions WHERE id = $1', [id]),
+    )
+  })
+
+  it('authenticated non-admin cannot reach the inbox through any direct path', async () => {
+    const devId = uuid()
+    await db.query(`
+      INSERT INTO auth.users (id, email, raw_user_meta_data)
+      VALUES ($1, $2, $3)
+    `, [devId, 'dev@example.com', JSON.stringify({ role: 'developer' })])
+
+    await asRole(db, 'authenticated', devId, async (tx) => {
+      await expect(tx.query('SELECT * FROM public.contact_submissions')).rejects.toThrow(
+        /permission denied/,
+      )
+    })
+
+    await asRole(db, 'authenticated', devId, async (tx) => {
+      await expect(tx.query('UPDATE public.contact_submissions SET status = $1 WHERE id = $2', ['resolved', uuid()])).rejects.toThrow(
+        /permission denied/,
+      )
+    })
+
+    await asRole(db, 'authenticated', devId, async (tx) => {
+      await expect(tx.query('DELETE FROM public.contact_submissions WHERE id = $1', [uuid()])).rejects.toThrow(
+        /permission denied/,
+      )
+    })
   })
 })

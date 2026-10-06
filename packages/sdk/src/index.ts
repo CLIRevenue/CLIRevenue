@@ -61,6 +61,17 @@ function measureHost(root: Element): AdContainer {
 }
 
 export const SDK_VERSION = "1.0.2";
+
+/**
+ * The only telemetry events this SDK is able to report.
+ *
+ * The server catalogues twelve. These three are the ones a browser is the sole
+ * authority for, and they are an observation, never a claim about money or
+ * accounting. The other nine are derived server-side from the delivery,
+ * impression, interaction and reward transactions, which is why there is no
+ * method here to assert any of them.
+ */
+export type TelemetryEventName = "session_started" | "page_viewed" | "ad_rendered";
 export const SDK_VERSION_HEADER = "X-CLIRevenue-SDK-Version";
 export const DEFAULT_BASE_URL = "https://api.clirevenue.in";
 
@@ -98,6 +109,19 @@ export type CLIRevenueOptions = {
   sleep?: (ms: number) => Promise<void>;
   cacheTtlMs?: number;
   sendBeaconImpl?: (url: string, data: Blob) => boolean;
+  /**
+   * Emit page lifecycle telemetry. Defaults to true.
+   *
+   * Telemetry is what turns a set of counters into a lifecycle an advertiser
+   * can read: which session asked, which creative was chosen, when the ad
+   * became viewable, when the server accepted it, when a reward came into
+   * existence. Turning it off loses all of that and changes no money, which is
+   * why it is a publisher's choice rather than an internal detail.
+   *
+   * The delivery, impression and click calls are unaffected either way: those
+   * are the ad pipeline and are always sent.
+   */
+  telemetry?: boolean;
 };
 
 /** The ambient IntersectionObserver, typed the way the viewability gate wants it. */
@@ -145,6 +169,19 @@ export class CLIRevenue {
   /** In-memory only. Ties a click to this page's impression. */
   private readonly sessionId = randomId();
   private onlineHandlerAttached = false;
+
+  /**
+   * Whether this instance has already opened a telemetry session.
+   *
+   * Set on first use rather than in the constructor. A publisher page that
+   * loads the SDK but never fills a slot should produce no telemetry at all,
+   * and `init()` should stay free of side effects -- a constructor that fires
+   * a network request makes the SDK impossible to import for its types alone.
+   */
+  private telemetryStarted = false;
+
+  /** Whether page lifecycle telemetry is on. See the `telemetry` option. */
+  private readonly telemetryEnabled: boolean;
   private onlineHandler?: () => void;
   private disposers = new Set<() => void>();
 
@@ -184,7 +221,9 @@ export class CLIRevenue {
     const observerImpl = options.ObserverImpl ?? ambientObserver();
     this.gate = observerImpl ? createViewabilityGate({ ObserverImpl: observerImpl }) : null;
     this.sendBeaconImpl = options.sendBeaconImpl;
+    this.telemetryEnabled = options.telemetry !== false;
     this.attachOnlineFlush();
+    this.telemetryStarted = false;
   }
 
   /* ---------------- delivery ---------------- */
@@ -200,6 +239,7 @@ export class CLIRevenue {
     if (typeof placementKey !== "string" || !placementKey.trim()) {
       throw new CLIRevenueConfigError("getAd(placement) requires a non-empty placement key.");
     }
+    this.startTelemetrySession();
     const cached = this.cache.get(placementKey);
     if (cached !== undefined) return cached;
 
@@ -251,6 +291,11 @@ export class CLIRevenue {
         url: safeLocationUrl(),
         referrer: safeReferrer(),
         requestId: randomId(),
+        // Lets the server put this delivery's lifecycle events in the same
+        // session as the rest of this page load. It is the in-memory session
+        // id below: generated per page load, never persisted, never an
+        // identifier that follows the reader anywhere.
+        sessionId: this.sessionId,
       },
       fetchImpl: this.fetchImpl,
       timeoutMs: this.timeoutMs,
@@ -285,6 +330,7 @@ export class CLIRevenue {
     if (typeof selector !== "string" || !selector.trim()) {
       throw new CLIRevenueConfigError("render() requires a non-empty CSS selector.");
     }
+    this.startTelemetrySession();
     const root = globalThis.document?.querySelector(selector);
     if (!root) {
       throw new CLIRevenueConfigError(
@@ -356,6 +402,13 @@ export class CLIRevenue {
     resizeObserver?.observe(root);
 
     root.appendChild(node);
+
+    /* The ad is now in the document, which is exactly what "rendered" means.
+       It precedes the impression in the lifecycle: the impression is only
+       earned if the viewability gate later fires. Reported after the append,
+       not before, so the event cannot claim a render that never happened.
+       Best-effort: a lost render report must not stop the ad from working. */
+    void this.recordRendered(served, placementKey);
 
     const stopViewability = this.watchViewability(served, root);
     let disposed = false;
@@ -537,6 +590,97 @@ export class CLIRevenue {
 
   private findServed(requestId: string): ServedAd | null {
     return this.cache.find((v) => v !== null && v.requestId === requestId) ?? null;
+  }
+
+  /* ---------------- telemetry ---------------- */
+
+  /**
+   * Report an observed page event to the server.
+   *
+   * Only the three observations the browser is the sole authority for are
+   * reported from here: `session_started`, `page_viewed` and `ad_rendered`.
+   * Everything else in the catalogue -- the delivery chain, viewability, the
+   * impression, validation, and above all the reward -- is recorded by the
+   * server from its own accounting transactions. The SDK has no way to assert
+   * any of them, by construction rather than by convention.
+   *
+   * Uses the same idempotency key across every retry of one logical event and
+   * the same offline queue as the impression path, so a telemetry event is no
+   * more likely to be lost or double-counted than an impression.
+   *
+   * Nothing here is worth failing a page render over: 4xx responses are
+   * swallowed and everything else is queued for the next flush.
+   */
+  private async emitTelemetry(
+    eventType: TelemetryEventName,
+    extra: Record<string, unknown> = {},
+    opts: { beacon?: boolean } = {},
+  ): Promise<void> {
+    const idempotencyKey = randomId();
+    const body = {
+      publisherKey: this.publisherKey,
+      eventType,
+      sessionId: this.sessionId,
+      idempotencyKey,
+      ...extra,
+    };
+
+    if (opts.beacon) {
+      const ok = defaultSendBeacon(`${this.baseUrl}/telemetry`, body, this.sendBeaconImpl);
+      if (ok) return;
+    }
+
+    try {
+      await requestJson({
+        url: `${this.baseUrl}/telemetry`,
+        method: "POST",
+        headers: this.headers(),
+        body,
+        fetchImpl: this.fetchImpl,
+        timeoutMs: this.timeoutMs,
+        maxRetries: this.maxRetries,
+        idempotencyKey,
+        sleep: this.sleep,
+        random: this.random,
+      });
+    } catch (err) {
+      if (err instanceof CLIRevenueHttpError && err.status < 500) return;
+      this.queue.enqueue({
+        path: "/telemetry",
+        body,
+        idempotencyKey,
+        queuedAt: Date.now(),
+      });
+    }
+  }
+
+  /** Report that this ad is now in the document. Called by render(). */
+  private async recordRendered(served: ServedAd, placementKey: string): Promise<void> {
+    if (!this.telemetryEnabled) return;
+    await this.emitTelemetry("ad_rendered", {
+      requestId: served.requestId,
+      impressionToken: served.impressionToken,
+      placementKey,
+      occurredAt: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * Open the page-load session and record the page view.
+   *
+   * `session_started` has to precede any other session event, so it is sent
+   * first and the page view follows it. Both are fire-and-forget: the SDK does
+   * not block a render on telemetry, and the server rejects a `page_viewed`
+   * that arrives before its session root rather than guessing.
+   */
+  private startTelemetrySession(): void {
+    if (!this.telemetryEnabled || this.telemetryStarted) return;
+    this.telemetryStarted = true;
+    void this.emitTelemetry("session_started", { occurredAt: new Date().toISOString() })
+      .then(() => this.emitTelemetry("page_viewed", { occurredAt: new Date().toISOString() }))
+      .catch(() => {
+        /* telemetry must never surface to the publisher */
+      });
   }
 
   /* ---------------- offline queue ---------------- */

@@ -58,7 +58,7 @@
   background: var(--adm-bg-grid);
   padding: 12px;
   border: 1px solid var(--adm-border);
-  border-radius: 2px;
+  border-radius: var(--radius-md);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -85,7 +85,7 @@
   font-family: var(--adm-mono);
   font-size: 12px;
   padding: 8px 12px;
-  border-radius: 2px;
+  border-radius: var(--radius-md);
 }
 
 .adm-contacts__notes {
@@ -95,7 +95,7 @@
   font-family: var(--adm-mono);
   font-size: 12px;
   padding: 12px;
-  border-radius: 2px;
+  border-radius: var(--radius-md);
   resize: vertical;
 }
 
@@ -111,7 +111,7 @@
   letter-spacing: 0.1em;
   padding: 8px 16px;
   border: 1px solid var(--adm-border);
-  border-radius: 2px;
+  border-radius: var(--radius-md);
   background: var(--adm-bg);
   color: var(--adm-text);
   cursor: pointer;
@@ -155,7 +155,7 @@
   font-size: 12px;
   background: var(--adm-red-bg);
   padding: 8px 12px;
-  border-radius: 2px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--adm-red-dim);
 }
 
@@ -194,6 +194,7 @@
   right: 0;
   background: var(--adm-bg);
   border-top: 1px solid var(--adm-border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   padding: 24px 32px;
   max-height: 60vh;
   overflow-y: auto;
@@ -222,7 +223,7 @@
   font-family: var(--adm-mono);
   font-size: 11px;
   padding: 6px 12px;
-  border-radius: 2px;
+  border-radius: var(--radius-md);
   cursor: pointer;
 }
 

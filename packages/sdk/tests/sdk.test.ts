@@ -23,16 +23,28 @@ import { backoffDelay, isRetryableStatus } from '../src/http.ts'
 const KEY = 'pk_test_' + 'a'.repeat(32)
 const BASE = 'https://api.test'
 
-/** Build a fetch stub from a queue of per-call handlers. */
+/** Build a fetch stub from a queue of per-call handlers.
+ *
+ * `calls` is the ad pipeline only: /telemetry traffic is recorded separately in
+ * `telemetryCalls`. The SDK opens a telemetry session the first time a
+ * publisher actually uses it, so mixing the two into one list would make every
+ * assertion about "the first call the SDK makes" depend on an unrelated
+ * lifecycle. The telemetry assertions live in their own suite below and read
+ * `telemetryCalls`.
+ */
 function stubFetch(handlers) {
   const calls = []
+  const telemetryCalls = []
   const impl = async (url, init = {}) => {
-    calls.push({ url, init })
+    const isTelemetry = String(url).includes('/telemetry')
+    if (isTelemetry) telemetryCalls.push({ url, init })
+    else calls.push({ url, init })
     const handler = handlers[Math.min(calls.length - 1, handlers.length - 1)]
     if (typeof handler === 'function') return handler(init, url)
     return handler
   }
   impl.calls = calls
+  impl.telemetryCalls = telemetryCalls
   return impl
 }
 
@@ -184,8 +196,19 @@ describe('privacy invariants', () => {
     const fetchImpl = stubFetch([jsonResponse(200, servedAd())])
     await makeClient(fetchImpl).getAd('cli-landing')
     const body = JSON.parse(fetchImpl.calls[0].init.body)
-    // Only the publisher key, the placement, and page context.
-    expect(Object.keys(body).sort()).toEqual(['placementKey', 'publisherKey', 'referrer', 'requestId', 'url'])
+    // Only the publisher key, the placement, page context, and the in-memory
+    // session id. The session id is minted per page load and never persisted or
+    // transmitted to another origin, so it names a page rather than a person --
+    // and it is what lets the server tie this delivery's lifecycle events to the
+    // rest of the page load.
+    expect(Object.keys(body).sort()).toEqual([
+      'placementKey',
+      'publisherKey',
+      'referrer',
+      'requestId',
+      'sessionId',
+      'url',
+    ])
   })
 
   it('never references a server-only secret in code', async () => {
@@ -239,7 +262,10 @@ describe('retry policy', () => {
 
   it('retries a transport failure', async () => {
     let n = 0
-    const fetchImpl = async () => {
+    const fetchImpl = async (url) => {
+      // Count the delivery attempts only. The SDK also opens a telemetry
+      // session on first use, and that traffic is on its own retry lifecycle.
+      if (String(url).includes('/telemetry')) return jsonResponse(200, { ok: true })
       n++
       if (n === 1) throw new TypeError('Failed to fetch')
       return jsonResponse(200, servedAd())

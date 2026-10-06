@@ -100,17 +100,19 @@
   --glass-hi: rgba(255, 255, 255, 0.06);
   --glass-blur: 14px;
 
-  /* Corners. Zero, everywhere, no exceptions.
+  /* Corners. Legacy zero-radius rule preserved as --radius for components
+     that still reference it. The redesign introduces a small rounded
+     vocabulary for controls, cards, and the ad slot while keeping the
+     brutalist hard-edge feel on structural surfaces.
 
-     Rounded corners are the single cheapest way to make a dark
-     interface read as a consumer app rather than as an instrument, and
-     they are the first thing that turns a layout into a set of cards.
-     Every surface in this product is a panel, a plate or a line — hard
-     edges are what say so, and they are what let the hairlines carry
-     the structure on their own. Circles are unaffected: a status dot or
-     a cursor block sets `border-radius: 50%` locally and is not a
-     rounded rectangle in any sense that matters. */
+     Zero is still the default for plates, panels, and the terminal
+     itself — the rounded tokens are opt-in. */
   --radius: 0px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 10px;
+  --radius-pill: 9999px;
 
   /* Border weights. One language: 1px rules everywhere, 2px for a
      structural division, 3px only for the flag bar. */

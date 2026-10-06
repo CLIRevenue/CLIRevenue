@@ -40,6 +40,31 @@ function readContext(body: Record<string, unknown>): { url: string | null; refer
   };
 }
 
+/**
+ * The publisher's page-load session, as the SDK minted it.
+ *
+ * Read on the delivery path, not just on the impression path, because it is
+ * only useful if it is stored with the serve: the telemetry lifecycle for a
+ * delivery is written by a trigger that fires inside this insert, so a session
+ * the server never received leaves every delivery event in a synthetic
+ * per-serve session and the page's real session aggregate empty.
+ *
+ * It is opaque and untrusted — an in-memory id the SDK generates per page load
+ * and never persists — and it is used only as a grouping key. It cannot name a
+ * campaign, cannot change an amount, and the RPC takes the session for a
+ * delivery-bound event from this column rather than from the request, so a
+ * client cannot use it to steer attribution. Absent or malformed is fine: the
+ * server then falls back to a synthetic per-serve session, which is recorded
+ * with a SYNTHETIC_SESSION risk flag.
+ */
+function readTelemetrySession(body: Record<string, unknown>): string | null {
+  const v = body.sessionId;
+  if (typeof v !== "string") return null;
+  const trimmed = v.trim();
+  if (!trimmed || trimmed.length > 200) return null;
+  return /^[A-Za-z0-9._:-]+$/.test(trimmed) ? trimmed : null;
+}
+
 async function readJson(req: Request): Promise<Record<string, unknown> | null> {
   try {
     const parsed = await req.json();
@@ -138,6 +163,7 @@ async function handleDeliver(req: Request, admin: SupabaseClient): Promise<Respo
       sdk_version: sdkVersion,
       context_url: readContext(body).url,
       context_referrer: readContext(body).referrer,
+      telemetry_session_id: readTelemetrySession(body),
       cost_milli_cents: campaign.cpm_cents,
       served_at: new Date(now).toISOString(),
       expires_at: new Date(expiresAt).toISOString(),

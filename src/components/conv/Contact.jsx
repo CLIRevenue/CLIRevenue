@@ -1,13 +1,3 @@
-/* =============================================================
-   CLIRevenue — contact
-   -------------------------------------------------------------
-   The restrained way in. The form is the channel: the website
-   submits to Supabase and the message lands in the contact_submissions
-   table, where the admin panel reads and triages it. Nothing is sent
-   by email — no SMTP, no transactional provider, no credentials.
-   clirevenue@gmail.com is the contact identity only.
-   ============================================================= */
-
 import { useRef, useState } from 'react'
 import { motion } from 'motion/react'
 
@@ -34,7 +24,7 @@ const DEFAULT_MESSAGE =
 
 function Contact() {
   const reveal = useReveal()
-  const { user, session } = useAuth()
+  const { user } = useAuth()
   const [state, setState] = useState('idle') // idle | submitting | success | error
   const [form, setForm] = useState({
     name: user?.email ? user.email.split('@')[0] : '',
@@ -111,7 +101,7 @@ function Contact() {
 
     try {
       if (!supabaseConfigured) {
-        setError('This build has no database connection, so messages cannot be received.')
+        setError('Messages cannot be sent right now. Please try again later.')
         setState('error')
         return
       }
@@ -275,8 +265,7 @@ function Contact() {
         </p>
 
         <p className="form__info">
-          Messages are submitted to Supabase and handled in the CLIRevenue
-          admin panel. Official contact: <span className="form__email">clirevenue@gmail.com</span>.
+          Official contact: <span className="form__email">clirevenue@gmail.com</span>.
         </p>
 
         <button
@@ -286,12 +275,6 @@ function Contact() {
         >
           Send message
         </button>
-
-        <p className="form__disclosure">
-          Nothing is sent by email. No SMTP, no transactional provider —
-          the message lands in the CLIRevenue contact inbox and is handled
-          inside the admin panel.
-        </p>
       </form>
     </motion.section>
   )

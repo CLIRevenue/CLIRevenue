@@ -189,6 +189,7 @@
   margin: 0 auto;
   background: var(--panel);
   border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-panel);
   overflow: hidden;
 }
@@ -220,6 +221,7 @@
   padding: 0 14px;
   background: var(--chrome);
   border-bottom: 1px solid var(--hair);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.04em;
@@ -467,6 +469,7 @@
   position: relative;
   overflow: hidden;
   background: var(--ad-fill);
+  border-radius: var(--radius-md);
   /* The slot is the one region that is deliberately not output, so it
      is marked at its top edge with the accent instead of the neutral
      rule the rest of the terminal uses. */
@@ -782,6 +785,7 @@
   padding: 13px 24px;
   background: var(--input);
   border-top: 1px solid var(--hair);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   font-family: var(--mono);
   font-size: 13px;
 }
@@ -840,6 +844,7 @@
   gap: 11px;
   padding: 18px 20px 18px 0;
   background: var(--void);
+  border-radius: var(--radius-md);
 }
 
 .annot__index {
@@ -881,6 +886,7 @@
   min-height: 260px;
   padding: 30px 28px;
   background: var(--stage);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -1041,6 +1047,7 @@
   margin-top: 6px;
   background: var(--hair);
   border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
   text-align: left;
 }
 
@@ -1053,6 +1060,14 @@
   background: var(--void);
   color: var(--ink);
   transition: background var(--dur-fast) var(--ease-ui);
+}
+
+.closing__action:first-child {
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+.closing__action:last-child {
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
 }
 
 .closing__action:hover {
@@ -1258,6 +1273,7 @@
   padding: 10px 12px;
   background: var(--input);
   border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-md);
   color: var(--ink);
   font-family: var(--sans);
   font-size: 14px;
@@ -1298,6 +1314,7 @@
   gap: 8px;
   padding: 11px 18px;
   border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.03);
   color: var(--ink);
   font-family: var(--sans);
@@ -1448,6 +1465,7 @@
   padding: 14px 16px;
   background: var(--panel);
   border: 1px solid var(--hair);
+  border-radius: var(--radius-md);
   color: inherit;
   text-decoration: none;
   transition:
@@ -1645,6 +1663,7 @@
   padding: 14px 16px 16px;
   background: var(--panel);
   border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
 }
 
 .adpreview__head {
@@ -1695,13 +1714,11 @@
 
 .stat {
   display: grid;
-  /* Rows pack to the top: without this, `align-content: stretch`
-     gives a hintless cell two fat rows and its value slides down
-     into the bottom hairline. */
   align-content: start;
   gap: 6px;
   padding: 18px 20px;
   background: var(--panel);
+  border-radius: var(--radius-md);
   min-width: 0;
 }
 
@@ -1730,6 +1747,7 @@
   margin-top: 22px;
   overflow-x: auto;
   border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
 }
 
 .camps {
@@ -1809,6 +1827,7 @@
   padding: clamp(20px, 2.4vw, 28px);
   background: var(--panel);
   border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
 }
 
 .form__head {
@@ -1854,6 +1873,7 @@
   padding: 12px 14px;
   background: var(--panel-2);
   border-left: 2px solid var(--ok);
+  border-radius: var(--radius-md);
   font-size: 13px;
   line-height: 1.6;
   color: var(--ink-2);
@@ -1888,6 +1908,7 @@
   display: grid;
   background: var(--panel);
   border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
 }
 
 .reward__head {
@@ -2076,6 +2097,7 @@
 .activity {
   background: var(--panel);
   border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
 }
 
 .activity__head {
@@ -2225,6 +2247,7 @@
   background: var(--panel);
   border: 1px solid var(--hair);
   border-left: 2px solid var(--hair-strong);
+  border-radius: var(--radius-md);
   transition:
     border-color 0.22s var(--ease-ui),
     background 0.22s var(--ease-ui);
@@ -2278,6 +2301,7 @@
 .ledger {
   background: var(--panel);
   border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
 }
 
 .ledger__head {
@@ -2621,6 +2645,7 @@
   gap: 1px;
   background: var(--hair);
   border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
 }
 
 .conv__promise li {
@@ -2628,6 +2653,7 @@
   gap: 6px;
   padding: 14px 16px;
   background: var(--panel);
+  border-radius: var(--radius-md);
 }
 
 .conv__promise-key {
@@ -2717,6 +2743,7 @@
   align-content: start;
   padding: clamp(20px, 2.4vw, 28px);
   background: var(--panel);
+  border-radius: var(--radius-lg);
 }
 
 .conv__card-role {
@@ -2754,6 +2781,7 @@
 
 .faq__item {
   background: var(--panel);
+  border-radius: var(--radius-md);
 }
 
 .faq__q {
@@ -3797,6 +3825,7 @@ body {
   align-items: start;
   padding: 20px 0;
   border-top: var(--border-w) solid var(--hair);
+  border-radius: var(--radius-md);
 }
 
 /* The step number is set in mono at the weight the transcript uses
@@ -3856,7 +3885,7 @@ body {
   padding: 12px 14px;
   background: var(--panel-2);
   border: var(--border-w) solid var(--hair);
-  border-radius: 0;
+  border-radius: var(--radius-md);
   font-family: var(--mono);
   font-size: 12px;
   line-height: 1.6;
@@ -3875,6 +3904,7 @@ body {
   gap: 1px;
   background: var(--hair);
   border: var(--border-w) solid var(--hair);
+  border-radius: var(--radius-lg);
 }
 
 .setup__fact {
@@ -3883,6 +3913,7 @@ body {
   gap: 6px;
   padding: 14px 16px;
   background: var(--panel);
+  border-radius: var(--radius-md);
 }
 
 .setup__fact-label {

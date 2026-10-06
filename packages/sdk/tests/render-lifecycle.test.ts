@@ -50,8 +50,22 @@ function stubFetch(handler: (init: any) => unknown) {
   return impl
 }
 
+/**
+ * The ad paths the SDK called, in order.
+ *
+ * Telemetry traffic is filtered out rather than sliced: it lives on a different
+ * path with its own retry lifecycle, and the questions these tests ask are all
+ * about the ad pipeline. `telemetryPaths` reads the other half.
+ */
 const paths = (fetchImpl: { calls: { url: string }[] }) =>
-  fetchImpl.calls.map((c) => c.url.slice(c.url.indexOf('/ads/')))
+  fetchImpl.calls
+    .filter((c) => c.url.includes('/ads/'))
+    .map((c) => c.url.slice(c.url.indexOf('/ads/')))
+
+const telemetryPaths = (fetchImpl: { calls: { url: string }[] }) =>
+  fetchImpl.calls
+    .filter((c) => c.url.includes('/telemetry'))
+    .map(() => '/telemetry')
 
 const countOf = (fetchImpl: { calls: { url: string }[] }, path: string) =>
   paths(fetchImpl).filter((p) => p === path).length
@@ -299,7 +313,14 @@ describe('render() lifecycle', () => {
     await vi.advanceTimersByTimeAsync(0)
 
     expect(countOf(fetchImpl, '/ads/click')).toBe(1)
-    expect(fetchImpl.calls.every((c: any) => c.url.includes('/ads/'))).toBe(true)
+    // Every call this page load made is one of the two known endpoints, and
+    // nothing about the click went anywhere else.
+    expect(
+      fetchImpl.calls.every(
+        (c: any) => c.url.includes('/ads/') || c.url.includes('/telemetry'),
+      ),
+    ).toBe(true)
+    expect(paths(fetchImpl)).toEqual(['/ads/deliver', '/ads/click'])
   })
 
   it('survives a click report that rejects: one activation, retried, never thrown', async () => {
@@ -587,7 +608,17 @@ describe('a rendered ad still reports only what it is entitled to', () => {
 
     const deliver = fetchImpl.calls.find((c) => c.url.endsWith('/ads/deliver'))!
     const keys = Object.keys(JSON.parse(deliver.init.body)).sort()
-    expect(keys).toEqual(['placementKey', 'publisherKey', 'referrer', 'requestId', 'url'])
+    // sessionId is the in-memory page-load id, never persisted and never sent
+    // to another origin. It is what lets the server file this delivery's
+    // lifecycle events under the same session as the page's other events.
+    expect(keys).toEqual([
+      'placementKey',
+      'publisherKey',
+      'referrer',
+      'requestId',
+      'sessionId',
+      'url',
+    ])
     const headerKeys = Object.keys(deliver.init.headers).map((k) => k.toLowerCase())
     expect(headerKeys).toContain(SDK_VERSION_HEADER.toLowerCase())
     expect(

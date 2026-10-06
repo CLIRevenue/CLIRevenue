@@ -13,6 +13,7 @@
   background: var(--ad-fill);
   border: 1px solid var(--ad-edge);
   border-top: 2px solid var(--signal);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-ad);
   overflow: hidden;
   transition:
@@ -169,7 +170,7 @@
   transform: translate(2px, -2px);
 }
 
-/* Corner ticks */
+/* Corner ticks - adjusted for rounded corners */
 .promo-ad::before,
 .promo-ad::after {
   content: '';
@@ -183,15 +184,15 @@
 }
 
 .promo-ad::before {
-  top: 6px;
-  left: 4px;
+  top: 8px;
+  left: 8px;
   border-top: 1px solid;
   border-left: 1px solid;
 }
 
 .promo-ad::after {
-  right: 4px;
-  bottom: 6px;
+  right: 8px;
+  bottom: 8px;
   border-right: 1px solid;
   border-bottom: 1px solid;
 }

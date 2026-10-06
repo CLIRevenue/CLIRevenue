@@ -102,6 +102,7 @@
   text-align: center;
   background: var(--panel-2);
   border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-md);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   transition: border-color 0.45s ease;
 }
@@ -186,6 +187,7 @@
   padding: 3px 8px;
   background: var(--stage);
   border: 1px solid var(--hair);
+  border-radius: var(--radius-sm);
   font-family: var(--mono);
   font-size: 9.5px;
   font-weight: 500;
@@ -218,6 +220,7 @@
   background: none;
   border: 1px solid var(--hair);
   border-top-color: var(--hair-amber);
+  border-radius: var(--radius-md);
 }
 
 .revenue-flow .flow__stage {
@@ -228,11 +231,17 @@
   padding: 15px 18px;
   background: var(--stage);
   border-bottom: 1px solid var(--hair);
+  border-radius: var(--radius-md);
   animation: clir-stage-in 0.5s ease both;
   transition: background-color 0.45s ease;
 }
 
+.revenue-flow .flow__stage:first-child {
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
 .revenue-flow .flow__stage:last-child {
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
   border-bottom: 0;
 }
 
