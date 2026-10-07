@@ -74,12 +74,12 @@ public by design — it identifies the publisher and nothing more. See
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `baseUrl` | `https://api.clirevenue.in` | Gateway base URL. Point this at your own deployment. |
-| `timeoutMs` | `8000` | Per-request timeout. |
+| `timeoutMs` | `5000` | Per-request timeout in milliseconds. |
 | `maxRetries` | `2` | Retries for retryable failures (5xx and network errors). |
-| `retryBaseMs` | `300` | Base delay for exponential backoff. |
-| `retryMaxMs` | `4000` | Ceiling for a single backoff delay. |
-| `sessionId` | generated | Stable per-page id, used to group events from one visit. |
 | `ObserverImpl` | ambient `IntersectionObserver` | Override for tests or exotic environments. |
+| `telemetry` | `true` | Emit page lifecycle telemetry (`session_started`, `page_viewed`, `ad_rendered`). |
+| `cacheTtlMs` | `60000` | Placement cache TTL in milliseconds (default 60s). |
+| `sendBeaconImpl` | `navigator.sendBeacon` | Override beacon implementation for tests or exotic environments. |
 
 A malformed key throws `CLIRevenueConfigError` immediately, before any network
 request is made:
@@ -350,17 +350,41 @@ to your own fallback in a `catch`.
 
 ## Timeouts and retries
 
-- Every request has a timeout (`timeoutMs`, default 8s). A request that exceeds it
+- Every request has a timeout (`timeoutMs`, default 5s). A request that exceeds it
   rejects with `CLIRevenueTimeoutError`.
 - Retryable failures are retried: **5xx responses and network errors**.
   **4xx responses are never retried** — a rejected publisher key or an unknown
   placement will fail identically every time.
-- Backoff is exponential with **full jitter** and is capped (`retryMaxMs`), so a
+- Backoff is exponential with **full jitter** and is capped (30s ceiling), so a
   burst of clients does not synchronise into a thundering herd.
 - Each serve keeps **one idempotency key across all of its retries**, so a retried
   `getAd` cannot create two serves.
 - Impression, click and conversion requests carry an idempotency key too. Replaying
   one is safe: the server answers `status: 'duplicate'` rather than double-counting.
+
+---
+
+## Telemetry
+
+The SDK can emit three page-lifecycle events that only the browser can observe:
+
+| Event | When |
+| --- | --- |
+| `session_started` | First time the SDK is used on a page (first `getAd` or `render` call). |
+| `page_viewed` | Immediately after `session_started`. |
+| `ad_rendered` | After `render()` inserts the ad element into the DOM. |
+
+Telemetry is **on by default**. To disable it:
+
+```js
+const clirevenue = init('pk_test_…', { telemetry: false })
+```
+
+Disabling telemetry turns off all three events above. It does **not** affect the
+ad pipeline — `/ads/deliver`, `/ads/impression`, `/ads/click` and
+`/ads/conversion` are always sent. The server still decides everything about
+money; telemetry is only an observation that helps advertisers understand the
+lifecycle.
 
 ---
 
@@ -495,6 +519,10 @@ The requests it makes are: one ad request per placement (cached 60s), plus one
 request each for a recorded impression, a reported click, and — only if you call it
 from a trusted server — a conversion. There is no beacon on page load, and no
 request when nothing is rendered.
+
+Telemetry events (`session_started`, `page_viewed`, `ad_rendered`) are sent
+to `/telemetry` by default and can be disabled with `telemetry: false` in
+`init()` options.
 
 ---
 
@@ -646,18 +674,22 @@ Disposes observers and removes the global `online` listener. Idempotent.
 
 ## Gateway endpoints
 
-The SDK uses exactly four endpoints. All are `POST`, and all take the publisher key
+The SDK uses exactly five endpoints. All are `POST`, and all take the publisher key
 in the request body.
 
 | Endpoint | Body | Success | No-fill |
 | --- | --- | --- | --- |
-| `/ads/deliver` | `publisherKey`, `placementKey`, `url`, `referrer`, `requestId` | `200` `{requestId, ad, impressionToken, expiresAt}` | `204` |
+| `/ads/deliver` | `publisherKey`, `placementKey`, `url`, `referrer`, `requestId`, `sessionId` | `200` `{requestId, ad, impressionToken, expiresAt}` | `204` |
 | `/ads/impression` | `publisherKey`, `requestId`, `impressionToken`, `idempotencyKey`, `sessionId`, `cliIntegration?` | `200` | — |
 | `/ads/click` | `publisherKey`, `requestId`, `impressionToken`, `idempotencyKey` | `200` | — |
 | `/ads/conversion` | server-authenticated only | `200` | — |
+| `/telemetry` | `publisherKey`, `eventType`, `sessionId`, `idempotencyKey`, `requestId?`, `occurredAt?`, `metadata?` | `200` | — |
 
 `placementKey` is required on `/ads/deliver`; a missing or unknown placement is
 `400 INVALID_PLACEMENT`, and a disabled placement is `403`.
+
+Telemetry event types are `session_started`, `page_viewed`, and `ad_rendered`.
+Telemetry can be disabled with `telemetry: false` in `init()` options.
 
 ---
 
@@ -668,3 +700,6 @@ The SDK is complete and tested. The gateway endpoints above are implemented but
 error and every surface should show its fallback. That is the correct behaviour, and
 it is why no-fill handling is treated as a first-class state rather than an
 afterthought.
+
+Telemetry (`session_started`, `page_viewed`, `ad_rendered`) is implemented and
+enabled by default. Disable with `telemetry: false` in `init()` options.

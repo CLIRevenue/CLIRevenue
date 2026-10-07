@@ -32,13 +32,18 @@ const BASE = 'https://api.test'
  * lifecycle. The telemetry assertions live in their own suite below and read
  * `telemetryCalls`.
  */
-function stubFetch(handlers) {
+function stubFetch(handlers, telemetryHandlers) {
   const calls = []
   const telemetryCalls = []
   const impl = async (url, init = {}) => {
     const isTelemetry = String(url).includes('/telemetry')
-    if (isTelemetry) telemetryCalls.push({ url, init })
-    else calls.push({ url, init })
+    if (isTelemetry) {
+      telemetryCalls.push({ url, init })
+      const handler = telemetryHandlers?.[telemetryCalls.length - 1] ?? { status: 200, json: async () => ({ success: true }), text: async () => '{}' }
+      if (typeof handler === 'function') return handler(init, url)
+      return handler
+    }
+    calls.push({ url, init })
     const handler = handlers[Math.min(calls.length - 1, handlers.length - 1)]
     if (typeof handler === 'function') return handler(init, url)
     return handler
@@ -1065,11 +1070,183 @@ describe('getAd is single-flight per placement', () => {
     expect(fetchImpl.calls).toHaveLength(2)
   })
 
-  it('still validates the placement key before sharing anything', async () => {
-    const fetchImpl = stubFetch([jsonResponse(200, servedAd('r1'))])
+it('still validates the placement key before sharing anything', async () => {
+      const fetchImpl = stubFetch([jsonResponse(200, servedAd('r1'))])
+      const client = makeClient(fetchImpl)
+      await expect(client.getAd('')).rejects.toBeInstanceOf(CLIRevenueConfigError)
+      await expect(client.getAd(null)).rejects.toBeInstanceOf(CLIRevenueConfigError)
+      expect(fetchImpl.calls).toHaveLength(0)
+    })
+  })
+
+/* ------------------------------------------------------------------ */
+/* telemetry                                                           */
+/* ------------------------------------------------------------------ */
+
+describe('telemetry', () => {
+  it('emits session_started and page_viewed on first getAd', async () => {
+    const fetchImpl = stubFetch([jsonResponse(200, servedAd())])
     const client = makeClient(fetchImpl)
-    await expect(client.getAd('')).rejects.toBeInstanceOf(CLIRevenueConfigError)
-    await expect(client.getAd(null)).rejects.toBeInstanceOf(CLIRevenueConfigError)
-    expect(fetchImpl.calls).toHaveLength(0)
+    await client.getAd('placement-1')
+
+    const telemetry = fetchImpl.telemetryCalls.map((c) => JSON.parse(c.init.body).eventType)
+    // session_started and page_viewed are sent in sequence
+    expect(telemetry).toContain('session_started')
+    expect(telemetry).toContain('page_viewed')
+    // session_started should only be sent once
+    expect(telemetry.filter((t) => t === 'session_started')).toHaveLength(1)
+  })
+
+  it('emits ad_rendered after render()', async () => {
+    const fetchImpl = stubFetch([
+      jsonResponse(200, servedAd()),
+      jsonResponse(200, { status: 'recorded' }),
+    ])
+    const client = makeClient(fetchImpl)
+
+    // Minimal DOM stub for render
+    const anchor = { href: '', textContent: '', setAttribute: () => {}, addEventListener: () => {}, style: {} }
+    const host = {
+      appendChild: () => {},
+      style: { position: '' },
+      clientWidth: 800,
+      clientHeight: 600,
+      getBoundingClientRect: () => ({ width: 800, height: 600 }),
+    }
+    vi.stubGlobal('document', {
+      referrer: '',
+      querySelector: () => host,
+      createElement: () => anchor,
+    })
+    vi.stubGlobal('getComputedStyle', () => ({ position: 'static' }))
+    vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
+    vi.stubGlobal('IntersectionObserver', class { observe() {} disconnect() {} })
+
+    await client.render('placement-1', '#ad-slot')
+
+    const telemetry = fetchImpl.telemetryCalls.map((c) => JSON.parse(c.init.body).eventType)
+    expect(telemetry).toContain('session_started')
+    expect(telemetry).toContain('page_viewed')
+    expect(telemetry).toContain('ad_rendered')
+  })
+
+  it('includes requestId and impressionToken in ad_rendered', async () => {
+    const fetchImpl = stubFetch([
+      jsonResponse(200, servedAd('req-render-1')),
+      jsonResponse(200, { status: 'recorded' }),
+    ])
+    const client = makeClient(fetchImpl)
+
+    const anchor = { href: '', textContent: '', setAttribute: () => {}, addEventListener: () => {}, style: {} }
+    const host = {
+      appendChild: () => {},
+      style: { position: '' },
+      clientWidth: 800,
+      clientHeight: 600,
+      getBoundingClientRect: () => ({ width: 800, height: 600 }),
+    }
+    vi.stubGlobal('document', {
+      referrer: '',
+      querySelector: () => host,
+      createElement: () => anchor,
+    })
+    vi.stubGlobal('getComputedStyle', () => ({ position: 'static' }))
+    vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
+    vi.stubGlobal('IntersectionObserver', class { observe() {} disconnect() {} })
+
+    const result = await client.render('placement-1', '#ad-slot')
+
+    const adRenderedCall = fetchImpl.telemetryCalls.find(
+      (c) => JSON.parse(c.init.body).eventType === 'ad_rendered'
+    )
+    expect(adRenderedCall).toBeDefined()
+    const body = JSON.parse(adRenderedCall!.init.body)
+    expect(body.requestId).toBe('req-render-1')
+    expect(body.impressionToken).toBe('tok-1')
+    expect(body.placementKey).toBe('placement-1')
+    expect(body.occurredAt).toBeDefined()
+  })
+
+  it('includes sessionId in all telemetry events', async () => {
+    const fetchImpl = stubFetch([jsonResponse(200, servedAd())])
+    const client = makeClient(fetchImpl)
+    await client.getAd('placement-1')
+
+    for (const call of fetchImpl.telemetryCalls) {
+      const body = JSON.parse(call.init.body)
+      expect(body.sessionId).toBeDefined()
+      expect(typeof body.sessionId).toBe('string')
+      expect(body.sessionId.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('uses unique idempotencyKey per telemetry event', async () => {
+    const fetchImpl = stubFetch([jsonResponse(200, servedAd())])
+    const client = makeClient(fetchImpl)
+    await client.getAd('placement-1')
+
+    const keys = fetchImpl.telemetryCalls.map((c) => JSON.parse(c.init.body).idempotencyKey)
+    // session_started and page_viewed should have different keys
+    expect(new Set(keys).size).toBe(keys.length)
+  })
+
+  it('queues telemetry on 5xx and retries on flush', async () => {
+    const storage = memoryStorage()
+    // First, succeed at delivery so telemetry session starts
+    const deliveryFetch = stubFetch([jsonResponse(200, servedAd())])
+    const client = makeClient(deliveryFetch, { storage })
+    await client.getAd('placement-1')
+
+    // Now simulate telemetry failing with 5xx
+    // We need to create a new client with failing telemetry but same storage
+    const failingTelemetryFetch = async (url, init = {}) => {
+      if (String(url).includes('/telemetry')) {
+        return { status: 500, json: async () => ({ error: { message: 'boom' } }), text: async () => '{}' }
+      }
+      return jsonResponse(200, servedAd())
+    }
+    const client2 = makeClient(failingTelemetryFetch, { maxRetries: 0, storage })
+    await client2.getAd('placement-2') // This will trigger telemetry again for new placement
+
+    // Telemetry should be queued
+    expect(client2.pendingEvents).toBeGreaterThan(0)
+
+    // Now flush with a working endpoint
+    const recoveredFetch = stubFetch([jsonResponse(200, { success: true })])
+    const recoveredClient = makeClient(recoveredFetch, { storage })
+    await expect(recoveredClient.flush()).resolves.toMatchObject({ sent: 2, failed: 0 }) // session_started + page_viewed
+  })
+
+  it('does not queue telemetry on 4xx', async () => {
+    const storage = memoryStorage()
+    // First, succeed at delivery
+    const deliveryFetch = stubFetch([jsonResponse(200, servedAd())])
+    const client = makeClient(deliveryFetch, { storage })
+    await client.getAd('placement-1')
+
+    // Now simulate telemetry failing with 4xx
+    const failingTelemetryFetch = async (url, init = {}) => {
+      if (String(url).includes('/telemetry')) {
+        return { status: 400, json: async () => ({ error: { message: 'bad' } }), text: async () => '{}' }
+      }
+      return jsonResponse(200, servedAd())
+    }
+    const client2 = makeClient(failingTelemetryFetch, { maxRetries: 0, storage })
+    await client2.getAd('placement-2')
+
+    // 4xx should not be queued
+    expect(client2.pendingEvents).toBe(0)
+  })
+
+  it('TelemetryEventName type is exported', () => {
+    // This test ensures the type is exported from the public API
+    // It compiles if the type exists, fails if not
+    type TestTelemetryEventName = import('../src/index.ts').TelemetryEventName
+    const _event: TestTelemetryEventName = 'session_started'
+    const _event2: TestTelemetryEventName = 'page_viewed'
+    const _event3: TestTelemetryEventName = 'ad_rendered'
+    // @ts-expect-error - invalid event type should not compile
+    const _invalid: TestTelemetryEventName = 'invalid_event'
+    expect(true).toBe(true)
   })
 })

@@ -60,7 +60,7 @@ function measureHost(root: Element): AdContainer {
   return { width, height };
 }
 
-export const SDK_VERSION = "1.0.2";
+export const SDK_VERSION = "1.0.3";
 
 /**
  * The only telemetry events this SDK is able to report.
