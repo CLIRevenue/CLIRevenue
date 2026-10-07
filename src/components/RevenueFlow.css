@@ -27,6 +27,11 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
+  /* #revenue-split is the target of the split mechanism card's CTA, and this
+     element is a plain div rather than a .scene or .block, so it carries the
+     fixed-header clearance itself. Same offset as every other anchor on the
+     public page. */
+  scroll-margin-top: 88px;
 }
 
 .revenue-flow .flow {

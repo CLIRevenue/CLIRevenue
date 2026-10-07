@@ -1,5 +1,22 @@
 import './PromoAd.css'
 
+/* Six approved mechanism cards. Static presentation copy — no campaign
+   table, no budget, no counters — so the film never claims a delivery it
+   did not make.
+
+   Every `href` is a real id on the page the card is rendered on. These
+   cards appear on the public film AND inside the console, and three of
+   them originally pointed at ids that only existed on another route (or
+   at the section the card itself already sits inside), so the click moved
+   nothing:
+     - #developer  -> #developers  (the id is `developers`, on the public
+       page's "For developers" section)
+     - #delivery   -> #workbench   (`delivery` exists only on /advertiser;
+       the workbench is where a delivered payload is actually on screen)
+     - #money      -> #revenue-split (the split card lives inside #money,
+       so #money was a self-anchor; #revenue-split is the four-party flow
+       diagram directly above it)
+   tests/navigation-contracts.test.js pins that no href here can rot. */
 const PROMO_CAMPAIGNS = [
   {
     id: 'mech_01_advertiser_funding',
@@ -9,7 +26,7 @@ const PROMO_CAMPAIGNS = [
     support:
       'Advertisers deposit budgets to campaign for developer attention. Their spend buys impressions in the reserved CLI slot — never in stdout, never in logs. Each impression is validated, counted, and attributed before the developer sees a cent.',
     cta: 'Read the funding model',
-    href: '#advertiser',
+    href: '#money',
     category: 'Mechanism',
   },
   {
@@ -20,7 +37,7 @@ const PROMO_CAMPAIGNS = [
     support:
       'Drop the SDK into your CLI tool. No configuration, no maintenance. Every time a user runs a command and the sponsored slot renders, you earn. Revenue accrues per impression and settles automatically.',
     cta: 'See the integration',
-    href: '#developer',
+    href: '#developers',
     category: 'Mechanism',
   },
   {
@@ -42,7 +59,7 @@ const PROMO_CAMPAIGNS = [
     support:
       'The SDK requests an ad from the edge network. The edge responds with a signed payload — campaign ID, creative, timestamp, and a verification hash. The SDK renders the slot and posts a view event. No view, no payout. No hash, no trust.',
     cta: 'Inspect the payload',
-    href: '#delivery',
+    href: '#workbench',
     category: 'Mechanism',
   },
   {
@@ -64,7 +81,7 @@ const PROMO_CAMPAIGNS = [
     support:
       'Of every dollar an advertiser spends: 50¢ goes to the developer who owns the CLI surface, 15¢ covers network operations and edge delivery, 30¢ returns to the user as redeemable credits, 5¢ stays with CLIRevenue as platform fee. The math is fixed. The ledger proves it.',
     cta: 'Verify the split',
-    href: '#money',
+    href: '#revenue-split',
     category: 'Mechanism',
   },
 ]

@@ -3,6 +3,7 @@ import { useTerminal } from '../../hooks/useTerminal.js'
 import { advertiserDemoScene, hostApp } from '../../data/demo.js'
 import Terminal from '../Terminal.jsx'
 import OutputStream from '../OutputStream.jsx'
+import { PromoAd } from '../PromoAd.jsx'
 import Scene from '../Scene.jsx'
 import './AdvertiserDemo.css'
 
@@ -34,6 +35,7 @@ function AdvertiserDemo() {
       >
         <OutputStream lines={frame.lines} />
         <AdvertiserDemoSlot campaign={advertiserDemoScene.campaign} />
+        <PromoAd index={0} variant="compact" />
       </Terminal>
 
       <ul className="advertiser-demo__annotations" aria-label="Campaign metrics">

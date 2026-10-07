@@ -20,6 +20,13 @@
   min-height: 100svh;
   padding: 112px var(--gutter);
   isolation: isolate;
+  /* The site header is fixed to the top of the viewport on every public
+     route, so a jumped-to chapter otherwise lands its first line of copy
+     underneath it. One offset for every anchor target on this page — the
+     same convention .sdk-page [id] and .advx-page [id] already use on the
+     two landing routes, and the same value, so an anchor feels identical
+     wherever it is clicked from. */
+  scroll-margin-top: 88px;
 }
 
 .scene__inner {
@@ -1196,7 +1203,11 @@
 
 .block {
   padding-top: clamp(56px, 8vh, 104px);
-  scroll-margin-top: 48px;
+  /* Same fixed-header offset as .scene, and for the same reason: the console
+     blocks and the conversion sections are all anchor targets reached from
+     above, and 48px left the section head (its chapter number, its label)
+     hidden behind the header. */
+  scroll-margin-top: 88px;
 }
 
 .block__head {
@@ -2587,6 +2598,9 @@
   position: relative;
   background: var(--void);
   padding: clamp(72px, 10vh, 132px) var(--gutter) clamp(56px, 8vh, 96px);
+  /* #get-involved is an anchor target too, and it is a .conv rather than a
+     .block, so it carries the fixed-header clearance itself. */
+  scroll-margin-top: 88px;
 }
 
 .conv__inner {
@@ -4351,5 +4365,21 @@ body {
 
   .emission {
     display: none;
+  }
+}
+
+/* -------------------------------------------------------------
+   anchor offset, small screens
+   -------------------------------------------------------------
+
+   The site header compacts below 640px (8px padding instead of 10),
+   so it is shorter and needs slightly less clearance. Same two values
+   the landing routes use for .sdk-page [id] and .advx-page [id]. */
+@media (max-width: 760px) {
+  .scene,
+  .block,
+  .conv,
+  .revenue-flow {
+    scroll-margin-top: 72px;
   }
 }

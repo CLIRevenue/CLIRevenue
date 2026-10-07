@@ -4,6 +4,7 @@
  */
 
 import { supabase } from './api.js'
+import { classifyAuthEvent, planFor, RESOLUTION } from '../components/auth/authEvents.js'
 import { SETTLEMENT_MS, SEED_CAMPAIGNS, DEFAULT_CAMPAIGN_ID, DEMO_ACCOUNT, seedRewards } from '../data/economy.js'
 
 // Base URL for our API endpoints (the Supabase Edge Functions)
@@ -86,7 +87,14 @@ async function initializeStore() {
 initializeStore()
 
 // Supabase auth change listener to refresh data when login/logout occurs
-supabase.auth.onAuthStateChange(() => {
+supabase.auth.onAuthStateChange((event) => {
+  // Only a reason that can actually change this store's answer refetches.
+  // A rotated access token names the same user it named a minute ago, and
+  // every field here is scoped to that user, so re-reading campaigns,
+  // rewards and account would produce byte-identical JSON — three requests
+  // an hour to learn nothing, which read to the user like the page reloading.
+  // Sign-in, sign-out and profile updates still re-initialise.
+  if (planFor(classifyAuthEvent(event)) !== RESOLUTION.FULL) return
   initializeStore()
 })
 

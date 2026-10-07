@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
-import { useAuth, roleHome } from '../auth/authState.js'
-import { navigateApp } from '../../hooks/useAppRoute.js'
+import { useAuth } from '../auth/authState.js'
 import AdminOverview from './AdminOverview.jsx'
 import AdminCampaigns from './AdminCampaigns.jsx'
 import AdminAdvertisers from './AdminAdvertisers.jsx'
@@ -10,6 +9,7 @@ import AdminPlacements from './AdminPlacements.jsx'
 import AdminEvents from './AdminEvents.jsx'
 import AdminSystem from './AdminSystem.jsx'
 import AdminContacts from './AdminContacts.jsx'
+import AdminAccount from './AdminAccount.jsx'
 import './AdminConsole.css'
 
 const PAGES = {
@@ -22,6 +22,15 @@ const PAGES = {
   events:     { label: 'Events',     icon: AdminEventsIcon },
   system:     { label: 'System',     icon: AdminSystemIcon },
   contacts:   { label: 'Contacts',   icon: AdminContactsIcon },
+}
+
+// "Account" is the one admin entry that is not a platform read surface, so it
+// lives under its own Operations heading rather than in the Platform nav.
+// It is a real page, not a placeholder: it renders the shared AccountPage —
+// the same one the advertiser and developer dashboards reach, which is why all
+// three sidebars label it "Account" and not "Settings".
+const OPERATIONS_PAGES = {
+  account: { label: 'Account', icon: AdminAccountIcon },
 }
 
 function IconSvg({ d, size = 14 }) {
@@ -52,6 +61,9 @@ function AdminEventsIcon()     { return <IconSvg d="M22 12h-4l-3 9L9 3l-3 9H2" /
 function AdminSystemIcon()     { return <IconSvg d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /> }
 
 function AdminContactsIcon()   { return <IconSvg d="M4 4h16l-4 12H8z" /> }
+// Sliders, not the sun/gear glyph AdminSystemIcon uses: two identical icons
+// side by side in one sidebar reads as a rendering bug.
+function AdminAccountIcon()   { return <IconSvg d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /> }
 
 export default function AdminConsole() {
   const { user, role, session, signOut, loading } = useAuth()
@@ -85,7 +97,7 @@ export default function AdminConsole() {
       </div>
     )
   }
-  const PageComponent = PAGES[page] ? {
+  const PAGE_COMPONENTS = {
     overview: AdminOverview,
     campaigns: AdminCampaigns,
     advertisers: AdminAdvertisers,
@@ -95,7 +107,9 @@ export default function AdminConsole() {
     events: AdminEvents,
     system: AdminSystem,
     contacts: AdminContacts,
-  }[page] : AdminOverview
+    account: AdminAccount,
+  }
+  const PageComponent = PAGE_COMPONENTS[page] || AdminOverview
 
   return (
     <div className="adm-root">
@@ -161,14 +175,21 @@ export default function AdminConsole() {
               </li>
             ))}
           </ul>
-          <div className="adm-sidebar__section" style={{ marginTop: 16 }}>Operations</div>
+          <div className="adm-sidebar__section">Operations</div>
           <ul className="adm-nav">
-            <li className="adm-nav__item">
-              <button type="button" className="adm-nav__btn" onClick={() => {}}>
-                <svg className="adm-nav__icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
-                Settings
-              </button>
-            </li>
+            {Object.entries(OPERATIONS_PAGES).map(([key, { label, icon: Icon }]) => (
+              <li className="adm-nav__item" key={key}>
+                <button
+                  type="button"
+                  className={`adm-nav__btn${page === key ? ' adm-nav__btn--active' : ''}`}
+                  onClick={() => handleNav(key)}
+                  aria-current={page === key ? 'page' : undefined}
+                >
+                  <Icon />
+                  {label}
+                </button>
+              </li>
+            ))}
           </ul>
         </nav>
 

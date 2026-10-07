@@ -185,7 +185,11 @@ function RevenueFlow() {
   const wires = flows.map((flow, index) => ({ flow, segment: geometry?.segments[index] }))
 
   return (
-    <div className="revenue-flow">
+    /* #revenue-split is the target of the split mechanism card's "Verify the
+       split" CTA. The card sits directly under this diagram inside #money, so
+       pointing it at #money was a self-anchor that moved nothing; the flow
+       diagram is the thing the card is actually asking the reader to inspect. */
+    <div className="revenue-flow" id="revenue-split">
       <div className="flow" ref={flowRef}>
         {geometry && (
           <svg

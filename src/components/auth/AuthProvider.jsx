@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../lib/api.js'
 import { fetchAuthStatus } from '../../lib/advertiserApi.js'
+import { classifyAuthEvent, isOnceOnly, planFor, RESOLUTION } from './authEvents.js'
 import { flushPendingProfile, parkPendingProfile } from '../../lib/authPassword.js'
 import { navigateApp } from '../../hooks/useAppRoute.js'
 import { readCallbackParams } from './authCallback.js'
@@ -99,17 +100,32 @@ export function AuthProvider({ children }) {
   // a dashboard + user chip after the user had already logged out.
   const generation = useRef(0)
 
-  const refresh = useCallback(async () => {
+  // The boot resolution is once per provider, no matter how many times it
+  // is asked for: the mount effect starts it and supabase's INITIAL_SESSION
+  // event asks for the same one. Without this flag every page load resolved
+  // the session twice — getSession, getUser, the server-side role check and
+  // up to three table reads — and, because the two overlapped, the first
+  // one's answer was discarded by the generation fence. It also makes a
+  // StrictMode double-mount resolve once instead of twice.
+  const bootStarted = useRef(false)
+  // `loading` gates the resolution, not the result: a caller that must not
+  // show the role-check animation (a token rotation) resolves silently.
+  // Defaults to the historical behaviour for every direct refresh() call.
+  const refresh = useCallback(async ({ loading: mayShowLoading = true } = {}) => {
     const mine = ++generation.current
     const stale = () => generation.current !== mine
 
-    // Enter the loading state only when there is a session to revalidate.
-    // Re-entering it while already anonymous blanks Login/Signup for one
-    // network round trip: signOut fires SIGNED_OUT, the listener calls
-    // refresh() again, and a logged-out visitor would briefly have no way
-    // back in. The initial mount is unaffected — that state already has
-    // loading: true.
-    setState((s) => (s.session ? { ...s, loading: true, error: '' } : { ...s, error: '' }))
+    // Enter the loading state only when there is a session to revalidate,
+    // and only when this reason is allowed to show it. Re-entering it while
+    // already anonymous blanks Login/Signup for one network round trip:
+    // signOut fires SIGNED_OUT, the listener calls refresh() again, and a
+    // logged-out visitor would briefly have no way back in. The initial
+    // mount is unaffected — that state already has loading: true.
+    setState((s) => {
+      if (!s.session) return { ...s, error: '' }
+      if (!mayShowLoading) return s
+      return { ...s, loading: true, error: '' }
+    })
     try {
       const initial = await supabase.auth.getSession()
       if (stale()) return
@@ -174,17 +190,33 @@ export function AuthProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    let alive = true
-    async function initial() {
-      await refresh()
-      if (!alive) return
+    // One flag covers all three ways the boot can be asked for: the mount,
+    // INITIAL_SESSION, and a StrictMode double-mount that re-runs this
+    // effect while keeping the same refs.
+    const startBoot = () => {
+      if (bootStarted.current) return
+      bootStarted.current = true
+      void refresh()
     }
-    initial()
-    const { data } = supabase.auth.onAuthStateChange(() => {
-      refresh()
+    startBoot()
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      const reason = classifyAuthEvent(event)
+      const plan = planFor(reason)
+      // A client-side route change is not an auth event. Treating it as one
+      // is what made every nav click re-read the session.
+      if (plan === RESOLUTION.NEVER) return
+      if (isOnceOnly(reason)) {
+        startBoot()
+        return
+      }
+      // TOKEN_ROTATION lands here as SILENT: the same user, new tokens. The
+      // resolution still runs — the token changed, so re-validating is
+      // correct — but it may not enter the loading state, so the
+      // full-screen role-check animation cannot replay on a page that is
+      // already working.
+      refresh({ loading: plan === RESOLUTION.FULL })
     })
     return () => {
-      alive = false
       data.subscription?.unsubscribe?.()
     }
   }, [refresh])

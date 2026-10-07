@@ -1,7 +1,7 @@
 import Scene from '../Scene.jsx'
 import Terminal from '../Terminal.jsx'
 import OutputStream from '../OutputStream.jsx'
-import ServedAdSlot from '../console/ServedAdSlot.jsx'
+import { PromoAd } from '../PromoAd.jsx'
 import { useSceneProgress } from '../../hooks/useSceneProgress.js'
 import { useTerminal } from '../../hooks/useTerminal.js'
 import { adScene, hostApp } from '../../data/demo.js'
@@ -36,7 +36,7 @@ function TheAd() {
         hint="ad slot · reserved region"
       >
         <OutputStream lines={frame.lines} />
-        <ServedAdSlot placementId="filmAd" surface="film" />
+        <PromoAd index={2} variant="compact" />
       </Terminal>
     </Scene>
   )

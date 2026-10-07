@@ -1,6 +1,6 @@
-import AdSlot from './AdSlot.jsx'
 import CommandLine from './CommandLine.jsx'
 import OutputStream from './OutputStream.jsx'
+import { PromoAd } from './PromoAd.jsx'
 
 const IDLE_FRAME = {
   command: '',
@@ -22,6 +22,7 @@ function Terminal({
   foot = null,
   hint = null,
   showAd = false,
+  adIndex = 0,
   children = null,
 }) {
   const outClass = [
@@ -76,7 +77,11 @@ function Terminal({
 
         {foot && <div className="terminal__foot">{foot}</div>}
 
-        {showAd && <AdSlot />}
+        {/* The reserved ad region. It carries a contextual mechanism rather
+            than a generic branded advertisement: this is the film's own copy
+            explaining why the slot exists, and it is deterministic
+            presentation -- never backend campaign data, never a fixture. */}
+        {showAd && <PromoAd index={adIndex} variant="compact" />}
       </div>
 
       <div className="terminal__in">

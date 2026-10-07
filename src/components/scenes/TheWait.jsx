@@ -1,7 +1,6 @@
 import Scene from '../Scene.jsx'
 import Terminal from '../Terminal.jsx'
 import AgentStream from '../AgentStream.jsx'
-import { PromoAd } from '../PromoAd.jsx'
 import { useSceneProgress } from '../../hooks/useSceneProgress.js'
 import { useTerminal } from '../../hooks/useTerminal.js'
 import { hostApp, waitScene } from '../../data/demo.js'
@@ -103,7 +102,6 @@ function TheWait() {
               </a>
             </div>
 
-            <PromoAd index={0} />
           </div>
 
           <div className="hero__terminal">
@@ -112,6 +110,9 @@ function TheWait() {
               live
               outHeight="tall"
               frame={frame}
+              showAd
+              adIndex={3}
+              slot="ad"
               foot="stdout · clean · ad slot reserved"
               hint="waiting"
             >

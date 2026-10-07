@@ -47,7 +47,7 @@ export default function AdminSystem() {
           </div>
         ))}
       </div>
-      <div className="adm-muted" style={{ marginTop: 14, fontSize: 10, fontFamily: 'var(--adm-mono)', letterSpacing: '.04em' }}>
+      <div className="adm-note">
         Last checked: {status.checkedAt ? new Date(status.checkedAt).toLocaleString() : '—'}
       </div>
     </div>

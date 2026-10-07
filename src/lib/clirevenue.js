@@ -2,15 +2,38 @@
    CLIRevenue — publisher initialization boundary
    -------------------------------------------------------------
    One module decides whether this build may talk to the ad server at
-   all, and it does so from exactly two environment values:
+   all, and it does so from three environment values:
 
      VITE_CLIREVENUE_PUBLISHABLE_KEY  the publisher's publishable key
-     VITE_API_BASE_URL                the gateway base (shared with the
-                                      rest of the app)
+     VITE_AD_GATEWAY_URL              the public ad gateway
+     VITE_API_BASE_URL                the internal backend
 
-   One new variable, not two: the delivery gateway is the same host the
-   rest of the application already talks to, so there is nothing to
-   override separately and no way for the two to disagree.
+   WHY THE AD GATEWAY IS NOT VITE_API_BASE_URL
+   ------------------------------------------
+   These two were originally the same variable, on the reasoning that
+   "the delivery gateway is the same host the rest of the application
+   already talks to, so there is nothing to override separately and no
+   way for the two to disagree." Production disagreed.
+
+   VITE_API_BASE_URL is the *internal* backend: the Supabase-hosted
+   functions this app calls with a user JWT for campaigns, rewards,
+   payouts and the contact inbox. The ad gateway is the *public*
+   edge: api.clirevenue.in, the host a third-party publisher's page
+   is meant to talk to, with its own TLS, its own CORS layer and its
+   own routing. In production they are different hosts, and by reusing
+   the internal base the SDK was pointed straight past the gateway at
+   the Supabase project ref.
+
+   That is not cosmetic. It put browser delivery and telemetry traffic
+   on a different origin than the one the platform publishes, so the
+   gateway stopped seeing it, and telemetry 404'd because that endpoint
+   was never routed there.
+
+   The gateway base therefore has its own variable and its own default,
+   the SDK's own DEFAULT_BASE_URL. A build that sets neither still
+   talks to the intended public gateway; a local build opts into the
+   local backend by setting VITE_AD_GATEWAY_URL in .env.local, which
+   is gitignored and never shipped.
 
    The publishable key is safe in a browser bundle: it is the same
    credential a page has to present to be allowed to ask for an ad,
@@ -48,10 +71,14 @@ const readEnv = (name) => {
 }
 
 const rawKey = readEnv('VITE_CLIREVENUE_PUBLISHABLE_KEY')
-const rawBase = readEnv('VITE_API_BASE_URL')
+const rawGateway = readEnv('VITE_AD_GATEWAY_URL')
 
 export const publisherKey = rawKey
-export const baseUrl = (rawBase || DEFAULT_BASE_URL).replace(/\/+$/, '')
+
+/* The public ad gateway, never the internal backend. Falls back to the SDK's
+   own default so a build that configures nothing still addresses the
+   published gateway rather than guessing from an unrelated variable. */
+export const baseUrl = (rawGateway || DEFAULT_BASE_URL).replace(/\/+$/, '')
 
 /* Why the build cannot deliver, in words the interface can show. */
 export const configReason = (() => {

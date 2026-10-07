@@ -3,21 +3,22 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchAdminContacts, updateContactStatus, deleteContact } from '../../lib/adminApi.js'
 import './AdminContacts.css'
 
-const STATUS_STYLE = {
-  new: { color: 'var(--adm-amber)', background: 'rgba(245,158,11,.06)' },
-  read: { color: 'var(--adm-muted)', background: 'rgba(113,113,122,.06)' },
-  in_progress: { color: 'var(--adm-amber)', background: 'rgba(245,158,11,.06)' },
-  resolved: { color: 'var(--adm-green)', background: 'rgba(34,197,94,.06)' },
-  archived: { color: 'var(--adm-muted)', background: 'rgba(113,113,122,.06)' },
+// Tones, not colours. A colour map meant the dot stayed green and pulsing for
+// an archived submission, so "resolved" was the only status that looked like
+// itself. The five labels are the `contact_statuses` enum from migration
+// 000019 — an unknown status must still render, so it falls back to amber.
+const STATUS_TONE = {
+  new: 'adm-status-pill--amber',
+  in_progress: 'adm-status-pill--amber',
+  read: 'adm-status-pill--muted',
+  archived: 'adm-status-pill--muted',
+  resolved: '',
 }
 
 function StatusPill({ status }) {
-  const style = STATUS_STYLE[status] || STATUS_STYLE.new
+  const tone = STATUS_TONE[status] ?? STATUS_TONE.new
   return (
-    <span
-      className="adm-status-pill"
-      style={{ color: style.color, background: style.background }}
-    >
+    <span className={tone ? `adm-status-pill ${tone}` : 'adm-status-pill'}>
       <span className="adm-status-pill__dot" />
       {status}
     </span>
@@ -203,8 +204,8 @@ function MainContacts() {
           <div className="adm-op-header__sub">Website contact form submissions</div>
         </div>
         <div className="adm-op-header__right">
-          <div className="adm-status-pill" style={{ color: 'var(--adm-muted)', background: 'rgba(113,113,122,.06)', borderColor: 'rgba(113,113,122,.15)' }}>
-            <span className="adm-status-pill__dot" style={{ background: 'var(--adm-muted)' }} />
+          <div className="adm-status-pill adm-status-pill--muted">
+            <span className="adm-status-pill__dot" />
             {rows.length} row{rows.length === 1 ? '' : 's'}
           </div>
         </div>

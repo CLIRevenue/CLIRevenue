@@ -334,10 +334,42 @@
   background: var(--adm-green);
   animation: adm-pulse 2s ease-in-out infinite;
 }
+/* The muted pill is a neutral state, not a live one: no colour, no pulse.
+   It used to be two copies of an inline style object, which is why a fourth
+   status surface in this console could not be added without a third copy. */
+.adm-status-pill--muted {
+  color: var(--adm-muted);
+  background: rgba(113, 113, 122, .06);
+  border-color: rgba(113, 113, 122, .15);
+}
+.adm-status-pill--muted .adm-status-pill__dot {
+  background: var(--adm-muted);
+  animation: none;
+}
+/* Amber is "in play but not settled" — new work, work in progress. */
+.adm-status-pill--amber {
+  color: var(--adm-amber);
+  background: var(--adm-amber-bg);
+  border-color: rgba(245, 158, 11, .18);
+}
+.adm-status-pill--amber .adm-status-pill__dot {
+  background: var(--adm-amber);
+}
 @keyframes adm-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: .4; }
 }
+
+/* A short muted prose line that qualifies the panel it sits in — a refresh
+   timestamp, a disclosure. Two one-off inline styles were doing this job. */
+.adm-note {
+  color: var(--adm-muted);
+  font-family: var(--adm-mono);
+  font-size: 11px;
+  letter-spacing: .01em;
+  margin-top: 14px;
+}
+.adm-note--lead { margin-top: 0; margin-bottom: 16px; }
 
 /* ---------- telemetry grid ---------------------------------------- */
 .adm-telemetry {

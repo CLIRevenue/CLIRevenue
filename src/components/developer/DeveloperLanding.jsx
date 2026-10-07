@@ -626,25 +626,20 @@ export default function DeveloperLanding() {
                     Where the documentation lives
                   </h3>
                 </header>
+                {/* The topic list used to be an anchor whose onClick called
+                    navigateApp('/developer') — the page this link is already
+                    on. It looked clickable and did nothing, which is worse
+                    than not offering it: a reader who clicked it concluded the
+                    documentation was missing. The reference lives in the
+                    repository, not on the site, so the sentence is prose and
+                    says exactly where to look. */}
                 <p className="sdk-p">
                   The full reference is grouped under{' '}
                   <code className="sdk-inline">docs/developer/</code> in this
-                  repository:{' '}
-                  <a
-                    className="adv-link"
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      navigateApp('/developer')
-                    }}
-                  >
-                    getting-started, installation, sdk, placements, ad-slots,
-                    configuration, analytics, troubleshooting
-                  </a>
-                  . The documentation pages under{' '}
-                  <code className="sdk-inline">docs/developer/</code> are the
-                  current, website-side reference; the SDK package itself
-                  lives in <code className="sdk-inline">packages/sdk</code>{' '}
+                  repository — getting-started, installation, sdk, placements,
+                  ad-slots, configuration, analytics, troubleshooting. Those
+                  files are the current, website-side reference; the SDK package
+                  itself lives in <code className="sdk-inline">packages/sdk</code>{' '}
                   and is versioned there a separate workstream.
                 </p>
               </Panel>

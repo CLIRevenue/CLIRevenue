@@ -1,7 +1,7 @@
 import Scene from '../Scene.jsx'
 import Terminal from '../Terminal.jsx'
 import OutputStream from '../OutputStream.jsx'
-import ServedAdSlot from '../console/ServedAdSlot.jsx'
+import { PromoAd } from '../PromoAd.jsx'
 import { useSceneProgress } from '../../hooks/useSceneProgress.js'
 import { useTerminal } from '../../hooks/useTerminal.js'
 import { experienceScene, hostApp } from '../../data/demo.js'
@@ -33,7 +33,7 @@ function TheExperience() {
         hint="still yours to use"
       >
         <OutputStream lines={frame.lines} />
-        <ServedAdSlot placementId="filmExperience" surface="film" />
+        <PromoAd index={1} variant="compact" />
       </Terminal>
 
       <ul className="annot">

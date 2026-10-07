@@ -74,7 +74,7 @@ const AUDIT = `(() => {
     }
   }
   const type = {}
-  for (const sel of ['.scene__title', '.closing__headline', '.scene__body', '.terminal__out', '.adslot__headline', '.adslot__label', '.eyebrow']) {
+  for (const sel of ['.scene__title', '.closing__headline', '.scene__body', '.terminal__out', '.placement-slot__headline', '.placement-slot__label', '.eyebrow']) {
     const el = document.querySelector(sel)
     if (!el) continue
     const cs = getComputedStyle(el)
@@ -99,8 +99,8 @@ const AUDIT = `(() => {
     type,
     outline,
     landmarks: [...new Set(landmarks)],
-    ad: role('.adslot'),
-    adRegion: role('.adslot__detail-region'),
+    ad: role('.placement-slot'),
+    adRegion: role('.placement-slot__detail-region'),
     account: role('.reward'),
     flow: role('.flow'),
     focusableCount: focusables.length,

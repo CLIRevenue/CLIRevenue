@@ -1,4 +1,5 @@
 import Scene from '../Scene.jsx'
+import { PromoAd } from '../PromoAd.jsx'
 import { incentiveScene } from '../../data/demo.js'
 
 function TheIncentive() {
@@ -24,6 +25,8 @@ function TheIncentive() {
           )
         })}
       </ul>
+
+      <PromoAd index={4} variant="compact" />
     </Scene>
   )
 }

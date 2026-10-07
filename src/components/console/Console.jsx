@@ -13,7 +13,6 @@ import { MotionConfig } from 'motion/react'
 
 import ConsoleMasthead from './ConsoleMasthead.jsx'
 import Workbench from './Workbench.jsx'
-import AdvertiserConsole from './AdvertiserConsole.jsx'
 import RewardsPanel from './RewardsPanel.jsx'
 import EconomicLoop from './EconomicLoop.jsx'
 import { PromoAd } from '../PromoAd.jsx'
@@ -48,7 +47,12 @@ function Console() {
           </div>
 
           <Workbench />
-          <AdvertiserConsole economy={economy} />
+          {/* The advertiser brief lived here once, directly under the agent drum.
+              It duplicated film chapter 03 (#advertiserDemo) almost word for
+              word -- "Write the brief. Watch it land in a real session." against
+              "The advertiser writes the brief. The campaign lands in a real
+              session." -- so the film owns the story and this panel is gone.
+              The real advertiser console is a separate route at /advertiser. */}
           <RewardsPanel economy={economy} />
           <EconomicLoop economy={economy} />
 

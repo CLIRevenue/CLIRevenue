@@ -54,6 +54,10 @@ describe('service role key never reaches the browser', () => {
       // be readable by the browser. It is not a credential — it authorises
       // no administrative action, and it cannot issue or revoke keys.
       'VITE_CLIREVENUE_PUBLISHABLE_KEY',
+      // The public ad gateway the SDK addresses. A URL, not a credential, and
+      // deliberately NOT VITE_API_BASE_URL: that one is the internal backend.
+      // Sharing them is what pointed production SDK traffic past the gateway.
+      'VITE_AD_GATEWAY_URL',
     ])
     const used = new Set()
     for (const f of srcFiles) {

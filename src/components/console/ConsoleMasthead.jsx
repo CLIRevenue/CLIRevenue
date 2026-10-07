@@ -6,10 +6,13 @@ const Arrow = arrowGlyph
 
 /**
  * The four parties of the thesis, in thesis order rather than page order.
- * Each one is a real anchor into the console below.
+ * Three of the four anchors are into the console below; the advertiser's
+ * brief is film chapter 03 (#advertiserDemo), the chapter directly above,
+ * which is where that panel now lives — the console used to carry its own
+ * near-duplicate advertiser block and it was removed as a duplicate.
  */
 const JOURNEY = [
-  { index: '01', label: 'Advertiser', note: 'brief, budget, audience', href: '#advertiser' },
+  { index: '01', label: 'Advertiser', note: 'brief, budget, audience', href: '#advertiserDemo' },
   { index: '02', label: 'CLIRevenue', note: 'records the revenue', href: '#loop' },
   { index: '03', label: 'AI coding workflow', note: 'the sponsored slot', href: '#workbench' },
   { index: '04', label: 'User reward', note: 'pending to available', href: '#rewards' },

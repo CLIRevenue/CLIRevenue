@@ -105,14 +105,21 @@ describe('publisher initialization boundary', () => {
   })
 
   it('creates a client when a valid publishable key is present', async () => {
+    // Both bases are stubbed, and to different hosts on purpose: the SDK's
+    // gateway must not be the internal backend. This was the production
+    // defect -- reusing VITE_API_BASE_URL as the gateway base pointed browser
+    // delivery and telemetry straight past api.clirevenue.in.
     const { getClient, clirevenue } = await loadBoundary({
       VITE_CLIREVENUE_PUBLISHABLE_KEY: KEY,
-      VITE_API_BASE_URL: 'https://gateway.example/functions/v1',
+      VITE_AD_GATEWAY_URL: 'https://gateway.example',
+      VITE_API_BASE_URL: 'https://internal.example/functions/v1',
     })
 
     expect(clirevenue.configured).toBe(true)
     expect(clirevenue.publisherKeyConfigured).toBe(true)
-    expect(clirevenue.baseUrl).toBe('https://gateway.example/functions/v1')
+    expect(clirevenue.baseUrl).toBe('https://gateway.example')
+    // The internal backend variable has no say in where the SDK sends ads.
+    expect(clirevenue.baseUrl).not.toBe('https://internal.example/functions/v1')
     expect(clirevenue.sdkVersion).toMatch(/^\d+\.\d+\.\d+$/)
     expect(clirevenue.publisherKeyHint()).toBe(`${KEY.slice(0, 8)}…${KEY.slice(-4)}`)
 
@@ -149,7 +156,25 @@ describe('publisher initialization boundary', () => {
   })
 
   it('falls back to the SDK default base URL', async () => {
-    const { clirevenue } = await loadBoundary({ VITE_CLIREVENUE_PUBLISHABLE_KEY: KEY })
+    // Stubbed to empty rather than omitted: an unset variable would be filled
+    // in by whatever the developer's own .env.local happens to contain, which
+    // is how a routing assertion becomes a false green in one checkout and a
+    // red in another.
+    const { clirevenue } = await loadBoundary({
+      VITE_CLIREVENUE_PUBLISHABLE_KEY: KEY,
+      VITE_AD_GATEWAY_URL: '',
+    })
+    expect(clirevenue.baseUrl).toBe('https://api.clirevenue.in')
+  })
+
+  it('ignores the internal backend base entirely', async () => {
+    // The regression, stated directly: a build that configures only the
+    // internal backend must still address the published gateway.
+    const { clirevenue } = await loadBoundary({
+      VITE_CLIREVENUE_PUBLISHABLE_KEY: KEY,
+      VITE_AD_GATEWAY_URL: '',
+      VITE_API_BASE_URL: 'https://xoacisojqsqlqzvzzusx.supabase.co/functions/v1',
+    })
     expect(clirevenue.baseUrl).toBe('https://api.clirevenue.in')
   })
 

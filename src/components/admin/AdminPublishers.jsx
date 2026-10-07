@@ -27,7 +27,7 @@ export default function AdminPublishers() {
           <div className="adm-op-header__sub">Publisher inventory</div>
         </div>
       </div>
-      <div className="adm-muted" style={{ marginBottom: 16, fontSize: 11 }}>
+      <div className="adm-note adm-note--lead">
         Raw publisher keys are never displayed. Only safe identifying metadata is shown.
       </div>
       <div className="adm-table-wrap">

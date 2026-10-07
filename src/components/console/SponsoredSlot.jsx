@@ -1,7 +1,7 @@
 /* =============================================================
    CLIRevenue — the sponsored slot
    -------------------------------------------------------------
-   Same class names and same visual contract as the film's `AdSlot`, and
+   Same class names and same visual contract as the film's reserved ad slot, and
    three things can fill it:
 
      `served`  the SDK's Serve result for a placement key.

@@ -27,8 +27,8 @@ export default function AdminCampaigns() {
           <div className="adm-op-header__sub">Campaign activity</div>
         </div>
         <div className="adm-op-header__right">
-          <div className="adm-status-pill" style={{ color: 'var(--adm-muted)', background: 'rgba(113,113,122,.06)', borderColor: 'rgba(113,113,122,.15)' }}>
-            <span className="adm-status-pill__dot" style={{ background: 'var(--adm-muted)' }} />
+          <div className="adm-status-pill adm-status-pill--muted">
+            <span className="adm-status-pill__dot" />
             {rows.length} row{rows.length === 1 ? '' : 's'}
           </div>
         </div>

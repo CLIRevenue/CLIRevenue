@@ -36,7 +36,7 @@
        share a system without sharing an information architecture.
    ============================================================= */
 
-import { navigateApp } from '../../hooks/useAppRoute.js'
+import { navigateApp, spaNav } from '../../hooks/useAppRoute.js'
 
 import { Panel } from '../console/ui.jsx'
 import CopyButton from '../CopyButton.jsx'
@@ -603,7 +603,7 @@ function FinalCta() {
       </div>
       <p className="advx-cta__aside">
         Building the tool side instead?{' '}
-        <a className="adv-link" href="/developer">
+        <a className="adv-link" href="/developer" onClick={spaNav}>
           The developer page
         </a>{' '}
         documents the SDK, placements, and rendering.

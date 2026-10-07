@@ -233,7 +233,11 @@ describe('auth navigation state', () => {
     // already-anonymous one: it must not set loading without a session.
     const src = read('src/components/auth/AuthProvider.jsx')
     expect(src).not.toMatch(/setState\(\(s\) => \(\{ \.\.\.s, loading: true/)
-    expect(src).toMatch(/s\.session \? \{ \.\.\.s, loading: true/)
+    expect(src).toMatch(/if \(!s\.session\) return \{ \.\.\.s, error: '' \}/)
+    // ...and a reason that is not allowed to animate must not set it either,
+    // or the full-screen role check would replay on a token rotation.
+    expect(src).toMatch(/if \(!mayShowLoading\) return s/)
+    expect(src).toMatch(/return \{ \.\.\.s, loading: true, error: '' \}/)
   })
 })
 

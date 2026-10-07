@@ -2,6 +2,11 @@ import { useRef, useState } from 'react'
 import { motion } from 'motion/react'
 
 import { supabase, supabaseConfigured } from '../../lib/api.js'
+import {
+  CONTACT_FALLBACK,
+  contactErrorLog,
+  contactErrorMessage,
+} from '../../lib/contactErrors.js'
 import { useAuth } from '../auth/authState.js'
 import { SectionHead } from '../console/ui.jsx'
 import { isEmail, useReveal } from './helpers.js'
@@ -118,8 +123,11 @@ function Contact() {
         })
 
       if (submitError) {
-        console.error('contact submission failed:', submitError.message)
-        setError('Couldn\'t send your message. Please try again.')
+        // Log the code, never the raw message: a PostgREST error string can
+        // name the table and the policy, and this form is reachable by anyone
+        // on the internet. See src/lib/contactErrors.js.
+        console.error('contact submission failed:', contactErrorLog(submitError))
+        setError(contactErrorMessage(submitError, CONTACT_FALLBACK))
         setState('error')
         return
       }
@@ -127,8 +135,8 @@ function Contact() {
       resetForm()
       setState('success')
     } catch (e) {
-      console.error('contact submission threw:', e)
-      setError('Couldn\'t send your message. Please try again.')
+      console.error('contact submission threw:', contactErrorLog(e))
+      setError(contactErrorMessage(e, CONTACT_FALLBACK))
       setState('error')
     } finally {
       inFlight.current = false

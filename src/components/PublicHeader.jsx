@@ -1,5 +1,5 @@
 import { useAuth, authNavState } from './auth/authState.js'
-import { navigateApp } from '../hooks/useAppRoute.js'
+import { navigateApp, spaNav } from '../hooks/useAppRoute.js'
 import { ArrowUpRight } from 'lucide-react'
 
 /**
@@ -21,6 +21,17 @@ import { ArrowUpRight } from 'lucide-react'
  * grey-bordered box beside Log in and only ever received the global focus
  * outline. That class now survives solely on the non-interactive path chip in
  * the page mastheads, where an inert chip is the correct look.
+ *
+ * They keep a real href rather than becoming buttons, so middle-click,
+ * cmd-click and "copy link address" still do the native thing — but a plain
+ * left click is handed to spaNav(). Without that, these two were the only
+ * controls in the header that threw away the SPA: they issued a full document
+ * request, which rebooted the app, replayed the whole intro film and made the
+ * boot cost the visitor a second time for a link that is one click from the
+ * current page. (The landing routes carry their own mastheads, so this header is
+ * never mounted while you are on /developer or /advertiser — which is why these
+ * two need no active state, and why the Log in / Dashboard controls beside them
+ * already carry the "where am I" job.)
  */
 export default function PublicHeader() {
   const { loading, isAuthenticated, role, user, signOut } = useAuth()
@@ -42,8 +53,8 @@ export default function PublicHeader() {
         CLI<em>Revenue</em>
       </button>
       <nav className="sitehead__nav" aria-label="Account">
-        <a className="btn btn--ghost btn--sm" href="/developer">Developer</a>
-        <a className="btn btn--ghost btn--sm" href="/advertiser">Advertiser</a>
+        <a className="btn btn--ghost btn--sm" href="/developer" onClick={spaNav}>Developer</a>
+        <a className="btn btn--ghost btn--sm" href="/advertiser" onClick={spaNav}>Advertiser</a>
         {nav.showDashboard ? (
           <>
             <button
