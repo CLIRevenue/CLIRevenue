@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { AdvBarChart, AdvEmpty, AdvError, AdvLoading, AdvStats } from '../advertiser/AdvertiserUI.jsx'
+import { AdvBarChart, AdvEmpty, AdvError, AdvLoading, AdvPageHead, AdvStats } from '../advertiser/AdvertiserUI.jsx'
 import { Panel } from '../console/ui.jsx'
 import { supabase } from '../../lib/api.js'
 import DeveloperAccount from './DeveloperAccount.jsx'
@@ -183,41 +183,46 @@ export default function DeveloperApp() {
       <div className="adv-shell__inner">
         <nav className="adv-nav" aria-label="Developer">
           {TABS.map((t) => (
-            <button key={t.id} type="button" className="adv-nav__btn" data-active={tab === t.id} aria-current={tab === t.id ? 'page' : undefined} onClick={() => setTab(t.id)}>
+            <button
+              key={t.id}
+              type="button"
+              className="adv-nav__btn"
+              data-active={tab === t.id}
+              aria-current={tab === t.id ? 'page' : undefined}
+              onClick={() => setTab(t.id)}
+            >
               {t.label}
             </button>
           ))}
           <LogoutButton />
         </nav>
 
-        {/* The account and SDK tabs render their own page head — showing
-            this one too would stack two eyebrows and two headlines. */}
         {tab !== 'account' && tab !== 'sdk' ? (
           <AdvPageHead
             index="D1"
             label="Developer"
             title={tab === 'dashboard' ? 'Earnings at a glance.' : tab[0].toUpperCase() + tab.slice(1) + '.'}
-            body={
-              {
-                dashboard: 'Every figure below is read live from your account — real reward balances and delivery, never estimates.',
-                earnings: 'Balances and rewards as they land, straight from your account.',
-                integrations: 'Which CLIs you\'ve connected and how each one reads.',
-                sdk: 'Ad delivery, end to end.',
-                keys: 'Manage your publisher keys.',
-                analytics: 'A quick look at what you\'ve earned so far.',
-                account: 'Your details, security, and account controls.',
-              }[tab]
-            }
+            body={{
+              dashboard: 'Every figure below is read live from your account — real reward balances and delivery, never estimates.',
+              earnings: 'Balances and rewards as they land, straight from your account.',
+              integrations: 'Which CLIs you\'ve connected and how each one reads.',
+              sdk: 'Ad delivery, end to end.',
+              keys: 'Manage your publisher keys.',
+              analytics: 'A quick look at what you\'ve earned so far.',
+              account: 'Your details, security, and account controls.',
+            }[tab]}
           />
         ) : null}
-        {/* The rewards banner is suppressed on the SDK tab: it describes a
-            failure the SDK page has nothing to do with, and the SDK page
-            reports its own status honestly. */}
+
         {error && tab !== 'sdk' ? <AdvError message={error} onRetry={refresh} /> : null}
-        {/* SDK setup needs no account data, so it sits outside the loading
-            gate on purpose: a rewards endpoint that has not been deployed
-            yet must not hide the one page that explains how to integrate. */}
-        {tab === 'sdk' ? <SdkSetup /> : tab === 'keys' ? <PublisherKeys /> : loading ? <AdvLoading label="Loading developer rewards…" /> : (
+
+        {tab === 'sdk' ? (
+          <SdkSetup />
+        ) : tab === 'keys' ? (
+          <PublisherKeys />
+        ) : loading ? (
+          <AdvLoading label="Loading developer rewards…" />
+        ) : (
           <>
             {(tab === 'dashboard' || tab === 'earnings') && (
               <>
@@ -245,10 +250,11 @@ export default function DeveloperApp() {
                               {rewardStatus(r).label} · {formatCents(r.amount_cents ?? r.amountCents ?? 0)}
                             </span>
                           </li>
-                        )}
+                        ))}
                       </ul>
                     )}
                   </section>
+
                   <section className="panel adv-panel" aria-label="Reward mix">
                     <h4 className="adv-panel__title">Reward mix</h4>
                     <p className="adv-panel__sub">By campaign (latest entries).</p>
@@ -265,6 +271,7 @@ export default function DeveloperApp() {
                 </div>
               </>
             )}
+
             {tab === 'integrations' && (
               <Panel className="adv-panel">
                 <h4 className="adv-panel__title">Integrations</h4>
@@ -281,6 +288,7 @@ export default function DeveloperApp() {
                 </ul>
               </Panel>
             )}
+
             {tab === 'analytics' && (
               <Panel className="adv-panel">
                 <h4 className="adv-panel__title">Analytics</h4>
@@ -290,7 +298,8 @@ export default function DeveloperApp() {
                     label: 'Rewards seen',
                     value: String(rewards.length),
                     hint: rewards.length === 1 ? 'one entry' : 'entries in the ledger',
-                    tone: rewards.length > 0 ? 'live' : 'zero' },
+                    tone: rewards.length > 0 ? 'live' : 'zero',
+                  },
                   { label: 'Available', value: formatCents(available), tone: available > 0 ? 'live' : 'zero' },
                   { label: 'Pending', value: formatCents(pending), tone: pending > 0 ? 'settling' : 'zero' },
                 ]} />
@@ -307,10 +316,12 @@ export default function DeveloperApp() {
                 )}
               </Panel>
             )}
+
             {tab === 'account' && <DeveloperAccount />}
           </>
         )}
       </div>
-    )
+    </section>
   )
+
 }
