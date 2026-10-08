@@ -64,7 +64,7 @@ function isEmpty(v) {
  * selection and role-specific fields. Called with live values on every
  * render, so errors evaporate the moment the input becomes valid.
  */
-export function validateSignup({ step, email, password, confirm, role, values }) {
+export function validateSignup({ step, email, password, confirm, role, values, privacyConsent, termsConsent }) {
   const errors = {}
 
   if (step >= 1) {
@@ -98,6 +98,13 @@ export function validateSignup({ step, email, password, confirm, role, values })
     const ac = values.app_count
     if (!isEmpty(ac) && (!/^\d+$/.test(String(ac).trim()) || Number(ac) < 0)) {
       errors.app_count = 'Enter a whole number of 0 or more.'
+    }
+
+    if (step >= 2 && !privacyConsent) {
+      errors.privacyConsent = 'You must agree to the Privacy Policy.'
+    }
+    if (step >= 2 && !termsConsent) {
+      errors.termsConsent = 'You must agree to the Terms & Conditions.'
     }
   }
 

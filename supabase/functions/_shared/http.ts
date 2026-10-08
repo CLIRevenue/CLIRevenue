@@ -96,7 +96,21 @@ export function originFor(req?: Request): string {
   if (!allowed.length) return "*";
   const origin = req ? (req.headers.get("origin") ?? "") : ambientOrigin();
   if (!origin) return "";
-  return allowed.includes(origin) ? origin : "";
+
+  if (allowed.includes(origin)) return origin;
+
+  const lower = origin.toLowerCase();
+  const isLocalhost =
+    lower.startsWith("http://localhost") ||
+    lower.startsWith("https://localhost") ||
+    lower.startsWith("http://127.0.0.1") ||
+    lower.startsWith("https://127.0.0.1") ||
+    lower === "http://::1" ||
+    lower === "https://::1";
+
+  if (isLocalhost) return origin;
+
+  return "";
 }
 
 export function corsFor(req?: Request): Record<string, string> {

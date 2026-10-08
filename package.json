@@ -15,7 +15,8 @@
     "test:db": "vitest run tests/db"
   },
   "dependencies": {
-    "@clirevenue/sdk": "^1.0.2",
+    "@clirevenue/sdk": "^1.0.3",
+    "@filebase/sdk": "^1.0.6",
     "@rolldown/binding-wasm32-wasi": "^1.2.12",
     "@supabase/supabase-js": "^2.39.0",
     "gsap": "^3.15.0",

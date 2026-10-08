@@ -7,6 +7,8 @@ import SdkSetup from './SdkSetup.jsx'
 import PublisherKeys from './PublisherKeys.jsx'
 import { LogoutButton } from '../auth/LogoutButton.jsx'
 
+const STORAGE_KEY = 'clirevenueDeveloperTab'
+
 function trimBase(raw) {
   return String(raw || '').replace(/\/+$/, '')
 }
@@ -20,9 +22,8 @@ async function authedGet(url) {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   })
-  const text = await res.text()
   let json
-  try { json = text ? JSON.parse(text) : null } catch { json = null }
+  try { json = await res.json() } catch { json = null }
   if (!res.ok) {
     const err = new Error(json?.error?.message || json?.error || json?.message || res.statusText || 'Request failed')
     err.status = res.status
@@ -85,11 +86,36 @@ function rewardStatus(reward) {
 }
 
 export default function DeveloperApp() {
-  const [tab, setTab] = useState('dashboard')
+  // Initialize tab from sessionStorage or default to 'dashboard'
+  const [tab, setTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = window.sessionStorage.getItem(STORAGE_KEY)
+        if (stored && ['dashboard', 'earnings', 'sdk', 'keys', 'integrations', 'analytics', 'account'].includes(stored)) {
+          return stored
+        }
+      } catch (e) {
+        console.warn('Failed to read developer tab state from sessionStorage:', e)
+      }
+    }
+    return 'dashboard'
+  })
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [balance, setBalance] = useState(null)
   const [rewards, setRewards] = useState([])
+
+  // Persist tab state to sessionStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.sessionStorage.setItem(STORAGE_KEY, tab)
+      } catch (e) {
+        console.warn('Failed to write developer tab state to sessionStorage:', e)
+      }
+    }
+  }, [tab])
 
   // Initial load: every setState happens after the awaited fetch, so the
   // effect itself never synchronously updates state.
@@ -247,8 +273,7 @@ export default function DeveloperApp() {
                               {r.campaign_name || r.campaign_id || 'Reward'}
                             </span>
                             <span className="adv-activity__detail">
-                              {rewardStatus(r).label} · {formatCents(r.amount_cents ?? r.amountCents ?? 0)}
-                            </span>
+                              {rewardStatus(r).label} · {formatCents(r.amount_cents ?? r.amountCents ?? 0)}</span>
                           </li>
                         ))}
                       </ul>
@@ -323,5 +348,4 @@ export default function DeveloperApp() {
       </div>
     </section>
   )
-
 }

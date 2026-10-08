@@ -13,6 +13,9 @@ import { LoginPage, SignupPage, AuthCallbackPage } from './components/auth/AuthP
 import { RequireRole, AuthLoadingScreen } from './components/auth/RequireAuth.jsx'
 import { useAuth, roleHome } from './components/auth/authState.js'
 import PublicHeader from './components/PublicHeader.jsx'
+import Footer from './components/Footer.jsx'
+import PrivacyPolicyPage from './components/PrivacyPolicyPage.jsx'
+import TermsConditionsPage from './components/TermsConditionsPage.jsx'
 import useAppRoute, { navigateApp } from './hooks/useAppRoute.js'
 import './components/advertiser/advertiser.css'
 import './App.css'
@@ -44,6 +47,7 @@ function Routes() {
         <Atmosphere />
         <PublicHeader />
         <LoginPage />
+        <Footer />
       </>
     )
   }
@@ -54,6 +58,7 @@ function Routes() {
         <Atmosphere />
         <PublicHeader />
         <SignupPage />
+        <Footer />
       </>
     )
   }
@@ -66,6 +71,7 @@ function Routes() {
       <>
         <Atmosphere />
         <AuthCallbackPage />
+        <Footer />
       </>
     )
   }
@@ -100,6 +106,7 @@ function Routes() {
       <>
         <Atmosphere />
         <DeveloperLanding />
+        <Footer />
       </>
     )
   }
@@ -113,6 +120,29 @@ function Routes() {
       <>
         <Atmosphere />
         <AdvertiserLanding />
+        <Footer />
+      </>
+    )
+  }
+
+  if (clean === '/privacy' || clean.startsWith('/privacy')) {
+    return (
+      <>
+        <Atmosphere />
+        <PublicHeader />
+        <PrivacyPolicyPage />
+        <Footer />
+      </>
+    )
+  }
+
+  if (clean === '/terms' || clean.startsWith('/terms')) {
+    return (
+      <>
+        <Atmosphere />
+        <PublicHeader />
+        <TermsConditionsPage />
+        <Footer />
       </>
     )
   }
@@ -153,6 +183,7 @@ function Routes() {
       <Cinema />
       <Console />
       <Conversion />
+      <Footer />
     </>
   )
 }

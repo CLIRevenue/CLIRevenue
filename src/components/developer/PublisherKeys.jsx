@@ -3,18 +3,7 @@ import { Panel } from '../console/ui.jsx'
 import { AdvEmpty, AdvPageHead } from '../advertiser/AdvertiserUI.jsx'
 import CopyButton from '../CopyButton.jsx'
 import { listPublisherKeys, createPublisherKey, revokePublisherKey } from '../../lib/publisherKeysApi.js'
-
-/* Status vocabulary */
-const OUTCOME = {
-  idle: { tone: 'idle', label: 'Idle' },
-  loading: { tone: 'busy', label: 'Loading…' },
-  ready: { tone: 'ok', label: 'Ready' },
-  error: { tone: 'warn', label: 'Error' },
-  creating: { tone: 'busy', label: 'Creating…' },
-  created: { tone: 'ok', label: 'Created!' },
-  revoking: { tone: 'busy', label: 'Revoking…' },
-  revoked: { tone: 'ok', label: 'Revoked!' },
-}
+import { provisionPublisher } from '../../lib/publisherApi.js'
 
 const MASK = '•'.repeat(16)
 
@@ -28,9 +17,29 @@ export default function PublisherKeys() {
   const [revokingKeyId, setRevokingKeyId] = useState(null) // keyId being revoked
   const [newLabel, setNewLabel] = useState('')
 
-  const fetchKeys = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+  // Initial load: provision first, then list. Every setState happens after
+  // the awaited fetches, so the effect itself never synchronously updates
+  // state.
+  //
+  // publishers.owner_profile_id is written only by provision_publisher, so on
+  // a developer's first visit the list call races provisioning and answers
+  // 404. Provisioning is idempotent -- provision_publisher_slot returns the
+  // existing publisher and only mints a key when there is none -- so calling
+  // it on every load is safe and removes the dependency on which sibling
+  // component happens to render first.
+  //
+  // The response can carry the raw publishable key on the very first
+  // provisioning. This page only ever renders key metadata, so the value is
+  // deliberately dropped; SdkSetup owns the one-time hand-off.
+  const load = useCallback(async () => {
+    try {
+      await provisionPublisher()
+    } catch (err) {
+      // Not fatal on its own. The list call below decides the message, and
+      // if the publisher really is absent it answers 404 with the accurate
+      // reason rather than a provisioning error standing in for it.
+      console.warn('Publisher provisioning before listing keys failed:', err)
+    }
     try {
       const keyList = await listPublisherKeys()
       setKeys(keyList)
@@ -42,6 +51,13 @@ export default function PublisherKeys() {
       setLoading(false)
     }
   }, [])
+
+  // Retry path (event handlers): may flip loading synchronously.
+  const fetchKeys = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    await load()
+  }, [load])
 
   const handleCreateKey = useCallback(async () => {
     if (!newLabel.trim()) {
@@ -83,8 +99,12 @@ export default function PublisherKeys() {
   }, [])
 
   useEffect(() => {
-    fetchKeys()
-  }, [fetchKeys])
+    // Async boundary: kick the loader off without synchronously mutating
+    // state from the effect body itself.
+    void (async () => {
+      await load()
+    })()
+  }, [load])
 
   const handleDismissCreated = useCallback(() => {
     setTab('list')

@@ -55,6 +55,11 @@ const UNIQUE_VIOLATION = "23505";
 
 const INSUFFICIENT_PRIVILEGE = "42501";
 
+/** PostgREST PGRST116: "JSON object requested, multiple (or no) rows returned".
+ *  `.single()` reports the same code for zero rows and for more than one, so
+ *  it describes a lookup that found nothing to own, never a fault. */
+const NOT_SINGLE = "PGRST116";
+
 type KeyRow = {
   id: string;
   key_prefix: string;
@@ -83,6 +88,23 @@ function asKeyRow(data: unknown): KeyRow | null {
     : null;
 }
 
+/**
+ * Resolve the caller's publisher.
+ *
+ * Zero rows is an expected answer, not an error. publishers.owner_profile_id
+ * is nullable and is written only by provision_publisher_slot(), so a
+ * developer who has not provisioned yet simply owns nothing and the caller
+ * answers 404. `.single()` would raise PGRST116 for that case, so the query
+ * is narrowed to at most one row instead: `.maybeSingle()` yields null when
+ * there is nothing and no longer raises when there is exactly one, which is
+ * what `.single()` did correctly.
+ *
+ * The extra `.limit(1)` is what keeps this safe if a row ever slipped past
+ * the partial unique index publishers_owner_profile_id_key (000016): a
+ * duplicate degrades to the first row instead of turning a page load into a
+ * 500. Ownership is still the filter -- this never adopts a publisher that
+ * belongs to somebody else, or one with a NULL owner_profile_id.
+ */
 async function getPublisherId(
   admin: ReturnType<typeof adminClient>,
   profileId: string,
@@ -91,9 +113,13 @@ async function getPublisherId(
     .from("publishers")
     .select("id")
     .eq("owner_profile_id", profileId)
-    .single();
-  if (error) throw new Error(`get publisher: ${error.message}`);
-  return (data as { id: string | null })?.id ?? null;
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    // maybeSingle() only surfaces a genuine query failure.
+    throw new Error(`get publisher: ${error.message}`);
+  }
+  return (data as { id: string | null } | null)?.id ?? null;
 }
 
 async function listKeys(
@@ -161,14 +187,22 @@ async function revokeKey(
 ): Promise<void> {
   // First, check that the key belongs to the publisher to prevent revoking
   // another publisher's key.
+  //
+  // Not `.single()`: an unknown key_id, or one belonging to another
+  // publisher, matches zero rows and `.single()` raises PGRST116, which would
+  // surface as a 500 and make the "Key not found" 404 below unreachable.
+  // `.limit(1).maybeSingle()` asks the same question without demanding a row.
   const { data, error } = await admin
     .from("publisher_keys")
     .select("id")
     .eq("id", keyId)
     .eq("publisher_id", publisherId)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
-  if (error) throw new Error(`verify key: ${error.message}`);
+  if (error) {
+    throw new Error(`verify key: ${error.message}`);
+  }
   if (!data) {
     throw new Error("Key not found or does not belong to this publisher");
   }
@@ -176,7 +210,9 @@ async function revokeKey(
   const { error: updateError } = await admin
     .from("publisher_keys")
     .update({ revoked_at: new Date().toISOString() })
-    .eq("id", keyId);
+    .eq("id", keyId)
+    // Scoped again so the write cannot outlive the check above.
+    .eq("publisher_id", publisherId);
 
   if (updateError) throw new Error(`revoke key: ${updateError.message}`);
 }
@@ -203,7 +239,18 @@ const handler = serveWithCors(async (req) => {
   if ("error" in dev && dev.error) return dev.error;
   const profileId = dev.profile!.id;
 
-  const publisherId = await getPublisherId(admin, profileId);
+  // Not provisioned yet is a 404, not a 500: it means the developer has not
+  // called provision_publisher, and it is the state the dashboard is in for
+  // the first visit. A real lookup failure still answers 500, but through
+  // apiError so the caller gets JSON with CORS headers instead of an
+  // unhandled rejection surfaced as SB-Error-Code: EDGE_FUNCTION_ERROR.
+  let publisherId: string | null = null;
+  try {
+    publisherId = await getPublisherId(admin, profileId);
+  } catch (err) {
+    console.error("publisher_keys: publisher lookup failed:", err);
+    return apiError("INTERNAL_ERROR", "Internal server error.", 500, {}, req);
+  }
   if (!publisherId) {
     return apiError("NOT_FOUND", "Publisher not found for this developer.", 404, {}, req);
   }

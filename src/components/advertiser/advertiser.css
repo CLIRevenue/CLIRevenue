@@ -350,6 +350,7 @@ button.btn--ghost:hover .sitehead__icon {
   flex-wrap: wrap;
 }
 .adv-check { display: flex; gap: 10px; align-items: center; padding: 8px 0; font-size: 13px; color: var(--ink-2); }
+.form__consent { display: grid; gap: 4px; margin-top: 4px; }
 .adv-shell__inner--narrow { max-width: 640px; }
 .adv-password { display: flex; gap: 8px; }
 .adv-password .field__input { flex: 1; }

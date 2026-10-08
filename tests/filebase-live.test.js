@@ -18,13 +18,32 @@
  *   FILEBASE_ACCESS_KEY_ID=... FILEBASE_SECRET_ACCESS_KEY=... \
  *   npx vitest run tests/filebase-live.test.js
  */
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const { filebaseConfig, buildObjectKey, presign, presignCreativeRead, headObject, deleteObject, validateCreativeUpload } =
   await import("../supabase/functions/_shared/filebase.ts");
 
+/**
+ * Runtime adapter.
+ *
+ * filebaseConfig() defaults its parameter to `Deno.env` because in production
+ * it is only ever called from Supabase Edge Functions, where that is the real
+ * environment. This file runs under Node via Vitest, where there is no `Deno`
+ * global -- calling it with no argument evaluates the default parameter and
+ * throws `ReferenceError: Deno is not defined` before a single request is
+ * made.
+ *
+ * The function already accepts an explicit `{ get(name) }` object, which is
+ * the seam this uses: the live test hands it a Node `process.env` reader. The
+ * production code is left alone, and the Edge Functions keep calling it with
+ * no argument.
+ */
+const ENV = {
+  get: (name) => globalThis.process.env[name],
+};
+
 const ENABLED = globalThis.process.env.FILEBASE_LIVE_TEST === "1";
-const CONFIG = ENABLED ? filebaseConfig() : null;
+const CONFIG = ENABLED ? filebaseConfig(ENV) : null;
 
 // A 1x1 transparent PNG -- the smallest thing that is genuinely a PNG, so a
 // success cannot be an artefact of a text body.
@@ -53,9 +72,47 @@ safeDescribe("Filebase live round-trip", () => {
     campaignId: "00000000-0000-4000-8000-0000000000bb",
     creativeId: crypto.randomUUID(),
   });
+  // A throwaway key used only by the credential gate below, kept separate so
+  // it can never collide with the object the round-trip test manages.
+  const probeKey = `${key}-probe`;
+
+  /**
+   * Credential gate.
+   *
+   * Two of the three tests assert that a request is REJECTED -- one for a
+   * content type that disagrees with the signature, one for an unsigned URL.
+   * Wrong credentials make *every* request fail, so both would pass for the
+   * wrong reason and a run that verified nothing would still look green.
+   *
+   * This proves the credentials can write before either of them runs, and if
+   * they cannot it fails the whole suite loudly with the storage layer's own
+   * non-secret XML body. A red suite here means "live Filebase UNVERIFIED",
+   * which is the honest outcome -- never "the signature works".
+   */
+  beforeAll(async () => {
+    const url = await presign(CONFIG, {
+      method: "PUT",
+      objectKey: probeKey,
+      expiresInSeconds: 120,
+      contentType: "image/png",
+    });
+    const put = await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": "image/png" },
+      body: PNG,
+    });
+    if (![200, 201, 204].includes(put.status)) {
+      throw new Error(
+        `[filebase-live] CREDENTIALS REJECTED: a presigned PUT returned ${put.status} ${await safeBody(put)}. ` +
+          "Live Filebase is UNVERIFIED. No credential value is printed.",
+      );
+    }
+    await deleteObject(CONFIG, probeKey);
+  });
 
   afterAll(async () => {
     if (CONFIG) await deleteObject(CONFIG, key);
+    if (CONFIG) await deleteObject(CONFIG, probeKey);
   });
 
   it("reads back exactly what a presigned PUT stored", async () => {

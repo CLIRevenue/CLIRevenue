@@ -165,7 +165,7 @@ function MainContacts() {
       const result = await fetchAdminContacts()
       setRows(result.submissions ?? [])
     } catch (e) {
-      setError(e.status === 403 ? 'Access denied. Admin role required.' : e.message)
+      setError(e.status === 403 ? 'Access denied. Admin role required.' : 'Unexpected error: ' + (e.message || 'Unknown error'))
     } finally {
       setLoading(false)
     }

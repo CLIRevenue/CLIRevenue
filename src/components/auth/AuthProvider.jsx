@@ -228,7 +228,7 @@ export function AuthProvider({ children }) {
     return data
   }, [refresh])
 
-  const signUp = useCallback(async ({ email, password, role, values }) => {
+  const signUp = useCallback(async ({ email, password, role, values, privacyConsent, termsConsent }) => {
     if (!['advertiser', 'developer'].includes(role)) {
       throw new Error('Pick Advertiser or Developer.')
     }
@@ -260,6 +260,20 @@ export function AuthProvider({ children }) {
       } catch {
         // Best-effort: trigger may have already handled it; role resolution will surface status.
       }
+      // Record policy consent if provided.
+      if (newUserId && (privacyConsent || termsConsent)) {
+        try {
+          await supabase.from('profiles').update({
+            privacy_policy_version: privacyConsent ? '1.0' : undefined,
+            terms_version: termsConsent ? '1.0' : undefined,
+            privacy_policy_accepted_at: privacyConsent ? new Date().toISOString() : undefined,
+            terms_accepted_at: termsConsent ? new Date().toISOString() : undefined,
+          }).eq('id', newUserId)
+        } catch {
+          // Best-effort: if the columns do not exist yet the update is ignored.
+        }
+      }
+
       // Ensure role-side account row exists for advertiser UX (RLS insert allowed for own row).
       try {
         if (role === 'advertiser') {

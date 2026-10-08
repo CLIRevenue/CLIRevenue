@@ -255,6 +255,8 @@ export function SignupPage() {
   // confirmation screen instead of the form continuing.
   const [confirmation, setConfirmation] = useState(null)
   const [resendState, setResendState] = useState({ busy: false, error: '', secondsLeft: 0 })
+  const [privacyConsent, setPrivacyConsent] = useState(false)
+  const [termsConsent, setTermsConsent] = useState(false)
 
   useEffect(() => {
     if (confirmation) return undefined
@@ -278,8 +280,8 @@ export function SignupPage() {
   // correcting an input removes its error (and any disabled state) on the
   // very next render. `attempted` only controls when messages first appear.
   const errors = useMemo(
-    () => (attempted ? validateSignup({ step, email, password, confirm, role: accountType, values }) : {}),
-    [attempted, step, email, password, confirm, accountType, values],
+    () => (attempted ? validateSignup({ step, email, password, confirm, role: accountType, values, privacyConsent, termsConsent }) : {}),
+    [attempted, step, email, password, confirm, accountType, values, privacyConsent, termsConsent],
   )
   const errorCount = Object.keys(errors).length
 
@@ -314,7 +316,7 @@ export function SignupPage() {
     if (errorCount > 0) return
     setBusy(true)
     try {
-      const data = await signUp({ email: email.trim(), password, role: accountType, values })
+      const data = await signUp({ email: email.trim(), password, role: accountType, values, privacyConsent, termsConsent })
       if (data.session) {
         // Session present: provider refresh resolves role, flushes profile
         // fields, and the effect redirects.
@@ -530,7 +532,29 @@ export function SignupPage() {
 
           <FieldError message={error} />
           {info ? <div className="adv-notice" role="status">{info}</div> : null}
-          <button className="btn btn--primary" type="submit" disabled={busy}>
+
+          <div className="form__consent">
+            <label className="adv-check">
+              <input
+                type="checkbox"
+                checked={privacyConsent}
+                onChange={(e) => setPrivacyConsent(e.target.checked)}
+              />
+              <span>I agree to the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span>
+            </label>
+            <FieldError message={errors.privacyConsent} />
+            <label className="adv-check">
+              <input
+                type="checkbox"
+                checked={termsConsent}
+                onChange={(e) => setTermsConsent(e.target.checked)}
+              />
+              <span>I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a>.</span>
+            </label>
+            <FieldError message={errors.termsConsent} />
+          </div>
+
+          <button className="btn btn--primary" type="submit" disabled={busy || !privacyConsent || !termsConsent}>
             {busy ? 'Creating…' : 'Sign up'}
           </button>
           <button className="btn btn--ghost" type="button" onClick={goStep1} disabled={busy}>

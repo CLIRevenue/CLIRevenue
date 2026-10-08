@@ -48,7 +48,7 @@
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--signal-text);
+  color: #ffffff;
   background: var(--signal);
   padding: 2px 7px;
   flex-shrink: 0;
