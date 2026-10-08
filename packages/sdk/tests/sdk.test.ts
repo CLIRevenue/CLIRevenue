@@ -217,10 +217,12 @@ describe('privacy invariants', () => {
   })
 
   it('never references a server-only secret in code', async () => {
-    const { readFileSync, readdirSync } = await import('node:fs')
+    const { readFileSync, readdirSync, statSync } = await import('node:fs')
     const dir = new URL('../src/', import.meta.url)
     for (const name of readdirSync(dir)) {
-      const src = readFileSync(new URL(name, dir), 'utf8')
+      const fileUrl = new URL(name, dir)
+      if (statSync(fileUrl).isDirectory()) continue
+      const src = readFileSync(fileUrl, 'utf8')
       // Strip comments first: the privacy notes name the secret precisely to
       // document that it must never appear. Scan executable code, not prose.
       const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')

@@ -93,8 +93,8 @@ export async function createCampaign(db, advertiserId, overrides = {}) {
     await tx.query(
       `INSERT INTO public.campaigns
          (id, advertiser_id, name, headline, description, cta, audience_id,
-          budget_cents, cpm_cents, status, starts_at, ends_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          budget_cents, cpm_cents, status, starts_at, ends_at, landing_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
       [
         id,
         advertiserId,
@@ -109,10 +109,95 @@ export async function createCampaign(db, advertiserId, overrides = {}) {
         overrides.status ?? 'active',
         overrides.startsAt ?? null,
         overrides.endsAt ?? null,
+        overrides.landingUrl === undefined ? 'https://example.test/landing' : overrides.landingUrl,
       ],
     )
   })
   return id
+}
+
+/**
+ * Attach a validated creative asset to a campaign. The slot itself is minted by
+ * the tg_campaign_creative_mint trigger on campaign INSERT (000021, replaced in
+ * 000022 to carry advertiser_id), so this only fills in the asset columns and
+ * flips the status — exactly what the creatives Edge Function does after a
+ * successful Filebase upload. Runs as service role because 000022 leaves
+ * campaign_creatives readable/writable only by service_role.
+ */
+export async function createCreative(db, campaignId, advertiserId, overrides = {}) {
+  const mediaType = overrides.mediaType ?? 'image'
+  const { rows: campaignRows } = await asService(db, (tx) =>
+    tx.query(`SELECT advertiser_id FROM public.campaigns WHERE id = $1`, [campaignId]),
+  )
+  const owner = campaignRows[0]?.advertiser_id ?? advertiserId
+  const { rows: slotRows } = await asService(db, (tx) =>
+    tx.query(`SELECT id FROM public.campaign_creatives WHERE campaign_id = $1`, [campaignId]),
+  )
+  // The slot is normally already minted by tg_campaign_creative_mint; only fall
+  // back to inserting one for campaigns created before migration 000022.
+  const creativeId = slotRows[0]?.id ?? overrides.id ?? uuid()
+  const objectKey =
+    overrides.objectKey ??
+    `advertisers/${owner}/campaigns/${campaignId}/creatives/${creativeId}/original`
+  await asService(db, async (tx) => {
+    if (slotRows.length === 0) {
+      await tx.query(
+        `INSERT INTO public.campaign_creatives (id, campaign_id, advertiser_id)
+         VALUES ($1,$2,$3)`,
+        [creativeId, campaignId, owner],
+      )
+    }
+    await tx.query(
+      `UPDATE public.campaign_creatives
+          SET advertiser_id = $2, media_type = $3, object_key = $4, mime_type = $5,
+              file_size_bytes = $6, extension = $7, width = $8, height = $9,
+              duration_ms = $10, poster_object_key = $11, checksum = $12,
+              label = $13, status = $14, updated_at = NOW()
+        WHERE campaign_id = $1`,
+      [
+        campaignId,
+        owner,
+        mediaType,
+        overrides.objectKey === null ? null : objectKey,
+        overrides.mimeType ?? (mediaType === 'video' ? 'video/mp4' : 'image/png'),
+        overrides.fileSizeBytes ?? (mediaType === 'video' ? 1024 * 1024 : 24 * 1024),
+        overrides.extension ?? (mediaType === 'video' ? 'mp4' : 'png'),
+        overrides.width ?? (mediaType === 'video' ? 1280 : 1200),
+        overrides.height ?? (mediaType === 'video' ? 720 : 628),
+        overrides.durationMs ?? (mediaType === 'video' ? 15000 : null),
+        overrides.posterObjectKey ?? null,
+        overrides.checksum ?? 'a'.repeat(64),
+        overrides.label ?? 'Test creative',
+        overrides.status ?? 'validated',
+      ],
+    )
+  })
+  return { id: creativeId, campaignId, advertiserId: owner, objectKey, mediaType }
+}
+
+/** Read a creative row (all asset columns) as the service role. */
+export async function creativeState(db, campaignId) {
+  const { rows } = await asService(db, (tx) =>
+    tx.query(
+      `SELECT id, campaign_id, advertiser_id, status, media_type, mime_type,
+              object_key, file_size_bytes, width, height, duration_ms,
+              poster_object_key, label
+         FROM public.campaign_creatives WHERE campaign_id = $1`,
+      [campaignId],
+    ),
+  )
+  return rows[0]
+}
+
+/** Call campaign_activation_blockers as the service role (the only permitted role). */
+export function activationBlockers(db, campaignId) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT public.campaign_activation_blockers($1) AS blockers`,
+      [campaignId],
+    )
+    return rows[0].blockers
+  })
 }
 
 /** Read a campaign's accounting columns as the service role. */

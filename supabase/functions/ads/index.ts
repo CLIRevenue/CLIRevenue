@@ -4,6 +4,11 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { adminClient } from "../_shared/auth.ts";
 import { apiError, corsFor, isUuid, json, optionsResponse, restPath } from "../_shared/http.ts";
 import { isEligible } from "../_shared/eligibility.ts";
+import {
+  CREATIVE_DELIVERY_URL_TTL_SECONDS,
+  filebaseConfig,
+  presignCreativeRead,
+} from "../_shared/filebase.ts";
 import { adTokenSecret, signServeToken, verifyServeToken } from "../_shared/adToken.ts";
 import { authenticatePublisher, rateLimitDelivery } from "../_shared/publisherAuth.ts";
 import { authorizeServe } from "../_shared/serveAuthz.ts";
@@ -27,8 +32,63 @@ type Candidate = {
   cpm_cents: number;
 };
 
+/* The deliverable half of a campaign_creatives row. Only rows that reached
+   'validated' are ever selected, and only their canonical object_key leaves
+   the server; the client never names a bucket or an object. */
+type ServeCreative = {
+  id: string;
+  media_type: string;
+  mime_type: string;
+  object_key: string;
+  width: number | null;
+  height: number | null;
+  duration_ms: number | null;
+  poster_object_key: string | null;
+};
+
 function noFill(req: Request): Response {
   return new Response(null, { status: 204, headers: { ...corsFor(req) } });
+}
+
+/**
+ * Validated creatives for the given campaigns, keyed by campaign id.
+ *
+ * Delivery does not trust that an active campaign necessarily has one — that
+ * is an invariant the activation gate maintains, not a fact about the row —
+ * so a candidate without a usable creative is skipped rather than served with
+ * an empty asset.
+ */
+async function loadValidatedCreatives(
+  admin: SupabaseClient,
+  campaignIds: string[],
+): Promise<Map<string, ServeCreative>> {
+  const map = new Map<string, ServeCreative>();
+  if (campaignIds.length === 0) return map;
+  const { data, error } = await admin
+    .from("campaign_creatives")
+    .select(
+      "id, campaign_id, media_type, mime_type, object_key, width, height, duration_ms, poster_object_key",
+    )
+    .eq("status", "validated")
+    .in("campaign_id", campaignIds);
+  if (error) {
+    console.error("delivery creative query failed:", error.message);
+    return map;
+  }
+  for (const row of (data ?? []) as unknown as Record<string, unknown>[]) {
+    if (!row.object_key) continue;
+    map.set(String(row.campaign_id), {
+      id: String(row.id),
+      media_type: String(row.media_type),
+      mime_type: String(row.mime_type),
+      object_key: String(row.object_key),
+      width: row.width == null ? null : Number(row.width),
+      height: row.height == null ? null : Number(row.height),
+      duration_ms: row.duration_ms == null ? null : Number(row.duration_ms),
+      poster_object_key: row.poster_object_key == null ? null : String(row.poster_object_key),
+    });
+  }
+  return map;
 }
 
 function readContext(body: Record<string, unknown>): { url: string | null; referrer: string | null } {
@@ -143,8 +203,51 @@ async function handleDeliver(req: Request, admin: SupabaseClient): Promise<Respo
   }
 
   const now = Date.now();
-  const campaign = ((data ?? []) as unknown as Candidate[]).find((c) => isEligible(c, now));
-  if (!campaign) return noFill(req);
+  const candidates = ((data ?? []) as unknown as Candidate[]).filter((c) => isEligible(c, now));
+  if (candidates.length === 0) return noFill(req);
+
+  const creatives = await loadValidatedCreatives(
+    admin,
+    candidates.map((c) => c.id),
+  );
+  const storage = filebaseConfig();
+
+  /* One pass over the already-eligible list keeps the established priority
+     (oldest campaign first) while requiring a real, deliverable creative.
+     A candidate whose creative is missing — or whose signed URL cannot be
+     minted because storage is unconfigured — is skipped rather than served
+     broken, so a storage outage degrades to no-fill instead of a broken ad. */
+  let campaign: Candidate | undefined;
+  let creative: ServeCreative | undefined;
+  let creativeUrl: string | undefined;
+  let posterUrl: string | undefined;
+  for (const c of candidates) {
+    const asset = creatives.get(c.id);
+    if (!asset || !storage) continue;
+    const url = await presignCreativeRead(
+      storage,
+      asset.object_key,
+      CREATIVE_DELIVERY_URL_TTL_SECONDS,
+    );
+    if (!url) continue;
+    campaign = c;
+    creative = asset;
+    creativeUrl = url;
+    if (asset.poster_object_key) {
+      posterUrl = (await presignCreativeRead(
+        storage,
+        asset.poster_object_key,
+        CREATIVE_DELIVERY_URL_TTL_SECONDS,
+      )) ?? undefined;
+    }
+    break;
+  }
+  if (!campaign || !creative || !creativeUrl) {
+    if (storage === null) {
+      console.error("Filebase is not configured; no campaign can be delivered with a creative.");
+    }
+    return noFill(req);
+  }
 
   const requestId = crypto.randomUUID();
   const expiresAt = now + SERVE_TTL_MS;
@@ -197,6 +300,16 @@ async function handleDeliver(req: Request, admin: SupabaseClient): Promise<Respo
         cta: campaign.cta,
         audience: campaign.audience_id,
         landingUrl: campaign.landing_url,
+        creative: {
+          id: creative.id,
+          type: creative.media_type,
+          mimeType: creative.mime_type,
+          url: creativeUrl,
+          width: creative.width,
+          height: creative.height,
+          durationMs: creative.duration_ms,
+          posterUrl: posterUrl ?? null,
+        },
       },
       impressionToken: token,
       expiresAt: new Date(expiresAt).toISOString(),
