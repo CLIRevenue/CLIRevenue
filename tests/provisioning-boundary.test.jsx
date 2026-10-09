@@ -233,11 +233,22 @@ describe('the SDK setup page', () => {
     expect(src).not.toMatch(/No API to create a publisher/)
   })
 
-  test('does not advertise an installer that does not exist', () => {
-    // npm install @clirevenue/sdk is the real command. A page that tells a
-    // developer to run a package we have never published costs them an hour.
+  test('advertises only installers that exist', () => {
+    // A page that tells a developer to run a package we have never published
+    // costs them an hour.
+    //
+    // This used to forbid `npx clirevenue setup` outright, because at the time
+    // the CLI had never been published and the command did not exist for
+    // anyone. That is no longer true: `clirevenue` is released and 1.2.0 is
+    // the version this repo builds, so the command is real and the page is
+    // entitled to teach it. What still has to hold is the older half of the
+    // rule -- the SDK package name must be the published one -- and the
+    // hand-wiring path must remain reachable for developers who skip the CLI.
     expect(src).toMatch(/npm install @clirevenue\/sdk/)
-    expect(src).not.toMatch(/npx clirevenue setup/)
+    expect(src).toMatch(/npx clirevenue setup/)
+    // The hand-wired path is still documented, not replaced.
+    expect(src).toMatch(/getAd\(\)/)
+    expect(src).toMatch(/init\(\)/)
   })
 
   test('still refuses to invent a number', () => {

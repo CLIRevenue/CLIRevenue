@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { AdvEmpty, AdvError, AdvLoading, AdvPageHead } from './AdvertiserUI.jsx'
 import { Panel } from '../console/ui.jsx'
 import {
@@ -25,6 +25,23 @@ import {
   formatBytes,
   maxCreativeBytes,
 } from '../../lib/campaignRules.js'
+
+// Stable ids help the form's aria-describedby/aria-invalid wiring so the
+// status/field errors stay programmatically linked to the inputs they describe.
+function fid(key) {
+  return `adv-campaign--${key}`
+}
+
+// One persistent success notice lives above the form; it is not replaced by
+// the per-field error list so a successful submission can be read in full
+// without re-focusing.
+function FormNotice({ className, children }) {
+  return (
+    <div role="status" aria-live="polite" className={`form__ok ${className || ''}`}>
+      {children}
+    </div>
+  )
+}
 
 const EMPTY_FORM = {
   name: '',
@@ -537,53 +554,126 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
             <form className="form adv-form" onSubmit={selected ? handleUpdate : handleCreate} noValidate>
               <label className="field">
                 <span className="field__label">Campaign name</span>
-                <input className="field__input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoComplete="off" />
-                {formErrors.name ? <span className="adv-field-error">{formErrors.name}</span> : null}
+                <input
+                  className="field__input"
+                  id={fid('name')}
+                  value={form.name}
+                  aria-invalid={Boolean(formErrors.name)}
+                  aria-describedby={formErrors.name ? fid('name-error') : undefined}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  autoComplete="off"
+                />
+                {formErrors.name ? <span id={fid('name-error')} className="adv-field-error">{formErrors.name}</span> : null}
               </label>
               <label className="field">
                 <span className="field__label">Headline</span>
-                <input className="field__input" value={form.headline} onChange={(e) => setForm({ ...form, headline: e.target.value })} autoComplete="off" />
-                {formErrors.headline ? <span className="adv-field-error">{formErrors.headline}</span> : null}
+                <input
+                  className="field__input"
+                  id={fid('headline')}
+                  value={form.headline}
+                  aria-invalid={Boolean(formErrors.headline)}
+                  aria-describedby={formErrors.headline ? fid('headline-error') : undefined}
+                  onChange={(e) => setForm({ ...form, headline: e.target.value })}
+                  autoComplete="off"
+                />
+                {formErrors.headline ? <span id={fid('headline-error')} className="adv-field-error">{formErrors.headline}</span> : null}
               </label>
               <label className="field">
                 <span className="field__label">Description</span>
-                <textarea className="field__input field__input--area" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                <textarea
+                  className="field__input field__input--area"
+                  rows={3}
+                  id={fid('description')}
+                  value={form.description}
+                  aria-invalid={Boolean(formErrors.description)}
+                  aria-describedby={formErrors.description ? fid('description-error') : undefined}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                />
+                {formErrors.description ? <span id={fid('description-error')} className="adv-field-error">{formErrors.description}</span> : null}
               </label>
               <div className="field-row">
                 <label className="field">
                   <span className="field__label">Call to action</span>
-                  <input className="field__input" value={form.cta} onChange={(e) => setForm({ ...form, cta: e.target.value })} autoComplete="off" />
+                  <input
+                    className="field__input"
+                    id={fid('cta')}
+                    value={form.cta}
+                    aria-invalid={Boolean(formErrors.cta)}
+                    aria-describedby={formErrors.cta ? fid('cta-error') : undefined}
+                    onChange={(e) => setForm({ ...form, cta: e.target.value })}
+                    autoComplete="off"
+                  />
+                  {formErrors.cta ? <span id={fid('cta-error')} className="adv-field-error">{formErrors.cta}</span> : null}
                 </label>
                 <label className="field">
                   <span className="field__label">Landing URL</span>
-                  <input className="field__input" value={form.landingUrl} onChange={(e) => setForm({ ...form, landingUrl: e.target.value })} placeholder="https://example.com/offer" autoComplete="off" />
-                  {formErrors.landingUrl ? <span className="adv-field-error">{formErrors.landingUrl}</span> : null}
+                  <input
+                    className="field__input"
+                    id={fid('landingUrl')}
+                    value={form.landingUrl}
+                    aria-invalid={Boolean(formErrors.landingUrl)}
+                    aria-describedby={formErrors.landingUrl ? fid('landingUrl-error') : undefined}
+                    onChange={(e) => setForm({ ...form, landingUrl: e.target.value })}
+                    placeholder="https://example.com/offer"
+                    autoComplete="off"
+                  />
+                  {formErrors.landingUrl ? <span id={fid('landingUrl-error')} className="adv-field-error">{formErrors.landingUrl}</span> : null}
                 </label>
               </div>
               <div className="field-row">
                 <label className="field">
                   <span className="field__label">Budget (USD)</span>
-                  <input className="field__input" type="number" min={1} step="0.01" value={form.budgetDollars} onChange={(e) => setForm({ ...form, budgetDollars: e.target.value })} inputMode="decimal" />
-                  {formErrors.budgetDollars ? <span className="adv-field-error">{formErrors.budgetDollars}</span> : null}
+                  <input
+                    className="field__input"
+                    id={fid('budgetDollars')}
+                    type="number"
+                    min={1}
+                    step="0.01"
+                    value={form.budgetDollars}
+                    aria-invalid={Boolean(formErrors.budgetDollars)}
+                    aria-describedby={formErrors.budgetDollars ? fid('budgetDollars-error') : undefined}
+                    onChange={(e) => setForm({ ...form, budgetDollars: e.target.value })}
+                    inputMode="decimal"
+                  />
+                  {formErrors.budgetDollars ? <span id={fid('budgetDollars-error')} className="adv-field-error">{formErrors.budgetDollars}</span> : null}
                 </label>
                 <label className="field">
                   <span className="field__label">CPM (USD)</span>
-                  <input className="field__input" type="number" min={0.001} step="0.001" value={form.cpmDollars} onChange={(e) => setForm({ ...form, cpmDollars: e.target.value })} inputMode="decimal" />
-                  {formErrors.cpmCents ? <span className="adv-field-error">{formErrors.cpmCents}</span> : null}
+                  <input
+                    className="field__input"
+                    id={fid('cpmDollars')}
+                    type="number"
+                    min={0.001}
+                    step="0.001"
+                    value={form.cpmDollars}
+                    aria-invalid={Boolean(formErrors.cpmCents)}
+                    aria-describedby={formErrors.cpmCents ? fid('cpmDollars-error') : undefined}
+                    onChange={(e) => setForm({ ...form, cpmDollars: e.target.value })}
+                    inputMode="decimal"
+                  />
+                  {formErrors.cpmCents ? <span id={fid('cpmDollars-error')} className="adv-field-error">{formErrors.cpmCents}</span> : null}
                 </label>
               </div>
               <div className="field-row">
                 <label className="field">
                   <span className="field__label">Audience</span>
-                  <select className="field__input field__input--select" value={form.audienceId} onChange={(e) => setForm({ ...form, audienceId: e.target.value })}>
+                  <select
+                    className="field__input field__input--select"
+                    id={fid('audienceId')}
+                    value={form.audienceId}
+                    aria-invalid={Boolean(formErrors.audienceId)}
+                    aria-describedby={formErrors.audienceId ? fid('audienceId-error') : undefined}
+                    onChange={(e) => setForm({ ...form, audienceId: e.target.value })}
+                  >
                     {ADVERTISER_AUDIENCES.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
                   </select>
-                  {formErrors.audienceId ? <span className="adv-field-error">{formErrors.audienceId}</span> : null}
+                  {formErrors.audienceId ? <span id={fid('audienceId-error')} className="adv-field-error">{formErrors.audienceId}</span> : null}
                 </label>
                 <label className="field">
                   <span className="field__label">Status</span>
                   <select
                     className="field__input field__input--select"
+                    id={fid('status')}
                     value={selected ? form.status : 'draft'}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}
                     disabled={!selected}
@@ -597,12 +687,28 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
               <div className="field-row">
                 <label className="field">
                   <span className="field__label">Starts</span>
-                  <input className="field__input" type="datetime-local" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} />
+                  <input
+                    className="field__input"
+                    id={fid('startsAt')}
+                    type="datetime-local"
+                    value={form.startsAt}
+                    aria-invalid={Boolean(formErrors.startsAt)}
+                    aria-describedby={formErrors.startsAt ? fid('startsAt-error') : undefined}
+                    onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
+                  />
                 </label>
                 <label className="field">
                   <span className="field__label">Ends</span>
-                  <input className="field__input" type="datetime-local" value={form.endsAt} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} />
-                  {formErrors.endsAt ? <span className="adv-field-error">{formErrors.endsAt}</span> : null}
+                  <input
+                    className="field__input"
+                    id={fid('endsAt')}
+                    type="datetime-local"
+                    value={form.endsAt}
+                    aria-invalid={Boolean(formErrors.endsAt)}
+                    aria-describedby={formErrors.endsAt ? fid('endsAt-error') : undefined}
+                    onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
+                  />
+                  {formErrors.endsAt ? <span id={fid('endsAt-error')} className="adv-field-error">{formErrors.endsAt}</span> : null}
                 </label>
               </div>
 
@@ -685,9 +791,11 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
               ) : null}
 
               {formErrors.form ? <p className="form__error" role="alert">{formErrors.form}</p> : null}
-              <button className="btn btn--primary" type="submit" disabled={saving || uploading}>
-                {saving ? 'Saving…' : selected ? 'Save changes' : 'Create campaign'}
-              </button>
+              {notice ? (
+                <div role="status" aria-live="polite" className="form__ok">
+                  {notice}
+                </div>
+              ) : null}
               <p className="form__note">Nothing is charged. Campaigns save to your account only.</p>
             </form>
           </Panel>

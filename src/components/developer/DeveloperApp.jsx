@@ -5,7 +5,9 @@ import { supabase } from '../../lib/api.js'
 import DeveloperAccount from './DeveloperAccount.jsx'
 import SdkSetup from './SdkSetup.jsx'
 import PublisherKeys from './PublisherKeys.jsx'
+import PublisherPlacements from './PublisherPlacements.jsx'
 import { LogoutButton } from '../auth/LogoutButton.jsx'
+import './DeveloperConsole.css'
 
 const STORAGE_KEY = 'clirevenueDeveloperTab'
 
@@ -42,7 +44,7 @@ function formatCents(cents) {
 function rewardsBases() {
   const raw = trimBase(import.meta.env.VITE_API_BASE_URL || '')
   if (!raw) return ['/api/rewards']
-  if (raw.endsWith('/functions/v1')) return [`${raw}/rewards`, `${raw}/api/rewards`]
+  if (raw.endsWith('/functions/v1')) return [`${raw}/rewards`, `${raw}/api/reviews`]
   return [`${raw}/api/rewards`]
 }
 
@@ -91,7 +93,7 @@ export default function DeveloperApp() {
     if (typeof window !== 'undefined') {
       try {
         const stored = window.sessionStorage.getItem(STORAGE_KEY)
-        if (stored && ['dashboard', 'earnings', 'sdk', 'keys', 'integrations', 'analytics', 'account'].includes(stored)) {
+        if (stored && ['dashboard', 'earnings', 'sdk', 'keys', 'integrations', 'analytics', 'account', 'placements'].includes(stored)) {
           return stored
         }
       } catch (e) {
@@ -199,6 +201,7 @@ export default function DeveloperApp() {
     { id: 'earnings', label: 'Earnings' },
     { id: 'sdk', label: 'SDK setup' },
     { id: 'keys', label: 'Publisher Keys' },
+    { id: 'placements', label: 'Placements' },
     { id: 'integrations', label: 'Integrations' },
     { id: 'analytics', label: 'Analytics' },
     { id: 'account', label: 'Account' },
@@ -231,10 +234,11 @@ export default function DeveloperApp() {
             body={{
               dashboard: 'Every figure below is read live from your account — real reward balances and delivery, never estimates.',
               earnings: 'Balances and rewards as they land, straight from your account.',
-              integrations: 'Which CLIs you\'ve connected and how each one reads.',
+              integrations: 'Which CLIs you\'ve connected, and how each one reads.',
               sdk: 'Ad delivery, end to end.',
               keys: 'Manage your publisher keys.',
-              analytics: 'A quick look at what you\'ve earned so far.',
+              placements: 'Manage your ad placements.',
+              analytics: 'Where your earnings came from, and what is not measured yet.',
               account: 'Your details, security, and account controls.',
             }[tab]}
           />
@@ -246,6 +250,8 @@ export default function DeveloperApp() {
           <SdkSetup />
         ) : tab === 'keys' ? (
           <PublisherKeys />
+        ) : tab === 'placements' ? (
+          <PublisherPlacements />
         ) : loading ? (
           <AdvLoading label="Loading developer rewards…" />
         ) : (
@@ -300,46 +306,108 @@ export default function DeveloperApp() {
             {tab === 'integrations' && (
               <Panel className="adv-panel">
                 <h4 className="adv-panel__title">Integrations</h4>
-                <p className="adv-panel__sub">Which CLIs you've connected, at a glance.</p>
+                <p className="adv-panel__sub">
+                  Each coding CLI gets its own placement key, so its earnings stay separable.
+                  The CLI writes this list into clirevenue.config.json in your project.
+                </p>
+                {/* The dashboard cannot read that file — it lives in the developer's
+                    project, not on the server — so this shows the rule and the command
+                    that reports the real list. Inventing plausible-looking rows here
+                    would be the exact failure the design system forbids: a confident
+                    number that is not a measurement. */}
                 <ul className="adv-activity">
                   <li className="adv-activity__row">
-                    <span className="adv-activity__label">Claude Code</span>
-                    <span className="adv-activity__detail">Sponsored slot supported · read-only in this build.</span>
+                    <span className="adv-activity__label">One key per CLI</span>
+                    <span className="adv-activity__detail">
+                      Add a CLI, and setup provisions a placement for it. Two integrations
+                      can never share a key, so one editor's ad is never mistaken for another's.
+                    </span>
                   </li>
                   <li className="adv-activity__row">
-                    <span className="adv-activity__label">Codex / Cline / OpenCode</span>
-                    <span className="adv-activity__detail">Same sponsored slot, one shared key.</span>
+                    <span className="adv-activity__label">Many slots per key</span>
+                    <span className="adv-activity__detail">
+                      A second ad on the same page is another slot on the same key, with its
+                      own size and position — not another placement on your account.
+                    </span>
+                  </li>
+                  <li className="adv-activity__row">
+                    <span className="adv-activity__label">Positions stay in your repo</span>
+                    <span className="adv-activity__detail">
+                      clirevenue.config.json holds each slot's geometry and never contains a
+                      key, so it is safe to commit.
+                    </span>
                   </li>
                 </ul>
+                <div className="setup__actions">
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => setTab('sdk')}
+                  >
+                    How to connect one
+                  </button>
+                </div>
+                <AdvEmpty
+                  mark="Not shown here"
+                  title="This list lives in your project, not on the server"
+                  body="Run clirevenue integrations list in your project to see the integrations and slots you have actually configured, or run npx clirevenue setup to add one."
+                />
               </Panel>
             )}
 
             {tab === 'analytics' && (
-              <Panel className="adv-panel">
-                <h4 className="adv-panel__title">Analytics</h4>
-                <p className="adv-panel__sub">Straight from your reward ledger.</p>
-                <AdvStats items={[
-                  {
-                    label: 'Rewards seen',
-                    value: String(rewards.length),
-                    hint: rewards.length === 1 ? 'one entry' : 'entries in the ledger',
-                    tone: rewards.length > 0 ? 'live' : 'zero',
-                  },
-                  { label: 'Available', value: formatCents(available), tone: available > 0 ? 'live' : 'zero' },
-                  { label: 'Pending', value: formatCents(pending), tone: pending > 0 ? 'settling' : 'zero' },
-                ]} />
-                {rewards.length === 0 ? (
-                  <AdvEmpty
-                    mark="No history"
-                    title="Analytics start after the first impression"
-                    body="This panel reads your reward ledger directly — no sampling, no estimates. Serve one sponsored slot and the numbers appear here."
-                    actionLabel="Integrate the SDK"
-                    onAction={() => setTab('sdk')}
-                  />
-                ) : (
-                  <AdvBarChart rows={chartRows} valueLabel="Rewards by campaign" />
-                )}
-              </Panel>
+              <>
+                <Panel className="adv-panel">
+                  <h4 className="adv-panel__title">Where the earnings come from</h4>
+                  <p className="adv-panel__sub">
+                    Every reward in your ledger, newest first. Balances are on Earnings; this
+                    is the breakdown of which campaign paid what.
+                  </p>
+                  {rewards.length === 0 ? (
+                    <AdvEmpty
+                      mark="No history"
+                      title="This becomes a breakdown after your first reward"
+                      body="There is one reward per served impression, so there is nothing to compare until a campaign pays. This panel reads your ledger directly — no sampling, no estimates."
+                      actionLabel="Connect a CLI"
+                      onAction={() => setTab('integrations')}
+                    />
+                  ) : (
+                    <AdvBarChart rows={chartRows} valueLabel="Rewards by campaign" />
+                  )}
+                </Panel>
+
+                <Panel className="adv-panel">
+                  <h4 className="adv-panel__title">Not available yet</h4>
+                  <p className="adv-panel__sub">
+                    Stated rather than faked. Each of these would need a publisher-facing
+                    endpoint that does not exist, and a row of zeros would read as a
+                    measurement instead of the absence of one.
+                  </p>
+                  <ul className="adv-activity">
+                    <li className="adv-activity__row">
+                      <span className="adv-activity__label">Impressions and fill rate</span>
+                      <span className="adv-activity__detail">
+                        Delivery counts are recorded on the server, but nothing exposes them to
+                        a publisher yet.
+                      </span>
+                    </li>
+                    <li className="adv-activity__row">
+                      <span className="adv-activity__label">Per-placement breakdown</span>
+                      <span className="adv-activity__detail">
+                        Your ledger keys rewards by campaign today. Which of your own
+                        placements served one is not yet reported back.
+                      </span>
+                    </li>
+                    <li className="adv-activity__row">
+                      <span className="adv-activity__label">Time series</span>
+                      <span className="adv-activity__detail">
+                        The rewards endpoint returns recent entries rather than a range, so
+                        this panel shows what it was given instead of extrapolating a trend.
+                      </span>
+                    </li>
+                  </ul>
+                </Panel>
+              </>
             )}
 
             {tab === 'account' && <DeveloperAccount />}

@@ -123,10 +123,11 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
             <section className="panel adv-panel" aria-label="Campaign performance">
               <h4 className="adv-panel__title">Campaign performance</h4>
               <p className="adv-panel__sub">Spend by campaign, from backend records.</p>
-              <AdvBarChart rows={chartRows} valueLabel="Spend" />
               {chartRows.length === 0 ? (
                 <AdvEmpty mark="No spend" title="Nothing to compare" body="Spend by campaign appears here once a campaign records a delivery." />
-              ) : null}
+              ) : (
+                <AdvBarChart rows={chartRows} valueLabel="Spend (USD)" />
+              )}
             </section>
             <section className="panel adv-panel" aria-label="Recent activity">
               <div className="adv-panel__row">

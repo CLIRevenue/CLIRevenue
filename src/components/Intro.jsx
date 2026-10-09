@@ -51,9 +51,9 @@ gsap.registerPlugin(ScrambleTextPlugin)
    the bitmaps finish in the background. The preload is what makes that
    safe — the fetch starts during HTML parse, in parallel with the
    bundle, instead of waiting for React to mount before it even begins. */
-const MARK_SRC = '/brand/clirevenue-logo.png'
+const MARK_SRC = '/brand/clirevenue-logo-dark.png'
 const WORDMARK_SRC = '/brand/clirevenue-wordmark.png'
-const MARK_SIZE = { width: 1254, height: 1254 }
+const MARK_SIZE = { width: 164, height: 178 }
 const WORDMARK_SIZE = { width: 2164, height: 727 }
 
 const STATUS = 'SYS/00 · READY'

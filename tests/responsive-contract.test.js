@@ -175,6 +175,6 @@ describe('custom property integrity', () => {
       }
     }
 
-    expect(missing, missing.join('\n')).toEqual([])
+    expect(missing).toEqual([])
   })
 })

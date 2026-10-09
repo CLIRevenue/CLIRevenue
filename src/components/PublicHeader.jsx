@@ -1,6 +1,7 @@
 import { useAuth, authNavState } from './auth/authState.js'
 import { navigateApp, spaNav } from '../hooks/useAppRoute.js'
 import { ArrowUpRight } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 /**
  * Site-wide public header. Auth controls live top-right and stay fixed
@@ -36,6 +37,19 @@ import { ArrowUpRight } from 'lucide-react'
 export default function PublicHeader() {
   const { loading, isAuthenticated, role, user, signOut } = useAuth()
   const nav = authNavState({ loading, isAuthenticated, role })
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    return saved === 'light' ? 'light' : 'dark'
+  })
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-theme')
+    } else {
+      document.documentElement.classList.remove('light-theme')
+    }
+    localStorage.setItem('theme', theme)
+  }, [theme])
 
   async function onLogout() {
     try {
@@ -46,11 +60,20 @@ export default function PublicHeader() {
     }
   }
 
+  const logoSrc = theme === 'light' ? '/brand/clirevenue-logo-light.png' : '/brand/clirevenue-logo-dark.png'
+
   return (
     <header className="sitehead glass" aria-label="Site">
       <button type="button" className="sitehead__brand" onClick={() => navigateApp('/')} aria-label="CLIRevenue home">
-        <span className="sitehead__mark" aria-hidden="true">▸</span>
-        CLI<em>Revenue</em>
+        <img
+          className="sitehead__logo"
+          src={logoSrc}
+          alt=""
+          aria-hidden="true"
+          width="32"
+          height="32"
+        />
+        <span className="sitehead__name">CLI<em>Revenue</em></span>
       </button>
       <nav className="sitehead__nav" aria-label="Account">
         <a className="btn btn--ghost btn--sm" href="/developer" onClick={spaNav}>Developer</a>
@@ -95,6 +118,15 @@ export default function PublicHeader() {
             Sign up
           </button>
         ) : null}
+        {/* Theme toggle */}
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm"
+          onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
       </nav>
     </header>
   )

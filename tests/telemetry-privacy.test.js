@@ -25,6 +25,11 @@ const SQL = readFileSync(join(ROOT, 'supabase/migrations/000021_telemetry_event_
 const TS = readFileSync(join(ROOT, 'supabase/functions/_shared/telemetry.ts'), 'utf8')
 const SDK = readFileSync(join(ROOT, 'packages/sdk/src/index.ts'), 'utf8')
 const FN = readFileSync(join(ROOT, 'supabase/functions/telemetry/index.ts'), 'utf8')
+// Handler logic lives in supabase/functions/_shared/telemetryRecord.ts so it is
+// executable in tests; index.ts owns routing and serve(). Together they are the
+// whole telemetry surface.
+const RECORD = readFileSync(join(ROOT, 'supabase/functions/_shared/telemetryRecord.ts'), 'utf8')
+const SURFACE = `${FN}\n${RECORD}`
 
 /**
  * Source with comments removed.
@@ -230,6 +235,7 @@ describe('the privacy screen holds', () => {
     for (const [name, source] of [
       ['telemetry.ts', TS],
       ['telemetry/index.ts', FN],
+      ['telemetryRecord.ts', RECORD],
       ['sdk/index.ts', SDK],
       ['000021.sql', SQL],
     ]) {
@@ -271,11 +277,11 @@ describe('the privacy screen holds', () => {
     // The handler validates the whole body through validateTelemetryPayload
     // before it reads anything else off it, and passes only named parameters
     // to the RPC.
-    expect(FN).toContain('validateTelemetryPayload')
-    expect(FN).toContain('record_telemetry_event')
+    expect(SURFACE).toContain('validateTelemetryPayload')
+    expect(SURFACE).toContain('record_telemetry_event')
     // Every field the handler reads off the body is named here. Anything new
     // has to be added deliberately, alongside the screen that permits it.
-    const reads = [...new Set([...FN.matchAll(/body\.([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]))]
+    const reads = [...new Set([...SURFACE.matchAll(/body\.([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]))]
     expect(reads.sort()).toEqual([
       'idempotencyKey',
       'idempotency_key',

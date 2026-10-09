@@ -1,85 +1,85 @@
 /* =============================================================
    CLIRevenue — design tokens
-   Brutalist cyber-editorial: black / white / red.
-   Hard 1px rules, inverted white panels, oversized geometric display
-   type, technical micro-labels. Three colours and no fourth.
+   Premium modern design with dark/light theme support.
+   Semantic tokens for colors, surfaces, text, borders, accents, gradients.
    ============================================================= */
 
 :root {
-  /* ---- §24 palette ----------------------------------------
-     Black, white, red. Nothing else is a colour.
+  /* Dark theme (default) */
+  --bg: #0B0D12;
+  --surface: #171C27;
+  --elevated: #1D2432;
+  --paper: #171C27;
+  --signal: #60A5FA;
+  --signal-text: #60A5FA;
+  --signal-dark: #60A5FA;
+  --signal-soft: rgba(96, 165, 250, 0.14);
+  --muted: #737E92;
+  --text: #F5F7FC;
+  --text-muted: #737E92;
+  --border: rgba(168, 177, 194, 0.16);
+  --border-strong: #A8B1C2;
 
-     --signal is a *flag*, not a highlight. Red appears where the
-     system needs to name something: a label, a number, a rule, a
-     live state. It is never used to decorate a surface, and it is
-     never used for a paragraph. */
-  --cli-black: #000000;
-  --cli-white: #ffffff;
-  --cli-red: #ff1f2d;
-
-  --bg: #000000;
-  --surface: #000000;
-  --paper: #ffffff;
-  --signal: #ff1f2d;
-  --signal-text: #ff1f2d;
-  --signal-dark: #ff1f2d;
-  --signal-soft: rgba(255, 31, 45, 0.14);
-  --muted: rgba(255, 255, 255, 0.72);
-  --text: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.76);
-  --border: rgba(255, 255, 255, 0.18);
-  --border-strong: #ffffff;
-
-  /* ---- surface aliases ------------------------------------
-     Every surface is black. Separation comes from white hairlines
-     and geometry, never from a lighter gray fill. */
-  --clr-black: #000000;
-  --clr-bg: #000000;
-  --clr-surface: #000000;
-  --clr-panel: #000000;
-  --clr-elevated: #000000;
-  --clr-border: #ffffff;
-  --clr-muted: rgba(255, 255, 255, 0.7);
-  --clr-secondary: rgba(255, 255, 255, 0.78);
-  --clr-text: #ffffff;
-  --clr-amber: #ff1f2d;
-
-  /* ---- legacy surface names ------------------------------
-     App.css is entirely token-driven and addresses these directly. */
+  /* Legacy surface aliases (used throughout codebase) */
   --void: var(--bg);
-  --stage: #000000;
-  --panel: #000000;
-  --panel-2: #000000;
+  --stage: var(--bg);
+  --panel: var(--surface);
+  --panel-2: var(--elevated);
   --chrome: var(--surface);
-  --input: #000000;
+  --input: var(--elevated);
 
-  /* hairlines — the structure of the whole page (white only) */
-  --hair: rgba(255, 255, 255, 0.16);
-  --hair-strong: rgba(255, 255, 255, 0.34);
-  --hair-amber: rgba(255, 31, 45, 0.6);
+  /* hairlines — structure of the whole page */
+  --hair: rgba(168, 177, 194, 0.16);
+  --hair-strong: rgba(168, 177, 194, 0.34);
+  --hair-amber: rgba(96, 165, 250, 0.6);
 
-  /* Ink ramp. White only — size and weight separate the tiers. */
-  --ink: var(--paper);
-  --ink-2: #ffffff;
+  /* Ink ramp — text hierarchy */
+  --ink: var(--text);
+  --ink-2: var(--text);
   --ink-3: var(--text-muted);
   --ink-4: var(--muted);
 
-  /* accent — red only (legacy name kept: --amber now IS red) */
+  /* accent aliases (legacy names kept for compatibility) */
   --amber: var(--signal);
   --amber-dim: var(--signal-text);
   --amber-wash: var(--signal-soft);
-  --amber-glow: rgba(255, 31, 45, 0.35);
+  --amber-glow: rgba(96, 165, 250, 0.35);
 
-  /* sponsored slot: black plate, white ink, white edge */
-  --ad-ink: #ffffff;
+  /* sponsored slot tokens */
+  --ad-ink: var(--text);
   --ad-dim: var(--text-muted);
-  --ad-edge: rgba(255, 255, 255, 0.3);
-  --ad-fill: #000000;
+  --ad-edge: var(--hair-strong);
+  --ad-fill: var(--bg);
 
-  /* status — white, never a fifth hue */
-  --ok: #ffffff;
+  /* status */
+  --ok: var(--accent-green);
 
-  /* type — self-hosted, /fonts/fonts.css */
+  /* Color aliases (used in some components) */
+  --clr-black: var(--bg);
+  --clr-bg: var(--bg);
+  --clr-surface: var(--surface);
+  --clr-panel: var(--surface);
+  --clr-elevated: var(--elevated);
+  --clr-border: var(--border-strong);
+  --clr-muted: var(--muted);
+  --clr-secondary: var(--text-muted);
+  --clr-text: var(--text);
+  --clr-amber: var(--signal);
+
+  /* Accent colors */
+  --accent-blue: #60A5FA;
+  --accent-violet: #A78BFA;
+  --accent-purple: #C084FC;
+  --accent-green: #4ADE80;
+  --accent-error: #FB7185;
+
+  /* Gradient tokens */
+  --gradient-blue-violet: linear-gradient(90deg, var(--accent-blue), var(--accent-violet));
+  --gradient-violet-purple: linear-gradient(90deg, var(--accent-violet), var(--accent-purple));
+  --gradient-blue-violet-purple: linear-gradient(90deg, var(--accent-blue), var(--accent-violet), var(--accent-purple));
+  --gradient-purple-green: linear-gradient(90deg, var(--accent-purple), var(--accent-green));
+
+  /* Fonts */
   --font-display: 'Orbitron', 'Space Grotesk', system-ui, sans-serif;
   --font-body: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
@@ -88,25 +88,19 @@
   --mono: var(--font-mono);
   --sans: var(--font-body);
 
-  /* rhythm */
+  /* Rhythm */
   --gutter: clamp(20px, 5vw, 72px);
   --measure: 1180px;
   --u: 4px;
 
-  /* glass — translucent black instrument material, square geometry */
+  /* Glass */
   --glass-bg: rgba(0, 0, 0, 0.78);
   --glass-bg-strong: rgba(0, 0, 0, 0.92);
-  --glass-edge: rgba(255, 255, 255, 0.2);
+  --glass-edge: var(--border);
   --glass-hi: rgba(255, 255, 255, 0.06);
   --glass-blur: 14px;
 
-  /* Corners. Legacy zero-radius rule preserved as --radius for components
-     that still reference it. The redesign introduces a small rounded
-     vocabulary for controls, cards, and the ad slot while keeping the
-     brutalist hard-edge feel on structural surfaces.
-
-     Zero is still the default for plates, panels, and the terminal
-     itself — the rounded tokens are opt-in. */
+  /* Corners */
   --radius: 0px;
   --radius-sm: 2px;
   --radius-md: 4px;
@@ -114,81 +108,117 @@
   --radius-xl: 10px;
   --radius-pill: 9999px;
 
-  /* Border weights. One language: 1px rules everywhere, 2px for a
-     structural division, 3px only for the flag bar. */
+  /* Border weights */
   --border-w: 1px;
   --border-w-2: 2px;
   --border-w-3: 3px;
 
-  /* Motion durations. Four steps and no fifth; anything that needs a
-     different number is asking for its own opinion. */
+  /* Motion durations */
   --dur-fast: 140ms;
   --dur: 240ms;
   --dur-slow: 520ms;
   --dur-cine: 900ms;
 
-  /* Display type, locked to the viewport height and then capped against
-     the viewport width. A width-only fluid size (`clamp(30px, 4.2vw,
-     52px)`) tracks the window but not the composition: the same 4.2vw
-     is a headline on a wide laptop and a caption on a tall portrait
-     phone, so the type stops being part of the layout and becomes a
-     passenger in it. Keying the top of the scale to `svh` instead —
-     and using `min()` so the width still gets a veto — makes the
-     statement a function of how much vertical room the composition
-     actually has, which is what a designer means by "big".
-
-     The `svh` unit rather than `vh`: the small viewport height does not
-     move when a mobile browser's URL bar collapses, so nothing reflows
-     mid-scroll. The whole page is already built on `svh` for the same
-     reason.
-
-     Each step names two numbers: the height it would like, and the width
-     that would stop it getting there. The height always wins on a
-     landscape desktop, which is the primary target. The width only binds
-     on a phone, and it is deliberately set loose (a display line
-     normally breaks well before it is out of room) so that a narrow
-     screen gets a *smaller statement* rather than a *smaller page*. */
+  /* Display type */
   --display-xl: min(8svh, 12.5vw);
   --display-l: min(5.3svh, 8.6vw);
   --display-m: min(4svh, 6.9vw);
   --display-s: min(2.6svh, 5.4vw);
 
-  /* Tracking. Display type is set tight, body type is set normal, and
-     the micro-labels are set wide — three jobs, three values, and no
-     size in between that is allowed its own opinion. Orbitron is
-     already a wide geometric face, so its display tracking is only
-     lightly negative; the negative value belongs to Space Grotesk,
-     which is the one that needs drawing rather than typing. */
+  /* Tracking */
   --track-display: -0.01em;
   --track-head: -0.03em;
   --track-tight: -0.022em;
   --track-label: 0.18em;
 
-  /* Easing. One curve for the interface, one for display type, and the
-     split is not arbitrary.
-
-     `.4,0,.2,1` handles every state change a viewer can trigger or
-     perceive as UI — hovers, disclosure, anything that should feel
-     like a control responding. It is used fourteen times across the
-     project and reused deliberately, so the whole surface has one
-     physical feel and nothing feels hand-placed.
-
-     Display type gets a different curve, `.19,1,.22,1`, because it
-     arrives rather than responds. It decelerates hard from the very
-     first frame, which is what reads as mass; a control that decelerated
-     that hard would feel sluggish, and a headline that eased in evenly
-     would feel like it had no weight. Mixing the two within one element
-     is the thing to avoid — an easing vocabulary is only worth having
-     if it is applied consistently. */
+  /* Easing */
   --ease-ui: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-reveal: cubic-bezier(0.19, 1, 0.22, 1);
 
+  /* Shadows */
   --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.03) inset,
     0 24px 70px -30px rgba(0, 0, 0, 0.9);
   --shadow-ad: 0 0 0 1px var(--ad-edge), 0 12px 40px -22px rgba(0, 0, 0, 0.9),
     0 0 34px -22px var(--amber-glow);
 
   color-scheme: dark;
+}
+
+.light-theme {
+  --bg: #FAF9F6;
+  --surface: #F1F0F8;
+  --elevated: #E9EAF5;
+  --paper: #F1F0F8;
+  --signal: #2563EB;
+  --signal-text: #2563EB;
+  --signal-dark: #2563EB;
+  --signal-soft: rgba(37, 99, 235, 0.14);
+  --muted: #747B8E;
+  --text: #171923;
+  --text-muted: #51576A;
+  --border: rgba(23, 25, 35, 0.12);
+  --border-strong: #171923;
+
+  /* Legacy surface aliases */
+  --void: var(--bg);
+  --stage: var(--bg);
+  --panel: var(--surface);
+  --panel-2: var(--elevated);
+  --chrome: var(--surface);
+  --input: var(--elevated);
+
+  /* hairlines */
+  --hair: rgba(23, 25, 35, 0.12);
+  --hair-strong: rgba(23, 25, 35, 0.24);
+  --hair-amber: rgba(37, 99, 235, 0.6);
+
+  /* Ink ramp */
+  --ink: var(--text);
+  --ink-2: var(--text);
+  --ink-3: var(--text-muted);
+  --ink-4: var(--muted);
+
+  /* accent aliases */
+  --amber: var(--signal);
+  --amber-dim: var(--signal-text);
+  --amber-wash: var(--signal-soft);
+  --amber-glow: rgba(37, 99, 235, 0.35);
+
+  /* sponsored slot */
+  --ad-ink: var(--text);
+  --ad-dim: var(--text-muted);
+  --ad-edge: var(--hair-strong);
+  --ad-fill: var(--bg);
+
+  /* status */
+  --ok: var(--accent-green);
+
+  /* Color aliases */
+  --clr-black: var(--bg);
+  --clr-bg: var(--bg);
+  --clr-surface: var(--surface);
+  --clr-panel: var(--surface);
+  --clr-elevated: var(--elevated);
+  --clr-border: var(--border-strong);
+  --clr-muted: var(--muted);
+  --clr-secondary: var(--text-muted);
+  --clr-text: var(--text);
+  --clr-amber: var(--signal);
+
+  /* Accent colors */
+  --accent-blue: #2563EB;
+  --accent-violet: #7C3AED;
+  --accent-purple: #9333EA;
+  --accent-green: #15803D;
+  --accent-error: #BE123C;
+
+  /* Gradient tokens */
+  --gradient-blue-violet: linear-gradient(90deg, var(--accent-blue), var(--accent-violet));
+  --gradient-violet-purple: linear-gradient(90deg, var(--accent-violet), var(--accent-purple));
+  --gradient-blue-violet-purple: linear-gradient(90deg, var(--accent-blue), var(--accent-violet), var(--accent-purple));
+  --gradient-purple-green: linear-gradient(90deg, var(--accent-purple), var(--accent-green));
+
+  color-scheme: light;
 }
 
 /* =============================================================
@@ -210,12 +240,10 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
-/* A continuous black field. No gradient steps: the page base is pure
-   black and the structure is carried by white hairlines only. */
 body {
   margin: 0;
-  background: #000000;
-  color: var(--ink-2);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--sans);
   font-size: 16px;
   line-height: 1.55;
@@ -245,9 +273,6 @@ button {
   cursor: pointer;
 }
 
-/* Native checkboxes and radios default to browser-blue, which would
-   be a fourth colour. `accent-color` repaints the checked fill with
-   the single accent without replacing the control's semantics. */
 input[type="checkbox"],
 input[type="radio"] {
   accent-color: var(--signal-text);
@@ -258,35 +283,16 @@ ol {
   list-style: none;
 }
 
-/* One focus indicator, one colour, one weight. `--signal-text` rather
-   than `--signal` because the ring has to clear 3:1 against both the
-   black stage and the dark chrome it lands on, and pure signal red
-   only manages 4.45:1 on the latter. 2px because a 1px ring is a ring
-   that disappears at 125% zoom and in forced-colours, where it is the
-   only affordance left. */
 :focus-visible {
   outline: 2px solid var(--signal-text);
   outline-offset: 2px;
 }
 
-/* Selection is the one interaction on this page that the viewer
-   actually performs. Signal-red selection with deep-black text stays
-   readable and reads as the product's single accent. */
 ::selection {
-  background: var(--amber);
+  background: var(--signal);
   color: var(--bg);
 }
 
-/* Lenis adds `lenis`, and `lenis-smooth` while it is easing, to the
-   root element. It ships no stylesheet of its own — these are the
-   rules it assumes you have written.
-
-   The one that is not optional is `scroll-behavior: auto`. Lenis
-   animates the scroll position itself; if CSS is also allowed to
-   smooth it, the two smoothers compound and every wheel tick arrives
-   late and twice-removed. `height: auto` is the other half of the same
-   idea: Lenis measures the document's real height, and a `100%` on
-   html or body would be a height it is measuring against itself. */
 html.lenis,
 html.lenis body {
   height: auto;
@@ -296,25 +302,14 @@ html.lenis body {
   scroll-behavior: auto !important;
 }
 
-/* Anything that opts out of smoothing is opted out of the wrapper's
-   overscroll too, or dragging inside it scrolls the page behind it. */
 .lenis.lenis-smooth [data-lenis-prevent] {
   overscroll-behavior: contain;
 }
 
-/* Lenis parks the document with `overflow: clip` while stopped, which
-   `hidden` cannot do because it would drop the scroll position. */
 .lenis.lenis-stopped {
   overflow: clip;
 }
 
-/* The intro plays over a locked document. `scrollbar-gutter: stable`
-   is the whole reason this is safe: `overflow: hidden` takes the
-   scrollbar away, and without the gutter reserved the viewport would
-   be ~15px wider for the length of the intro and the page would jump
-   sideways when it released. With the gutter reserved the layout is
-   identical before, during and after, so nothing reflows when the
-   lock comes off. */
 html.intro-lock,
 html.intro-lock body {
   overflow: hidden;
@@ -334,8 +329,6 @@ html.intro-lock body {
   --atmos-p: 0;
 }
 
-/* Vertical structure only: full-height white hairlines. No horizontal
-   rows, no scanlines, no atmospheric bands — those read as seams. */
 .atmos__grid {
   position: absolute;
   inset: -12vh 0;
@@ -361,11 +354,6 @@ html.intro-lock body {
   transform: translate3d(0, calc(var(--atmos-p) * -58px), 0);
 }
 
-/* Depth pools removed: translucent white/red radial gradients over
-   black are a gray wash. The environment stays pure black; depth
-   comes from perspective and scale in the drum itself. */
-
-/* content must paint above the fixed atmosphere */
 .stage,
 .console,
 .conv {
@@ -373,7 +361,6 @@ html.intro-lock body {
   z-index: 1;
 }
 
-/* scroll-depth response for the film shell (driven by GSAP --film-p) */
 .stage {
   --film-p: 0;
   transform: translate3d(0, calc(var(--film-p) * 14px), 0);
@@ -392,14 +379,6 @@ html.intro-lock body {
   background:
     linear-gradient(180deg, var(--glass-hi), transparent 34%),
     var(--glass-bg);
-  /* The instrument sheen is baked into the background stack below
-     rather than sampled from the page behind it. A backdrop-filter
-     re-blurs everything underneath on every frame in which anything
-     underneath moves, which during a scroll is every frame; and
-     against this app's near-black background a 14px blur of near-black
-     is not something the eye can separate from a static gradient, so
-     the blur was cost with no visible return. `--glass-blur` is kept
-     for any future surface that genuinely sits over moving imagery. */
   border: var(--border-w) solid var(--glass-edge);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
@@ -441,7 +420,6 @@ html.intro-lock body {
   font-variant-ligatures: none;
 }
 
-/* chapter eyebrow — small signal instrumentation label */
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -479,15 +457,6 @@ html.intro-lock body {
     scroll-behavior: auto !important;
   }
 
-  /* The only initial states in the project GSAP is not the author of.
-     Everything else that starts hidden is hidden by a `gsap.set` in
-     the cinema hook, which is never reached when motion is reduced —
-     so there is nothing to undo. These two, though, ship hidden in
-     their own markup and stylesheet and would stay hidden forever
-     with no timeline to reveal them: a collapsed rule above each
-     benefit, and the arrowheads that give each wire a direction.
-     `!important` because App.css loads after this file and the
-     surrounding block uses it for the same reason. */
   .benefit__rule {
     transform: none !important;
   }
@@ -495,31 +464,12 @@ html.intro-lock body {
   .flow__arrowhead {
     opacity: 1 !important;
   }
-
-  /* A third element also ships hidden in its markup and is left that
-     way on purpose: the dot on each wire. It is the one thing in the
-     money scene that exists only to move, so with motion reduced it
-     has no meaning left to carry. Unhiding it would not give a
-     static diagram, it would park three dots at the vertex each
-     travels from, which reads as debris rather than as a paused
-     journey. The wires themselves are already drawn — DrawSVG is a
-     GSAP write, and with no timeline it simply never runs, so the
-     geometry survives the reduction intact. */
 }
 
 /* =============================================================
    forced colors
    ============================================================= */
 
-/* A high-contrast user swaps the entire palette for system colours and
-   the design absorbs that well: every surface, hairline, wire stroke
-   and corner tick in the prototype is drawn with `border` or `stroke`,
-   and those survive the swap intact.
-
-   What does not survive is `box-shadow`, and the ad slot's identity is
-   carried mostly by its amber ring. So the ring is restated here as a
-   dashed border — the one styling a high-contrast user still reads as
-   "this region is not part of the output". */
 @media (forced-colors: active) {
   .placement-slot {
     border: 1px dashed CanvasText;

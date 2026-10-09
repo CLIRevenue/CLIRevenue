@@ -1,0 +1,83 @@
+/* =============================================================
+   CLIRevenue — developer console additions
+   -------------------------------------------------------------
+   Only what `SdkSetup` and `DeveloperApp` need on top of the
+   shared layers. Everything here is deliberately thin:
+
+     * `advertiser.css` owns the dashboard primitives
+       (`.adv-panel`, `.adv-table`, `.adv-activity`, …).
+     * `App.css` owns the numbered step list (`.setup__step`).
+
+   This file adds the two things neither of them has a concept
+   for: a phase divider inside the step list, and a compact
+   "why" cell for the host-compatibility table.
+
+   Tokens only — no literal colours and no literal spacing
+   values — so the amber migration stays a one-file change.
+   ============================================================= */
+
+/* ---- phase dividers -------------------------------------
+   The step list is long enough now that the reader loses track
+   of which part of the setup they are in. A divider is one
+   full-width hairline with a label sitting on it, in the same
+   mono uppercase treatment the rest of the instrumentation
+   uses, so it reads as part of the terminal rather than as a
+   card header. `li` because it lives inside the `<ol>`. */
+.setup__phase {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 28px 0 0;
+  color: var(--signal);
+}
+
+.setup__phase:first-child {
+  margin-top: 0;
+}
+
+.setup__phase-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The rule after the label rather than before it, so the label
+   sits at the left margin where the eyebrow rhythm expects it
+   and the rule runs off to the right like a leader. */
+.setup__phase::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--hair);
+}
+
+/* ---- host compatibility --------------------------------
+   Two states, no third: "shortcut" is the only one that ever
+   binds a real key, so it is the only one allowed the accent.
+   Everything else is a command or a fallback and stays ink. */
+.setup__how {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.setup__how[data-kind='shortcut'] {
+  color: var(--signal);
+}
+
+.setup__how[data-kind='command'] {
+  color: var(--ink-2);
+}
+
+.setup__why {
+  color: var(--ink-3);
+}
+
+/* Utility for error text */
+.setup__text-error {
+  color: var(--signal-text);
+}

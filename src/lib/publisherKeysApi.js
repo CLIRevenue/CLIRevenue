@@ -36,15 +36,12 @@ function publisherKeysBaseCandidates() {
 async function authedFetch(url, options = {}) {
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
-  if (!token) {
-    const err = new Error('Not signed in.')
-    err.status = 401
-    throw err
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
   }
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-    ...options,
-  })
+  if (token) headers.Authorization = `Bearer ${token}`
+  const res = await fetch(url, { ...options, headers })
   const text = await res.text()
   let json = null
   try {

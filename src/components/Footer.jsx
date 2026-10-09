@@ -1,4 +1,5 @@
 import useAppRoute from '../hooks/useAppRoute.js'
+import { useEffect, useState } from 'react'
 import './Footer.css'
 
 export default function Footer() {
@@ -15,15 +16,38 @@ export default function Footer() {
     clean === '/app' ||
     clean.startsWith('/app/')
 
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    return saved === 'light' ? 'light' : 'dark'
+  })
+
+  useEffect(() => {
+    const handler = () => {
+      const saved = localStorage.getItem('theme')
+      setTheme(saved === 'light' ? 'light' : 'dark')
+    }
+    window.addEventListener('storage', handler)
+    handler() // initial sync
+    return () => window.removeEventListener('storage', handler)
+  }, [])
+
   if (isDashboard) return null
 
+  const logoSrc = theme === 'light' ? '/brand/clirevenue-logo-light.png' : '/brand/clirevenue-logo-dark.png'
   const year = new Date().getFullYear()
 
   return (
     <footer className="sitefoot" aria-label="Site">
       <div className="sitefoot__inner">
         <div className="sitefoot__brand">
-          <span className="sitefoot__mark" aria-hidden="true">▸</span>
+          <img
+            className="sitefoot__logo"
+            src={logoSrc}
+            alt=""
+            aria-hidden="true"
+            width="28"
+            height="28"
+          />
           <span className="sitefoot__name">CLI<em>Revenue</em></span>
         </div>
 

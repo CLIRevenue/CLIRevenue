@@ -172,7 +172,7 @@ describe('the source no longer contradicts the model', () => {
 
   test('boots on the two approved brand files', () => {
     const intro = code('src/components/Intro.jsx')
-    expect(intro).toContain('/brand/clirevenue-logo.png')
+    expect(intro).toContain('/brand/clirevenue-logo-dark.png')
     expect(intro).toContain('/brand/clirevenue-wordmark.png')
     expect(read('src/App.css')).not.toMatch(/\.intro__word\b/)
   })

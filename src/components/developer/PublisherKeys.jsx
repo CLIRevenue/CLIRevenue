@@ -197,9 +197,9 @@ export default function PublisherKeys() {
             </button>
           </div>
           {error && (
-            <p className="setup__note" style={{ color: '#dc2626' }}>
-              {error}
-            </p>
+                 <p className="setup__text-error">
+                   {error}
+                 </p>
           )}
         </div>
       </Panel>

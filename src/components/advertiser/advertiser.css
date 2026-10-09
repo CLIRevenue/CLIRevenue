@@ -28,11 +28,11 @@
 /* Active tab reads as the inverted red plate the rest of the
    product uses for the primary control. */
 .adv-nav__btn[data-active="true"] {
-  color: #ffffff; border-color: var(--amber); background: var(--amber); font-weight: 600;
+   color: var(--paper); border-color: var(--amber); background: var(--amber); font-weight: 600;
   box-shadow: 0 0 0 1px var(--amber-glow);
 }
 .adv-nav__btn:hover { color: var(--ink); border-color: var(--hair); }
-.adv-nav__btn[data-active="true"]:hover { color: #ffffff; border-color: var(--amber); background: var(--amber); }
+.adv-nav__btn[data-active="true"]:hover { color: var(--paper); border-color: var(--amber); background: var(--amber); }
 .adv-page { display: flex; flex-direction: column; gap: 28px; }
 /* Stats adapt to their count instead of reserving empty columns. */
 .adv-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; background: var(--hair); border: 1px solid var(--hair); border-radius: var(--radius-md); }
@@ -280,6 +280,50 @@ button.btn--ghost:hover .sitehead__icon {
   }
 }
 
+/* --- responsive app-form fields ------------------------------- */
+
+@media (max-width: 640px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .field-row .field label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field__label {
+    font-size: 9px;
+  }
+
+  .adv-form .field__input,
+  .adv-form .field__input--area {
+    font-size: 13px;
+  }
+
+  .adv-detail div {
+    grid-template-columns: 1fr;
+  }
+
+  .adv-detail dt {
+    margin-bottom: 2px;
+  }
+
+  .adv-detail dd {
+    margin-left: 0;
+  }
+
+  .adv-detail__actions {
+    flex-wrap: wrap;
+  }
+
+  .adv-detail__actions .btn {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
 /* account page — editable profile sections + danger zone */
 .account-fields {
   display: grid;
@@ -382,8 +426,7 @@ button.btn--ghost:hover .sitehead__icon {
 /* Sticky tab bar stays one row: scrollable, never a multi-row wrap. */
 @media (max-width: 640px) {
   .adv-nav { flex-wrap: nowrap; overflow-x: auto; margin-bottom: 24px; scrollbar-width: thin; }
-  .adv-nav__btn { white-space: nowrap; padding: 9px 12px; }
-  .adv-detail div { grid-template-columns: 1fr; gap: 2px; }
+  .adv-nav__btn { white-space: nowrap; padding: 9px 12px; transition: color var(--dur-fast) var(--ease-ui), border-color var(--dur-fast) var(--ease-ui), background var(--dur-fast) var(--ease-ui); }
 }
 
 /* signup confirmation / existing-account screens */

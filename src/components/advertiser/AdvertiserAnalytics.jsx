@@ -116,8 +116,12 @@ export default function AdvertiserAnalytics({ campaigns, loading, error, onRetry
           <div className="adv-grid adv-grid--2">
             <section className="panel adv-panel" aria-label="Historical trend">
               <h4 className="adv-panel__title">Historical trend</h4>
-              <p className="adv-panel__sub">Impressions in the order campaigns were created.</p>
-              <AdvBarChart rows={trend} valueLabel="Impressions" />
+              <p className="adv-panel__sub">Impressions in the order campaigns were created — zero means no delivery yet.</p>
+              {trend.length === 0 ? (
+                <AdvEmpty mark="No delivery" title="No trend yet" body="Charts appear once campaigns record impressions." />
+              ) : (
+                <AdvBarChart rows={trend} valueLabel="Impressions (count)" />
+              )}
             </section>
             <section className="panel adv-panel" aria-label="Audience performance">
               <h4 className="adv-panel__title">Audience performance</h4>
