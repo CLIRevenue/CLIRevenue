@@ -30,15 +30,7 @@ const SEGMENT_DATA = [
 function OrbitRing() {
   const containerRef = useRef(null)
   const [progress, setProgress] = useState(0)
-  const [isReducedMotion, setIsReducedMotion] = useState(false)
-
-  // Use the hook directly, not inside a callback
-  useEffect(() => {
-    const updatePreferredMotion = usePrefersReducedMotion()
-    setIsReducedMotion(updatePreferredMotion)
-    // Return a cleanup function if needed
-    return () => {}
-  }, [])
+  const isReducedMotion = usePrefersReducedMotion()
 
   useEffect(() => {
     if (isReducedMotion) return
