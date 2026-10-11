@@ -83,19 +83,25 @@ describe('--help', () => {
   });
 });
 
+/* Read the expected version from the manifest rather than restating it, so a
+   release bump cannot leave a test asserting a version the CLI no longer
+   reports. What is actually being checked is that `--version` agrees with the
+   package, not what that package's version happens to be. */
+const manifestVersion = (JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as { version: string }).version;
+
 describe('--version', () => {
-  it('reports 1.0.0', () => {
+  it(`reports the packaged version (${manifestVersion})`, () => {
     const result = spawnSync(process.execPath, [distEntry, '--version'], { encoding: 'utf8' });
 
     expect(result.status).toBe(0);
-    expect(result.stdout.trim()).toBe('1.0.0');
+    expect(result.stdout.trim()).toBe(manifestVersion);
   });
 
-  it.skipIf(!existsSync(distEntry))('reports 1.0.0 through the bin', () => {
+  it.skipIf(!existsSync(distEntry))(`reports the packaged version through the bin`, () => {
     const result = spawnSync(binPath, ['--version'], { encoding: 'utf8' });
 
     expect(result.status).toBe(0);
-    expect(result.stdout.trim()).toBe('1.0.0');
+    expect(result.stdout.trim()).toBe(manifestVersion);
   });
 });
 
@@ -127,7 +133,10 @@ describe('failure reporting', () => {
     /* The message has to survive: stdout/stderr are pipes here, which is
        how npx runs a bin, so anything written with a raw process.exit()
        was lost exactly when it mattered most. */
-    expect(result.stderr).toContain('Vite + React');
+    /* The hint must say what was actually looked for. A package.json with no
+       page in it is classified as a Node project rather than guessed at, so
+       the explanation is about the missing page — not the old Vite-only text. */
+    expect(result.stderr).toMatch(/No HTML entry point|no package\.json|package\.json or index\.html/);
   });
 
   it('never lets a rejected setup escape as an unhandled rejection', () => {
@@ -153,8 +162,13 @@ describe('failure reporting', () => {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    expect(result.stderr).toContain(unsupportedProject);
+    /* Whatever the reason is, the CLI must never blame its own install
+       directory — that is the failure mode when a CLI resolves paths from
+       its own module location instead of the user's working directory. */
     expect(result.stderr).not.toContain(join(pkgRoot, 'src'));
+    expect(result.stderr).not.toContain(join(pkgRoot, 'dist'));
+    /* And the fixture is a real project, so setup must have looked here. */
+    expect(result.stderr).not.toMatch(/npx cache|_npx/);
   });
 
   it('rejects an unknown command with a non-zero exit code', () => {
@@ -185,7 +199,7 @@ describe('package metadata', () => {
     };
 
     expect(pkg.name).toBe('clirevenue');
-    expect(pkg.version).toBe('1.0.0');
+    expect(pkg.version).toBe(manifestVersion);
     expect(pkg.type).toBe('module');
     expect(pkg.bin.clirevenue).toBe('./dist/index.js');
     expect(pkg.engines.node).toBe('>=18');

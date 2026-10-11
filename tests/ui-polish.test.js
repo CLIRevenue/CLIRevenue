@@ -36,6 +36,39 @@ const SRC = join(ROOT, 'src')
 const ADMIN = join(SRC, 'components/admin')
 const read = (p) => readFileSync(join(ROOT, p), 'utf8')
 
+/** Strip block and line comments so a rule that *documents* a palette is not
+ *  mistaken for one that hardcodes it. */
+const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/.*$/gm, ' ')
+
+/** Extract a balanced `sel { … }` block. Slicing to the next `}` — which is
+ *  what the older assertions here did — truncates at the first nested or
+ *  at-rule brace and silently checks a prefix instead of the block. */
+function cssBlock(src, sel) {
+  const at = src.indexOf(sel)
+  if (at < 0) return null
+  const open = src.indexOf('{', at)
+  if (open < 0) return null
+  let depth = 0
+  for (let i = open; i < src.length; i += 1) {
+    if (src[i] === '{') depth += 1
+    else if (src[i] === '}') {
+      depth -= 1
+      if (depth === 0) return src.slice(open + 1, i)
+    }
+  }
+  return null
+}
+
+/** The custom properties a block declares, lowercased. */
+function declaredTokens(block) {
+  return new Set([...block.matchAll(/(--[a-z0-9-]+)\s*:/gi)].map((m) => m[1].toLowerCase()))
+}
+
+/** Blank out a block so what is left is "the rest of the file". */
+function withoutBlock(src, block) {
+  return src.replace(block, ' ')
+}
+
 function walk(dir, ext) {
   const out = []
   for (const name of readdirSync(dir)) {
@@ -196,17 +229,33 @@ describe('existing polish is not quietly lost', () => {
   })
 
   it('radius stays tokenised', () => {
-    // Three literal radii pre-date this pass (1px hairline, 2px, 3px). A new
-    // literal is how a design system stops being one. Tokens are the rule.
-    const literals = []
+    // Two things are being kept, and neither is "these three literals exist":
+    //   - a raw literal above the hairline threshold is a design decision made
+    //     in a component file, which is how a design system stops being one;
+    //   - the one exception is a value that is itself a step on the radius
+    //     scale, read from index.css so widening the scale is not a fight.
+    // `--radius-pill` is excluded from the scale set: it is the round-pill
+    // sentinel and would otherwise licence any literal up to 9999px.
+    const scale = [...read('src/index.css').matchAll(/--radius(?:-[a-z0-9]+)?\s*:\s*([\d.]+)px/gi)]
+      .filter((m) => !/--radius-pill\b/.test(m[0]))
+      .map((m) => Number(m[1]))
+    expect(scale.length).toBeGreaterThan(0)
+    const allowed = new Set(scale.map(String))
+
+    const HAIRLINE = 3
+    const offenders = []
     for (const [path, src] of cssFiles) {
-      for (const m of src.matchAll(/border-radius:\s*([^;]+);/g)) {
-        for (const px of m[1].matchAll(/(\d+)px/g)) literals.push({ path, value: px[1] })
+      const code = stripComments(src)
+      for (const m of code.matchAll(/border-radius\s*:\s*([^;]+);/g)) {
+        for (const px of m[1].matchAll(/(\d+)px/g)) {
+          const n = Number(px[1])
+          if (n > HAIRLINE && !allowed.has(String(n))) {
+            offenders.push(`${path.replace(ROOT, '')}: ${n}px is neither a hairline nor a radius token`)
+          }
+        }
       }
     }
-    const above = literals.filter((l) => Number(l.value) > 3)
-    expect(above).toEqual([])
-    expect([...new Set(literals.map((l) => l.value))].sort()).toEqual(['1', '2', '3'])
+    expect(offenders).toEqual([])
   })
 
   it('the radius scale itself still exists', () => {
@@ -224,58 +273,104 @@ describe('existing polish is not quietly lost', () => {
   })
 
    it('focus is still visible through one global rule', () => {
-     // Many component stylesheets can rely on it; only one has to define it.
-     expect(read('src/index.css')).toMatch(
-       /:focus-visible\s*{\s*outline:\s*2px solid var\(--signal-text\)/
-     );
+     // Many component stylesheets rely on it; only one has to define it.
+     // What must not drift is the *shape* of the guarantee: one global rule,
+     // a ring thick enough to see, and a colour that comes from a token
+     // rather than a literal (a literal cannot follow the theme).
+     const index = stripComments(read('src/index.css'))
+     const globals = [...index.matchAll(/(^|[},;\s])(:focus-visible)\s*\{([^}]*)\}/g)]
+       .map((m) => m[3])
+     expect(globals.length).toBeGreaterThan(0)
+
+     const ring = globals.find((body) => /outline\s*:/i.test(body))
+     expect(ring).toBeTruthy()
+     expect(ring).toMatch(/outline\s*:\s*(?:(\d+)px\s+)?(?:solid|dashed|dotted|double)/i)
+
+     const width = Number((ring.match(/outline\s*:\s*(\d+)px/i) || [])[1] || 0)
+     expect(width).toBeGreaterThanOrEqual(2)
+
+     // The outline's colour half has to be a token reference, so the ring
+     // follows the theme instead of being welded to one palette.
+     const outlineDecl = ring.match(/outline\s*:[^;]+/i)[0]
+     expect(outlineDecl).toMatch(/var\(\s*--[a-z0-9-]+\s*\)/i)
+     expect(outlineDecl).not.toMatch(/#[0-9a-f]{3,8}/i)
    })
 });
 
 describe('the design token system is in place', () => {
+  // The palette is the redesignable part. What must not drift is that the
+  // two themes describe the same system: same semantic names, declared once
+  // per theme, with a colour-scheme each, so nothing falls back to the
+  // wrong theme's value. Asserting specific hexes here would only make the
+  // next redesign a fight -- which is what this file's own docblock says.
+  const SEMANTIC = [
+    '--bg',
+    '--surface',
+    '--text',
+    '--signal',
+    '--accent-blue',
+    '--accent-violet',
+    '--accent-purple',
+    '--accent-green',
+    '--accent-error',
+  ]
+
   it('defines the dark theme tokens in :root', () => {
     const index = read('src/index.css')
-    const root = index.slice(index.indexOf(':root'), index.indexOf('}', index.indexOf(':root')))
-    // Check for a few key tokens
-    expect(root).toContain('--bg: #0B0D12;')
-    expect(root).toContain('--surface: #171C27;')
-    expect(root).toContain('--signal: #60A5FA;')
-    expect(root).toContain('--text: #F5F7FC;')
-    expect(root).toContain('--accent-blue: #60A5FA;')
-    expect(root).toContain('--accent-violet: #A78BFA;')
-    expect(root).toContain('--accent-purple: #C084FC;')
-    expect(root).toContain('--accent-green: #4ADE80;')
-    expect(root).toContain('--accent-error: #FB7185;')
+    const root = cssBlock(index, ':root')
+    expect(root).toBeTruthy()
+    expect(root).toMatch(/color-scheme\s*:\s*dark/i)
+
+    const declared = declaredTokens(root)
+    const missing = SEMANTIC.filter((t) => !declared.has(t))
+    expect(missing).toEqual([])
+
+    // Declared is not the same as given a value: `--bg: ;` would pass a name
+    // check and render nothing.
+    const empty = SEMANTIC.filter((t) => {
+      const m = root.match(new RegExp(`${t}\\s*:\\s*([^;]+);`, 'i'))
+      return m && !m[1].trim()
+    })
+    expect(empty).toEqual([])
   })
 
   it('defines the light theme tokens in .light-theme', () => {
     const index = read('src/index.css')
-    const lightThemeStart = index.indexOf('.light-theme')
-    // Find the opening brace after .light-theme
-    const lightThemeOpenBrace = index.indexOf('{', lightThemeStart)
-    // Find the closing brace for the .light-theme block (we assume it's the next '}' at the same nesting level)
-    // Since we don't have nested blocks in .light-theme, we can find the next '}' after the opening brace.
-    const lightThemeCloseBrace = index.indexOf('}', lightThemeOpenBrace)
-    const lightTheme = index.slice(lightThemeOpenBrace, lightThemeCloseBrace + 1)
-    expect(lightTheme).toContain('--bg: #FAF9F6;')
-    expect(lightTheme).toContain('--surface: #F1F0F8;')
-    expect(lightTheme).toContain('--signal: #2563EB;')
-    expect(lightTheme).toContain('--text: #171923;')
-    expect(lightTheme).toContain('--accent-blue: #2563EB;')
-    expect(lightTheme).toContain('--accent-violet: #7C3AED;')
-    expect(lightTheme).toContain('--accent-purple: #9333EA;')
-    expect(lightTheme).toContain('--accent-green: #15803D;')
-    expect(lightTheme).toContain('--accent-error: #BE123C;')
+    const light = cssBlock(index, '.light-theme')
+    expect(light).toBeTruthy()
+    expect(light).toMatch(/color-scheme\s*:\s*light/i)
+
+    const lightTokens = declaredTokens(light)
+    for (const token of SEMANTIC) {
+      expect(lightTokens.has(token)).toBe(true)
+    }
+
+    // Parity: a token the dark theme sets and the light theme does not is a
+    // token that silently keeps its dark value in light mode. The radius
+    // scale is the one documented exception -- it is a scale, not a colour.
+    const root = cssBlock(index, ':root')
+    const darkOnly = [...declaredTokens(root)]
+      .filter((t) => !lightTokens.has(t) && !t.startsWith('--radius'))
+      .sort()
+    expect(darkOnly).toEqual([])
+
+    const lightOnly = [...lightTokens]
+      .filter((t) => !declaredTokens(root).has(t))
+      .sort()
+    expect(lightOnly).toEqual([])
   })
 
   it('does not contain hardcoded colors outside of tokens and gradients', () => {
-    // We'll allow the gradient tokens and the font files (which are in the token values) and the token definitions themselves.
-    // We'll check for any hex color that is not part of a token definition or gradient.
-    // This is complex, so we'll skip for now and rely on the other tests.
-    // We'll just check that the old palette colors are not used as hardcoded values in the root block.
+    // Colours live in the token blocks, in a gradient(), or in the comment
+    // that documents the palette. A hex anywhere else in this file is a
+    // value that will not follow the theme.
     const index = read('src/index.css')
-    const root = index.slice(index.indexOf(':root'), index.indexOf('}', index.indexOf(':root')))
-    const allowed = new Set(['#0b0d12', '#171c27', '#1d2432', '#60a5fa', '#f5f7fc', '#737e92', '#ffffff', '#000000', '#a78bfa', '#c084fc', '#4ade80', '#fb7185', '#a8b1c2'])
-    const hexes = [...root.matchAll(/#[0-9a-fA-F]{3,8}/g)].map((m) => m[0].toLowerCase())
-    expect(hexes.filter((h) => !allowed.has(h))).toEqual([])
+    const outside = withoutBlock(withoutBlock(index, cssBlock(index, ':root')), cssBlock(index, '.light-theme'))
+    const code = stripComments(outside)
+    const gradients = [...code.matchAll(/(?:linear|radial|conic)-gradient\([^;]*\)/gi)].map((m) => m[0])
+    const residue = code.replace(/(?:linear|radial|conic)-gradient\([^;]*\)/gi, ' ')
+    const stray = [...residue.matchAll(/#[0-9a-fA-F]{3,8}/g)].map((m) => m[0].toLowerCase())
+
+    expect({ stray, gradients: gradients.length >= 0 }).toEqual({ stray: [], gradients: true })
   })
 });

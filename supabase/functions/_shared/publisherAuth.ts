@@ -167,12 +167,29 @@ export function createRateLimiter({
   capacity = 120,
   refillPerSecond = 2,
   now = () => Date.now(),
+  /**
+   * Optional ceiling on tracked buckets. Endpoints keyed by something a
+   * caller controls (a client address on a public route) must bound the map,
+   * or the limiter becomes the memory leak it exists to prevent. When the
+   * ceiling is reached the oldest-inserted bucket is evicted first; an evicted
+   * caller restarts at full capacity, which is the safe direction for abuse
+   * damping. Callers with unbounded-but-trusted keys (publisher ids) leave
+   * this unset.
+   */
+  maxKeys = Number.POSITIVE_INFINITY,
 } = {}) {
   const buckets = new Map<string, Bucket>();
 
   return function check(key: string): { allowed: boolean; retryAfterMs: number } {
     const t = now();
-    const bucket = buckets.get(key) ?? { tokens: capacity, updatedAt: t };
+    let bucket = buckets.get(key);
+    if (!bucket) {
+      if (maxKeys > 0 && buckets.size >= maxKeys && !buckets.has(key)) {
+        const oldest = buckets.keys().next();
+        if (!oldest.done) buckets.delete(oldest.value);
+      }
+      bucket = { tokens: capacity, updatedAt: t };
+    }
     const elapsed = Math.max(0, t - bucket.updatedAt);
     bucket.tokens = Math.min(capacity, bucket.tokens + (elapsed / 1000) * refillPerSecond);
     bucket.updatedAt = t;

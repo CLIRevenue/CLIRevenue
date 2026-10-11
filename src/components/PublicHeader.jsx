@@ -60,19 +60,23 @@ export default function PublicHeader() {
     }
   }
 
-  const logoSrc = theme === 'light' ? '/brand/clirevenue-logo-light.png' : '/brand/clirevenue-logo-dark.png'
-
   return (
     <header className="sitehead glass" aria-label="Site">
       <button type="button" className="sitehead__brand" onClick={() => navigateApp('/')} aria-label="CLIRevenue home">
-        <img
+        <svg
           className="sitehead__logo"
-          src={logoSrc}
-          alt=""
-          aria-hidden="true"
+          viewBox="0 0 32 32"
           width="32"
           height="32"
-        />
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <rect x="3" y="3" width="26" height="26" rx="0" fill="var(--bg)" strokeWidth="0" />
+          <rect x="3" y="3" width="26" height="26" rx="0" stroke="var(--electric-cyan)" strokeWidth="1.5" />
+          <path d="M8 8h2v16h-2v-4h1" stroke="var(--electric-cyan)" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M12 8h2v16h-2v-8h6v2h2v-6h-2v4h-4v-6" stroke="var(--hyper-violet)" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
         <span className="sitehead__name">CLI<em>Revenue</em></span>
       </button>
       <nav className="sitehead__nav" aria-label="Account">
@@ -114,18 +118,24 @@ export default function PublicHeader() {
           </button>
         ) : null}
         {nav.showSignup ? (
-          <button type="button" className="btn btn--primary btn--sm" onClick={() => navigateApp('/signup')}>
+          <button type="button" className="btn btn--signal btn--sm" onClick={() => navigateApp('/signup')}>
             Sign up
           </button>
         ) : null}
         {/* Theme toggle */}
         <button
           type="button"
-          className="btn btn--ghost btn--sm"
+          className="btn btn--ghost btn--sm theme-toggle"
           onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
         >
-          {theme === 'light' ? '🌙' : '☀️'}
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            {theme === 'light' ? (
+              <path d="M8 1V2M8 14V15M2.34 2.34L2.95 2.95M13.05 13.05L13.66 13.66M1 8H2M14 8H15M2.34 13.66L2.95 13.05M13.05 2.95L13.66 2.34" strokeWidth="1.5" stroke="currentColor" />
+            ) : (
+              <circle cx="8" cy="8" r="3" fill="currentColor" />
+            )}
+          </svg>
         </button>
       </nav>
     </header>

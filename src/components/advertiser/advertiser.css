@@ -131,9 +131,9 @@
 }
 
 .sitehead__brand:focus-visible {
-  outline: 2px solid var(--signal-text);
+  outline: 2px solid var(--electric-cyan);
   outline-offset: 4px;
-  border-radius: 2px;
+  border-radius: 0;
 }
 
 .sitehead__mark {
@@ -146,7 +146,7 @@
 
 .sitehead__brand em {
   font-style: normal;
-  color: var(--amber);
+  color: var(--electric-cyan);
 }
 
 .sitehead__nav {
@@ -178,15 +178,15 @@
 }
 
 .sitehead__nav-link:hover {
-  border-color: var(--hair-amber);
-  background: var(--amber-wash);
-  color: var(--ink);
+  border-color: var(--electric-cyan);
+  background: rgba(0, 240, 255, 0.06);
+  color: var(--on-surface);
 }
 
 .sitehead__nav-link[aria-current='page'],
 .sitehead__nav-link[aria-current='true'] {
-  border-color: var(--hair-amber);
-  background: var(--amber-wash);
+  border-color: var(--electric-cyan);
+  background: rgba(0, 240, 255, 0.06);
 }
 
 .sitehead__user {

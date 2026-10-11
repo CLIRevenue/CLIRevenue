@@ -1,23 +1,20 @@
-import { CLIREVENUE_API_BASE_URL } from '../config.js';
+import {
+  CLIREVENUE_API_BASE_URL,
+  DEFAULT_REQUEST_TIMEOUT_MS,
+  apiUrl,
+  errorMessage,
+  isTimeoutError,
+  timeoutMessage,
+  timeoutSignal,
+  unreachableMessage,
+} from './http.js';
 const KEY_RE = /^pk_(live|test)_[A-Za-z0-9_-]{32,}$/;
+
+export const PUBLISHER_KEY_HEADER = 'x-clirevenue-publisher-key';
 
 /** A verification call that never returns leaves the terminal looking
  *  frozen, so every request is bounded. */
-export const DEFAULT_VERIFY_TIMEOUT_MS = 15_000;
-
-function isTimeoutError(err: unknown): boolean {
-  return (
-    err instanceof Error &&
-    (err.name === 'TimeoutError' || err.name === 'AbortError')
-  );
-}
-
-function timeoutSignal(timeoutMs: number): AbortSignal | undefined {
-  if (typeof AbortSignal === 'undefined' || typeof AbortSignal.timeout !== 'function') {
-    return undefined;
-  }
-  return AbortSignal.timeout(timeoutMs);
-}
+export const DEFAULT_VERIFY_TIMEOUT_MS = DEFAULT_REQUEST_TIMEOUT_MS;
 
 export interface VerifiedKey {
   publisherId: string;
@@ -52,29 +49,27 @@ export async function verifyKey(
     );
   }
 
-  const url = `${baseUrl.replace(/\/+$/, '')}/cli/placements?publisherKey=${encodeURIComponent(rawKey)}`;
+  // The credential travels in a header, never in the query string: a URL is
+  // written to proxy and gateway logs, and this one is a secret. The server
+  // still accepts the legacy `?publisherKey=` form for already-released CLIs.
+  const url = apiUrl(baseUrl, '/cli/placements');
 
   let res: Response;
   try {
     res = await fetch(url, {
       method: 'GET',
-      headers: { accept: 'application/json' },
+      headers: { accept: 'application/json', [PUBLISHER_KEY_HEADER]: rawKey },
       signal: timeoutSignal(options.timeoutMs ?? DEFAULT_VERIFY_TIMEOUT_MS),
     });
   } catch (err) {
     if (isTimeoutError(err)) {
       throw new KeyVerificationError(
-        `The CLIRevenue API did not respond within ${
-          options.timeoutMs ?? DEFAULT_VERIFY_TIMEOUT_MS
-        }ms. Check your network connection, then try again.`,
+        timeoutMessage(options.timeoutMs ?? DEFAULT_VERIFY_TIMEOUT_MS),
         'network_error',
       );
     }
 
-    throw new KeyVerificationError(
-      `Could not reach CLIRevenue backend: ${err instanceof Error ? err.message : 'unknown error'}`,
-      'network_error',
-    );
+    throw new KeyVerificationError(unreachableMessage(err), 'network_error');
   }
 
   if (res.status === 401) {
@@ -82,11 +77,7 @@ export async function verifyKey(
   }
 
   if (res.status !== 200) {
-    const text = await res.text().catch(() => '');
-    throw new KeyVerificationError(
-      `Backend returned ${res.status}: ${text.slice(0, 200)}`,
-      'unexpected',
-    );
+    throw new KeyVerificationError(await errorMessage(res), 'unexpected');
   }
 
   const body = await res.json().catch(() => null);

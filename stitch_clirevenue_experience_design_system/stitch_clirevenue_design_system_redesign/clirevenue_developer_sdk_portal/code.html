@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><style>@layer base{html,body{width:100%;margin:0;padding:0;background-color:#0b0e15;color:#cbd5e1;}body{overscroll-behavior-y:none;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}.pb-safe{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 0.5rem);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}
+/* Liquid Glass & Neumorphic Custom Utilities */
+.neu-card {
+  background: linear-gradient(135deg, rgba(29, 33, 46, 0.65) 0%, rgba(16, 20, 30, 0.8) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 8px 8px 24px rgba(0, 0, 0, 0.65), -6px -6px 20px rgba(255, 255, 255, 0.035), inset 0 1px 1px rgba(255, 255, 255, 0.15), inset 0 -1px 2px rgba(0, 0, 0, 0.5);
+}
+.neu-inset {
+  background: linear-gradient(145deg, rgba(10, 13, 20, 0.85), rgba(15, 19, 28, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: inset 4px 4px 10px rgba(0, 0, 0, 0.75), inset -3px -3px 8px rgba(255, 255, 255, 0.04);
+}
+.neu-btn {
+  background: linear-gradient(145deg, rgba(35, 41, 56, 0.8), rgba(20, 24, 35, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5), -3px -3px 8px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.neu-btn:active {
+  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.7), inset -2px -2px 5px rgba(255, 255, 255, 0.03);
+  transform: translateY(1px);
+}
+.neu-chip {
+  background: linear-gradient(135deg, rgba(25, 30, 44, 0.7), rgba(16, 20, 30, 0.8));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4), -2px -2px 5px rgba(255, 255, 255, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+.neu-chip-inset {
+  background: rgba(11, 14, 22, 0.65);
+  box-shadow: inset 2px 2px 5px rgba(0,0,0,0.6), inset -1px -1px 3px rgba(255,255,255,0.04);
+}
+.glass-glow {
+  position: absolute;
+  pointer-events: none;
+  filter: blur(36px);
+  border-radius: 9999px;
+}
+</style><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-background": "#e1e2ec", "on-primary-fixed": "#001945", "primary-fixed-dim": "#b0c6ff", "tertiary": "#00daf3", "surface-container-low": "#191b23", "surface-container": "#1d1f27", "on-tertiary-fixed": "#001f24", "inverse-primary": "#0058ca", "on-tertiary-container": "#002f35", "surface-bright": "#363941", "surface-container-highest": "#32353d", "secondary-fixed": "#f8d8ff", "error-container": "#93000a", "primary-fixed": "#d9e2ff", "on-primary": "#002d6e", "primary": "#b0c6ff", "surface-variant": "#32353d", "outline": "#8c90a0", "secondary-container": "#cf5cff", "on-secondary-fixed-variant": "#74009f", "inverse-on-surface": "#2d3038", "surface-container-high": "#272a32", "on-tertiary": "#00363d", "secondary": "#ecb2ff", "inverse-surface": "#e1e2ec", "background": "#10131a", "secondary-fixed-dim": "#ecb2ff", "on-primary-fixed-variant": "#00429b", "surface": "#10131a", "tertiary-fixed-dim": "#00daf3", "on-secondary-fixed": "#320047", "tertiary-fixed": "#9cf0ff", "surface-dim": "#10131a", "on-secondary": "#520071", "on-error-container": "#ffdad6", "surface-tint": "#b0c6ff", "surface-container-lowest": "#0b0e15", "on-error": "#690005", "on-surface": "#e1e2ec", "outline-variant": "#424655", "on-surface-variant": "#c2c6d7", "tertiary-container": "#009fb2", "on-tertiary-fixed-variant": "#004f58", "on-secondary-container": "#480063", "primary-container": "#558dff", "error": "#ffb4ab", "on-primary-container": "#002661" }, borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, spacing: { "space-xl": "2.5rem", "space-lg": "1.5rem", "gutter": "1rem", "margin": "1rem", "gutter-desktop": "1.5rem", "margin-tablet": "2rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "margin-desktop": "3rem", "space-md": "1rem" }, fontFamily: { "headline-sm": ["Geist"], "headline-lg-mobile": ["Geist"], "label-code-md": ["JetBrains Mono"], "display-xl": ["Geist"], "display-xl-mobile": ["Geist"], "headline-lg": ["Geist"], "label-code-lg": ["JetBrains Mono"], "body-sm": ["Inter"], "body-lg": ["Inter"], "label-code-xs": ["JetBrains Mono"], "body-md": ["Inter"], "headline-md": ["Geist"] }, fontSize: { "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "500" }], "headline-lg-mobile": ["26px", { "lineHeight": "34px", "fontWeight": "600" }], "label-code-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "display-xl": ["56px", { "lineHeight": "64px", "fontWeight": "700" }], "display-xl-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }], "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }], "label-code-lg": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }], "label-code-xs": ["10px", { "lineHeight": "14px", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }], "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+      background: radial-gradient(circle at 50% -10%, rgba(0, 218, 243, 0.08), transparent 45%), radial-gradient(circle at 90% 40%, rgba(207, 92, 255, 0.06), transparent 50%), #0c0f17;
+    }
+  </style>
+</head><body class="bg-[#0c0f17] font-body-md text-body-md text-slate-300 antialiased min-h-screen flex flex-col"><header class="fixed top-0 w-full z-50 pt-safe bg-[#0b0e15]/75 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.55),inset_0_-1px_0_rgba(255,255,255,0.06)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="clirevenue-logo(dark).png" class="h-8 w-auto object-contain flex-shrink-0 drop-shadow-[0_2px_8px_rgba(0,218,243,0.3)]" src="https://lh3.googleusercontent.com/aida/AEtjO1Xwy6vpDH3RQXzioR8Y6OJIQDzi3nJ1LTSPIsDpjkgzozBjHtyeQ0megmS6oZC5gmO7Sgdh9Os7TLhH4KwNrUAS3JHA-AvzFKfnAd5Xitj1hp0zic0fpaUUa7w2_uSD5H6XxJCDlQFcS26wS8B-l5Oqb1exNdQ-3G_dh2xWvYigx8sjosLpfEV0GM1lbdljiUrT0MGX_wtwcIoHF7kw530vB_IDE2v4heNf4M5JkBTHy3OheaR2Mr6UQeYEeMaOHBxnrJH2u0wt2A"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm bg-gradient-to-r from-slate-100 via-slate-200 to-slate-400 bg-clip-text text-transparent tracking-tight truncate">CLIRevenue</span><span class="hidden xs:inline-flex items-center gap-1 px-2 py-0.5 rounded-full neu-chip text-tertiary/90 font-label-code-xs text-label-code-xs tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse shadow-[0_0_6px_rgba(0,218,243,0.8)]"></span>LIVE</span></div><span class="font-label-code-xs text-label-code-xs text-slate-400 truncate">Developers And Sdk</span></div></div><div class="flex items-center gap-space-xs flex-shrink-0"><button aria-label="Telemetry Status" class="h-9 px-2.5 rounded-lg flex items-center gap-1.5 neu-btn text-tertiary/90 font-label-code-xs text-label-code-xs"><span class="material-symbols-outlined text-[16px]">terminal</span><span class="hidden sm:inline">v2.4</span></button><button aria-label="Account Switcher" class="w-9 h-9 rounded-full neu-btn p-0.5 flex items-center justify-center text-slate-300 hover:text-primary transition-colors"><img alt="Profile" class="w-7 h-7 rounded-full object-cover shadow-inner" src="https://lh3.googleusercontent.com/aida/AEtjO1WVWAtvZmc9-s2eOe5neWGNBHeC6JwCfz7LaN_j1t3Phfn8MLi8eWF54x_5nADvLgkLdE9Xt8DUWIYEDDm4Wzr5mSeICApS72UcDzUNo9UF40FkeaJSin-0rMZlsiM8P_E1I7qAiVZHlwgoLZ41sABxBR4uCaR8LiAOY-bEm1rRsCXGs41AFmwDHzCXfd3SwmYIZIPSPWkcL7mwqj6vutfi2NIjXCa-QHTp8XTAWyUd1ut-utzIw4RHidESeaVJjX4E7UAJfoNu"/></button></div></div></header><main class="flex-1 w-full bg-transparent pt-16 pb-24"><div class="flex flex-col w-full px-margin space-y-space-lg pb-space-xl">
+<!-- Diagnostic Status Header / Runtime Header -->
+<div class="relative overflow-hidden rounded-2xl neu-card p-space-md">
+<div class="glass-glow -right-10 -top-10 w-48 h-48 bg-gradient-to-br from-tertiary/20 via-secondary-container/15 to-transparent"></div>
+<div class="flex items-center justify-between gap-space-sm pb-space-sm border-b-0">
+<div class="flex items-center gap-2">
+<span class="inline-flex w-2.5 h-2.5 rounded-full bg-tertiary shadow-[0_0_10px_rgba(0,218,243,0.9)] animate-pulse"></span>
+<span class="font-label-code-xs text-label-code-xs text-tertiary/90 uppercase tracking-wider font-semibold">Mesh Gateway: Online</span>
+</div>
+<span class="px-2.5 py-1 rounded-full neu-chip font-label-code-xs text-label-code-xs text-slate-400">
+        NODE-AFFINITY: US-EAST-01
+      </span>
+</div>
+<div class="mt-space-xs flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent tracking-tight">Integration Hub</span>
+<span class="px-2.5 py-0.5 rounded-full neu-chip text-primary/90 font-label-code-xs text-label-code-xs">v2.4.12-rc</span>
+</div>
+<p class="font-body-sm text-body-sm text-slate-400">
+        Configure runtime ad injectors, verify terminal stdout envelopes, and coordinate agent telemetry.
+      </p>
+</div>
+<!-- Production Notice Badge -->
+<div class="mt-space-sm p-2.5 rounded-xl neu-inset flex items-center justify-between gap-2">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="material-symbols-outlined text-primary/90 text-[16px] flex-shrink-0">verified_user</span>
+<span class="font-label-code-xs text-label-code-xs text-slate-400 truncate">
+          [PRODUCTION PLACEMENT CONTROLS - DEMO MOCK DATA MARKED CLEARLY]
+        </span>
+</div>
+<span class="flex-shrink-0 font-label-code-xs text-label-code-xs text-slate-500">STRICT-MODE</span>
+</div>
+</div>
+<!-- SECTION 1: Quick Install & CLI Initializer -->
+<section class="flex flex-col space-y-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[18px]">terminal</span>
+<h2 class="font-headline-sm text-headline-sm bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent tracking-tight">01. Runtime Setup</h2>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full neu-chip text-slate-400 font-label-code-xs text-label-code-xs">
+<span>Target:</span>
+<span class="text-tertiary/90">Stdlib / Pipe</span>
+</div>
+</div>
+<!-- Monospace instruction box with copy -->
+<div class="rounded-2xl neu-card p-space-md space-y-space-sm relative group">
+<div class="flex items-center justify-between text-slate-400">
+<span class="font-label-code-xs text-label-code-xs uppercase tracking-widest text-slate-500">Unified Bootstrapper</span>
+<span class="font-label-code-xs text-label-code-xs text-primary-fixed-dim/80">POSIX + Win32 PowerShell</span>
+</div>
+<div class="flex items-center justify-between gap-2 neu-inset px-3 py-2.5 rounded-xl">
+<div class="flex items-center gap-2 min-w-0">
+<span class="font-label-code-md text-label-code-md text-tertiary select-none font-bold">$</span>
+<code class="font-label-code-md text-label-code-md text-slate-200 truncate tracking-tight" id="installCommand">npx @clirevenue/sdk init</code>
+</div>
+<button class="px-3 py-1.5 rounded-lg neu-btn text-primary/90 font-label-code-xs text-label-code-xs flex items-center gap-1 flex-shrink-0" id="copyInstallBtn" onclick="copyInstallCmd()">
+<span class="material-symbols-outlined text-[14px]" id="copyIcon">content_copy</span>
+<span id="copyText">COPY</span>
+</button>
+</div>
+<!-- Active Environment badging -->
+<div class="pt-space-xs flex flex-wrap items-center gap-1.5">
+<span class="font-label-code-xs text-label-code-xs text-slate-400 pr-1">Supported Runtimes:</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full neu-chip text-tertiary/90 font-label-code-xs text-label-code-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary shadow-[0_0_4px_rgba(0,218,243,0.8)]"></span>Node.js
+        </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full neu-chip text-primary/90 font-label-code-xs text-label-code-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_4px_rgba(176,198,255,0.8)]"></span>Rust
+        </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full neu-chip text-secondary/90 font-label-code-xs text-label-code-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary shadow-[0_0_4px_rgba(236,178,255,0.8)]"></span>Go
+        </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full neu-chip text-primary-fixed-dim/90 font-label-code-xs text-label-code-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-fixed-dim shadow-[0_0_4px_rgba(176,198,255,0.8)]"></span>Python
+        </span>
+</div>
+</div>
+<!-- API Credential snippet card -->
+<div class="rounded-2xl neu-card p-space-md flex flex-col space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-code-xs text-label-code-xs text-slate-400 uppercase tracking-wider">Default Production API Secret</span>
+<span class="px-2 py-0.5 rounded-full neu-chip text-tertiary/90 font-label-code-xs text-label-code-xs">Read/Write Hook</span>
+</div>
+<div class="flex items-center justify-between gap-space-sm neu-inset px-3 py-2 rounded-xl">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-slate-500 text-[16px]">key</span>
+<span class="font-label-code-md text-label-code-md text-primary/90 tracking-wider truncate" id="apiKeyMasked">cr_live_948f••••••••••••</span>
+</div>
+<button class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg neu-btn text-slate-300 hover:text-slate-100 font-label-code-xs text-label-code-xs flex-shrink-0" id="copyKeyBtn" onclick="copyApiKey()">
+<span class="material-symbols-outlined text-[14px]">file_copy</span>
+<span id="copyKeyText">Copy Key</span>
+</button>
+</div>
+</div>
+</section>
+<!-- SECTION 2: Placement Configurator & Live Preview -->
+<section class="flex flex-col space-y-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">tune</span>
+<h2 class="font-headline-sm text-headline-sm bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent tracking-tight">02. Placement Configurator</h2>
+</div>
+<span class="px-2.5 py-1 rounded-full neu-chip text-slate-400 font-label-code-xs text-label-code-xs">Interactive Inspector</span>
+</div>
+<!-- Placement Type Selectors Tabs -->
+<div class="p-1.5 rounded-2xl neu-inset grid grid-cols-3 gap-1.5">
+<button class="placement-tab flex flex-col items-center justify-center py-2 px-1 rounded-xl neu-btn text-tertiary transition-all" id="tab-terminal" onclick="switchPlacement('terminal')">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+<span class="font-label-code-xs text-label-code-xs mt-1 text-center font-medium leading-tight">Stdout Banner</span>
+</button>
+<button class="placement-tab flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-400 hover:text-slate-200 transition-all" id="tab-ai" onclick="switchPlacement('ai')">
+<span class="material-symbols-outlined text-[18px]">psychology</span>
+<span class="font-label-code-xs text-label-code-xs mt-1 text-center font-medium leading-tight">LLM Tool Call</span>
+</button>
+<button class="placement-tab flex flex-col items-center justify-center py-2 px-1 rounded-xl text-slate-400 hover:text-slate-200 transition-all" id="tab-interactive" onclick="switchPlacement('interactive')">
+<span class="material-symbols-outlined text-[18px]">contact_support</span>
+<span class="font-label-code-xs text-label-code-xs mt-1 text-center font-medium leading-tight">CLI Prompt Tip</span>
+</button>
+</div>
+<!-- Live Preview Display Screen -->
+<div class="rounded-2xl neu-card p-space-md space-y-space-sm">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-1.5">
+<div class="w-2.5 h-2.5 rounded-full bg-error/70 shadow-[0_0_6px_rgba(255,180,171,0.6)]"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-secondary-container/70 shadow-[0_0_6px_rgba(207,92,255,0.6)]"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-tertiary/70 shadow-[0_0_6px_rgba(0,218,243,0.6)]"></div>
+<span class="font-label-code-xs text-label-code-xs text-slate-500 ml-2 font-mono">tty0 ~ 80x24 ANSI Stream</span>
+</div>
+<span class="font-label-code-xs text-label-code-xs text-tertiary/90 neu-chip px-2.5 py-0.5 rounded-full" id="renderEngineLabel">
+          ANSI Cyberpunk (Chalk v5)
+        </span>
+</div>
+<!-- Dynamic Live Preview Terminal Frame -->
+<div class="rounded-xl neu-inset p-3.5 font-label-code-xs text-label-code-xs text-slate-300 space-y-2 leading-relaxed overflow-x-auto min-h-[148px]" id="terminalFrame">
+<!-- stdout stream demo preview -->
+<div id="previewContent">
+<p class="text-slate-500">$ npm run build --target=production</p>
+<p class="text-slate-400">&gt; compiling 148 packages into dist/cli.bundle.js</p>
+<p class="text-tertiary/90 font-semibold">✔ Bundled in 412ms [hash: 98fa12c4]</p>
+<!-- Injected Ad Container -->
+<div class="mt-2.5 p-2.5 rounded-xl bg-gradient-to-r from-slate-900/90 via-[#181d2a]/80 to-slate-900/90 border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),inset_0_-1px_2px_rgba(0,0,0,0.6),4px_4px_12px_rgba(0,0,0,0.4)] text-slate-200 relative overflow-hidden backdrop-blur-md">
+<div class="flex items-center justify-between pb-1">
+<span class="text-[9px] uppercase tracking-widest text-secondary font-mono">Sponsored Developer Tool</span>
+<span class="text-[9px] text-slate-500 font-mono">1.2ms latency</span>
+</div>
+<p class="text-primary/95 font-medium">⚡ WarpDB: Low-latency distributed vector storage for CLI agents.</p>
+<p class="text-[10px] text-tertiary/90 font-mono">curl -sSf https://warpdb.dev/install | sh</p>
+</div>
+</div>
+</div>
+<!-- Dynamic Configuration Code Block: clirevenue.config.json -->
+<div class="space-y-1.5 pt-space-xs">
+<div class="flex items-center justify-between text-slate-400">
+<span class="font-label-code-xs text-label-code-xs font-semibold text-slate-300">clirevenue.config.json</span>
+<button class="text-tertiary hover:underline font-label-code-xs text-label-code-xs flex items-center gap-1" onclick="copyConfigBlock()">
+<span class="material-symbols-outlined text-[13px]">code</span>
+<span id="configCopyStatus">Copy JSON</span>
+</button>
+</div>
+<pre class="neu-inset rounded-xl p-3 font-label-code-xs text-label-code-xs text-primary-fixed-dim/90 overflow-x-auto selection:bg-primary/20"><code id="configJsonBlock">{
+  "placementId": "pl_terminal_build_stdout",
+  "theme": "ansi-cyberpunk",
+  "frequency": "1_per_day",
+  "keywords": ["database", "cloud", "security"]
+}</code></pre>
+</div>
+</div>
+</section>
+<!-- SECTION 3: Live Integration Health & Placements Status -->
+<section class="flex flex-col space-y-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">verified</span>
+<h2 class="font-headline-sm text-headline-sm bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent tracking-tight">03. Integration Health</h2>
+</div>
+<span class="px-2.5 py-1 rounded-full neu-chip text-tertiary/90 font-label-code-xs text-label-code-xs">
+        Heartbeat OK
+      </span>
+</div>
+<!-- Registered Placements List -->
+<div class="space-y-space-sm">
+<!-- Placement Item 1: Active -->
+<div class="rounded-2xl neu-card p-space-md space-y-2.5">
+<div class="flex items-start justify-between gap-2">
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-code-md text-label-code-md text-slate-200 font-semibold truncate">build-cli-trailer</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full neu-chip text-tertiary/90 font-label-code-xs text-label-code-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse shadow-[0_0_6px_rgba(0,218,243,0.8)]"></span>Active
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-slate-400 truncate mt-0.5">Stdout sponsor trailer hooked to postinstall &amp; exit handler</p>
+</div>
+<button class="w-8 h-8 rounded-lg neu-btn flex items-center justify-center text-slate-400 hover:text-slate-200 flex-shrink-0 transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<div class="flex items-center justify-between text-slate-400 pt-1 neu-inset px-3 py-2 rounded-xl">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-slate-500 text-[14px]">tag</span>
+<span class="font-label-code-xs text-label-code-xs text-slate-300 font-mono">Live in v1.4.0</span>
+</div>
+<div class="flex items-center gap-1 font-label-code-xs text-label-code-xs text-slate-400">
+<span class="material-symbols-outlined text-[13px]">schedule</span>
+<span>Est. sync: 1m ago</span>
+</div>
+</div>
+</div>
+<!-- Placement Item 2: In Staging -->
+<div class="rounded-2xl neu-card p-space-md space-y-2.5">
+<div class="flex items-start justify-between gap-2">
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-code-md text-label-code-md text-slate-200 font-semibold truncate">ai-agent-explain</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full neu-chip text-secondary font-label-code-xs text-label-code-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary shadow-[0_0_6px_rgba(236,178,255,0.8)]"></span>In Staging
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-slate-400 truncate mt-0.5">Contextual tip appended to LLM agent code explanations</p>
+</div>
+<button class="w-8 h-8 rounded-lg neu-btn flex items-center justify-center text-slate-400 hover:text-slate-200 flex-shrink-0 transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<div class="flex items-center justify-between text-slate-400 pt-1 neu-inset px-3 py-2 rounded-xl">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-slate-500 text-[14px]">hourglass_empty</span>
+<span class="font-label-code-xs text-label-code-xs text-slate-400 font-mono">Waiting for verification run</span>
+</div>
+<button class="font-label-code-xs text-label-code-xs text-tertiary hover:underline font-mono" id="verifyBtn" onclick="triggerVerification()">
+            [Ping RPC]
+          </button>
+</div>
+</div>
+<!-- Realistic Empty / Inactive Placeholder Slot -->
+<div class="rounded-2xl neu-inset p-space-md flex flex-col items-center justify-center text-center space-y-2 border border-white/[0.03]">
+<div class="w-10 h-10 rounded-full neu-btn flex items-center justify-center text-slate-400">
+<span class="material-symbols-outlined text-[20px]">cloud_off</span>
+</div>
+<div class="space-y-0.5">
+<span class="font-label-code-xs text-label-code-xs uppercase tracking-wider text-slate-500">Secondary Node Slot</span>
+<p class="font-body-sm text-body-sm text-slate-400">No fallback placement registered for Python microservice daemon.</p>
+</div>
+</div>
+</div>
+<!-- Call-to-action: Create New Placement Wizard Launcher -->
+<div class="pt-space-xs">
+<button class="w-full py-3.5 px-space-md rounded-2xl bg-gradient-to-r from-[#98b8ff] via-[#b0c6ff] to-[#9dbbff] text-[#002255] font-headline-sm text-headline-sm font-semibold flex items-center justify-center gap-2 border border-white/30 shadow-[6px_6px_18px_rgba(0,0,0,0.5),-4px_-4px_14px_rgba(255,255,255,0.06),inset_0_1px_1px_rgba(255,255,255,0.6),inset_0_-1px_2px_rgba(0,0,0,0.3)] active:translate-y-0.5 transition-all" onclick="openPlacementWizard()">
+<span class="material-symbols-outlined text-[22px]">add_circle</span>
+<span>Create New Placement</span>
+</button>
+</div>
+</section>
+<!-- Interactive Modal / Wizard Drawer Placeholder (Controlled via vanilla JS) -->
+<div class="hidden fixed inset-0 z-50 bg-[#06080e]/80 backdrop-blur-xl flex flex-col justify-end p-margin" id="wizardModal">
+<div class="neu-card rounded-3xl p-space-md space-y-space-md shadow-2xl">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[20px]">auto_fix_high</span>
+<h3 class="font-headline-sm text-headline-sm text-slate-200">New Placement Protocol</h3>
+</div>
+<button class="w-8 h-8 rounded-full neu-btn flex items-center justify-center text-slate-300" onclick="closePlacementWizard()">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<div class="space-y-space-sm font-body-sm text-body-sm text-slate-400">
+<p>Choose runtime injector targeting parameters:</p>
+<div class="space-y-2">
+<label class="block font-label-code-xs text-label-code-xs uppercase text-slate-500">Placement Target Identifier</label>
+<div class="flex items-center neu-inset px-3 py-2 rounded-xl">
+<span class="font-label-code-xs text-label-code-xs text-tertiary mr-1 font-mono">pl_</span>
+<input class="w-full bg-transparent font-label-code-xs text-label-code-xs text-slate-200 focus:outline-none" type="text" value="cli_rust_worker_exit"/>
+</div>
+</div>
+</div>
+<div class="flex gap-2 pt-2">
+<button class="flex-1 py-2.5 rounded-xl neu-btn text-slate-300 font-label-code-xs text-label-code-xs" onclick="closePlacementWizard()">
+          Cancel
+        </button>
+<button class="flex-1 py-2.5 rounded-xl bg-tertiary text-on-tertiary font-label-code-xs text-label-code-xs font-bold shadow-[0_2px_12px_rgba(0,218,243,0.4)]" onclick="confirmNewPlacement()">
+          Register Placement
+        </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Client-side Micro-interactions -->
+<script>
+  const placementData = {
+    terminal: {
+      themeLabel: "ANSI Cyberpunk (Chalk v5)",
+      preview: `
+        <p class="text-slate-500">$ npm run build --target=production</p>
+        <p class="text-slate-400">> compiling 148 packages into dist/cli.bundle.js</p>
+        <p class="text-tertiary/90 font-semibold">✔ Bundled in 412ms [hash: 98fa12c4]</p>
+        <div class="mt-2.5 p-2.5 rounded-xl bg-gradient-to-r from-slate-900/90 via-[#181d2a]/80 to-slate-900/90 border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),inset_0_-1px_2px_rgba(0,0,0,0.6),4px_4px_12px_rgba(0,0,0,0.4)] text-slate-200 relative overflow-hidden backdrop-blur-md">
+          <div class="flex items-center justify-between pb-1">
+            <span class="text-[9px] uppercase tracking-widest text-secondary font-mono">Sponsored Developer Tool</span>
+            <span class="text-[9px] text-slate-500 font-mono">1.2ms latency</span>
+          </div>
+          <p class="text-primary font-medium">⚡ WarpDB: Low-latency distributed vector storage for CLI agents.</p>
+          <p class="text-[10px] text-tertiary/90 font-mono">curl -sSf https://warpdb.dev/install | sh</p>
+        </div>
+      `,
+      json: `{\n  "placementId": "pl_terminal_build_stdout",\n  "theme": "ansi-cyberpunk",\n  "frequency": "1_per_day",\n  "keywords": ["database", "cloud", "security"]\n}`
+    },
+    ai: {
+      themeLabel: "Markdown Injection (Prompt Safe)",
+      preview: `
+        <p class="text-slate-500">> Agent Response: Completed code refactoring.</p>
+        <p class="text-slate-400 font-mono">Updated 3 files with safe concurrent mutex channels.</p>
+        <div class="mt-2.5 p-2.5 rounded-xl bg-gradient-to-r from-slate-900/90 via-[#181d2a]/80 to-slate-900/90 border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),inset_0_-1px_2px_rgba(0,0,0,0.6),4px_4px_12px_rgba(0,0,0,0.4)] text-slate-200 relative overflow-hidden backdrop-blur-md">
+          <div class="flex items-center justify-between pb-1">
+            <span class="text-[9px] uppercase tracking-widest text-tertiary font-mono">AI Partner Integration</span>
+            <span class="text-[9px] text-slate-500 font-mono">Context-Matched</span>
+          </div>
+          <p class="text-secondary font-medium">🤖 Sentry Copilot: Automated error telemetry for agent-built codebases.</p>
+          <p class="text-[10px] text-primary-fixed-dim/90 font-mono">Note: Use token 'AI2025' for 100k free verification traces.</p>
+        </div>
+      `,
+      json: `{\n  "placementId": "pl_ai_agent_explain",\n  "format": "llm_markdown_footnote",\n  "temperatureFloor": 0.2,\n  "contextTokensLimit": 48\n}`
+    },
+    interactive: {
+      themeLabel: "Interactive Terminal Prompt Footer",
+      preview: `
+        <p class="text-slate-500">? Select deployment region: [us-east-1, eu-west-1]</p>
+        <p class="text-primary-fixed-dim/90">> Connecting to remote compute grid...</p>
+        <div class="mt-2.5 p-2.5 rounded-xl bg-gradient-to-r from-slate-900/90 via-[#181d2a]/80 to-slate-900/90 border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),inset_0_-1px_2px_rgba(0,0,0,0.6),4px_4px_12px_rgba(0,0,0,0.4)] text-slate-200 relative overflow-hidden backdrop-blur-md">
+          <div class="flex items-center justify-between pb-1">
+            <span class="text-[9px] uppercase tracking-widest text-primary font-mono">Terminal Tip</span>
+            <span class="text-[9px] text-slate-500 font-mono">Interactive Stdout</span>
+          </div>
+          <p class="text-slate-200 font-medium">💡 Save up to 70% cloud spend with Neon serverless Postgres branches.</p>
+          <p class="text-[10px] text-tertiary/90 font-mono">Press [TAB] to visit docs or [ENTER] to proceed.</p>
+        </div>
+      `,
+      json: `{\n  "placementId": "pl_interactive_prompt_tip",\n  "hook": "inquiry_footer",\n  "delayMs": 150,\n  "allowDismissal": true\n}`
+    }
+  };
+
+  function switchPlacement(type) {
+    document.querySelectorAll('.placement-tab').forEach(el => {
+      el.classList.remove('neu-btn', 'text-tertiary');
+      el.classList.add('text-slate-400');
+    });
+    const activeBtn = document.getElementById('tab-' + type);
+    if(activeBtn) {
+      activeBtn.classList.remove('text-slate-400');
+      activeBtn.classList.add('neu-btn', 'text-tertiary');
+    }
+
+    const data = placementData[type];
+    if (data) {
+      document.getElementById('renderEngineLabel').innerText = data.themeLabel;
+      document.getElementById('previewContent').innerHTML = data.preview;
+      document.getElementById('configJsonBlock').innerText = data.json;
+    }
+  }
+
+  function copyInstallCmd() {
+    const text = "npx @clirevenue/sdk init";
+    navigator.clipboard?.writeText(text);
+    const label = document.getElementById('copyText');
+    const icon = document.getElementById('copyIcon');
+    label.innerText = 'COPIED!';
+    icon.innerText = 'check';
+    setTimeout(() => {
+      label.innerText = 'COPY';
+      icon.innerText = 'content_copy';
+    }, 2000);
+  }
+
+  function copyApiKey() {
+    navigator.clipboard?.writeText("cr_live_948f983bc12aa914f6");
+    const label = document.getElementById('copyKeyText');
+    label.innerText = 'Copied!';
+    setTimeout(() => {
+      label.innerText = 'Copy Key';
+    }, 2000);
+  }
+
+  function copyConfigBlock() {
+    const text = document.getElementById('configJsonBlock').innerText;
+    navigator.clipboard?.writeText(text);
+    const status = document.getElementById('configCopyStatus');
+    status.innerText = 'JSON Copied!';
+    setTimeout(() => {
+      status.innerText = 'Copy JSON';
+    }, 2000);
+  }
+
+  function triggerVerification() {
+    const btn = document.getElementById('verifyBtn');
+    btn.innerText = '[Pinging...]';
+    setTimeout(() => {
+      btn.innerText = '[Verified 200 OK]';
+      btn.classList.remove('text-tertiary');
+      btn.classList.add('text-primary');
+    }, 900);
+  }
+
+  function openPlacementWizard() {
+    document.getElementById('wizardModal').classList.remove('hidden');
+  }
+
+  function closePlacementWizard() {
+    document.getElementById('wizardModal').classList.add('hidden');
+  }
+
+  function confirmNewPlacement() {
+    closePlacementWizard();
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-[#0b0e15]/80 backdrop-blur-2xl border-t border-white/[0.08] shadow-[0_-4px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)]" data-active-classes="text-tertiary"><div class="h-16 px-space-xs flex items-center justify-around"><a class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl text-slate-400 hover:text-slate-200 transition-colors" data-path="overview" href="#"><span class="material-symbols-outlined text-[20px]">analytics</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Overview</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl transition-all text-tertiary neu-chip" data-path="developers-and-sdk" href="#"><span class="material-symbols-outlined text-[20px]">code_blocks</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight font-semibold">SDK</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl text-slate-400 hover:text-slate-200 transition-colors" data-path="advertisers" href="#"><span class="material-symbols-outlined text-[20px]">storefront</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Ads</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl text-slate-400 hover:text-slate-200 transition-colors" data-path="campaigns-and-placements" href="#"><span class="material-symbols-outlined text-[20px]">ad_units</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Campaigns</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl text-slate-400 hover:text-slate-200 transition-colors" data-path="console" href="#"><span class="material-symbols-outlined text-[20px]">terminal</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Console</span></a></div></nav></body></html>

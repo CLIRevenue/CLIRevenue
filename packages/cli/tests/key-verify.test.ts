@@ -47,6 +47,29 @@ describe('verifyKey', () => {
     expect(result.publisherId).toBe('pub-456');
   });
 
+  it('sends the key in a header and never in the URL', async () => {
+    const calls: Array<{ url: string; init: RequestInit }> = [];
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit) => {
+      calls.push({ url, init });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ publisherId: 'pub-123', placements: [] }),
+      } as any;
+    });
+
+    await verifyKey('pk_test_abcdefghijklmnopqrstuvwxyz0123456789');
+
+    expect(calls).toHaveLength(1);
+    const [{ url, init }] = calls;
+    expect(url).not.toContain('publisherKey=');
+    expect(url).not.toContain('pk_test_');
+    const headers = init.headers as Record<string, string>;
+    expect(headers['x-clirevenue-publisher-key']).toBe(
+      'pk_test_abcdefghijklmnopqrstuvwxyz0123456789',
+    );
+  });
+
   it('throws on 401 invalid key', async () => {
     const mockResponse = {
       ok: false,

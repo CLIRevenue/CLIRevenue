@@ -29,20 +29,20 @@ class FakeChild extends EventEmitter {
 
 describe('getInstallCommand', () => {
   it('builds correct commands for each package manager', () => {
-    expect(getInstallCommand('npm', '@clirevenue/sdk@1.0.2')).toBe('npm install @clirevenue/sdk@1.0.2');
-    expect(getInstallCommand('pnpm', '@clirevenue/sdk@1.0.2')).toBe('pnpm add @clirevenue/sdk@1.0.2');
-    expect(getInstallCommand('yarn', '@clirevenue/sdk@1.0.2')).toBe('yarn add @clirevenue/sdk@1.0.2');
-    expect(getInstallCommand('bun', '@clirevenue/sdk@1.0.2')).toBe('bun add @clirevenue/sdk@1.0.2');
+    expect(getInstallCommand('npm', `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`)).toBe(`npm install @clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`);
+    expect(getInstallCommand('pnpm', `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`)).toBe(`pnpm add @clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`);
+    expect(getInstallCommand('yarn', `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`)).toBe(`yarn add @clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`);
+    expect(getInstallCommand('bun', `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`)).toBe(`bun add @clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`);
   });
 
   it('returns undefined for unknown package manager', () => {
-    expect(getInstallCommand('unknown' as any, '@clirevenue/sdk@1.0.2')).toBeUndefined();
+    expect(getInstallCommand('unknown' as any, `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`)).toBeUndefined();
   });
 });
 
 describe('CLIREVENUE_SDK_VERSION', () => {
-  it('is pinned to 1.0.2', () => {
-    expect(CLIREVENUE_SDK_VERSION).toBe('1.0.2');
+  it('is pinned to 2.0.0', () => {
+    expect(CLIREVENUE_SDK_VERSION).toBe('2.0.0');
   });
 });
 
@@ -107,7 +107,7 @@ describe('isSdkInstalled', () => {
   });
 
   it('returns true when SDK in node_modules at correct version', () => {
-    writeFileSync(sdkPkgPath, JSON.stringify({ name: '@clirevenue/sdk', version: '1.0.2' }, null, 2));
+    writeFileSync(sdkPkgPath, JSON.stringify({ name: '@clirevenue/sdk', version: CLIREVENUE_SDK_VERSION }, null, 2));
     expect(isSdkInstalled(tmp)).toBe(true);
   });
 
@@ -139,17 +139,17 @@ describe('installSdk', () => {
     mkdirSync(sdkDir, { recursive: true });
     writeFileSync(
       join(sdkDir, 'package.json'),
-      JSON.stringify({ name: '@clirevenue/sdk', version: '1.0.2' }, null, 2),
+      JSON.stringify({ name: '@clirevenue/sdk', version: CLIREVENUE_SDK_VERSION }, null, 2),
     );
 
     const spawnFn = vi.fn(() => {
       throw new Error('spawn should not be called');
     });
 
-    const res = await installSdk(tmp, '@clirevenue/sdk@1.0.2', { spawnFn });
+    const res = await installSdk(tmp, `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`, { spawnFn });
     expect(res.alreadyInstalled).toBe(true);
     expect(res.packageManager).toBe('npm');
-    expect(res.command).toBe('npm install @clirevenue/sdk@1.0.2');
+    expect(res.command).toBe(`npm install @clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`);
     expect(spawnFn).not.toHaveBeenCalled();
   });
 
@@ -157,7 +157,7 @@ describe('installSdk', () => {
     const child = new FakeChild();
     const spawnFn = vi.fn((_cmd, _args, opts) => {
       expect(_cmd).toBe('npm');
-      expect(_args).toEqual(['install', '@clirevenue/sdk@1.0.2']);
+      expect(_args).toEqual(['install', `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`]);
       expect(opts.cwd).toBe(tmp);
       expect(opts.stdio).toBe('inherit');
       expect(opts.shell).toBe(process.platform === 'win32');
@@ -168,10 +168,10 @@ describe('installSdk', () => {
       return child as any;
     });
 
-    const res = await installSdk(tmp, '@clirevenue/sdk@1.0.2', { spawnFn });
+    const res = await installSdk(tmp, `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`, { spawnFn });
     expect(res.alreadyInstalled).toBe(false);
     expect(res.packageManager).toBe('npm');
-    expect(res.command).toBe('npm install @clirevenue/sdk@1.0.2');
+    expect(res.command).toBe(`npm install @clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`);
     expect(spawnFn).toHaveBeenCalledTimes(1);
   });
 
@@ -184,11 +184,11 @@ describe('installSdk', () => {
     });
 
     await expect(
-      installSdk(tmp, '@clirevenue/sdk@1.0.2', { spawnFn }),
+      installSdk(tmp, `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`, { spawnFn }),
     ).rejects.toBeInstanceOf(InstallError);
 
     try {
-      await installSdk(tmp, '@clirevenue/sdk@1.0.2', { spawnFn });
+      await installSdk(tmp, `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`, { spawnFn });
     } catch (e) {
       const err = e as InstallError;
       expect(err.code).toBe('install_spawn_failed');
@@ -206,11 +206,11 @@ describe('installSdk', () => {
     });
 
     await expect(
-      installSdk(tmp, '@clirevenue/sdk@1.0.2', { spawnFn }),
+      installSdk(tmp, `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`, { spawnFn }),
     ).rejects.toBeInstanceOf(InstallError);
 
     try {
-      await installSdk(tmp, '@clirevenue/sdk@1.0.2', { spawnFn });
+      await installSdk(tmp, `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`, { spawnFn });
     } catch (e) {
       const err = e as InstallError;
       expect(err.code).toBe('install_failed');
@@ -228,7 +228,7 @@ describe('installSdk', () => {
     });
 
     try {
-      await installSdk(tmp, '@clirevenue/sdk@1.0.2', { spawnFn });
+      await installSdk(tmp, `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`, { spawnFn });
       expect.unreachable('should have thrown');
     } catch (e) {
       const err = e as InstallError;
@@ -247,20 +247,20 @@ describe('installSdk', () => {
       return child as any;
     });
 
-    const res = await installSdk(tmp, '@clirevenue/sdk@1.0.2', { spawnFn });
+    const res = await installSdk(tmp, `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`, { spawnFn });
     expect(res.alreadyInstalled).toBe(false);
   });
 
-  it('defaults to @clirevenue/sdk@1.0.2 when packageName omitted', async () => {
+  it('defaults to the pinned @clirevenue/sdk version when packageName omitted', async () => {
     const child = new FakeChild();
     const spawnFn = vi.fn((_cmd, _args) => {
-      expect(_args).toEqual(['install', '@clirevenue/sdk@1.0.2']);
+      expect(_args).toEqual(['install', `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`]);
       process.nextTick(() => child.emit('close', 0, null));
       return child as any;
     });
 
     const res = await installSdk(tmp, undefined, { spawnFn });
     expect(res.packageManager).toBe('npm');
-    expect(res.command).toBe('npm install @clirevenue/sdk@1.0.2');
+    expect(res.command).toBe(`npm install @clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`);
   });
 });

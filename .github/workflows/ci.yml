@@ -1,0 +1,211 @@
+name: ci
+
+# Verifies the backend, the Edge Functions and the CLI on every push and pull
+# request. Nothing here deploys, publishes, or talks to a live service.
+#
+# SECURITY POSTURE
+#   * No credentials of any kind are required or present. There is no npm
+#     token, no Supabase service-role key, no Filebase token. Every job runs
+#     entirely on source in the runner.
+#   * No job reaches a live service. The database suite runs PGlite, an
+#     in-process Postgres, so it is deterministic and offline. This is a
+#     deliberate trade: the suites prove the contracts, not the deployment.
+#     The checks that genuinely need a live service are listed by hand in
+#     docs/DEPLOYMENT_CHECKLIST.md instead of being faked here.
+#   * permissions are read-only for the whole workflow. CI cannot push.
+#   * Publishes nothing. `.github/workflows/release.yml` owns that, and it
+#     requires a tag or an explicit manual dispatch.
+#
+# JOB SPLIT
+#   * `backend-unit` and `backend-db` cannot be one job. The root vitest
+#     include pattern covers `tests/db/**`, so a plain `npm test` would silently
+#     run the whole PGlite suite in the unit job too -- ~12 in-memory Postgres
+#     instances, each replaying every migration. The unit job therefore
+#     excludes `tests/db/**` explicitly.
+#   * `edge-deno` is separate because it is the only thing that needs the Deno
+#     toolchain, and because `deno test` and `deno check` fail for different
+#     reasons: one is behaviour, the other is types.
+
+on:
+  push:
+    branches:
+      - main
+      - backend-real-delivery
+  pull_request:
+  workflow_dispatch:
+
+# CI needs to read the source and nothing else.
+permissions:
+  contents: read
+
+# A newer push to the same branch makes an in-flight run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-unit:
+    name: Backend unit tests (vitest, no database)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The excludes are not decorative. The first two restore vitest's own
+      # defaults, which the next flag would otherwise replace; the third is the
+      # entire reason this is a separate job from backend-db.
+      - name: Test
+        run: |
+          set -euo pipefail
+          npx vitest run \
+            --exclude '**/node_modules/**' \
+            --exclude '**/dist/**' \
+            --exclude 'tests/db/**'
+
+  backend-db:
+    name: Database contracts (PGlite)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test database contracts
+        run: npm run test:db
+
+      # PGlite is in-process, so the usual symptom of a bad suite is a timeout
+      # rather than a failure. Letting it run without a hard stop hides a hung
+      # migration replay as a green build.
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pglite-failure-logs
+          path: tmp/audit-*.out
+          if-no-files-found: ignore
+
+  edge-deno:
+    name: Edge Functions (deno test + check)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # `--allow-env=APP_ORIGINS` is the only permission these tests need. No
+      # net, no fs write, no run: if a test ever reaches for one it should fail
+      # here rather than pass silently against a local machine's defaults.
+      - name: Test shared modules
+        run: deno test --allow-env=APP_ORIGINS supabase/functions/_shared/
+
+      # Type checking is its own step because it catches the failure mode the
+      # runtime tests cannot: a handler whose signature drifted from its caller.
+      - name: Typecheck functions
+        run: deno check supabase/functions/*/index.ts supabase/functions/_shared/*.ts packages/sdk/src/*.ts
+
+  cli:
+    name: CLI package (typecheck, test, build, pack)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+
+      # The CLI is its own npm project with its own lockfile and is NOT a
+      # workspace member of the root install, so it installs independently.
+      # That is the single most common way to get a false green here: without
+      # this, typecheck falls through to whatever global `tsc` is on PATH.
+      - name: Install CLI dependencies
+        working-directory: packages/cli
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: packages/cli
+        run: npm run typecheck
+
+      - name: Test
+        working-directory: packages/cli
+        run: npm test
+
+      - name: Build
+        working-directory: packages/cli
+        run: npm run build
+
+      # `prepack` builds, so this doubles as a check that the published
+      # artefact is buildable from a clean tree. `dist/` is gitignored, so the
+      # build in the step above is what makes the tarball contents meaningful.
+      - name: Verify package contents
+        working-directory: packages/cli
+        run: |
+          set -euo pipefail
+          npm pack --dry-run --json > pack.json
+          node -e '
+            const pack = require("./pack.json")[0];
+            const files = pack.files.map(f => f.path);
+
+            // Three kinds of check, because each catches a different mistake.
+            const top = files.filter(f => !f.startsWith("dist/")).sort();
+            const expectedTop = ["LICENSE", "README.md", "package.json"];
+            if (JSON.stringify(top) !== JSON.stringify(expectedTop)) {
+              console.error("Unexpected non-dist entries:", top);
+              process.exit(1);
+            }
+
+            // The bin must be present or `npx clirevenue` runs nothing.
+            if (!files.includes("dist/index.js")) {
+              console.error("dist/index.js missing from the package.");
+              process.exit(1);
+            }
+
+            // A tarball is the one artefact most likely to be archived to a
+            // bug report, so a credential-shaped string inside it is a real
+            // leak. Check contents, not filenames: the name of a shipped
+            // module is never the secret.
+            const credential = /pk_(live|test)_[A-Za-z0-9_-]{32,}|sk_(live|test)_[A-Za-z0-9_-]{32,}|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY/;
+            const leaks = [];
+            for (const path of walk("dist")) {
+              if (credential.test(require("fs").readFileSync(path, "utf8"))) leaks.push(path);
+            }
+            for (const path of ["README.md", "package.json"]) {
+              if (credential.test(require("fs").readFileSync(path, "utf8"))) leaks.push(path);
+            }
+            if (leaks.length) {
+              console.error("Credential-shaped literal in:", leaks.join(", "));
+              process.exit(1);
+            }
+
+            function walk(dir) {
+              const out = [];
+              for (const entry of require("fs").readdirSync(dir, { withFileTypes: true })) {
+                const full = dir + "/" + entry.name;
+                if (entry.isDirectory()) out.push(...walk(full));
+                else if (/\.(js|ts|json|md|map)$/.test(entry.name)) out.push(full);
+              }
+              return out;
+            }
+
+            console.log("CLI package verified:", files.length, "files,", pack.size, "bytes packed");
+          '

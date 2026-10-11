@@ -117,7 +117,7 @@ export function corsFor(req?: Request): Record<string, string> {
   const origin = originFor(req);
   const headers: Record<string, string> = {
     "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-settlement-secret, x-idempotency-key, x-clirevenue-sdk-version",
+      "authorization, x-client-info, apikey, content-type, x-settlement-secret, x-idempotency-key, x-clirevenue-sdk-version, x-clirevenue-publisher-key",
     "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
   };
   // An unknown origin gets NO Access-Control-Allow-Origin at all, rather than
@@ -194,6 +194,75 @@ export function restPath(pathname: string, fnName: string): string[] {
   if (parts[0] === "functions" && parts[1] === "v1") parts.splice(0, 2);
   while (parts.length && (parts[0] === fnName || parts[0] === "api")) parts.shift();
   return parts;
+}
+
+/* ------------------------------------------------------------------ *
+ * Request body limits
+ *
+ * A public endpoint that buffers `req.text()` before it can reject a
+ * malformed body also buffers an arbitrarily large one. The platform
+ * enforces its own request ceiling, but this check is the application's
+ * half: a declared oversized body is refused before it is read, and an
+ * undeclared one (chunked / lying Content-Length) is refused before it is
+ * parsed. 128 KiB is roughly 30x the largest legitimate payload on these
+ * surfaces (ad delivery, telemetry, CLI placement writes are all < 4 KiB),
+ * so no real client is affected.
+ *
+ * `body: null` means "not a JSON object" (empty, malformed, or an array);
+ * callers keep their own per-route messages for that case. Only the size
+ * and read failures become responses here, so every route answers them
+ * identically: 413 PAYLOAD_TOO_LARGE / 400 INVALID_REQUEST.
+ * ------------------------------------------------------------------ */
+export const MAX_REQUEST_BODY_BYTES = 128 * 1024;
+
+export type JsonObjectRead =
+  | { ok: true; body: Record<string, unknown> | null }
+  | { ok: false; response: Response };
+
+export async function readJsonObjectBody(
+  req: Request,
+  options: { maxBytes?: number; emptyAsObject?: boolean } = {},
+): Promise<JsonObjectRead> {
+  const maxBytes = options.maxBytes ?? MAX_REQUEST_BODY_BYTES;
+
+  const declared = Number(req.headers.get("content-length") ?? "");
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    return {
+      ok: false,
+      response: apiError("PAYLOAD_TOO_LARGE", "Request body is too large.", 413, {}, req),
+    };
+  }
+
+  let text: string;
+  try {
+    text = await req.text();
+  } catch {
+    return {
+      ok: false,
+      response: apiError("INVALID_REQUEST", "Could not read the request body.", 400, {}, req),
+    };
+  }
+
+  if (new TextEncoder().encode(text).byteLength > maxBytes) {
+    return {
+      ok: false,
+      response: apiError("PAYLOAD_TOO_LARGE", "Request body is too large.", 413, {}, req),
+    };
+  }
+
+  if (!text.trim()) {
+    return { ok: true, body: options.emptyAsObject ? {} : null };
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return { ok: true, body: null };
+    }
+    return { ok: true, body: parsed as Record<string, unknown> };
+  } catch {
+    return { ok: true, body: null };
+  }
 }
 
 const UUID_RE =

@@ -176,7 +176,7 @@ function startCreativePlayback(media: CreativeMedia | null): void {
   }
 }
 
-export const SDK_VERSION = "1.0.3";
+export const SDK_VERSION = "2.0.1";
 
 /**
  * The only telemetry events this SDK is able to report.

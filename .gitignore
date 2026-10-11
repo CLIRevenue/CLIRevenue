@@ -62,3 +62,5 @@ tmp/
 tmpconfig/
 
 .env.filebase
+# Local env variables
+.env.local

@@ -1,16 +1,18 @@
 {
   "name": "clirevenue",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "type": "module",
   "bin": {
     "clirevenue": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "pretest": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "dev": "tsx src/index.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "commander": "^11.1.0",
@@ -27,11 +29,17 @@
   "engines": {
     "node": ">=18"
   },
+  "license": "SEE LICENSE IN LICENSE",
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CLIRevenue/CLIRevenue.git"
   }
 }

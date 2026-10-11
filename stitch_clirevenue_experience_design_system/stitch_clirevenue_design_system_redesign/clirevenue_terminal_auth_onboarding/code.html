@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_blank" name="shell-type"/><style>@layer base{html,body{width:100%;margin:0;padding:0;background-color:#0d1017;color:#cbd5e1;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}
+/* Custom Liquid Glass & Neumorphic Utilities */
+.neu-extruded {
+  box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.7), -4px -4px 14px rgba(255, 255, 255, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.15), inset 0 -1px 1px rgba(0, 0, 0, 0.35);
+}
+.neu-inset {
+  box-shadow: inset 4px 4px 10px rgba(0, 0, 0, 0.75), inset -3px -3px 8px rgba(255, 255, 255, 0.04);
+}
+.neu-inset-subtle {
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.6), inset -2px -2px 5px rgba(255, 255, 255, 0.03);
+}
+.glass-panel {
+  background: linear-gradient(135deg, rgba(30, 36, 50, 0.65) 0%, rgba(16, 20, 28, 0.75) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.glass-panel-inner {
+  background: linear-gradient(135deg, rgba(23, 27, 38, 0.7) 0%, rgba(13, 16, 23, 0.8) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+.glass-btn {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%), rgba(26, 31, 44, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 6px 6px 16px rgba(0, 0, 0, 0.65), -3px -3px 10px rgba(255, 255, 255, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.2), inset 0 -1px 2px rgba(0, 0, 0, 0.5);
+}
+.glass-btn-active {
+  background: linear-gradient(180deg, rgba(74, 98, 142, 0.35) 0%, rgba(32, 43, 64, 0.5) 100%);
+  border: 1px solid rgba(176, 198, 255, 0.3);
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.7), inset -1px -1px 4px rgba(255, 255, 255, 0.08);
+}
+.glass-primary-btn {
+  background: linear-gradient(180deg, #6098ff 0%, #3b74e6 100%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 24px rgba(59, 116, 230, 0.35), 6px 6px 18px rgba(0, 0, 0, 0.7), -3px -3px 10px rgba(255, 255, 255, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.45), inset 0 -2px 3px rgba(0, 0, 0, 0.3);
+}
+</style><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-background": "#cbd5e1", "on-primary-fixed": "#001945", "primary-fixed-dim": "#b0c6ff", "tertiary": "#00daf3", "surface-container-low": "#131720", "surface-container": "#181d27", "on-tertiary-fixed": "#001f24", "inverse-primary": "#0058ca", "on-tertiary-container": "#002f35", "surface-bright": "#2c3342", "surface-container-highest": "#28303e", "secondary-fixed": "#f8d8ff", "error-container": "#93000a", "primary-fixed": "#d9e2ff", "on-primary": "#002d6e", "primary": "#93c5fd", "surface-variant": "#262d3a", "outline": "#64748b", "secondary-container": "#cf5cff", "on-secondary-fixed-variant": "#74009f", "inverse-on-surface": "#2d3038", "surface-container-high": "#202633", "on-tertiary": "#00363d", "secondary": "#e879f9", "inverse-surface": "#e1e2ec", "background": "#0d1017", "secondary-fixed-dim": "#ecb2ff", "on-primary-fixed-variant": "#00429b", "surface": "#0d1017", "tertiary-fixed-dim": "#00daf3", "on-secondary-fixed": "#320047", "tertiary-fixed": "#9cf0ff", "surface-dim": "#0d1017", "on-secondary": "#520071", "on-error-container": "#ffdad6", "surface-tint": "#b0c6ff", "surface-container-lowest": "#080a0f", "on-error": "#690005", "on-surface": "#cbd5e1", "outline-variant": "#334155", "on-surface-variant": "#94a3b8", "tertiary-container": "#009fb2", "on-tertiary-fixed-variant": "#004f58", "on-secondary-container": "#480063", "primary-container": "#3b82f6", "error": "#ffb4ab", "on-primary-container": "#0f172a" }, borderRadius: { "DEFAULT": "0.125rem", "lg": "0.375rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xl": "2.5rem", "space-lg": "1.5rem", "gutter": "1rem", "margin": "1rem", "gutter-desktop": "1.5rem", "margin-tablet": "2rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "margin-desktop": "3rem", "space-md": "1rem" }, fontFamily: { "headline-sm": ["Geist"], "headline-lg-mobile": ["Geist"], "label-code-md": ["JetBrains Mono"], "display-xl": ["Geist"], "display-xl-mobile": ["Geist"], "headline-lg": ["Geist"], "label-code-lg": ["JetBrains Mono"], "body-sm": ["Inter"], "body-lg": ["Inter"], "label-code-xs": ["JetBrains Mono"], "body-md": ["Inter"], "headline-md": ["Geist"] }, fontSize: { "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "500" }], "headline-lg-mobile": ["26px", { "lineHeight": "34px", "fontWeight": "600" }], "label-code-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "display-xl": ["56px", { "lineHeight": "64px", "fontWeight": "700" }], "display-xl-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }], "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }], "label-code-lg": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }], "label-code-xs": ["10px", { "lineHeight": "14px", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }], "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }] } } } };</script></head><body class="bg-[#0d1017] font-body-md text-body-md text-slate-300 antialiased min-h-screen flex flex-col pt-safe pb-safe selection:bg-cyan-500/30 selection:text-cyan-200"><main class="flex-1 w-full bg-[#0d1017] relative flex flex-col overflow-hidden"><div class="flex flex-col w-full px-margin pb-space-xl">
+<!-- Subtle Liquid Ambient Glow Orbs -->
+<div class="relative w-full overflow-hidden flex flex-col items-center pt-space-md">
+<div class="absolute -top-24 left-1/2 -translate-x-1/2 w-80 h-80 bg-fuchsia-600/10 rounded-full blur-[90px] pointer-events-none"></div>
+<div class="absolute -top-12 left-1/4 w-56 h-56 bg-cyan-500/10 rounded-full blur-[70px] pointer-events-none"></div>
+<div class="absolute top-1/2 -right-16 w-60 h-60 bg-blue-600/10 rounded-full blur-[80px] pointer-events-none"></div>
+<!-- Header Logo with Neumorphic Pedestal & Liquid Reflection Accent -->
+<div class="relative flex items-center justify-center mb-space-md group cursor-pointer">
+<div class="absolute -inset-2 bg-gradient-to-r from-cyan-400/25 via-blue-500/20 to-fuchsia-500/25 rounded-2xl blur-xl opacity-60"></div>
+<div class="relative p-2.5 rounded-2xl neu-extruded bg-gradient-to-br from-[#1a2130] to-[#0f131c] border border-white/10 flex items-center justify-center backdrop-blur-xl">
+<img alt="CLIRevenue Logo" class="w-14 h-14 object-contain drop-shadow-[0_4px_12px_rgba(0,218,243,0.3)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzNSc1o0cj1Y0BlcyFg4F597ja9zaT8r6nYCCsRPGnUOQgHXRnAud6OFWhX77uSE_BTS6FQb2t0Jzjf8mAhgOkxYHhKeCcdRhSNXf8lBeJqA9nQcZI_NWUr7Su8ocHH6XnsTXq8Tw7I4JrFFishNaz17nDQVJzYW4ljUoIgaZ8q8sMZPcp_CNi9c82rI3WTDmm_RE0mh_5Xo6N19ELCVn-8NjXQZ9HCpQBKYlCq7JK2elwI7n46arrKRndJYd68Gr3RA"/>
+</div>
+</div>
+<!-- Role / Mode Segmented Switcher (Deep Inset Neumorphic Track) -->
+<div class="w-full max-w-sm neu-inset bg-[#090b10] p-1.5 rounded-2xl flex items-center mb-space-lg border border-white/[0.04]">
+<button class="flex-1 py-2 px-3 rounded-xl text-center font-headline-sm text-body-sm transition-all duration-200 glass-btn-active text-slate-200 flex items-center justify-center gap-1.5" id="role-dev-btn" type="button">
+<span class="material-symbols-outlined text-[16px] text-cyan-400">terminal</span>
+<span class="font-medium tracking-wide">Developer</span>
+</button>
+<button class="flex-1 py-2 px-3 rounded-xl text-center font-headline-sm text-body-sm transition-all duration-200 text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5" id="role-adv-btn" type="button">
+<span class="material-symbols-outlined text-[16px]">campaign</span>
+<span class="font-medium tracking-wide">Advertiser</span>
+</button>
+</div>
+<!-- Title & Subtitle with Softer Typographic Grading -->
+<div class="text-center w-full max-w-sm mb-space-lg">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile bg-gradient-to-b from-slate-100 via-slate-200 to-slate-400 bg-clip-text text-transparent tracking-tight mb-space-xs font-semibold">
+        Authenticate to CLIRevenue
+      </h1>
+<p class="font-body-md text-body-md text-slate-400 leading-relaxed max-w-[320px] mx-auto">
+        Enter with your developer GitHub / GitLab identity or sync via terminal token.
+      </p>
+</div>
+<!-- OAuth & Identity Providers Stack (Embossed Liquid Glass Buttons) -->
+<div class="w-full max-w-sm flex flex-col gap-3 mb-space-lg">
+<!-- GitHub Action Button -->
+<button class="group relative w-full h-[50px] glass-btn active:scale-[0.985] text-slate-200 rounded-2xl px-4 flex items-center justify-between transition-all duration-150" type="button">
+<div class="flex items-center gap-3">
+<svg class="w-5 h-5 fill-current text-slate-300 group-hover:text-cyan-300 transition-colors" viewbox="0 0 24 24">
+<path clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" fill-rule="evenodd"></path>
+</svg>
+<span class="font-headline-sm text-body-md font-medium text-slate-200">Continue with GitHub</span>
+</div>
+<span class="font-label-code-xs text-label-code-xs text-cyan-300 bg-cyan-500/15 border border-cyan-400/25 px-2.5 py-0.5 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)]">Instant</span>
+</button>
+<!-- GitLab Action Button -->
+<button class="group relative w-full h-[50px] glass-btn active:scale-[0.985] text-slate-200 rounded-2xl px-4 flex items-center justify-between transition-all duration-150" type="button">
+<div class="flex items-center gap-3">
+<svg class="w-5 h-5 fill-current text-fuchsia-400 group-hover:scale-105 transition-transform" viewbox="0 0 24 24">
+<path d="M22.65 14.39L20 6.22a.91.91 0 00-.35-.48.9.9 0 00-.59-.14.92.92 0 00-.54.27.94.94 0 00-.22.54l-1.63 5H7.33l-1.63-5a.94.94 0 00-.22-.54.92.92 0 00-.54-.27.9.9 0 00-.59.14.91.91 0 00-.35.48L1.35 14.39a.83.83 0 00.3 1l10 7.27a.62.62 0 00.7 0l10-7.27a.83.83 0 00.3-1z"></path>
+</svg>
+<span class="font-headline-sm text-body-md font-medium text-slate-200">Continue with GitLab</span>
+</div>
+<span class="material-symbols-outlined text-slate-400 text-[18px]">chevron_right</span>
+</button>
+<!-- FIDO2 Hardware Key -->
+<button class="group relative w-full h-[50px] glass-btn active:scale-[0.985] text-slate-200 rounded-2xl px-4 flex items-center justify-between transition-all duration-150" type="button">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[20px] text-blue-300">key</span>
+<span class="font-headline-sm text-body-md font-medium text-slate-200">Passkey / Hardware FIDO2</span>
+</div>
+<span class="font-label-code-xs text-label-code-xs text-slate-400 bg-slate-800/80 border border-white/[0.06] px-2.5 py-0.5 rounded-full neu-inset-subtle">WebAuthn</span>
+</button>
+</div>
+<!-- Divider with Soft Glow -->
+<div class="w-full max-w-sm flex items-center gap-3 mb-space-lg">
+<div class="flex-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+<span class="font-label-code-xs text-label-code-xs text-slate-400/80 uppercase tracking-widest text-[9px]">or sign in with email</span>
+<div class="flex-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+</div>
+<!-- Credentials Form (Pillowy Debossed Inputs + Embossed Button) -->
+<form class="w-full max-w-sm flex flex-col gap-space-md mb-space-lg" onsubmit="event.preventDefault();">
+<!-- Email Input -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between px-0.5">
+<label class="font-label-code-md text-label-code-md text-slate-400 flex items-center gap-1.5" for="work-email">
+<span class="text-cyan-400 font-bold">&gt;</span>
+<span class="text-slate-300">work_email</span>
+</label>
+<span class="font-label-code-xs text-label-code-xs text-cyan-300 hidden items-center gap-1" id="email-valid-status">
+<span class="material-symbols-outlined text-[13px]">check_circle</span> verified_syntax
+</span>
+</div>
+<div class="relative flex items-center">
+<input class="w-full h-12 bg-[#090b10] text-slate-200 placeholder:text-slate-500/70 font-label-code-md text-label-code-md px-4 rounded-xl border border-white/[0.06] outline-none neu-inset focus:border-cyan-400/40 focus:ring-1 focus:ring-cyan-400/20 transition-all" id="work-email" placeholder="developer@studio.internal" type="email"/>
+</div>
+</div>
+<!-- Password Input with Tactile Track & Entropy -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between px-0.5">
+<label class="font-label-code-md text-label-code-md text-slate-400 flex items-center gap-1.5" for="auth-password">
+<span class="text-fuchsia-400 font-bold">&gt;</span>
+<span class="text-slate-300">secret_token / pass</span>
+</label>
+<a class="font-label-code-xs text-label-code-xs text-blue-300/90 hover:text-blue-200 hover:underline transition-colors" href="#">reset?</a>
+</div>
+<div class="relative flex items-center">
+<input class="w-full h-12 bg-[#090b10] text-slate-200 placeholder:text-slate-500/70 font-label-code-md text-label-code-md px-4 pr-11 rounded-xl border border-white/[0.06] outline-none neu-inset focus:border-fuchsia-400/40 focus:ring-1 focus:ring-fuchsia-400/20 transition-all" id="auth-password" placeholder="••••••••••••••••" type="password"/>
+<button class="absolute right-3 text-slate-400 hover:text-slate-200 p-1 flex items-center justify-center transition-colors" id="toggle-pw-btn" type="button">
+<span class="material-symbols-outlined text-[18px]" id="pw-icon">visibility</span>
+</button>
+</div>
+<!-- Entropy / Complexity Bar Indicator with Neumorphic Trench -->
+<div class="flex flex-col gap-1.5 pt-1 px-0.5">
+<div class="w-full h-2 neu-inset bg-[#07090d] rounded-full overflow-hidden p-0.5 border border-white/[0.03]">
+<div class="h-full w-2/3 bg-gradient-to-r from-cyan-400 via-blue-500 to-fuchsia-400 rounded-full shadow-[0_0_8px_rgba(0,218,243,0.5)] transition-all duration-300" id="entropy-fill"></div>
+</div>
+<div class="flex justify-between items-center text-slate-400 text-[11px]">
+<span class="font-label-code-xs">entropy: 94.2 bits</span>
+<span class="font-label-code-xs text-cyan-300 font-medium drop-shadow-[0_0_6px_rgba(0,218,243,0.3)]">Cryptographic Grade</span>
+</div>
+</div>
+</div>
+<!-- Submit Button (Pillowy Tactile Primary Action) -->
+<button class="w-full h-12 glass-primary-btn text-white active:scale-[0.985] font-headline-sm text-body-md font-semibold rounded-2xl flex items-center justify-center gap-2 transition-all mt-1 cursor-pointer" type="submit">
+<span class="drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] tracking-wide">Authorize Session</span>
+<span class="material-symbols-outlined text-[18px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">arrow_forward</span>
+</button>
+</form>
+<!-- Terminal Device Pairing Live Card (Glassmorphic Container + Dual Tone Extrusion) -->
+<div class="w-full max-w-sm glass-panel neu-extruded rounded-2xl p-space-md mb-space-lg relative overflow-hidden">
+<!-- Liquid Prismatic Top Highlight -->
+<div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-cyan-400/80 via-blue-500/80 to-fuchsia-500/80 shadow-[0_0_10px_rgba(0,218,243,0.6)]"></div>
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-cyan-300 animate-pulse drop-shadow-[0_0_6px_rgba(0,218,243,0.8)]">sensors</span>
+<span class="font-label-code-xs text-label-code-xs text-slate-300 uppercase tracking-wider font-semibold">Device Pairing via CLI</span>
+</div>
+<div class="flex items-center gap-1.5 neu-inset-subtle bg-[#0a0d14] px-2.5 py-1 rounded-full border border-white/[0.05]">
+<span class="material-symbols-outlined text-[12px] text-slate-400">timer</span>
+<span class="font-label-code-xs text-label-code-xs text-cyan-300 font-bold" id="timer-display">04:59</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-slate-400 mb-3 leading-relaxed">
+        Run this command inside any terminal emulator to immediately bind this device to your agent fleet:
+      </p>
+<!-- Terminal Command Snippet Box (Debossed Inset Trench) -->
+<div class="neu-inset bg-[#080a0f] p-space-sm rounded-xl flex items-center justify-between group mb-3 border border-white/[0.04]">
+<div class="flex items-center gap-2 overflow-x-auto min-w-0 pr-2">
+<span class="font-label-code-xs text-label-code-xs text-fuchsia-400 font-bold shrink-0">$</span>
+<code class="font-label-code-md text-label-code-md text-slate-200 whitespace-nowrap select-all font-medium" id="cli-cmd">clirev login --code 882-901-XK</code>
+</div>
+<button class="shrink-0 p-1.5 rounded-lg neu-extruded bg-gradient-to-b from-[#1c2230] to-[#121620] hover:from-[#222a3b] hover:to-[#161a27] text-slate-300 border border-white/10 active:scale-95 transition-all flex items-center justify-center cursor-pointer" id="copy-cmd-btn" title="Copy Command" type="button">
+<span class="material-symbols-outlined text-[16px]" id="copy-icon">content_copy</span>
+</button>
+</div>
+<!-- Pulse Status Handshake Bar -->
+<div class="flex items-center justify-between text-slate-400 pt-0.5">
+<div class="flex items-center gap-2">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-400 shadow-[0_0_6px_rgba(0,218,243,0.8)]"></span>
+</span>
+<span class="font-label-code-xs text-label-code-xs text-slate-400">Listening for terminal handshake...</span>
+</div>
+<span class="font-label-code-xs text-label-code-xs text-slate-400/70 font-mono">port 9042</span>
+</div>
+</div>
+<!-- Security & Privacy Assurance Notice (Frosted Crystalline Pill) -->
+<div class="w-full max-w-sm glass-panel neu-extruded p-3.5 rounded-2xl flex items-start gap-3 mb-space-lg">
+<div class="p-1.5 rounded-xl neu-inset-subtle bg-[#0a0d14] text-cyan-300 shrink-0 mt-0.5 border border-white/[0.05]">
+<span class="material-symbols-outlined text-[18px] block">verified_user</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="font-label-code-xs text-label-code-xs font-semibold text-slate-300 uppercase tracking-wide">Developer Security Policy</span>
+<p class="font-body-sm text-body-sm text-slate-400 leading-snug">
+          End-to-end encrypted API tokens. Zero tracking cookies in CLI telemetry pipelines.
+        </p>
+</div>
+</div>
+<!-- Global Compliance & Navigation Footer Links with Soft Typographic Treatment -->
+<div class="w-full max-w-sm flex flex-wrap items-center justify-center gap-x-space-md gap-y-space-xs text-center">
+<a class="font-label-code-xs text-label-code-xs text-slate-400 hover:text-slate-200 transition-colors" href="#">CLI Documentation</a>
+<span class="text-slate-600 font-label-code-xs">•</span>
+<a class="font-label-code-xs text-label-code-xs text-slate-400 hover:text-slate-200 transition-colors" href="#">Terms of Service</a>
+<span class="text-slate-600 font-label-code-xs">•</span>
+<a class="font-label-code-xs text-label-code-xs text-slate-400 hover:text-slate-200 transition-colors" href="#">Privacy</a>
+<span class="text-slate-600 font-label-code-xs">•</span>
+<a class="font-label-code-xs text-label-code-xs text-slate-400 hover:text-slate-200 transition-colors" href="#">Recover Account</a>
+</div>
+<div class="mt-space-md text-center">
+<span class="font-label-code-xs text-label-code-xs text-slate-500/80">CLIRevenue Engine v2.4.1-rc5 • Node Global Mesh</span>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    // Mode Switcher Interaction
+    const devBtn = document.getElementById('role-dev-btn');
+    const advBtn = document.getElementById('role-adv-btn');
+    
+    if (devBtn && advBtn) {
+      devBtn.addEventListener('click', () => {
+        devBtn.className = "flex-1 py-2 px-3 rounded-xl text-center font-headline-sm text-body-sm transition-all duration-200 glass-btn-active text-slate-200 flex items-center justify-center gap-1.5";
+        advBtn.className = "flex-1 py-2 px-3 rounded-xl text-center font-headline-sm text-body-sm transition-all duration-200 text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5";
+      });
+      advBtn.addEventListener('click', () => {
+        advBtn.className = "flex-1 py-2 px-3 rounded-xl text-center font-headline-sm text-body-sm transition-all duration-200 glass-btn-active text-slate-200 flex items-center justify-center gap-1.5";
+        devBtn.className = "flex-1 py-2 px-3 rounded-xl text-center font-headline-sm text-body-sm transition-all duration-200 text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5";
+      });
+    }
+
+    // Toggle Password Visibility
+    const pwInput = document.getElementById('auth-password');
+    const togglePwBtn = document.getElementById('toggle-pw-btn');
+    const pwIcon = document.getElementById('pw-icon');
+    if (togglePwBtn && pwInput && pwIcon) {
+      togglePwBtn.addEventListener('click', () => {
+        const isPw = pwInput.type === 'password';
+        pwInput.type = isPw ? 'text' : 'password';
+        pwIcon.textContent = isPw ? 'visibility_off' : 'visibility';
+      });
+    }
+
+    // Dynamic Email Syntax Validation
+    const emailInput = document.getElementById('work-email');
+    const emailStatus = document.getElementById('email-valid-status');
+    if (emailInput && emailStatus) {
+      emailInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        if (val.includes('@') && val.includes('.')) {
+          emailStatus.classList.remove('hidden');
+          emailStatus.classList.add('flex');
+        } else {
+          emailStatus.classList.add('hidden');
+          emailStatus.classList.remove('flex');
+        }
+      });
+    }
+
+    // Copy Terminal Pairing Code
+    const copyBtn = document.getElementById('copy-cmd-btn');
+    const copyIcon = document.getElementById('copy-icon');
+    const cliCmd = document.getElementById('cli-cmd');
+    if (copyBtn && copyIcon && cliCmd) {
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(cliCmd.textContent.trim()).then(() => {
+          copyIcon.textContent = 'done';
+          setTimeout(() => {
+            copyIcon.textContent = 'content_copy';
+          }, 2000);
+        }).catch(() => {
+          copyIcon.textContent = 'done';
+          setTimeout(() => {
+            copyIcon.textContent = 'content_copy';
+          }, 2000);
+        });
+      });
+    }
+
+    // Interactive Countdown Timer
+    const timerElem = document.getElementById('timer-display');
+    let timeLeft = 299; // 04:59
+    if (timerElem) {
+      setInterval(() => {
+        if (timeLeft <= 0) {
+          timeLeft = 300;
+        } else {
+          timeLeft--;
+        }
+        const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+        const s = (timeLeft % 60).toString().padStart(2, '0');
+        timerElem.textContent = `${m}:${s}`;
+      }, 1000);
+    }
+  })();
+</script></main></body></html>

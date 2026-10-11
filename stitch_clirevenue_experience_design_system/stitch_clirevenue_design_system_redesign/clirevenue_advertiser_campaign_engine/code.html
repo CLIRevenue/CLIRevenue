@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><style>
+  @layer base {
+    html, body {
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: #0d1017;
+      color: #cbd5e1;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    body {
+      overscroll-behavior-y: none;
+    }
+    .pb-safe {
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+    }
+    .pt-safe {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    main > :first-child {
+      margin-top: 0 !important;
+    }
+    main > :last-child {
+      margin-bottom: 0 !important;
+    }
+  }
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Liquid Glass + Neumorphism utility styles */
+  .neu-card {
+    background: linear-gradient(135deg, rgba(29, 34, 46, 0.72) 0%, rgba(16, 20, 29, 0.85) 100%);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 10px 10px 24px rgba(4, 6, 10, 0.75), -6px -6px 18px rgba(255, 255, 255, 0.035), inset 0 1px 1px rgba(255, 255, 255, 0.15), inset 0 -1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .neu-extruded {
+    box-shadow: 5px 5px 12px rgba(3, 5, 8, 0.65), -3px -3px 8px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  .neu-inset {
+    background: rgba(10, 13, 20, 0.75);
+    box-shadow: inset 3px 3px 8px rgba(2, 3, 5, 0.8), inset -2px -2px 6px rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .neu-pill {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .neu-pill.active {
+    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.6), inset -1px -1px 3px rgba(255, 255, 255, 0.08), 0 0 12px rgba(0, 218, 243, 0.12);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+  .neu-pill:not(.active) {
+    box-shadow: 3px 3px 8px rgba(3, 5, 8, 0.5), -2px -2px 6px rgba(255, 255, 255, 0.025);
+  }
+
+  .liquid-shimmer {
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0) 70%);
+  }
+</style><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-background": "#cbd5e1", "on-primary-fixed": "#001945", "primary-fixed-dim": "#b0c6ff", "tertiary": "#38e0f5", "surface-container-low": "#131722", "surface-container": "#181d2a", "on-tertiary-fixed": "#001f24", "inverse-primary": "#0058ca", "on-tertiary-container": "#002f35", "surface-bright": "#2c3344", "surface-container-highest": "#283042", "secondary-fixed": "#f8d8ff", "error-container": "#93000a", "primary-fixed": "#d9e2ff", "on-primary": "#002d6e", "primary": "#a5bcfc", "surface-variant": "#232a3b", "outline": "#6b7280", "secondary-container": "#b645e6", "on-secondary-fixed-variant": "#74009f", "inverse-on-surface": "#1e2430", "surface-container-high": "#202636", "on-tertiary": "#00363d", "secondary": "#df9eff", "inverse-surface": "#cbd5e1", "background": "#0d1017", "secondary-fixed-dim": "#ecb2ff", "on-primary-fixed-variant": "#00429b", "surface": "#0d1017", "tertiary-fixed-dim": "#00daf3", "on-secondary-fixed": "#320047", "tertiary-fixed": "#9cf0ff", "surface-dim": "#0a0c12", "on-secondary": "#520071", "on-error-container": "#ffdad6", "surface-tint": "#a5bcfc", "surface-container-lowest": "#080a0f", "on-error": "#690005", "on-surface": "#cbd5e1", "outline-variant": "#374151", "on-surface-variant": "#94a3b8", "tertiary-container": "#008da0", "on-tertiary-fixed-variant": "#004f58", "on-secondary-container": "#480063", "primary-container": "#437bf2", "error": "#f87171", "on-primary-container": "#dbeafe" }, borderRadius: { "DEFAULT": "0.125rem", "lg": "0.375rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xl": "2.5rem", "space-lg": "1.5rem", "gutter": "1rem", "margin": "1rem", "gutter-desktop": "1.5rem", "margin-tablet": "2rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "margin-desktop": "3rem", "space-md": "1rem" }, fontFamily: { "headline-sm": ["Geist"], "headline-lg-mobile": ["Geist"], "label-code-md": ["JetBrains Mono"], "display-xl": ["Geist"], "display-xl-mobile": ["Geist"], "headline-lg": ["Geist"], "label-code-lg": ["JetBrains Mono"], "body-sm": ["Inter"], "body-lg": ["Inter"], "label-code-xs": ["JetBrains Mono"], "body-md": ["Inter"], "headline-md": ["Geist"] }, fontSize: { "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "500" }], "headline-lg-mobile": ["25px", { "lineHeight": "33px", "fontWeight": "600" }], "label-code-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "display-xl": ["56px", { "lineHeight": "64px", "fontWeight": "700" }], "display-xl-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }], "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }], "label-code-lg": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }], "label-code-xs": ["10px", { "lineHeight": "14px", "fontWeight": "500" }], "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }], "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head><body class="bg-[#0d1017] font-body-md text-body-md text-slate-300 antialiased min-h-screen flex flex-col"><header class="fixed top-0 w-full z-50 pt-safe bg-[#0d1017]/70 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.6)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="clirevenue-logo(dark).png" class="h-8 w-auto object-contain flex-shrink-0 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" src="https://lh3.googleusercontent.com/aida/AEtjO1Xwy6vpDH3RQXzioR8Y6OJIQDzi3nJ1LTSPIsDpjkgzozBjHtyeQ0megmS6oZC5gmO7Sgdh9Os7TLhH4KwNrUAS3JHA-AvzFKfnAd5Xitj1hp0zic0fpaUUa7w2_uSD5H6XxJCDlQFcS26wS8B-l5Oqb1exNdQ-3G_dh2xWvYigx8sjosLpfEV0GM1lbdljiUrT0MGX_wtwcIoHF7kw530vB_IDE2v4heNf4M5JkBTHy3OheaR2Mr6UQeYEeMaOHBxnrJH2u0wt2A"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm bg-gradient-to-r from-slate-200 via-slate-300 to-slate-400 bg-clip-text text-transparent tracking-tight truncate">CLIRevenue</span><span class="hidden xs:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-slate-800/80 border border-cyan-400/20 text-cyan-300 font-label-code-xs text-label-code-xs tracking-wider shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_6px_rgba(0,218,243,0.8)]"></span>LIVE</span></div><span class="font-label-code-xs text-label-code-xs text-slate-400 truncate">Advertisers</span></div></div><div class="flex items-center gap-space-xs flex-shrink-0"><button aria-label="Telemetry Status" class="h-10 px-2.5 rounded-xl flex items-center gap-1.5 bg-[#151924]/80 border border-white/[0.08] text-cyan-300 font-label-code-xs text-label-code-xs neu-extruded hover:border-cyan-400/30 transition-all"><span class="material-symbols-outlined text-[15px] opacity-90">terminal</span><span class="hidden sm:inline text-slate-300">v2.4</span></button><button aria-label="Account Switcher" class="w-10 h-10 rounded-full flex items-center justify-center neu-extruded border border-white/[0.1] hover:border-primary/40 transition-all overflow-hidden p-0.5"><img alt="Profile" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1WVWAtvZmc9-s2eOe5neWGNBHeC6JwCfz7LaN_j1t3Phfn8MLi8eWF54x_5nADvLgkLdE9Xt8DUWIYEDDm4Wzr5mSeICApS72UcDzUNo9UF40FkeaJSin-0rMZlsiM8P_E1I7qAiVZHlwgoLZ41sABxBR4uCaR8LiAOY-bEm1rRsCXGs41AFmwDHzCXfd3SwmYIZIPSPWkcL7mwqj6vutfi2NIjXCa-QHTp8XTAWyUd1ut-utzIw4RHidESeaVJjX4E7UAJfoNu"/></button></div></div></header><main class="flex-1 w-full bg-[#0d1017] pt-16 pb-24"><div class="flex flex-col w-full px-margin pb-space-xl space-y-space-lg">
+<!-- Section 1: Campaign Overview & Creator Header -->
+<div class="relative overflow-hidden rounded-2xl neu-card p-space-md">
+<div class="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-blue-500/10 blur-3xl pointer-events-none"></div>
+<div class="absolute right-8 bottom-0 w-36 h-36 rounded-full bg-purple-500/10 blur-2xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col space-y-space-md">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full neu-inset text-cyan-300 border border-cyan-400/20">
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+<span class="font-label-code-xs text-label-code-xs tracking-wider uppercase font-semibold text-cyan-200/90">Direct Terminal &amp; AI Sponsorships</span>
+</div>
+<span class="font-label-code-xs text-label-code-xs text-slate-400 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-cyan-400">shield_lock</span>
+          Zero-Pii Engine
+        </span>
+</div>
+<div class="flex flex-col space-y-1.5">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile bg-gradient-to-r from-slate-100 via-slate-200 to-slate-400 bg-clip-text text-transparent tracking-tight font-semibold">Sponsor Terminal Real Estate</h2>
+</div>
+<p class="font-body-md text-body-md text-slate-400 leading-relaxed">
+          Inject native, text-first contextual recommendations directly into CLI command flows and autonomous coding loops.
+        </p>
+</div>
+<!-- Quick Budget & Schedule Micro-Bar -->
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<div class="rounded-xl neu-inset p-3.5 flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-slate-400 uppercase tracking-wider">Account Balance</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-headline-sm text-headline-sm text-slate-200 font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">$2,450.00</span>
+<span class="font-label-code-xs text-label-code-xs text-cyan-400 font-medium">USD</span>
+</div>
+<span class="font-label-code-xs text-label-code-xs text-slate-400 mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-indigo-300">autorenew</span> Auto-topup active
+          </span>
+</div>
+<div class="rounded-xl neu-inset p-3.5 flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-slate-400 uppercase tracking-wider">Global Spend Pacing</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-headline-sm text-headline-sm text-slate-200 font-semibold">Strict</span>
+<span class="font-label-code-xs text-label-code-xs text-purple-300 font-medium">Daily Capped</span>
+</div>
+<span class="font-label-code-xs text-label-code-xs text-slate-400 mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-cyan-400">schedule</span> UTC rollover 00:00
+          </span>
+</div>
+</div>
+<!-- Primary Action CTA -->
+<button class="relative group overflow-hidden w-full h-12 rounded-xl bg-gradient-to-r from-blue-600/90 via-indigo-600/90 to-purple-600/90 text-slate-100 font-headline-sm text-headline-sm flex items-center justify-center gap-2 border border-white/20 shadow-[0_8px_20px_rgba(40,20,90,0.5),inset_0_1px_1px_rgba(255,255,255,0.35),inset_0_-2px_4px_rgba(0,0,0,0.4)] active:translate-y-0.5 active:shadow-[inset_0_2px_6px_rgba(0,0,0,0.6)] transition-all" id="launchCampaignBtn">
+<div class="absolute inset-0 liquid-shimmer opacity-30 pointer-events-none group-hover:opacity-60 transition-opacity"></div>
+<span class="material-symbols-outlined text-[20px] text-slate-100">add_circle</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-slate-100 tracking-wide drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]">+ Launch New Terminal Campaign</span>
+</button>
+</div>
+</div>
+<!-- Section 2: Contextual Targeting Engine -->
+<div class="rounded-2xl neu-card p-space-md flex flex-col space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-cyan-400 text-[20px]">tune</span>
+<h3 class="font-headline-sm text-headline-sm bg-gradient-to-r from-slate-200 to-slate-300 bg-clip-text text-transparent font-semibold">Targeting Matrix</h3>
+</div>
+<span class="font-label-code-xs text-label-code-xs px-2.5 py-1 rounded-full neu-inset text-slate-400 border border-white/[0.04]">Tap to toggle</span>
+</div>
+<p class="font-body-sm text-body-sm text-slate-400 -mt-1 leading-relaxed">
+      Zero tracking cookies. Impressions match deterministic AST command parsers and runtime environment signatures.
+    </p>
+<!-- Programming Languages Group -->
+<div class="flex flex-col space-y-2">
+<div class="flex items-center justify-between text-slate-400">
+<span class="font-label-code-xs text-label-code-xs font-semibold tracking-wider text-indigo-300/90">PROGRAMMING LANGUAGES</span>
+<span class="font-label-code-xs text-label-code-xs text-slate-400">5 Available</span>
+</div>
+<div class="flex flex-wrap gap-2" id="target-languages">
+<button class="targeting-pill neu-pill active px-3.5 py-1.5 rounded-xl bg-[#1a202d] text-indigo-200 border border-white/[0.08] font-label-code-md text-label-code-md flex items-center gap-2 transition-all" data-tag="TypeScript">
+<span class="w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_6px_rgba(129,140,248,0.8)]"></span>
+          TypeScript
+        </button>
+<button class="targeting-pill neu-pill active px-3.5 py-1.5 rounded-xl bg-[#1a202d] text-indigo-200 border border-white/[0.08] font-label-code-md text-label-code-md flex items-center gap-2 transition-all" data-tag="Rust">
+<span class="w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_6px_rgba(129,140,248,0.8)]"></span>
+          Rust
+        </button>
+<button class="targeting-pill neu-pill px-3.5 py-1.5 rounded-xl bg-[#121620] text-slate-400 border border-white/[0.05] font-label-code-md text-label-code-md flex items-center gap-2 hover:text-slate-300 transition-all" data-tag="Go">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+          Go
+        </button>
+<button class="targeting-pill neu-pill px-3.5 py-1.5 rounded-xl bg-[#121620] text-slate-400 border border-white/[0.05] font-label-code-md text-label-code-md flex items-center gap-2 hover:text-slate-300 transition-all" data-tag="Python">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+          Python
+        </button>
+<button class="targeting-pill neu-pill px-3.5 py-1.5 rounded-xl bg-[#121620] text-slate-400 border border-white/[0.05] font-label-code-md text-label-code-md flex items-center gap-2 hover:text-slate-300 transition-all" data-tag="C++">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+          C++
+        </button>
+</div>
+</div>
+<!-- Developer Toolchains Group -->
+<div class="flex flex-col space-y-2 pt-1">
+<div class="flex items-center justify-between text-slate-400">
+<span class="font-label-code-xs text-label-code-xs font-semibold tracking-wider text-cyan-300/90">DEVELOPER TOOLCHAINS</span>
+<span class="font-label-code-xs text-label-code-xs text-slate-400">5 Available</span>
+</div>
+<div class="flex flex-wrap gap-2" id="target-toolchains">
+<button class="targeting-pill neu-pill active px-3.5 py-1.5 rounded-xl bg-[#1a202d] text-cyan-300 border border-white/[0.08] font-label-code-md text-label-code-md flex items-center gap-2 transition-all" data-tag="Docker">
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(0,218,243,0.8)]"></span>
+          Docker
+        </button>
+<button class="targeting-pill neu-pill active px-3.5 py-1.5 rounded-xl bg-[#1a202d] text-cyan-300 border border-white/[0.08] font-label-code-md text-label-code-md flex items-center gap-2 transition-all" data-tag="Kubernetes">
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(0,218,243,0.8)]"></span>
+          Kubernetes
+        </button>
+<button class="targeting-pill neu-pill px-3.5 py-1.5 rounded-xl bg-[#121620] text-slate-400 border border-white/[0.05] font-label-code-md text-label-code-md flex items-center gap-2 hover:text-slate-300 transition-all" data-tag="Terraform">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+          Terraform
+        </button>
+<button class="targeting-pill neu-pill px-3.5 py-1.5 rounded-xl bg-[#121620] text-slate-400 border border-white/[0.05] font-label-code-md text-label-code-md flex items-center gap-2 hover:text-slate-300 transition-all" data-tag="Git">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+          Git
+        </button>
+<button class="targeting-pill neu-pill px-3.5 py-1.5 rounded-xl bg-[#121620] text-slate-400 border border-white/[0.05] font-label-code-md text-label-code-md flex items-center gap-2 hover:text-slate-300 transition-all" data-tag="Neovim">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+          Neovim
+        </button>
+</div>
+</div>
+<!-- AI Coding Agents Group -->
+<div class="flex flex-col space-y-2 pt-1">
+<div class="flex items-center justify-between text-slate-400">
+<span class="font-label-code-xs text-label-code-xs font-semibold tracking-wider text-purple-300/90">AI CODING AGENTS &amp; ASSISTANTS</span>
+<span class="font-label-code-xs text-label-code-xs text-slate-400">High-Intent</span>
+</div>
+<div class="flex flex-wrap gap-2" id="target-agents">
+<button class="targeting-pill neu-pill active px-3.5 py-1.5 rounded-xl bg-[#1a202d] text-purple-300 border border-white/[0.08] font-label-code-md text-label-code-md flex items-center gap-2 transition-all" data-tag="Cursor">
+<span class="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_6px_rgba(216,180,254,0.8)]"></span>
+          Cursor
+        </button>
+<button class="targeting-pill neu-pill active px-3.5 py-1.5 rounded-xl bg-[#1a202d] text-purple-300 border border-white/[0.08] font-label-code-md text-label-code-md flex items-center gap-2 transition-all" data-tag="Claude Code">
+<span class="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_6px_rgba(216,180,254,0.8)]"></span>
+          Claude Code
+        </button>
+<button class="targeting-pill neu-pill px-3.5 py-1.5 rounded-xl bg-[#121620] text-slate-400 border border-white/[0.05] font-label-code-md text-label-code-md flex items-center gap-2 hover:text-slate-300 transition-all" data-tag="Aider">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+          Aider
+        </button>
+<button class="targeting-pill neu-pill px-3.5 py-1.5 rounded-xl bg-[#121620] text-slate-400 border border-white/[0.05] font-label-code-md text-label-code-md flex items-center gap-2 hover:text-slate-300 transition-all" data-tag="Copilot CLI">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+          Copilot CLI
+        </button>
+</div>
+</div>
+</div>
+<!-- Section 3: Live Campaign Inspector & Ad Format Tester -->
+<div class="rounded-2xl neu-card p-space-md flex flex-col space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-indigo-300 text-[20px]">terminal</span>
+<h3 class="font-headline-sm text-headline-sm bg-gradient-to-r from-slate-200 to-slate-300 bg-clip-text text-transparent font-semibold">Live Format Inspector</h3>
+</div>
+<span class="font-label-code-xs text-label-code-xs text-cyan-300 flex items-center gap-1.5 font-medium px-2.5 py-1 rounded-full neu-inset">
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(0,218,243,0.8)]"></span> 80-Col Safe
+      </span>
+</div>
+<!-- Mode Selector Tabs -->
+<div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl neu-inset">
+<button class="inspector-tab active py-2 text-center rounded-lg bg-[#202738]/90 text-slate-200 border border-white/[0.08] shadow-[0_2px_6px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] font-label-code-xs text-label-code-xs font-semibold transition-all" id="mode-ansi">
+        ANSI Monocrome
+      </button>
+<button class="inspector-tab py-2 text-center rounded-lg text-slate-400 hover:text-slate-200 font-label-code-xs text-label-code-xs transition-all" id="mode-truecolor">
+        24-bit TrueColor
+      </button>
+<button class="inspector-tab py-2 text-center rounded-lg text-slate-400 hover:text-slate-200 font-label-code-xs text-label-code-xs transition-all" id="mode-markdown">
+        LLM Markdown
+      </button>
+</div>
+<!-- Interactive Terminal Screen Simulation -->
+<div class="rounded-xl neu-inset p-4 flex flex-col space-y-2 border border-white/[0.05]">
+<!-- Window Bar -->
+<div class="flex items-center justify-between pb-2 border-b border-white/[0.05]">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-rose-500/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]"></span>
+<span class="w-2.5 h-2.5 rounded-full bg-amber-400/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]"></span>
+<span class="w-2.5 h-2.5 rounded-full bg-cyan-400/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]"></span>
+</div>
+<span class="font-label-code-xs text-label-code-xs text-slate-400 font-medium" id="terminal-emulator-label">vt100 · 80x24</span>
+</div>
+<!-- Execution context mock -->
+<div class="font-label-code-xs text-label-code-xs text-slate-400 select-none space-y-0.5">
+<div class="text-slate-400">$ npm run build --workspace=@acme/infra</div>
+<div class="text-cyan-400/90">✓ Compiled 142 modules in 420ms</div>
+<div class="text-slate-600">------------------------------------------------------------</div>
+</div>
+<!-- Simulated Ad Payload Viewport -->
+<div class="rounded-lg p-3 bg-[#131722]/80 border border-white/[0.06] shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] transition-all font-mono" id="preview-container">
+<!-- Default State: ANSI Mode -->
+<div class="font-label-code-md text-label-code-md text-slate-200 leading-relaxed break-all" id="preview-text">
+<span class="text-cyan-400 font-bold">❯</span> <strong class="text-slate-100 font-medium">Supabase</strong> <span class="text-slate-400">—</span> Open source Firebase alternative. Try branch databases free <span class="text-cyan-400">→</span>
+</div>
+</div>
+<!-- Telemetry verification footer inside terminal -->
+<div class="flex items-center justify-between pt-1 font-label-code-xs text-label-code-xs text-slate-400">
+<span>Payload: 74 bytes</span>
+<span class="text-cyan-400 flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">done_all</span> Non-blocking hook
+        </span>
+</div>
+</div>
+<!-- Active Sponsor Copy Editor Micro-form -->
+<div class="flex flex-col space-y-1.5">
+<label class="font-label-code-xs text-label-code-xs text-slate-400 flex items-center justify-between" for="adCopyInput">
+<span>SPONSOR COPY LINE (MAX 80 CHARS)</span>
+<span class="text-cyan-300 font-label-code-xs" id="charCount">74/80</span>
+</label>
+<div class="relative flex items-center">
+<span class="absolute left-3.5 text-cyan-400 font-label-code-md">❯</span>
+<input class="w-full h-11 pl-8 pr-3 rounded-xl neu-inset text-slate-200 font-label-code-xs text-label-code-xs outline-none focus:border-cyan-400/40 transition-all placeholder-slate-500" id="adCopyInput" maxlength="80" type="text" value="Supabase — Open source Firebase alternative. Try branch databases free →"/>
+</div>
+</div>
+</div>
+<!-- Section 4: Campaigns Portfolio List -->
+<div class="rounded-2xl neu-card p-space-md flex flex-col space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-purple-300 text-[20px]">layers</span>
+<h3 class="font-headline-sm text-headline-sm bg-gradient-to-r from-slate-200 to-slate-300 bg-clip-text text-transparent font-semibold">Deployment Ledger</h3>
+</div>
+<span class="font-label-code-xs text-label-code-xs px-2.5 py-1 rounded-full neu-inset text-slate-400 font-medium border border-white/[0.04]">2 Total</span>
+</div>
+<!-- Campaign Item 1 -->
+<div class="rounded-xl neu-card p-3.5 flex flex-col space-y-2 border border-white/[0.06] hover:border-white/[0.12] transition-all">
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md font-semibold text-slate-200 truncate">Q2 Cloud Infra Push</span>
+<span class="font-label-code-xs text-label-code-xs text-slate-400">CLI-DIRECT-08492</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full neu-inset text-cyan-300 border border-cyan-400/20 font-label-code-xs text-label-code-xs font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(0,218,243,0.8)]"></span> Active
+        </span>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1">
+<div class="flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-slate-400">Targets</span>
+<div class="flex gap-1.5 mt-1">
+<span class="px-2 py-0.5 rounded-lg neu-inset text-cyan-300 font-label-code-xs text-label-code-xs font-medium border border-cyan-400/10">Docker</span>
+<span class="px-2 py-0.5 rounded-lg neu-inset text-cyan-300 font-label-code-xs text-label-code-xs font-medium border border-cyan-400/10">K8s</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-slate-400">Daily Budget Cap</span>
+<span class="font-label-code-md text-label-code-md text-slate-200 font-semibold mt-1">$50.00 / day</span>
+</div>
+</div>
+<div class="pt-1.5 flex items-center justify-between text-slate-400 font-label-code-xs text-label-code-xs border-t border-white/[0.04]">
+<span class="flex items-center gap-1.5 text-slate-400">
+<span class="material-symbols-outlined text-[14px] text-indigo-300">speed</span> 24h Pacing: Optimal
+        </span>
+<button class="text-cyan-300 hover:text-cyan-200 flex items-center gap-0.5 transition-colors">
+          Inspect Logs <span class="material-symbols-outlined text-[13px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Campaign Item 2 -->
+<div class="rounded-xl neu-card p-3.5 flex flex-col space-y-2 border border-white/[0.06] hover:border-white/[0.12] transition-all">
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md font-semibold text-slate-200 truncate">Dev Security Scanner Promo</span>
+<span class="font-label-code-xs text-label-code-xs text-slate-400">CLI-DIRECT-08499</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full neu-inset text-slate-400 font-label-code-xs text-label-code-xs font-semibold border border-white/[0.05]">
+<span class="material-symbols-outlined text-[12px] text-slate-400">schedule</span> Scheduled
+        </span>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1">
+<div class="flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-slate-400">Activation Date</span>
+<span class="font-label-code-md text-label-code-md text-slate-200 font-semibold mt-1">May 1, 2025</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-slate-400">Runtime Trigger</span>
+<span class="font-label-code-md text-label-code-md text-purple-300 font-semibold mt-1">Claude Code, Git</span>
+</div>
+</div>
+<div class="pt-1.5 flex items-center justify-between text-slate-400 font-label-code-xs text-label-code-xs border-t border-white/[0.04]">
+<span class="text-slate-400">Targeting: 2 Environments</span>
+<button class="text-cyan-300 hover:text-cyan-200 flex items-center gap-0.5 transition-colors">
+          Edit Queue <span class="material-symbols-outlined text-[13px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Operational State Disclaimer Card -->
+<div class="rounded-xl neu-inset p-3.5 flex items-start gap-2.5 border border-white/[0.04]">
+<span class="material-symbols-outlined text-cyan-400 text-[18px] shrink-0 mt-0.5">info</span>
+<div class="flex flex-col space-y-0.5">
+<span class="font-label-code-xs text-label-code-xs font-semibold text-slate-300">Telemetry Safeguard</span>
+<p class="font-label-code-xs text-label-code-xs text-slate-400 leading-relaxed">
+          Data labeled for demonstration purposes. Live reporting activates upon first ad delivery. CLI telemetry is collected in-memory without cookies or identifying machine fingerprints.
+        </p>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function initInspector() {
+    const copyInput = document.getElementById('adCopyInput');
+    const previewText = document.getElementById('preview-text');
+    const charCount = document.getElementById('charCount');
+    const terminalEmulatorLabel = document.getElementById('terminal-emulator-label');
+    const previewContainer = document.getElementById('preview-container');
+
+    const modeAnsi = document.getElementById('mode-ansi');
+    const modeTruecolor = document.getElementById('mode-truecolor');
+    const modeMarkdown = document.getElementById('mode-markdown');
+
+    let currentMode = 'ansi';
+
+    function renderCopy() {
+      const val = copyInput.value || '❯ Sponsor snippet';
+      charCount.textContent = `${val.length}/80`;
+
+      if (currentMode === 'ansi') {
+        previewText.innerHTML = `<span class="text-cyan-400 font-bold">❯</span> <strong class="text-slate-100 font-medium">${escapeHTML(val)}</strong>`;
+        previewContainer.className = 'rounded-lg p-3 bg-[#131722]/80 border border-white/[0.06] shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] transition-all font-mono';
+        terminalEmulatorLabel.textContent = 'vt100 · 80x24 (Monochrome/16)';
+      } else if (currentMode === 'truecolor') {
+        previewText.innerHTML = `<span class="text-purple-300 font-bold">❯</span> <span class="bg-gradient-to-r from-cyan-300 via-indigo-300 to-purple-300 bg-clip-text text-transparent font-semibold">${escapeHTML(val)}</span>`;
+        previewContainer.className = 'rounded-lg p-3 bg-[#181d2a]/90 border border-white/[0.08] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_12px_rgba(0,0,0,0.5)] transition-all font-mono';
+        terminalEmulatorLabel.textContent = 'xterm-ghostty · 24-bit TrueColor';
+      } else if (currentMode === 'markdown') {
+        previewText.innerHTML = `<div class="text-slate-400 text-xs mb-1 font-sans"># LLM Autonomous Agent Shell Response</div><div class="font-sans text-body-sm text-slate-300">> <strong class="text-slate-200">Recommendation</strong>: <a href="https://example.com" class="text-cyan-300 underline underline-offset-2">${escapeHTML(val)}</a></div>`;
+        previewContainer.className = 'rounded-lg p-3 bg-[#1d2332]/80 border border-white/[0.08] shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)] transition-all';
+        terminalEmulatorLabel.textContent = 'AI Agent · Markdown Stream';
+      }
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+          '&': '&',
+          '<': '<',
+          '>': '>',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag)
+      );
+    }
+
+    if (copyInput) {
+      copyInput.addEventListener('input', renderCopy);
+    }
+
+    function setMode(mode, targetBtn) {
+      currentMode = mode;
+      [modeAnsi, modeTruecolor, modeMarkdown].forEach(btn => {
+        btn.classList.remove('active', 'bg-[#202738]/90', 'text-slate-200', 'font-semibold', 'border', 'border-white/[0.08]', 'shadow-[0_2px_6px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)]');
+        btn.classList.add('text-slate-400');
+      });
+      targetBtn.classList.add('active', 'bg-[#202738]/90', 'text-slate-200', 'font-semibold', 'border', 'border-white/[0.08]', 'shadow-[0_2px_6px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)]');
+      targetBtn.classList.remove('text-slate-400');
+      renderCopy();
+    }
+
+    if (modeAnsi) modeAnsi.addEventListener('click', (e) => setMode('ansi', e.currentTarget));
+    if (modeTruecolor) modeTruecolor.addEventListener('click', (e) => setMode('truecolor', e.currentTarget));
+    if (modeMarkdown) modeMarkdown.addEventListener('click', (e) => setMode('markdown', e.currentTarget));
+
+    // Targeting Matrix Pills Interactive Toggle
+    const pills = document.querySelectorAll('.targeting-pill');
+    pills.forEach(pill => {
+      pill.addEventListener('click', function() {
+        const dot = this.querySelector('span');
+        const isActive = this.classList.contains('active');
+        
+        if (isActive) {
+          this.classList.remove('active', 'bg-[#1a202d]', 'text-indigo-200', 'text-cyan-300', 'text-purple-300');
+          this.classList.add('bg-[#121620]', 'text-slate-400');
+          if (dot) {
+            dot.className = 'w-1.5 h-1.5 rounded-full bg-slate-600';
+          }
+        } else {
+          this.classList.remove('bg-[#121620]', 'text-slate-400');
+          this.classList.add('active', 'bg-[#1a202d]');
+          
+          const parentId = this.parentElement.id;
+          if (parentId === 'target-languages') {
+            this.classList.add('text-indigo-200');
+            if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_6px_rgba(129,140,248,0.8)]';
+          } else if (parentId === 'target-toolchains') {
+            this.classList.add('text-cyan-300');
+            if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(0,218,243,0.8)]';
+          } else {
+            this.classList.add('text-purple-300');
+            if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_6px_rgba(216,180,254,0.8)]';
+          }
+        }
+      });
+    });
+
+    // Launch Button micro-feedback
+    const launchBtn = document.getElementById('launchCampaignBtn');
+    if (launchBtn) {
+      launchBtn.addEventListener('click', () => {
+        const originalText = launchBtn.innerHTML;
+        launchBtn.innerHTML = '<span class="material-symbols-outlined text-[20px] animate-spin text-slate-200">refresh</span> <span class="text-slate-200 font-semibold tracking-wide">Provisioning Draft...</span>';
+        launchBtn.disabled = true;
+        setTimeout(() => {
+          launchBtn.innerHTML = '<span class="material-symbols-outlined text-[20px] text-cyan-300">task_alt</span> <span class="text-cyan-200 font-semibold tracking-wide">Draft Campaign Queued</span>';
+          setTimeout(() => {
+            launchBtn.innerHTML = originalText;
+            launchBtn.disabled = false;
+          }, 1800);
+        }, 800);
+      });
+    }
+
+    renderCopy();
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-[#0d1017]/80 backdrop-blur-2xl border-t border-white/[0.08] shadow-[0_-8px_24px_rgba(0,0,0,0.6)]" data-active-classes="text-cyan-300"><div class="h-16 px-space-xs flex items-center justify-around"><a class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl text-slate-400 hover:text-slate-300 transition-colors" data-path="overview" href="#"><span class="material-symbols-outlined text-[20px]">analytics</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Overview</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl text-slate-400 hover:text-slate-300 transition-colors" data-path="developers-and-sdk" href="#"><span class="material-symbols-outlined text-[20px]">code_blocks</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">SDK</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl transition-all text-cyan-300 neu-inset border border-cyan-400/20 shadow-[0_0_12px_rgba(0,218,243,0.15)]" data-path="advertisers" href="#"><span class="material-symbols-outlined text-[20px] drop-shadow-[0_0_6px_rgba(0,218,243,0.6)]">storefront</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight font-medium text-cyan-200">Ads</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl text-slate-400 hover:text-slate-300 transition-colors" data-path="campaigns-and-placements" href="#"><span class="material-symbols-outlined text-[20px]">ad_units</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Campaigns</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl text-slate-400 hover:text-slate-300 transition-colors" data-path="console" href="#"><span class="material-symbols-outlined text-[20px]">terminal</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Console</span></a></div></nav></body></html>

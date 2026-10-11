@@ -1,5 +1,14 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { corsFor, json, apiError, optionsResponse, originFor, serveWithCors } from "./http.ts";
+import {
+  corsFor,
+  json,
+  apiError,
+  optionsResponse,
+  originFor,
+  serveWithCors,
+  readJsonObjectBody,
+  MAX_REQUEST_BODY_BYTES,
+} from "./http.ts";
 
 /**
  * CORS tests.
@@ -170,5 +179,68 @@ Deno.test("cors", async (t) => {
       // Fail closed rather than guessing the first entry.
       assertEquals(originFor(), "");
     });
+  });
+});
+
+const postBody = (body: string, headers: Record<string, string> = {}) =>
+  new Request("https://x.functions.supabase.co/ads/deliver", {
+    method: "POST",
+    headers: { "content-type": "application/json", ...headers },
+    body,
+  });
+
+async function bodyCodeOf(res: Response): Promise<{ status: number; code: string }> {
+  const parsed = (await res.json()) as { code?: string; error?: { code?: string } };
+  return { status: res.status, code: String(parsed.code ?? parsed.error?.code) };
+}
+
+Deno.test("request body limits", async (t) => {
+  await t.step("accepts an ordinary object body", async () => {
+    const read = await readJsonObjectBody(postBody(JSON.stringify({ publisherKey: "x" })));
+    assertEquals(read.ok, true);
+    if (read.ok) assertEquals(read.body, { publisherKey: "x" });
+  });
+
+  await t.step("treats malformed JSON as unparseable, not as a crash", async () => {
+    const read = await readJsonObjectBody(postBody("{not json"));
+    assertEquals(read.ok, true);
+    if (read.ok) assertEquals(read.body, null);
+  });
+
+  await t.step("treats an array body as unparseable", async () => {
+    const read = await readJsonObjectBody(postBody("[1,2]"));
+    assertEquals(read.ok, true);
+    if (read.ok) assertEquals(read.body, null);
+  });
+
+  await t.step("treats an empty body as unparseable unless the caller allows it", async () => {
+    const strict = await readJsonObjectBody(postBody(""));
+    assertEquals(strict.ok, true);
+    if (strict.ok) assertEquals(strict.body, null);
+    const lenient = await readJsonObjectBody(postBody(""), { emptyAsObject: true });
+    assertEquals(lenient.ok, true);
+    if (lenient.ok) assertEquals(lenient.body, {});
+  });
+
+  await t.step("refuses a declared oversized body before reading it", async () => {
+    const read = await readJsonObjectBody(
+      postBody(JSON.stringify({ a: 1 }), { "content-length": String(MAX_REQUEST_BODY_BYTES + 1) }),
+    );
+    assertEquals(read.ok, false);
+    if (!read.ok) assertEquals(await bodyCodeOf(read.response), { status: 413, code: "PAYLOAD_TOO_LARGE" });
+  });
+
+  await t.step("refuses an undeclared oversized body before parsing it", async () => {
+    const read = await readJsonObjectBody(postBody("x".repeat(MAX_REQUEST_BODY_BYTES + 1)));
+    assertEquals(read.ok, false);
+    if (!read.ok) {
+      assertEquals(await bodyCodeOf(read.response), { status: 413, code: "PAYLOAD_TOO_LARGE" });
+    }
+  });
+
+  await t.step("honours a caller-supplied smaller limit", async () => {
+    const read = await readJsonObjectBody(postBody(JSON.stringify({ a: "b".repeat(50) })), { maxBytes: 16 });
+    assertEquals(read.ok, false);
+    if (!read.ok) assertEquals((await bodyCodeOf(read.response)).status, 413);
   });
 });

@@ -60,6 +60,40 @@ const INSUFFICIENT_PRIVILEGE = "42501";
  *  it describes a lookup that found nothing to own, never a fault. */
 const NOT_SINGLE = "PGRST116";
 
+/**
+ * True when a PostgREST error is the unique_violation (23505) we expect from
+ * `publisher_keys_active_env_key`.
+ *
+ * The cast is unavoidable and deliberately narrow: PostgREST hands back a bare
+ * JSON object, so the code is a runtime property of an `unknown`. Anything
+ * that is not an object with a string `code` is simply not a unique violation.
+ */
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === UNIQUE_VIOLATION
+  );
+}
+
+/**
+ * Carries a 23505 out of `createKey` so the handler can answer with the
+ * existing row's metadata instead of a bare 500.
+ *
+ * Throwing the raw PostgREST error used to work for the `code` check and
+ * nothing else: the handler had no way to tell "this publisher already has an
+ * active key in this environment" apart from a genuine fault, so both became
+ * the same 500. A developer clicking "create key" twice got a server error
+ * with no indication that the thing they wanted already exists.
+ */
+class ActiveKeyExistsError extends Error {
+  constructor(readonly existing: KeyRow) {
+    super("An active key already exists for this environment.");
+    this.name = "ActiveKeyExistsError";
+  }
+}
+
 type KeyRow = {
   id: string;
   key_prefix: string;
@@ -135,6 +169,35 @@ async function listKeys(
   return (data as KeyRow[]) ?? [];
 }
 
+/**
+ * Reads the publisher's one active key for an environment, or null.
+ *
+ * Scoped by `publisher_id` and `key_env` and filtered to `revoked_at IS NULL`
+ * to mirror `publisher_keys_active_env_key` exactly. If this ever disagrees
+ * with the index the handler answers 500 instead of a confident-but-wrong 409,
+ * which is the right way to be wrong: it tells the user to retry rather than
+ * telling them to revoke a key that is not there.
+ *
+ * Only `KEY_COLUMNS` is selected, so no `key_hash` and no raw key can leave
+ * this function.
+ */
+async function readActiveKey(
+  admin: ReturnType<typeof adminClient>,
+  publisherId: string,
+  env: "test" | "live",
+): Promise<KeyRow | null> {
+  const { data, error } = await admin
+    .from("publisher_keys")
+    .select(KEY_COLUMNS)
+    .eq("publisher_id", publisherId)
+    .eq("key_env", env)
+    .is("revoked_at", null)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`read active key: ${error.message}`);
+  return asKeyRow(data);
+}
+
 async function createKey(
   admin: ReturnType<typeof adminClient>,
   publisherId: string,
@@ -156,22 +219,17 @@ async function createKey(
     .single();
 
   if (error) {
-    // Check if it's a unique violation error (code property)
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      // @ts-ignore: error.code might not be known to TS
-      error.code === UNIQUE_VIOLATION
-    ) {
-      // This should not happen because key_prefix is not unique? Actually,
-      // key_prefix is not unique in the table (we only have a partial unique
-      // index on publisher_id and key_env where revoked_at is null and key_env
-      // is not null). So a race condition might still cause a duplicate key
-      // prefix? But the key_hash is unique? Not necessarily, but the probability
-      // is extremely low. We treat it as a conflict and retry? For now, we
-      // throw and let the caller handle.
-      throw error;
+    // `publisher_keys_active_env_key` (000016) allows exactly one unrevoked key
+    // per (publisher_id, key_env). So a 23505 here means the publisher already
+    // has an active key in this environment, which is a conflict the user can
+    // act on -- not a server fault. Read the row back so the handler can name
+    // it. If the read finds nothing, the 23505 came from somewhere else (a
+    // key_hash collision is astronomically unlikely but not impossible) and the
+    // caller correctly answers 500 rather than pointing at a row that is not
+    // there.
+    if (isUniqueViolation(error)) {
+      const existing = await readActiveKey(admin, publisherId, KEY_ENV);
+      if (existing) throw new ActiveKeyExistsError(existing);
     }
     throw error;
   }
@@ -297,17 +355,17 @@ const handler = serveWithCors(async (req) => {
       );
     } catch (err) {
       console.error("publisher_keys create error:", err);
-      if (
-        err &&
-        typeof err === "object" &&
-        "code" in err &&
-        // @ts-ignore: err.code might not be known to TS
-        err.code === UNIQUE_VIOLATION
-      ) {
-        // This is a conflict; we can try to read the existing key and return
-        // its metadata without the raw key, similar to provision_publisher.
-        // For simplicity, we return an internal error.
-        return apiError("INTERNAL_ERROR", "Internal server error.", 500, {}, req);
+      if (err instanceof ActiveKeyExistsError) {
+        // 409 with metadata only: the caller learns which key is in the way and
+        // what to do about it. No hash and no raw key -- the raw key exists
+        // only on the response that created it.
+        return apiError(
+          "KEY_EXISTS",
+          "An active key already exists for this environment. Revoke it before creating a replacement.",
+          409,
+          { existingKey: err.existing },
+          req,
+        );
       }
       return apiError("INTERNAL_ERROR", "Internal server error.", 500, {}, req);
     }

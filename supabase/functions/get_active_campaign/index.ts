@@ -34,6 +34,32 @@ import { serveWithCors } from "../_shared/http.ts";
 import { adminClient } from "../_shared/auth.ts";
 import { apiError, corsFor, json, optionsResponse } from "../_shared/http.ts";
 import { CANDIDATE_WINDOW, pickEligible } from "../_shared/eligibility.ts";
+import { createRateLimiter } from "../_shared/publisherAuth.ts";
+
+/**
+ * Abuse damping for the public read path.
+ *
+ * This endpoint is unauthenticated by design, so there is no publisher key to
+ * budget against. The best-effort client address buckets anonymous floods
+ * without tracking anyone; an unknown address shares one global bucket
+ * rather than bypassing the check. In-memory and per-isolate, as every
+ * limiter here is: this damps casual abuse, it is not a global quota and it
+ * must never be described as one. Deliberately generous (60 burst, one token
+ * per second per bucket): a normal page load costs one request, and a
+ * legitimate no-fill must stay cheap.
+ */
+const rateLimitPublicRead = createRateLimiter({ capacity: 60, refillPerSecond: 1, maxKeys: 10000 });
+
+/** Best-effort bucket for the caller: first client hop, else a shared one. */
+export function clientBucket(req: Request): string {
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const first = forwarded.split(",")[0].trim();
+    if (first) return first.slice(0, 64);
+  }
+  return "unknown";
+}
+
 
 function noFill(req?: Request): Response {
   // A no-fill is a normal delivery outcome, not an exceptional one. The
@@ -46,6 +72,17 @@ const handler = serveWithCors(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse(req);
   if (req.method !== "GET") {
     return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405, {}, req);
+  }
+
+  const limited = rateLimitPublicRead(clientBucket(req));
+  if (!limited.allowed) {
+    return apiError(
+      "RATE_LIMITED",
+      "Too many requests. Retry after the indicated delay.",
+      429,
+      { retry_after_ms: limited.retryAfterMs },
+      req,
+    );
   }
 
   try {

@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { serveWithCors } from "../_shared/http.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { adminClient } from "../_shared/auth.ts";
-import { apiError, corsFor, isUuid, json, optionsResponse, restPath } from "../_shared/http.ts";
+import { apiError, corsFor, isUuid, json, optionsResponse, readJsonObjectBody, restPath } from "../_shared/http.ts";
 import { isEligible } from "../_shared/eligibility.ts";
 import {
   CREATIVE_DELIVERY_URL_TTL_SECONDS,
@@ -126,12 +126,9 @@ function readTelemetrySession(body: Record<string, unknown>): string | null {
 }
 
 async function readJson(req: Request): Promise<Record<string, unknown> | null> {
-  try {
-    const parsed = await req.json();
-    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
-  } catch {
-    return null;
-  }
+  const read = await readJsonObjectBody(req);
+  if (!read.ok) throw read.response;
+  return read.body;
 }
 
 function rpcErrorCode(err: { message?: string } | null): string | null {
@@ -151,7 +148,12 @@ function rpcErrorCode(err: { message?: string } | null): string | null {
 }
 
 async function handleDeliver(req: Request, admin: SupabaseClient): Promise<Response> {
-  const body = await readJson(req);
+  let body: Record<string, unknown> | null;
+  try {
+    body = await readJson(req);
+  } catch (thrown) {
+    return thrown as Response;
+  }
   if (!body) return apiError("INVALID_REQUEST", "JSON body required.", 400, {}, req);
 
   const auth = await authenticatePublisher(admin, body.publisherKey, body.placementKey);
@@ -343,7 +345,12 @@ async function resolveDeveloperId(req: Request, admin: SupabaseClient): Promise<
 }
 
 async function handleImpression(req: Request, admin: SupabaseClient): Promise<Response> {
-  const body = await readJson(req);
+  let body: Record<string, unknown> | null;
+  try {
+    body = await readJson(req);
+  } catch (thrown) {
+    return thrown as Response;
+  }
   if (!body) return apiError("INVALID_REQUEST", "JSON body required.", 400, {}, req);
 
   const auth = await authorizeTracking(req, admin, body);
@@ -395,7 +402,12 @@ async function handleImpression(req: Request, admin: SupabaseClient): Promise<Re
 }
 
 async function handleClick(req: Request, admin: SupabaseClient): Promise<Response> {
-  const body = await readJson(req);
+  let body: Record<string, unknown> | null;
+  try {
+    body = await readJson(req);
+  } catch (thrown) {
+    return thrown as Response;
+  }
   if (!body) return apiError("INVALID_REQUEST", "JSON body required.", 400, {}, req);
 
   const auth = await authorizeTracking(req, admin, body);
@@ -433,7 +445,12 @@ async function handleClick(req: Request, admin: SupabaseClient): Promise<Respons
 }
 
 async function handleConversion(req: Request, admin: SupabaseClient): Promise<Response> {
-  const body = await readJson(req);
+  let body: Record<string, unknown> | null;
+  try {
+    body = await readJson(req);
+  } catch (thrown) {
+    return thrown as Response;
+  }
   if (!body) return apiError("INVALID_REQUEST", "JSON body required.", 400, {}, req);
 
   const auth = await authorizeTracking(req, admin, body);

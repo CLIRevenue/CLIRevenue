@@ -72,7 +72,7 @@ After running `npx clirevenue setup`, the following files will be created:
 
 ## SDK Version
 
-Version: 2.0.0
+Version: 2.0.1
 
 ## License
 

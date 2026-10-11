@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#10131a;color:#e1e2ec;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-background": "#e1e2ec", "on-secondary": "#520071", "inverse-primary": "#0058ca", "on-secondary-container": "#480063", "on-tertiary": "#00363d", "surface-tint": "#b0c6ff", "surface-container": "#1d1f27", "surface-dim": "#10131a", "secondary-fixed-dim": "#ecb2ff", "tertiary-fixed": "#9cf0ff", "on-surface-variant": "#c2c6d7", "on-primary-fixed": "#001945", "secondary-container": "#cf5cff", "primary-fixed": "#d9e2ff", "surface": "#10131a", "on-secondary-fixed-variant": "#74009f", "surface-container-lowest": "#0b0e15", "on-primary": "#002d6e", "surface-variant": "#32353d", "surface-bright": "#363941", "inverse-on-surface": "#2d3038", "surface-container-high": "#272a32", "secondary": "#ecb2ff", "tertiary": "#00daf3", "surface-container-highest": "#32353d", "tertiary-fixed-dim": "#00daf3", "primary-container": "#558dff", "on-surface": "#e1e2ec", "on-primary-container": "#002661", "on-tertiary-fixed-variant": "#004f58", "background": "#10131a", "outline-variant": "#424655", "on-tertiary-container": "#002f35", "primary-fixed-dim": "#b0c6ff", "tertiary-container": "#009fb2", "on-secondary-fixed": "#320047", "on-primary-fixed-variant": "#00429b", "inverse-surface": "#e1e2ec", "error-container": "#93000a", "surface-container-low": "#191b23", "secondary-fixed": "#f8d8ff", "error": "#ffb4ab", "on-error": "#690005", "outline": "#8c90a0", "on-error-container": "#ffdad6", "on-tertiary-fixed": "#001f24" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "space-md": "1rem", "gutter": "1rem", "space-xs": "0.25rem", "gutter-desktop": "1.5rem", "margin-desktop": "3rem", "space-lg": "1.5rem", "margin": "1rem", "space-sm": "0.5rem", "space-xl": "2.5rem", "margin-tablet": "2rem" }, "fontFamily": { "display-xl-mobile": ["Geist"], "headline-lg": ["Geist"], "label-code-lg": ["JetBrains Mono"], "headline-sm": ["Geist"], "body-lg": ["Inter"], "label-code-xs": ["JetBrains Mono"], "display-xl": ["Geist"], "headline-md": ["Geist"], "body-md": ["Inter"], "label-code-md": ["JetBrains Mono"], "body-sm": ["Inter"], "headline-lg-mobile": ["Geist"] }, "fontSize": { "display-xl-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }], "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }], "label-code-lg": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "500" }], "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }], "label-code-xs": ["10px", { "lineHeight": "14px", "fontWeight": "600" }], "display-xl": ["56px", { "lineHeight": "64px", "fontWeight": "700" }], "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }], "label-code-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }], "headline-lg-mobile": ["26px", { "lineHeight": "34px", "fontWeight": "600" }] } } } };</script></head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen selection:bg-tertiary/20"><header class="fixed top-0 w-full z-50 bg-surface-container-lowest/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-gutter flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="clirevenue-favicon(dark).png" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1UAqJ7uQMU-JJOUvWpdaCsfbfiByfsrRQndu540q93od9p4qsi8XzOg334gfjSi1JYtnaSzs6bZVv_TwNS_FWMS7vNFUNtdVnI7vwomr-cd9D-iqgGqYPeVL1vEAezRsjyFn-CuyG6dSLb-7YSv4ccO1UT5NCPACD0KwTeAkaEu7oRjLR6ZPBElmGUS3wPpURcYLY8I9jSKkSyvLlMShfTpunZ7HUQy5MrjG8THGetJvrHsFDjpDO6y0jKtvd84JxW542KZya0-sQ"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-label-code-xs text-label-code-xs px-space-xs py-0.5 rounded bg-tertiary/10 text-tertiary tracking-wider font-semibold uppercase">ADMIN OPS // ROOT</span><span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span></div><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm font-semibold tracking-tight text-on-surface truncate">Accounts</span><span class="font-label-code-xs text-label-code-xs text-on-surface-variant hidden sm:inline-block">UTC+00:00</span></div></div></div><div class="flex items-center gap-space-sm flex-shrink-0"><div class="hidden xs:flex flex-col items-end px-space-xs py-0.5 rounded bg-surface-container-low"><span class="font-label-code-xs text-label-code-xs text-on-surface-variant">ACTIVE SEC-KEY</span><span class="font-label-code-md text-label-code-md text-tertiary font-medium">0x8F92..A41</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(176,198,255,0.2)]"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-24 bg-surface min-h-screen px-gutter"><div class="flex flex-col w-full pb-8 space-y-space-md">
+<!-- Dynamic Micro-Feedback Toast Notification (Hidden by default, triggered on actions) -->
+<div class="hidden fixed top-20 right-4 left-4 z-50 p-space-sm rounded-xl bg-surface-container-high/90 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300" id="toast-banner">
+<div class="flex items-center gap-space-sm text-tertiary">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+<span class="font-label-code-xs text-label-code-xs text-on-surface" id="toast-message">Ledger verification synchronized</span>
+</div>
+</div>
+<!-- Search & Telemetry Console Header -->
+<div class="relative rounded-xl p-space-md bg-surface-container-lowest/70 backdrop-blur-2xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),0_1px_2px_rgba(255,255,255,0.05)] overflow-hidden">
+<div class="flex flex-col space-y-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[18px]">terminal</span>
+<span class="font-label-code-xs text-label-code-xs text-on-surface-variant uppercase tracking-wider">Identity Mesh Query</span>
+</div>
+<div class="flex items-center gap-space-xs px-2 py-0.5 rounded-full bg-surface-container-highest/80 shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)]">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-ping"></span>
+<span class="font-label-code-xs text-label-code-xs text-tertiary font-medium">1,428 ENTITIES INDEXED</span>
+</div>
+</div>
+<!-- Tactile Neumorphic Inset Search Well -->
+<div class="relative flex items-center w-full rounded-xl bg-surface-container-lowest shadow-[inset_0_3px_6px_rgba(0,0,0,0.8),inset_0_-1px_1px_rgba(255,255,255,0.05)] px-space-sm py-2.5">
+<span class="font-label-code-md text-label-code-md text-tertiary select-none mr-2 font-bold">></span>
+<input class="w-full bg-transparent font-label-code-md text-label-code-md text-on-surface placeholder:text-outline focus:outline-none min-w-0" id="identity-search-input" placeholder="Search Account ID, email, GitHub handle, token prefix..." type="text"/>
+<div class="flex items-center gap-1.5 flex-shrink-0">
+<button class="hidden text-outline hover:text-on-surface transition-colors p-1" id="clear-search-btn">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+<div class="px-1.5 py-0.5 rounded bg-surface-container-high/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+<span class="font-label-code-xs text-label-code-xs text-on-surface-variant">⌘K</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Category Filter Pills (Soft Glass Surface) -->
+<div class="flex flex-col space-y-space-xs">
+<div class="flex items-center justify-between px-1">
+<span class="font-label-code-xs text-label-code-xs text-outline uppercase tracking-wider">Entity Segmentation</span>
+<span class="font-label-code-xs text-label-code-xs text-outline">FILTER_MODE: REALTIME</span>
+</div>
+<div class="flex items-center gap-space-xs overflow-x-auto pb-1 scrollbar-none">
+<button class="category-pill active flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-high shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_4px_12px_rgba(0,0,0,0.3)] text-tertiary font-label-code-xs text-label-code-xs font-semibold whitespace-nowrap transition-transform active:scale-95" data-filter="all">
+<span>All Accounts</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container text-tertiary text-label-code-xs">1,428</span>
+</button>
+<button class="category-pill flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-low/70 backdrop-blur-md shadow-[0_2px_4px_rgba(0,0,0,0.3)] text-on-surface-variant hover:text-on-surface font-label-code-xs text-label-code-xs whitespace-nowrap transition-transform active:scale-95" data-filter="devs">
+<span>Publishers / Devs</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-lowest text-outline text-label-code-xs">1,180</span>
+</button>
+<button class="category-pill flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-low/70 backdrop-blur-md shadow-[0_2px_4px_rgba(0,0,0,0.3)] text-on-surface-variant hover:text-on-surface font-label-code-xs text-label-code-xs whitespace-nowrap transition-transform active:scale-95" data-filter="advertisers">
+<span>Advertisers</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-lowest text-outline text-label-code-xs">214</span>
+</button>
+<button class="category-pill flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-low/70 backdrop-blur-md shadow-[0_2px_4px_rgba(0,0,0,0.3)] text-on-surface-variant hover:text-on-surface font-label-code-xs text-label-code-xs whitespace-nowrap transition-transform active:scale-95" data-filter="admins">
+<span>Admins / SecOps</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-lowest text-outline text-label-code-xs">34</span>
+</button>
+</div>
+</div>
+<!-- Status Filters (Micro-tactile switches) -->
+<div class="grid grid-cols-4 gap-1.5 p-1 rounded-xl bg-surface-container-lowest/80 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]">
+<button class="status-tab active py-1.5 rounded-lg bg-surface-container-high text-tertiary font-label-code-xs text-label-code-xs font-semibold text-center shadow-[0_2px_6px_rgba(0,0,0,0.4)] transition-all">
+      Active
+    </button>
+<button class="status-tab py-1.5 rounded-lg bg-transparent text-outline hover:text-on-surface font-label-code-xs text-label-code-xs text-center transition-all">
+      Suspended
+    </button>
+<button class="status-tab py-1.5 rounded-lg bg-transparent text-outline hover:text-on-surface font-label-code-xs text-label-code-xs text-center transition-all">
+      Pending
+    </button>
+<button class="status-tab py-1.5 rounded-lg bg-transparent text-outline hover:text-on-surface font-label-code-xs text-label-code-xs text-center transition-all">
+      Flagged (2)
+    </button>
+</div>
+<!-- Account Directory & Governance Ledger -->
+<div class="flex flex-col space-y-space-sm" id="accounts-container">
+<div class="flex items-center justify-between px-1">
+<span class="font-label-code-xs text-label-code-xs text-on-surface-variant tracking-wider">VERIFIED ENTITY LEDGER</span>
+<span class="font-label-code-xs text-label-code-xs text-outline">HASH_CHECK: SYNCHRONIZED</span>
+</div>
+<!-- Account Card 1: Neon Systems Corp (Advertiser) -->
+<div class="account-card relative rounded-xl p-space-md bg-surface-container-low/80 backdrop-blur-xl shadow-[0_8px_20px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.06)] hover:bg-surface-container-low transition-all duration-200">
+<div class="flex flex-col space-y-space-sm">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="relative w-10 h-10 rounded-xl bg-primary-container/20 flex items-center justify-center flex-shrink-0 shadow-[inset_0_1px_2px_rgba(255,255,255,0.2)]">
+<span class="material-symbols-outlined text-primary text-[22px]">corporate_fare</span>
+<span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-surface-container-lowest flex items-center justify-center">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface truncate">Neon Systems Corp</span>
+<span class="material-symbols-outlined text-tertiary text-[16px]" title="Cryptographically Verified">verified</span>
+</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="font-label-code-xs text-label-code-xs text-on-surface-variant">Role:</span>
+<span class="font-label-code-xs text-label-code-xs px-1.5 py-0.5 rounded bg-primary-container/20 text-primary-fixed">Advertiser</span>
+<span class="font-label-code-xs text-label-code-xs text-outline font-mono truncate">acc_adv_9942a</span>
+</div>
+</div>
+</div>
+<!-- Quick Status Indicator -->
+<span class="flex-shrink-0 px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary font-label-code-xs text-label-code-xs font-semibold">
+            Active
+          </span>
+</div>
+<!-- Telemetry Data Strip -->
+<div class="grid grid-cols-2 gap-2 p-2 rounded-lg bg-surface-container-lowest/60 shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
+<div class="flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-outline">Auth Provider</span>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-on-surface text-[14px]">key</span>
+<span class="font-label-code-xs text-label-code-xs text-on-surface font-medium">FIDO2 Passkey</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-outline">Managed Spend (Ledger)</span>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-tertiary text-[14px]">account_balance_wallet</span>
+<span class="font-label-code-xs text-label-code-xs text-on-surface font-bold">$2,450.00 USD</span>
+</div>
+</div>
+</div>
+<!-- Tactile Action Bar -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="font-label-code-xs text-label-code-xs text-on-surface-variant">KYC Tier 2 Complete</span>
+</div>
+<button class="audit-btn px-3 py-1.5 rounded-lg bg-surface-container-high/90 hover:bg-surface-container-highest shadow-[0_2px_6px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)] text-on-surface font-label-code-xs text-label-code-xs font-semibold flex items-center gap-1 transition-transform active:scale-95" data-account="acc_adv_9942a">
+<span class="material-symbols-outlined text-[16px] text-tertiary">policy</span>
+<span>Inspect / Audit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Account Card 2: Alexandre Dev (Publisher / Developer) -->
+<div class="account-card relative rounded-xl p-space-md bg-surface-container-low/80 backdrop-blur-xl shadow-[0_8px_20px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.06)] hover:bg-surface-container-low transition-all duration-200">
+<div class="flex flex-col space-y-space-sm">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="relative w-10 h-10 rounded-xl bg-secondary-container/20 flex items-center justify-center flex-shrink-0 shadow-[inset_0_1px_2px_rgba(255,255,255,0.2)]">
+<span class="material-symbols-outlined text-secondary text-[22px]">code</span>
+<span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-surface-container-lowest flex items-center justify-center">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface truncate">Alexandre Dev</span>
+<span class="font-label-code-xs text-label-code-xs text-secondary font-medium">@alex_cli</span>
+</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="font-label-code-xs text-label-code-xs text-on-surface-variant">Role:</span>
+<span class="font-label-code-xs text-label-code-xs px-1.5 py-0.5 rounded bg-secondary-container/20 text-secondary-fixed">Publisher (Dev)</span>
+<span class="font-label-code-xs text-label-code-xs text-outline font-mono truncate">acc_pub_4102c</span>
+</div>
+</div>
+</div>
+<!-- Status -->
+<span class="flex-shrink-0 px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary font-label-code-xs text-label-code-xs font-semibold">
+            Active
+          </span>
+</div>
+<!-- Telemetry Data Strip -->
+<div class="grid grid-cols-2 gap-2 p-2 rounded-lg bg-surface-container-lowest/60 shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
+<div class="flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-outline">Auth Provider</span>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-on-surface text-[14px]">integration_instructions</span>
+<span class="font-label-code-xs text-label-code-xs text-on-surface font-medium">GitHub OAuth</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-outline">Ad Integration</span>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-secondary text-[14px]">layers</span>
+<span class="font-label-code-xs text-label-code-xs text-on-surface font-bold">3 Active Repos</span>
+</div>
+</div>
+</div>
+<!-- Tactile Action Bar -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-outline text-[14px]">terminal</span>
+<span class="font-label-code-xs text-label-code-xs text-on-surface-variant">v2.1 CLI SDK Client</span>
+</div>
+<button class="audit-btn px-3 py-1.5 rounded-lg bg-surface-container-high/90 hover:bg-surface-container-highest shadow-[0_2px_6px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)] text-on-surface font-label-code-xs text-label-code-xs font-semibold flex items-center gap-1 transition-transform active:scale-95" data-account="acc_pub_4102c">
+<span class="material-symbols-outlined text-[16px] text-tertiary">policy</span>
+<span>Inspect / Audit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Account Card 3: ByteStream Daemon LLC (Publisher - Flagged) -->
+<div class="account-card relative rounded-xl p-space-md bg-surface-container-low/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(147,0,10,0.2),inset_0_1px_1px_rgba(255,255,255,0.06)] transition-all duration-200">
+<div class="flex flex-col space-y-space-sm">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="relative w-10 h-10 rounded-xl bg-error-container/30 flex items-center justify-center flex-shrink-0 shadow-[inset_0_1px_2px_rgba(255,255,255,0.15)]">
+<span class="material-symbols-outlined text-error text-[22px]">warning</span>
+<span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-surface-container-lowest flex items-center justify-center">
+<span class="w-2 h-2 rounded-full bg-error animate-ping"></span>
+</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface truncate">ByteStream Daemon LLC</span>
+</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="font-label-code-xs text-label-code-xs text-on-surface-variant">Role:</span>
+<span class="font-label-code-xs text-label-code-xs px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant">Publisher</span>
+<span class="font-label-code-xs text-label-code-xs text-outline font-mono truncate">acc_pub_0084x</span>
+</div>
+</div>
+</div>
+<!-- Amber / Red Warning Badge with subtle pulse glow -->
+<span class="flex-shrink-0 px-2 py-0.5 rounded-full bg-error-container text-error font-label-code-xs text-label-code-xs font-semibold shadow-[0_0_10px_rgba(255,180,171,0.25)]">
+            Flagged
+          </span>
+</div>
+<!-- Telemetry Data Strip with Alert Detail -->
+<div class="p-2.5 rounded-lg bg-surface-container-lowest/80 shadow-[inset_0_1px_3px_rgba(0,0,0,0.6)] space-y-1.5">
+<div class="flex items-center justify-between">
+<span class="font-label-code-xs text-label-code-xs text-outline">Auth Provider</span>
+<span class="font-label-code-xs text-label-code-xs text-on-surface">GitLab OAuth</span>
+</div>
+<div class="flex items-center gap-1.5 text-error">
+<span class="material-symbols-outlined text-[15px] flex-shrink-0">gpp_maybe</span>
+<span class="font-label-code-xs text-label-code-xs font-medium">Anomaly Detected: 400% Bot CTR Spurt from ASN-13335</span>
+</div>
+</div>
+<!-- Tactile Action Bar -->
+<div class="flex items-center justify-between pt-1">
+<span class="font-label-code-xs text-label-code-xs text-error font-medium">Traffic Ingestion Halted</span>
+<button class="flag-review-btn px-3 py-1.5 rounded-lg bg-error-container/80 hover:bg-error-container shadow-[0_2px_6px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)] text-error font-label-code-xs text-label-code-xs font-semibold flex items-center gap-1 transition-transform active:scale-95" data-account="acc_pub_0084x">
+<span class="material-symbols-outlined text-[16px]">security_update_warning</span>
+<span>Review Flag</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Account Card 4: SponsorFlow Ads (Advertiser - Pending Billing) -->
+<div class="account-card relative rounded-xl p-space-md bg-surface-container-low/80 backdrop-blur-xl shadow-[0_8px_20px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.06)] hover:bg-surface-container-low transition-all duration-200">
+<div class="flex flex-col space-y-space-sm">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="relative w-10 h-10 rounded-xl bg-surface-variant flex items-center justify-center flex-shrink-0 shadow-[inset_0_1px_2px_rgba(255,255,255,0.1)]">
+<span class="material-symbols-outlined text-outline text-[22px]">storefront</span>
+<span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-surface-container-lowest flex items-center justify-center">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface truncate">SponsorFlow Ads</span>
+</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="font-label-code-xs text-label-code-xs text-on-surface-variant">Role:</span>
+<span class="font-label-code-xs text-label-code-xs px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant">Advertiser</span>
+<span class="font-label-code-xs text-label-code-xs text-outline font-mono truncate">acc_adv_1109z</span>
+</div>
+</div>
+</div>
+<!-- Pending Status -->
+<span class="flex-shrink-0 px-2 py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-label-code-xs text-label-code-xs font-semibold">
+            Pending Billing
+          </span>
+</div>
+<!-- Telemetry Data Strip -->
+<div class="grid grid-cols-2 gap-2 p-2 rounded-lg bg-surface-container-lowest/60 shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
+<div class="flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-outline">Auth Provider</span>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-on-surface text-[14px]">mail_lock</span>
+<span class="font-label-code-xs text-label-code-xs text-on-surface font-medium">Email + Passkey</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-outline">Stripe Vault Ref</span>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-outline text-[14px]">credit_card_off</span>
+<span class="font-label-code-xs text-label-code-xs text-on-surface-variant font-medium">Pre-auth Unpaid</span>
+</div>
+</div>
+</div>
+<!-- Tactile Action Bar -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-outline text-[14px]">schedule</span>
+<span class="font-label-code-xs text-label-code-xs text-on-surface-variant">Awaiting deposit proof</span>
+</div>
+<button class="verify-btn px-3 py-1.5 rounded-lg bg-tertiary-container/30 hover:bg-tertiary-container/50 shadow-[0_2px_6px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)] text-tertiary font-label-code-xs text-label-code-xs font-semibold flex items-center gap-1 transition-transform active:scale-95" data-account="acc_adv_1109z">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Verify</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Privileged Sensitive Action Security Banner -->
+<div class="relative rounded-xl p-space-md bg-surface-container-lowest/90 backdrop-blur-md shadow-[inset_0_2px_4px_rgba(0,0,0,0.7),0_1px_2px_rgba(255,255,255,0.03)] overflow-hidden">
+<div class="flex items-start gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0 text-tertiary shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-1.5">
+<span class="font-label-code-xs text-label-code-xs font-semibold uppercase tracking-wider text-tertiary">Sensitive Action Policy</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary/10 text-tertiary text-label-code-xs">ROOT REQUIREMENT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+          Account suspension, API token revocation, and manual payout hold require multi-factor root re-auth and emit permanent immutable audit logs to the governance ledger.
+        </p>
+</div>
+</div>
+</div>
+<!-- Bottom Tactile Neumorphic Quick Action: Provision Admin Operator -->
+<div class="pt-2">
+<button class="group relative w-full py-3.5 px-space-md rounded-xl bg-gradient-to-b from-surface-container-high to-surface-container text-on-surface font-headline-sm text-headline-sm font-semibold flex items-center justify-center gap-space-sm shadow-[0_8px_16px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] active:translate-y-0.5 active:shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all" id="provision-admin-btn">
+<div class="w-7 h-7 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add_moderator</span>
+</div>
+<span class="tracking-tight text-on-surface">Provision Admin Operator</span>
+<span class="font-label-code-xs text-label-code-xs px-2 py-0.5 rounded bg-surface-container-lowest text-tertiary font-mono ml-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)]">
+        SEC-L2+
+      </span>
+</button>
+</div>
+</div>
+<script>
+  // Simple micro-interactions for delight & state feedback
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('identity-search-input');
+    const clearBtn = document.getElementById('clear-search-btn');
+    const toast = document.getElementById('toast-banner');
+    const toastMsg = document.getElementById('toast-message');
+    const accountCards = document.querySelectorAll('.account-card');
+
+    function showToast(msg) {
+      if (!toast || !toastMsg) return;
+      toastMsg.textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3200);
+    }
+
+    // Search bar micro-interactions
+    if (searchInput && clearBtn) {
+      searchInput.addEventListener('input', (e) => {
+        const val = e.target.value.toLowerCase().trim();
+        clearBtn.classList.toggle('hidden', val.length === 0);
+        
+        // Filter account cards live
+        accountCards.forEach(card => {
+          const text = card.innerText.toLowerCase();
+          card.style.display = text.includes(val) ? '' : 'none';
+        });
+      });
+
+      clearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        clearBtn.classList.add('hidden');
+        accountCards.forEach(card => card.style.display = '');
+        searchInput.focus();
+      });
+    }
+
+    // Category Filter Pills Toggle
+    const categoryPills = document.querySelectorAll('.category-pill');
+    categoryPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        categoryPills.forEach(p => {
+          p.classList.remove('bg-surface-container-high', 'text-tertiary', 'font-semibold');
+          p.classList.add('bg-surface-container-low/70', 'text-on-surface-variant');
+        });
+        pill.classList.add('bg-surface-container-high', 'text-tertiary', 'font-semibold');
+        pill.classList.remove('bg-surface-container-low/70', 'text-on-surface-variant');
+        showToast(`Filtered ledger by segment: ${pill.querySelector('span').innerText}`);
+      });
+    });
+
+    // Status Tabs Toggle
+    const statusTabs = document.querySelectorAll('.status-tab');
+    statusTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        statusTabs.forEach(t => {
+          t.classList.remove('bg-surface-container-high', 'text-tertiary', 'font-semibold', 'shadow-[0_2px_6px_rgba(0,0,0,0.4)]');
+          t.classList.add('bg-transparent', 'text-outline');
+        });
+        tab.classList.add('bg-surface-container-high', 'text-tertiary', 'font-semibold', 'shadow-[0_2px_6px_rgba(0,0,0,0.4)]');
+        tab.classList.remove('bg-transparent', 'text-outline');
+        showToast(`Auditing status filter: ${tab.innerText}`);
+      });
+    });
+
+    // Inspect / Audit Buttons
+    document.querySelectorAll('.audit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const acc = btn.dataset.account;
+        showToast(`Loading cryptographically signed audit ledger for [${acc}]...`);
+      });
+    });
+
+    // Review Flag Button
+    document.querySelectorAll('.flag-review-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        showToast('Initiating emergency SecOps review workflow for acc_pub_0084x');
+      });
+    });
+
+    // Verify Button
+    document.querySelectorAll('.verify-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        showToast('Requested manual stripe ledger reconciliation webhook for acc_adv_1109z');
+      });
+    });
+
+    // Provision Admin Operator Button
+    const provisionBtn = document.getElementById('provision-admin-btn');
+    if (provisionBtn) {
+      provisionBtn.addEventListener('click', () => {
+        showToast('Multi-factor authorization challenge dispatched to root sec-key');
+      });
+    }
+  });
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.4)]" data-active-classes="text-tertiary font-medium bg-surface-container-high/60"><div class="flex items-center justify-around h-16 px-space-xs"><a class="flex flex-col items-center justify-center min-w-[56px] h-12 px-space-xs rounded-lg transition-colors text-on-surface-variant hover:text-on-surface" data-path="overview" href="#"><span class="material-symbols-outlined text-[20px]">grid_view</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Overview</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] h-12 px-space-xs rounded-lg transition-colors text-tertiary font-medium bg-surface-container-high/60" data-path="accounts" href="#"><span class="material-symbols-outlined text-[20px]">shield_person</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Accounts</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 px-space-xs rounded-lg transition-colors text-on-surface-variant hover:text-on-surface" data-path="campaigns" href="#"><span class="material-symbols-outlined text-[20px]">campaign</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Campaigns</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 px-space-xs rounded-lg transition-colors text-on-surface-variant hover:text-on-surface" data-path="placements" href="#"><span class="material-symbols-outlined text-[20px]">terminal</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Placements</span></a><a class="flex flex-col items-center justify-center min-w-[56px] h-12 px-space-xs rounded-lg transition-colors text-on-surface-variant hover:text-on-surface" data-path="health-audit" href="#"><span class="material-symbols-outlined text-[20px]">monitoring</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Health</span></a></div></nav></body></html>

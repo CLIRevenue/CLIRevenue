@@ -74,7 +74,10 @@ describe('generateIntegration', () => {
     }
   });
 
-  it('creates component with correct placement key', () => {
+  it('never bakes a placement or size into the component', () => {
+    /* The editor owns geometry, so generated code must read it at runtime.
+       Baking it in would leave the app rendering a stale rectangle after the
+       user drags the ad — the exact bug the redesign removes. */
     const root = createRoot();
     try {
       generateIntegration({
@@ -87,28 +90,53 @@ describe('generateIntegration', () => {
       });
 
       const compContent = readFileSync(join(root, 'src/components/CLIRevenueAd.jsx'), 'utf8');
-      expect(compContent).toContain("placementKey = 'my-placement'");
-      expect(compContent).toContain('clirevenue.render');
+      expect(compContent).not.toContain("placementKey = 'my-placement'");
+      expect(compContent).toContain('renderPlacement');
+      expect(compContent).toContain('export default CLIRevenueAd');
     } finally {
       cleanup(root);
     }
   });
 
-  it('generates custom size layout', () => {
+  it('reads the placement layout from clirevenue.config.json at runtime', () => {
     const root = createRoot();
     try {
       generateIntegration({
         projectRoot: root,
         publisherKey: 'pk_test_key',
         baseUrl: 'https://api.clirevenue.in',
-        placementKey: 'homepage',
-        placementName: 'Homepage',
+      });
+
+      const libContent = readFileSync(join(root, 'src/lib/clirevenue.js'), 'utf8');
+      expect(libContent).toContain("import clirevenueConfig from '../../clirevenue.config.json'");
+      /* The v2 shape: an integration owns the placement key, a slot owns the
+         geometry, and many slots may share one key. */
+      expect(libContent).toContain('findSlot(');
+      expect(libContent).toContain('config.integrations');
+      expect(libContent).toContain('.slots');
+      expect(libContent).toContain('clirevenue.render');
+
+      /* And the config file it reads must actually exist, because the Vite
+         adapter imports it statically — a missing JSON module fails the build. */
+      expect(existsSync(join(root, 'clirevenue.config.json'))).toBe(true);
+    } finally {
+      cleanup(root);
+    }
+  });
+
+  it('does not hardcode ad dimensions into generated code', () => {
+    const root = createRoot();
+    try {
+      generateIntegration({
+        projectRoot: root,
+        publisherKey: 'pk_test_key',
+        baseUrl: 'https://api.clirevenue.in',
         size: [640, 180],
       });
 
       const compContent = readFileSync(join(root, 'src/components/CLIRevenueAd.jsx'), 'utf8');
-      expect(compContent).toContain('width: 640');
-      expect(compContent).toContain('height: 180');
+      expect(compContent).not.toContain('width: 640');
+      expect(compContent).not.toContain('height: 180');
     } finally {
       cleanup(root);
     }

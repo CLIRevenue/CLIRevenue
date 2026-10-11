@@ -1,0 +1,785 @@
+/* ==========================================================================
+   Governance, moderation, health and operations surfaces.
+   These four admin screens are additive. They live in their own file so the
+   shared console chrome in AdminConsole.css stays untouched — every class is
+   namespaced `adm-gov-*` (or a namespaced sub-part) and only reuses the
+   existing token set, never redeclares it.
+   ========================================================================== */
+
+/* ---------- toolbar: search well + filter pills -------------------- */
+.adm-gov-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.adm-gov-search {
+  flex: 1 1 280px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--adm-raised);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  padding: 7px 12px;
+  transition: border-color .12s;
+}
+.adm-gov-search:focus-within {
+  border-color: var(--adm-border);
+}
+.adm-gov-search__prompt {
+  font-family: var(--adm-mono);
+  font-size: 11px;
+  color: var(--adm-brand-bright);
+  flex-shrink: 0;
+}
+.adm-gov-search__input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--adm-text);
+  font-family: var(--adm-mono);
+  font-size: 11px;
+  letter-spacing: .01em;
+}
+.adm-gov-search__input::placeholder {
+  color: var(--adm-muted-dim);
+}
+.adm-gov-search__hint {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  color: var(--adm-muted-dim);
+  letter-spacing: .06em;
+  flex-shrink: 0;
+}
+/* A labelled run of filter pills. Two of these stack on one toolbar: the
+   entity-segmentation row, then the state row. */
+.adm-gov-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.adm-pill {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: var(--adm-radius);
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface);
+  color: var(--adm-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .12s, border-color .12s, background .12s;
+}
+.adm-pill:hover {
+  color: var(--adm-text-dim);
+  border-color: var(--adm-muted-dim);
+}
+.adm-pill--active {
+  background: var(--adm-brand-bg);
+  color: var(--adm-brand-bright);
+  border-color: var(--adm-brand-dim);
+}
+.adm-pill__count {
+  margin-left: 6px;
+  opacity: .65;
+}
+
+/* ---------- explicit "not supported" disclosure -------------------- */
+/* Every design card that has no backend source renders as this instead of a
+   plausible-looking number. It is deliberately loud. */
+.adm-gov-unavailable {
+  border: 1px dashed var(--adm-border);
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(113, 113, 122, .045),
+    rgba(113, 113, 122, .045) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+  border-radius: var(--adm-radius);
+  padding: 12px 14px;
+  color: var(--adm-muted);
+}
+.adm-gov-unavailable__label {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--adm-muted-dim);
+  margin-bottom: 5px;
+}
+.adm-gov-unavailable__body {
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  line-height: 1.6;
+  letter-spacing: .01em;
+  color: var(--adm-muted);
+}
+.adm-gov-unavailable__reason {
+  margin-top: 6px;
+  color: var(--adm-muted-dim);
+  font-size: 9px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* ---------- capability ledger ------------------------------------- */
+/* A flat, always-visible list of what the backend cannot do. Truthful
+   reporting lives here rather than being buried in a tooltip. */
+.adm-gov-caps {
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  background: var(--adm-surface);
+  overflow: hidden;
+}
+.adm-gov-caps__row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--adm-border-soft);
+}
+.adm-gov-caps__row:last-child { border-bottom: none; }
+.adm-gov-caps__key {
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  color: var(--adm-text-dim);
+  width: 190px;
+  flex-shrink: 0;
+}
+.adm-gov-caps__value {
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  color: var(--adm-muted);
+  line-height: 1.5;
+}
+.adm-gov-caps__value--no { color: var(--adm-status-error); }
+.adm-gov-caps__value--yes { color: var(--adm-status-ok); }
+
+/* ---------- entity ledger (accounts) ------------------------------ */
+.adm-gov-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.adm-entity {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  transition: border-color .12s;
+}
+.adm-entity:hover { border-color: var(--adm-muted-dim); }.adm-entity__glyph {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: var(--adm-radius-sm);
+  border: 1px solid var(--adm-border);
+  background: var(--adm-raised);
+  color: var(--adm-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--adm-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}.adm-entity__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--adm-text);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}.adm-entity__id {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  color: var(--adm-muted-dim);
+  letter-spacing: .04em;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}/* Head row is the glyph + id block + badge cluster. */
+.adm-entity__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+/* The muted line under the display name: role, then whatever identity field
+   actually exists for that role. Never a fabricated handle. */
+.adm-entity__sub {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  color: var(--adm-muted-dim);
+  letter-spacing: .04em;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Rendered where the schema has no status/suspension/verification column.
+   Deliberately not a badge: a badge implies a state the backend never set. */
+.adm-gov-unknown {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--adm-muted-dim);
+  border: 1px dashed var(--adm-border);
+  border-radius: var(--adm-radius-sm);
+  padding: 2px 7px;
+}
+
+/* ---------- buttons ----------------------------------------------- */
+.adm-gov-btn {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  padding: 6px 11px;
+  border-radius: var(--adm-radius);
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface);
+  color: var(--adm-muted);
+  cursor: pointer;
+  transition: color .12s, border-color .12s, background .12s;
+}
+.adm-gov-btn:hover:not(:disabled) {
+  color: var(--adm-text-dim);
+  border-color: var(--adm-muted-dim);
+}
+.adm-gov-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+.adm-gov-btn:focus-visible {
+  outline: 1px solid var(--adm-brand);
+  outline-offset: 1px;
+}
+.adm-gov-btn--primary {
+  background: var(--adm-brand);
+  border-color: var(--adm-brand);
+  color: #fff;
+}
+.adm-gov-btn--primary:hover:not(:disabled) {
+  background: var(--adm-brand-bright);
+  border-color: var(--adm-brand-bright);
+  color: #fff;
+}
+.adm-gov-btn--danger {
+  border-color: var(--adm-brand-dim);
+  color: var(--adm-brand-bright);
+  background: var(--adm-brand-bg);
+}
+.adm-gov-btn--danger:hover:not(:disabled) {
+  border-color: var(--adm-brand-bright);
+  color: var(--adm-brand-bright);
+}
+
+/* ---------- moderation: queue list + detail ------------------------ */
+.adm-mod-layout {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  gap: 10px;
+  align-items: start;
+}.adm-gov-kv {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--adm-border-soft);
+  border: 1px solid var(--adm-border-soft);
+  border-radius: var(--adm-radius-sm);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.adm-gov-kv__cell {
+  background: var(--adm-raised);
+  padding: 8px 11px;
+  min-width: 0;
+}
+.adm-gov-kv__label {
+  font-family: var(--adm-mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--adm-muted-dim);
+  margin-bottom: 3px;
+}
+.adm-gov-kv__value {
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  color: var(--adm-text-dim);
+  line-height: 1.5;
+  word-break: break-word;
+}
+.adm-gov-kv__value--empty { color: var(--adm-muted-dim); }
+
+/* ---------- activation blockers ----------------------------------- */
+.adm-blockers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.adm-blocker {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  padding: 4px 9px;
+  border-radius: var(--adm-radius);
+  border: 1px solid rgba(251, 113, 133, .25);
+  background: var(--adm-status-error-bg);
+  color: var(--adm-status-error);
+  line-height: 1.4;
+}
+.adm-blocker__msg {
+  font-family: var(--adm-sans);
+  font-size: 10px;
+  color: var(--adm-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 7px;
+  font-weight: 400;
+}.adm-blocker__code { color: inherit; }
+.adm-mod__blockers {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.adm-mod__clear {
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  color: var(--adm-status-ok);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* ---------- moderation: review card (grid layout) ----------------- */
+/* One card per campaign in the window. Deliberately not a queue + detail
+   split: there is no decision to make, so a persistent "focus" pane would
+   imply a workflow the backend does not have. */
+.adm-gov-grid--wide {
+  grid-template-columns: 1fr;
+}
+.adm-mod {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.adm-mod__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.adm-mod__id {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  color: var(--adm-muted-dim);
+  letter-spacing: .05em;
+  flex-shrink: 0;
+}
+.adm-mod__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-text);
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.adm-mod__badges {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.adm-mod__section-label {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--adm-muted-dim);
+}
+.adm-mod .adm-stdout,
+.adm-mod .adm-gov-kv { margin-bottom: 0; }
+/* Free-text operator note echoed from the governance log. */
+.adm-mod__reason {
+  font-family: var(--adm-sans);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--adm-text-dim);
+  margin: 3px 0 5px;
+}
+/* Roll-up of the review-state distribution across the loaded window. */
+.adm-mod__legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.adm-mod__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--adm-muted);
+  border: 1px solid var(--adm-border-soft);
+  border-radius: var(--adm-radius-sm);
+  padding: 3px 8px;
+}
+.adm-mod__legend-item .adm-pill__count { margin-left: 0; }
+
+/* ---------- stdout well ------------------------------------------- */
+.adm-stdout {
+  background: var(--adm-raised);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  line-height: 1.7;
+  color: var(--adm-text-dim);
+  padding: 12px 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+}
+.adm-stdout__line { display: block; }
+.adm-stdout__key { color: var(--adm-muted); }/* ---------- health signals ---------------------------------------- */
+.adm-signal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--adm-border-soft);
+}
+.adm-signal:last-child { border-bottom: none; }
+.adm-signal__label {
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--adm-text-dim);
+  width: 200px;
+  flex-shrink: 0;
+}
+.adm-signal__detail {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  color: var(--adm-muted);
+  line-height: 1.5;
+}/* The signal grid wraps the chip rows in their own bordered card so the
+   "measured" and "not instrumented" halves are visibly separate. */
+.adm-signal-grid {
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  background: var(--adm-surface);
+  overflow: hidden;
+}
+.adm-signal__value {
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--adm-text);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 108px;
+}
+.adm-signal__ms {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  color: var(--adm-muted-dim);
+  font-weight: 400;
+  letter-spacing: .02em;
+  margin-left: 5px;
+}
+.adm-signal__source {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  color: var(--adm-muted-dim);
+  letter-spacing: .04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Verdict colouring by signal kind, not by a red/green guess. */
+.adm-signal--fail .adm-signal__value { color: var(--adm-status-error); }
+.adm-signal--unknown .adm-signal__value { color: var(--adm-muted-dim); }
+.adm-event-type { font-size: 11px; color: var(--adm-text); }
+
+/* ---------- append-only stream (governance + telemetry) ----------- */
+.adm-gov-stream {
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  background: var(--adm-surface);
+  overflow: hidden;
+}
+/* A third dot state: "not instrumented". Not-ok would imply a fault; not-ok
+   on a value nobody measures is a lie. */
+.adm-health__dot--unknown {
+  background: var(--adm-muted-dim);
+}/* ---------- operations cards -------------------------------------- */
+.adm-ops-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.adm-ops-card {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.adm-ops-card--unavailable {
+  border-style: dashed;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(113, 113, 122, .04),
+    rgba(113, 113, 122, .04) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+.adm-ops-card__label {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--adm-muted);
+}
+.adm-ops-card__value {
+  font-family: var(--adm-mono);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--adm-text);
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+.adm-ops-card--unavailable .adm-ops-card__value {
+  font-size: 13px;
+  color: var(--adm-muted-dim);
+  font-weight: 600;
+  letter-spacing: .06em;
+}.adm-ops-card__unit {
+  font-family: var(--adm-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--adm-muted);
+  letter-spacing: 0;
+  margin-left: 5px;
+}
+/* The `source` line is the anti-fabrication guarantee: every number on this
+   screen names the query that produced it. */
+.adm-ops-card__detail {
+  font-family: var(--adm-sans);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--adm-muted);
+  margin-top: 3px;
+}
+.adm-ops-card__source {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  color: var(--adm-muted-dim);
+  letter-spacing: .05em;
+  margin-top: auto;
+  padding-top: 7px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.adm-ops-card__value--none {
+  font-size: 13px;
+  color: var(--adm-muted-dim);
+  font-weight: 600;
+  letter-spacing: .06em;
+}
+/* Secondary band sits below the four lead metrics; same card, fewer columns. */
+.adm-ops-grid--secondary {
+  grid-template-columns: repeat(3, 1fr);
+  margin-bottom: 0;
+}
+
+/* ---------- gate control ------------------------------------------ */
+.adm-gate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius);
+  background: var(--adm-surface);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}.adm-gate__reason:focus { border-color: var(--adm-muted-dim); }
+.adm-gate__reason::placeholder { color: var(--adm-muted-dim); }/* ---------- serving-gate control (per-advertiser card footer) ------ */
+/* This is the only write the console performs. It needs a written reason,
+   a second click, and a visible restatement of what the flag does. */
+.adm-gate {
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius-sm);
+  background: var(--adm-raised);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.adm-gate__head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.adm-gate__label {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--adm-muted);
+}
+.adm-gate__warning {
+  font-family: var(--adm-sans);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--adm-text-dim);
+}
+.adm-gate__input {
+  width: 100%;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius-sm);
+  color: var(--adm-text);
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  padding: 7px 10px;
+  outline: none;
+  resize: vertical;
+  min-height: 54px;
+}
+.adm-gate__input:focus { border-color: var(--adm-muted-dim); }
+.adm-gate__input::placeholder { color: var(--adm-muted-dim); }
+.adm-gate__buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.adm-gate__message {
+  font-family: var(--adm-mono);
+  font-size: 10px;
+  line-height: 1.6;
+  letter-spacing: .02em;
+}
+.adm-gate__message--ok { color: var(--adm-status-ok); }
+.adm-gate__message--warn { color: var(--adm-muted); }
+.adm-gate__message--error { color: var(--adm-status-error); }
+/* Second-confirmation row: the destructive half of the toggle gets an extra
+   click and an explicit restatement, the restore half does not. */
+.adm-gate__confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid var(--adm-border-soft);
+}
+
+/* ---------- bare page title (loading / error / empty states) ------- */
+/* AdminOverview, AdminContacts and the four governance pages all emit this
+   pair. It was referenced everywhere and defined nowhere, so the loading and
+   error states were rendering as unstyled text. */
+.adm-page-title {
+  font-family: var(--adm-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--adm-muted-dim);
+  margin-bottom: 6px;
+}
+.adm-page-heading {
+  font-family: var(--adm-sans);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: var(--adm-text);
+  margin: 0 0 16px;
+  line-height: 1.25;
+}
+
+/* ---------- responsive -------------------------------------------- */
+@media (max-width: 1100px) {
+  .adm-ops-grid { grid-template-columns: repeat(3, 1fr); }
+  .adm-ops-grid--secondary { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 900px) {
+  .adm-gov-grid { grid-template-columns: 1fr; }
+  .adm-ops-grid,
+  .adm-ops-grid--secondary { grid-template-columns: repeat(2, 1fr); }
+  .adm-signal { flex-wrap: wrap; }
+  .adm-signal__label { width: auto; flex-basis: 100%; }
+  .adm-signal__value { min-width: auto; }
+  .adm-gov-caps__row { flex-wrap: wrap; gap: 4px; }
+  .adm-gov-caps__key { width: auto; flex-basis: 100%; }
+}
+@media (max-width: 560px) {
+  .adm-gov-kv { grid-template-columns: 1fr; }
+  .adm-ops-grid,
+  .adm-ops-grid--secondary { grid-template-columns: 1fr; }
+  .adm-gov-search__hint { display: none; }
+  .adm-mod__head { flex-direction: column; gap: 6px; }
+  .adm-gate__buttons .adm-gov-btn { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .adm-gov-search,
+  .adm-pill,
+  .adm-gov-btn,
+  .adm-entity { transition: none; }
+}

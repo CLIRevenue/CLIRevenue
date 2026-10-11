@@ -135,6 +135,58 @@ export async function fetchAdminContacts() {
   return data ?? {}
 }
 
+export async function fetchAdminAccounts() {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates([...urls.map(u => `${u}/accounts`)], { method: 'GET' })
+  return data ?? {}
+}
+
+export async function fetchAdminModeration() {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates([...urls.map(u => `${u}/moderation`)], { method: 'GET' })
+  return data ?? {}
+}
+
+export async function fetchAdminHealth() {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates([...urls.map(u => `${u}/health`)], { method: 'GET' })
+  return data ?? {}
+}
+
+export async function fetchAdminAudit() {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates([...urls.map(u => `${u}/audit`)], { method: 'GET' })
+  return data ?? {}
+}
+
+export async function fetchAdminOperations() {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates([...urls.map(u => `${u}/operations`)], { method: 'GET' })
+  return data ?? {}
+}
+
+/**
+ * Toggle an advertiser's serving gate (can_run_campaigns).
+ *
+ * The actor identity is resolved from the bearer token on the server; the
+ * body carries only the subject, the desired value, and a human reason.
+ */
+export async function updateAdvertiserGate(advertiserId, canRunCampaigns, reason) {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates(
+    [...urls.map(u => `${u}/accounts/gate`)],
+    {
+      method: 'PATCH',
+      body: JSON.stringify({
+        advertiser_id: advertiserId,
+        can_run_campaigns: Boolean(canRunCampaigns),
+        reason: String(reason || ''),
+      }),
+    }
+  )
+  return data ?? {}
+}
+
 export async function updateContactStatus(id, status, adminNotes = '') {
   const urls = adminBaseCandidates()
   const { data } = await tryCandidates(

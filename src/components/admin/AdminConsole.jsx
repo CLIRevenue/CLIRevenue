@@ -10,17 +10,24 @@ import AdminEvents from './AdminEvents.jsx'
 import AdminSystem from './AdminSystem.jsx'
 import AdminContacts from './AdminContacts.jsx'
 import AdminAccount from './AdminAccount.jsx'
+import AdminOperations from './AdminOperations.jsx'
+import AdminAccounts from './AdminAccounts.jsx'
+import AdminModeration from './AdminModeration.jsx'
+import AdminHealth from './AdminHealth.jsx'
 import './AdminConsole.css'
 
 const PAGES = {
   overview:   { label: 'Overview',   icon: AdminOverviewIcon },
   campaigns:  { label: 'Campaigns',  icon: AdminCampaignsIcon },
+  moderation: { label: 'Moderation', icon: AdminModerationIcon },
   advertisers:{ label: 'Advertisers',icon: AdminAdvertisersIcon },
   developers: { label: 'Developers', icon: AdminDevelopersIcon },
   publishers: { label: 'Publishers', icon: AdminPublishersIcon },
   placements: { label: 'Placements', icon: AdminPlacementsIcon },
   events:     { label: 'Events',     icon: AdminEventsIcon },
   system:     { label: 'System',     icon: AdminSystemIcon },
+  health:     { label: 'Health & Audit', icon: AdminHealthIcon },
+  accounts:   { label: 'Accounts',   icon: AdminAccountsIcon },
   contacts:   { label: 'Contacts',   icon: AdminContactsIcon },
 }
 
@@ -30,6 +37,7 @@ const PAGES = {
 // the same one the advertiser and developer dashboards reach, which is why all
 // three sidebars label it "Account" and not "Settings".
 const OPERATIONS_PAGES = {
+  operations: { label: 'Operations', icon: AdminOperationsIcon },
   account: { label: 'Account', icon: AdminAccountIcon },
 }
 
@@ -61,6 +69,10 @@ function AdminEventsIcon()     { return <IconSvg d="M22 12h-4l-3 9L9 3l-3 9H2" /
 function AdminSystemIcon()     { return <IconSvg d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /> }
 
 function AdminContactsIcon()   { return <IconSvg d="M4 4h16l-4 12H8z" /> }
+function AdminModerationIcon() { return <IconSvg d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /> }
+function AdminHealthIcon()     { return <IconSvg d="M2 12h4l3-8 4 16 3-8h6" /> }
+function AdminOperationsIcon()  { return <IconSvg d="M3 3v18h18M7 15l4-5 3 3 5-7" /> }
+function AdminAccountsIcon()   { return <IconSvg d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 11h-6" /> }
 // Sliders, not the sun/gear glyph AdminSystemIcon uses: two identical icons
 // side by side in one sidebar reads as a rendering bug.
 function AdminAccountIcon()   { return <IconSvg d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /> }
@@ -106,6 +118,10 @@ export default function AdminConsole() {
     placements: AdminPlacements,
     events: AdminEvents,
     system: AdminSystem,
+    health: AdminHealth,
+    accounts: AdminAccounts,
+    moderation: AdminModeration,
+    operations: AdminOperations,
     contacts: AdminContacts,
     account: AdminAccount,
   }

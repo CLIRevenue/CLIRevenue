@@ -17,13 +17,34 @@
  *   GET    /admin/contacts     - all contact submissions (inbox)
  *   PATCH  /admin/contacts/:id - update status and internal notes
  *   DELETE /admin/contacts/:id - delete a submission
+ *   GET    /admin/accounts     - identity directory (profiles joined to role tables)
+ *   PATCH  /admin/accounts/gate- advertiser serving gate + append-only audit record
+ *   GET    /admin/moderation   - campaign/creative readiness queue with real blockers
+ *   GET    /admin/health       - measured subsystem signals (no invented uptime)
+ *   GET    /admin/audit        - delivery telemetry stream + admin governance log
+ *   GET    /admin/operations   - platform-wide aggregates with per-card availability
+ *
+ * Routes marked "measured" below only ever report values that came out of the
+ * database on that request. Anything the schema cannot answer is returned in a
+ * `capabilities` object with `supported: false` and a reason, so the console
+ * can say "not instrumented" instead of rendering a plausible-looking number.
  */
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { serveWithCors } from "../_shared/http.ts";
 import { adminClient, getJwtUser, requireAdmin } from "../_shared/auth.ts";
 import { apiError, isUuid, json, optionsResponse, restPath } from "../_shared/http.ts";
+import { ACTIVATION_BLOCKER_MESSAGES } from "../_shared/campaignRules.ts";
 
 const admin = adminClient();
+
+const DIRECTORY_LIMIT = 500;
+const MODERATION_LIMIT = 200;
+const AUDIT_LIMIT = 200;
+const CREATIVE_SCAN_LIMIT = 2000;
+const BLOCKER_BATCH = 25;
+const GOVERNANCE_REASON_MAX = 500;
+
+type Actor = { profileId: string; email: string };
 
 function badMethod(req: Request, allowed: string[]): Response | null {
   if (!allowed.includes(req.method)) {
@@ -268,6 +289,1137 @@ async function deleteContact(id: unknown) {
   return { data: { id } };
 }
 
+// --------------------------------------------------------------
+// Identity, moderation, health, audit and operations
+//
+// The shape of every block below is driven by what the schema can actually
+// answer, not by what a console would like to show:
+//
+//   - public.profiles (000001 + 000007) is id / role / created_at /
+//     updated_at / full_name / phone / address. There is no email, no status,
+//     no suspension flag and no verification column, so an identity directory
+//     can only join the role tables and must say so.
+//   - public.advertisers.can_run_campaigns (000022) is the single stored,
+//     server-enforced admin lever. It is the only write in this file.
+//   - Activation readiness is decided by public.campaign_activation_blockers()
+//     in SQL. This file calls that RPC rather than restating the rules, so the
+//     review queue cannot drift from the activation path.
+//   - telemetry_events (000021) is an append-only delivery event stream, not a
+//     record of administrator actions. The audit route says so explicitly.
+// --------------------------------------------------------------
+
+function groupBy<T extends Record<string, unknown>>(rows: T[], key: string): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const row of rows) {
+    const value = String(row[key] ?? "unknown");
+    out[value] = (out[value] ?? 0) + 1;
+  }
+  return out;
+}
+
+async function accountsDirectory() {
+  const [profilesRes, advertisersRes, developersRes, publishersRes, adminEmailsRes] =
+    await Promise.all([
+      admin
+        .from("profiles")
+        .select("id, role, full_name, created_at, updated_at")
+        .order("created_at", { ascending: false })
+        .limit(DIRECTORY_LIMIT),
+      admin
+        .from("advertisers")
+        .select("id, profile_id, company_name, contact_email, can_run_campaigns, created_at"),
+      admin
+        .from("developer_accounts")
+        .select("id, profile_id, developer_name, developer_type, created_at"),
+      admin
+        .from("publishers")
+        .select("id, owner_profile_id, name, status, created_at")
+        .order("created_at", { ascending: false }),
+      admin
+        .from("admin_emails")
+        .select("email, note, created_at")
+        .order("created_at", { ascending: false })
+        .limit(100),
+    ]);
+
+  const failure = [profilesRes, advertisersRes, developersRes, publishersRes].find((r) => r.error);
+  if (failure && failure.error) {
+    console.error("accounts directory error:", failure.error.message);
+    return apiError("INTERNAL_ERROR", "Failed to load the account directory.", 500);
+  }
+
+  const advertisersByProfile = new Map<string, Record<string, unknown>>();
+  for (const row of (advertisersRes.data ?? []) as Record<string, unknown>[]) {
+    if (row.profile_id) advertisersByProfile.set(String(row.profile_id), row);
+  }
+  const developersByProfile = new Map<string, Record<string, unknown>>();
+  for (const row of (developersRes.data ?? []) as Record<string, unknown>[]) {
+    if (row.profile_id) developersByProfile.set(String(row.profile_id), row);
+  }
+  const publishersByOwner = new Map<string, Record<string, unknown>[]>();
+  for (const row of (publishersRes.data ?? []) as Record<string, unknown>[]) {
+    if (!row.owner_profile_id) continue;
+    const key = String(row.owner_profile_id);
+    const list = publishersByOwner.get(key) ?? [];
+    list.push(row);
+    publishersByOwner.set(key, list);
+  }
+
+  const profiles = (profilesRes.data ?? []) as Record<string, unknown>[];
+  const accounts = profiles.map((profile) => {
+    const id = String(profile.id);
+    const role = String(profile.role ?? "unknown");
+    const advertiser = advertisersByProfile.get(id) ?? null;
+    const developer = developersByProfile.get(id) ?? null;
+    const publisher = (publishersByOwner.get(id) ?? [])[0] ?? null;
+
+    // Display name comes from whichever role table actually stores one.
+    // Falling back to full_name and then to null keeps an unnamed account
+    // visible instead of inventing a company or a handle for it.
+    const displayName =
+      (advertiser && typeof advertiser.company_name === "string" && advertiser.company_name) ||
+      (developer && typeof developer.developer_name === "string" && developer.developer_name) ||
+      (publisher && typeof publisher.name === "string" && publisher.name) ||
+      (typeof profile.full_name === "string" && profile.full_name) ||
+      null;
+
+    return {
+      profileId: id,
+      role,
+      displayName,
+      fullName: profile.full_name ?? null,
+      // Only advertisers store an address. Returning null for the other roles
+      // is the honest answer; the console renders it as "not stored".
+      email: advertiser && typeof advertiser.contact_email === "string"
+        ? advertiser.contact_email
+        : null,
+      emailSource: advertiser ? "advertisers.contact_email" : null,
+      createdAt: profile.created_at ?? null,
+      updatedAt: profile.updated_at ?? null,
+      advertiser: advertiser
+        ? {
+            id: String(advertiser.id),
+            companyName: advertiser.company_name ?? null,
+            canRunCampaigns: advertiser.can_run_campaigns === true,
+          }
+        : null,
+      developer: developer
+        ? {
+            id: String(developer.id),
+            developerType: developer.developer_type ?? null,
+          }
+        : null,
+      publisher: publisher
+        ? {
+            id: String(publisher.id),
+            name: publisher.name ?? null,
+            // publishers.status is a real CHECK (active | suspended).
+            status: publisher.status ?? null,
+          }
+        : null,
+      ownedPublisherCount: (publishersByOwner.get(id) ?? []).length,
+    };
+  });
+
+  return {
+    accounts,
+    counts: {
+      total: accounts.length,
+      byRole: groupBy(accounts, "role"),
+      advertisers: advertisersByProfile.size,
+      developers: developersByProfile.size,
+      publishers: (publishersRes.data ?? []).length,
+    },
+    // The authority table itself: addresses that grant admin access. Read with
+    // the service role because RLS grants it to nobody else (000017).
+    adminRoster: adminEmailsRes.error
+      ? { available: false, reason: adminEmailsRes.error.message, entries: [] }
+      : {
+          available: true,
+          entries: (adminEmailsRes.data ?? []) as Record<string, unknown>[],
+        },
+    capabilities: {
+      accountStatus: {
+        supported: false,
+        reason:
+          "public.profiles has no status or suspended column (migrations 000001, 000007). There is no field to read and nothing to write.",
+      },
+      email: {
+        supported: true,
+        scope:
+          "advertisers.contact_email only. Developer, publisher and admin profiles store no address anywhere in the schema.",
+      },
+      identityVerification: {
+        supported: false,
+        reason:
+          "No KYC, verification, or review-state table or column exists. Nothing in this project records that an advertiser was checked.",
+      },
+      riskFlags: {
+        supported: false,
+        reason:
+          "Per-account flags do not exist. telemetry_events.risk_flags scores individual delivery events, not accounts.",
+      },
+      servingGate: {
+        supported: true,
+        detail:
+          "advertisers.can_run_campaigns is stored and enforced by campaign_activation_blockers(); PATCH /admin/accounts/gate is the only admin write.",
+      },
+      publisherSuspension: {
+        supported: true,
+        scope: "publishers.status (active | suspended) — applies to publishers, not to profiles.",
+      },
+      pagination: {
+        supported: false,
+        detail: `No page, cursor or search parameter is accepted. This listing is capped at ${DIRECTORY_LIMIT} rows and reports truncated when it hits the cap.`,
+      },
+      rowLimit: DIRECTORY_LIMIT,
+      truncated: profiles.length >= DIRECTORY_LIMIT,
+    },
+  };
+}
+
+async function recordGovernanceAction(
+  actor: Actor,
+  action: string,
+  subjectId: string,
+  reason: string,
+  previousValue: string,
+  newValue: string,
+) {
+  // Best-effort by design: the serving gate has already changed by the time
+  // this runs, so a missing audit table must not roll the write back. The
+  // caller reports `auditRecorded: false` so the operator knows.
+  const { error } = await admin.from("admin_governance_actions").insert({
+    actor_profile_id: actor.profileId,
+    actor_email: actor.email,
+    action,
+    subject_type: "advertiser",
+    subject_id: subjectId,
+    reason,
+    previous_value: previousValue,
+    new_value: newValue,
+  });
+  if (error) {
+    console.error("governance audit insert failed:", error.message);
+    return false;
+  }
+  return true;
+}
+
+async function updateAdvertiserGate(body: Record<string, unknown>, actor: Actor) {
+  const advertiserId = body.advertiser_id;
+  const canRunCampaigns = body.can_run_campaigns;
+  const reason = body.reason;
+
+  if (!isUuid(advertiserId)) {
+    return apiError("INVALID_ID", "Advertiser identifier is not valid.", 400);
+  }
+  if (typeof canRunCampaigns !== "boolean") {
+    return apiError("INVALID_VALUE", "can_run_campaigns must be a boolean.", 400);
+  }
+  // A serving gate can stop a live advertiser from delivering. Requiring a
+  // written reason is what makes that change accountable once it has happened.
+  if (typeof reason !== "string" || reason.trim().length < 3) {
+    return apiError(
+      "REASON_REQUIRED",
+      "A written reason (3-500 characters) is required to change a serving gate.",
+      400,
+    );
+  }
+  if (reason.length > GOVERNANCE_REASON_MAX) {
+    return apiError(
+      "REASON_TOO_LONG",
+      `Reason cannot exceed ${GOVERNANCE_REASON_MAX} characters.`,
+      400,
+    );
+  }
+
+  const { data: before, error: readError } = await admin
+    .from("advertisers")
+    .select("id, company_name, can_run_campaigns")
+    .eq("id", advertiserId)
+    .maybeSingle();
+  if (readError) {
+    console.error("advertiser gate read error:", readError.message);
+    return apiError("INTERNAL_ERROR", "Failed to read the advertiser record.", 500);
+  }
+  if (!before) {
+    return apiError("NOT_FOUND", "Advertiser not found.", 404);
+  }
+
+  if (before.can_run_campaigns === canRunCampaigns) {
+    return json({
+      changed: false,
+      advertiser: {
+        id: before.id,
+        companyName: before.company_name ?? null,
+        canRunCampaigns: before.can_run_campaigns === true,
+      },
+      auditRecorded: true,
+      note: "No change: the serving gate already held that value, so nothing was written or logged.",
+    });
+  }
+
+  const now = new Date().toISOString();
+  const { data: after, error: writeError } = await admin
+    .from("advertisers")
+    .update({ can_run_campaigns: canRunCampaigns, updated_at: now })
+    .eq("id", advertiserId)
+    .select("id, company_name, can_run_campaigns, updated_at")
+    .single();
+  if (writeError) {
+    console.error("advertiser gate write error:", writeError);
+    return apiError("INTERNAL_ERROR", "Failed to update the serving gate.", 500);
+  }
+
+  const auditRecorded = await recordGovernanceAction(
+    actor,
+    canRunCampaigns ? "SERVING_GATE_ENABLED" : "SERVING_GATE_DISABLED",
+    String(advertiserId),
+    reason.trim(),
+    String(before.can_run_campaigns),
+    String(canRunCampaigns),
+  );
+
+  return json({
+    changed: true,
+    advertiser: {
+      id: after.id,
+      companyName: after.company_name ?? null,
+      canRunCampaigns: after.can_run_campaigns === true,
+      updatedAt: after.updated_at ?? now,
+    },
+    auditRecorded,
+    note: auditRecorded
+      ? "Change applied and written to the append-only governance log."
+      : "Change applied, but the governance log rejected the entry (missing migration). The change is NOT in the audit trail.",
+  });
+}
+
+type ModerationState =
+  | "live"
+  | "archived"
+  | "ready_to_activate"
+  | "creative_missing"
+  | "awaiting_upload"
+  | "awaiting_validation"
+  | "creative_failed"
+  | "creative_revoked"
+  | "unknown";
+
+// The creative lifecycle is the only per-campaign artefact an administrator
+// could review, so the review state is derived from it plus the SQL blocker
+// list rather than from a moderation table that does not exist.
+function moderationState(
+  campaignStatus: string,
+  creativeStatus: string | null,
+  blockers: string[] | null,
+): ModerationState {
+  if (blockers === null) return "unknown";
+  if (campaignStatus === "active") return "live";
+  if (campaignStatus === "archived") return "archived";
+  if (!blockers.includes("CREATIVE_MISSING")) return "ready_to_activate";
+  switch (creativeStatus) {
+    case null:
+      return "creative_missing";
+    case "pending":
+      return "awaiting_upload";
+    case "uploaded":
+      return "awaiting_validation";
+    case "failed":
+      return "creative_failed";
+    case "revoked":
+      return "creative_revoked";
+    default:
+      return "unknown";
+  }
+}
+
+async function moderationQueue() {
+  const [campaignsRes, creativesRes, advertisersRes] = await Promise.all([
+    admin
+      .from("campaigns")
+      .select(
+        "id, name, headline, description, cta, audience_id, budget_cents, cpm_cents, spend_milli_cents, impressions_count, clicks_count, conversions_count, status, starts_at, ends_at, landing_url, advertiser_id, created_at, updated_at",
+      )
+      .order("updated_at", { ascending: false })
+      .limit(MODERATION_LIMIT),
+    admin
+      .from("campaign_creatives")
+      .select(
+        "campaign_id, advertiser_id, media_type, mime_type, file_size_bytes, width, height, duration_ms, checksum, label, status, created_at, updated_at",
+      )
+      .order("updated_at", { ascending: false })
+      .limit(CREATIVE_SCAN_LIMIT),
+    admin.from("advertisers").select("id, company_name, contact_email, can_run_campaigns"),
+  ]);
+
+  if (campaignsRes.error) {
+    console.error("moderation campaigns error:", campaignsRes.error.message);
+    return apiError("INTERNAL_ERROR", "Failed to load the moderation queue.", 500);
+  }
+
+  const campaigns = (campaignsRes.data ?? []) as Record<string, unknown>[];
+  const creatives = (creativesRes.data ?? []) as Record<string, unknown>[];
+  const advertisers = (advertisersRes.data ?? []) as Record<string, unknown>[];
+
+  const creativeByCampaign = new Map<string, Record<string, unknown>>();
+  for (const creative of creatives) {
+    const key = String(creative.campaign_id ?? "");
+    if (key && !creativeByCampaign.has(key)) creativeByCampaign.set(key, creative);
+  }
+  const advertiserById = new Map<string, Record<string, unknown>>();
+  for (const advertiser of advertisers) {
+    advertiserById.set(String(advertiser.id), advertiser);
+  }
+
+  // campaign_activation_blockers() is the authority on whether a campaign may
+  // serve. Batched so a 200-row queue does not open 200 simultaneous
+  // connections; a failed batch reports `null` blockers rather than an empty
+  // array, because "we could not ask" and "nothing is wrong" must not look
+  // identical on screen.
+  const blockersById = new Map<string, string[] | null>();
+  let blockerLookupError: string | null = null;
+  for (let i = 0; i < campaigns.length; i += BLOCKER_BATCH) {
+    const batch = campaigns.slice(i, i + BLOCKER_BATCH);
+    const results = await Promise.all(
+      batch.map((campaign) =>
+        admin.rpc("campaign_activation_blockers", { p_campaign_id: campaign.id }),
+      ),
+    );
+    results.forEach((result, index) => {
+      const id = String(batch[index].id);
+      if (result.error) {
+        blockerLookupError = result.error.message;
+        blockersById.set(id, null);
+        return;
+      }
+      blockersById.set(id, Array.isArray(result.data) ? (result.data as string[]) : []);
+    });
+  }
+
+  const items = campaigns.map((campaign) => {
+    const id = String(campaign.id);
+    const creative = creativeByCampaign.get(id) ?? null;
+    const advertiser = advertiserById.get(String(campaign.advertiser_id ?? "")) ?? null;
+    const blockers = blockersById.has(id) ? blockersById.get(id)! : null;
+    const creativeStatus = creative ? String(creative.status) : null;
+    const state = moderationState(String(campaign.status), creativeStatus, blockers);
+
+    return {
+      campaignId: id,
+      name: campaign.name ?? null,
+      headline: campaign.headline ?? null,
+      description: campaign.description ?? null,
+      cta: campaign.cta ?? null,
+      status: campaign.status ?? null,
+      audienceId: campaign.audience_id ?? null,
+      landingUrl: campaign.landing_url ?? null,
+      budgetCents: campaign.budget_cents ?? null,
+      cpmCents: campaign.cpm_cents ?? null,
+      spendMilliCents: campaign.spend_milli_cents ?? null,
+      impressionsCount: campaign.impressions_count ?? null,
+      clicksCount: campaign.clicks_count ?? null,
+      conversionsCount: campaign.conversions_count ?? null,
+      startsAt: campaign.starts_at ?? null,
+      endsAt: campaign.ends_at ?? null,
+      createdAt: campaign.created_at ?? null,
+      updatedAt: campaign.updated_at ?? null,
+      advertiser: advertiser
+        ? {
+            id: String(advertiser.id),
+            companyName: advertiser.company_name ?? null,
+            canRunCampaigns: advertiser.can_run_campaigns === true,
+          }
+        : null,
+      creative: creative
+        ? {
+            status: creative.status ?? null,
+            mediaType: creative.media_type ?? null,
+            mimeType: creative.mime_type ?? null,
+            fileSizeBytes: creative.file_size_bytes ?? null,
+            width: creative.width ?? null,
+            height: creative.height ?? null,
+            durationMs: creative.duration_ms ?? null,
+            checksum: creative.checksum ?? null,
+            label: creative.label ?? null,
+            updatedAt: creative.updated_at ?? null,
+            // The object key and any signed URL stay out of this response: the
+            // admin queue needs the review status, not a delivery credential.
+            objectKeyPresent: Boolean(creative.object_key),
+          }
+        : null,
+      creativeStatus,
+      blockers: blockers
+        ? blockers.map((code) => ({ code, message: ACTIVATION_BLOCKER_MESSAGES[code] ?? code }))
+        : null,
+      blockersAvailable: blockers !== null,
+      reviewState: state,
+      needsAttention:
+        blockers !== null &&
+        blockers.length > 0 &&
+        campaign.status !== "active" &&
+        campaign.status !== "archived",
+    };
+  });
+
+  const attention = items.filter((item) => item.needsAttention);
+
+  return {
+    items,
+    summary: {
+      windowSize: items.length,
+      needsAttention: attention.length,
+      byReviewState: groupBy(items, "reviewState"),
+      byCampaignStatus: groupBy(items, "status"),
+      byCreativeStatus: groupBy(
+        items.filter((item) => item.creativeStatus),
+        "creativeStatus",
+      ),
+    },
+    blockerCodes: ACTIVATION_BLOCKER_MESSAGES,
+    blockerLookupError,
+    capabilities: {
+      queueSemantics: {
+        supported: true,
+        detail:
+          "This is a readiness queue derived from campaign_creatives.status plus campaign_activation_blockers(). There is no human moderation queue table: nothing here has ever been submitted to a moderator.",
+      },
+      decide: {
+        supported: false,
+        reason:
+          "No admin decision endpoint exists. creatives/index.ts is reached through requireAdvertiser and campaigns/index.ts scopes every update with .eq('advertiser_id', ...), so an admin JWT without its own advertiser row cannot write either. Approve / Reject / Flag / Batch cannot be implemented against this backend.",
+      },
+      forceStatus: {
+        supported: false,
+        reason:
+          "campaigns.status is writable only through the advertiser-scoped PATCH in campaigns/index.ts, which enforces the TRANSITIONS table. No admin override path is exposed.",
+      },
+      storageVerification: {
+        supported: false,
+        reason:
+          "Confirming the stored object still exists in Filebase needs a network HEAD. creatives/index.ts does it before flipping a creative to validated; this read-only route does not, so 'validated' means the row says validated, not that the bytes are reachable.",
+      },
+      domainReputation: {
+        supported: false,
+        reason: "No domain or URL reputation service is integrated anywhere in this project.",
+      },
+      piiScanning: {
+        supported: false,
+        reason:
+          "No PII or content scanner runs server-side. Creative MIME types and sizes are constrained by CHECK constraints in 000022; the text is not inspected.",
+      },
+      slaTimer: {
+        supported: false,
+        reason:
+          "No review deadline, queue entry time or SLA policy is stored. created_at/updated_at are the only timestamps that exist.",
+      },
+      servingGate: {
+        supported: true,
+        detail: "The advertiser gate can be changed via PATCH /admin/accounts/gate.",
+      },
+      rowLimit: MODERATION_LIMIT,
+      truncated: campaigns.length >= MODERATION_LIMIT,
+    },
+  };
+}
+
+type SignalKind = "measured" | "unverified";
+
+type Signal = {
+  key: string;
+  label: string;
+  kind: SignalKind;
+  ok: boolean | null;
+  detail: string;
+  durationMs: number | null;
+  source: string | null;
+};
+
+// PromiseLike, not Promise: a PostgREST query builder is a thenable, so a
+// Promise-typed parameter rejects every admin.from(...) chain passed directly.
+async function timedProbe(run: () => PromiseLike<{ error: { message: string } | null }>) {
+  const startedAt = Date.now();
+  const { error } = await run();
+  return { ok: !error, durationMs: Date.now() - startedAt, error: error ? error.message : null };
+}
+
+async function healthSignals() {
+  const [profilesProbe, telemetryProbe] = await Promise.all([
+    timedProbe(() => admin.from("profiles").select("id").limit(1)),
+    // telemetry_events has RLS enabled with zero policies (000021), so a
+    // successful read here also proves the service-role path is intact rather
+    // than merely proving the table exists.
+    timedProbe(() => admin.from("telemetry_events").select("id").limit(1)),
+  ]);
+
+  const [activeCampaignsRes, publishersRes, placementsRes, creativeBacklogRes, quarantineRes] =
+    await Promise.all([
+      admin.from("campaigns").select("*", { count: "exact", head: true }).eq("status", "active"),
+      admin.from("publishers").select("*", { count: "exact", head: true }),
+      admin.from("placements").select("*", { count: "exact", head: true }).eq("enabled", true),
+      admin
+        .from("campaign_creatives")
+        .select("*", { count: "exact", head: true })
+        .in("status", ["pending", "uploaded"]),
+      admin
+        .from("telemetry_events")
+        .select("*", { count: "exact", head: true })
+        .eq("validation_state", "quarantined"),
+    ]);
+
+  const signals: Signal[] = [
+    {
+      key: "auth",
+      label: "Admin authorization",
+      kind: "measured",
+      ok: true,
+      detail:
+        "This request passed getJwtUser() and requireAdmin(), which resolved profiles.role = 'admin' and a matching public.admin_emails row.",
+      durationMs: null,
+      source: "supabase/functions/_shared/auth.ts",
+    },
+    {
+      key: "database",
+      label: "Database (PostgREST round-trip)",
+      kind: "measured",
+      ok: profilesProbe.ok,
+      detail: profilesProbe.error
+        ? `profiles read failed: ${profilesProbe.error}`
+        : "profiles read returned without error.",
+      durationMs: profilesProbe.durationMs,
+      source: "public.profiles",
+    },
+    {
+      key: "telemetryPath",
+      label: "Service-role path (zero-policy table)",
+      kind: "measured",
+      ok: telemetryProbe.ok,
+      detail: telemetryProbe.error
+        ? `telemetry_events read failed: ${telemetryProbe.error}`
+        : "telemetry_events read returned without error through the service role.",
+      durationMs: telemetryProbe.durationMs,
+      source: "public.telemetry_events",
+    },
+    {
+      key: "delivery",
+      label: "Delivery inventory",
+      kind: "measured",
+      // Having something to serve is a fact about inventory, not proof that
+      // anything is being served successfully, so this reports the count.
+      ok: activeCampaignsRes.error ? null : (activeCampaignsRes.count ?? 0) > 0,
+      detail: activeCampaignsRes.error
+        ? `campaign count failed: ${activeCampaignsRes.error.message}`
+        : `${activeCampaignsRes.count ?? 0} campaign(s) in status 'active'.`,
+      durationMs: null,
+      source: "public.campaigns",
+    },
+    {
+      key: "creativeBacklog",
+      label: "Creative validation backlog",
+      kind: "measured",
+      ok: creativeBacklogRes.error ? null : (creativeBacklogRes.count ?? 0) === 0,
+      detail: creativeBacklogRes.error
+        ? `creative count failed: ${creativeBacklogRes.error.message}`
+        : `${creativeBacklogRes.count ?? 0} creative(s) pending or uploaded but not validated.`,
+      durationMs: null,
+      source: "public.campaign_creatives",
+    },
+    {
+      key: "quarantinedTelemetry",
+      label: "Quarantined delivery events",
+      kind: "measured",
+      ok: quarantineRes.error ? null : (quarantineRes.count ?? 0) === 0,
+      detail: quarantineRes.error
+        ? `telemetry count failed: ${quarantineRes.error.message}`
+        : `${quarantineRes.count ?? 0} telemetry event(s) in validation_state 'quarantined'.`,
+      durationMs: null,
+      source: "public.telemetry_events",
+    },
+    {
+      key: "edgeRuntime",
+      label: "Edge function mesh",
+      kind: "unverified",
+      ok: null,
+      detail:
+        "Not instrumented. A function cannot observe the runtime of its siblings, and this project has no control plane, registry or per-function health endpoint. Reporting a number here would be invention.",
+      durationMs: null,
+      source: null,
+    },
+    {
+      key: "uptime",
+      label: "Availability / uptime",
+      kind: "unverified",
+      ok: null,
+      detail:
+        "Not instrumented. No request log, error-rate counter or SLA history is stored anywhere, so availability cannot be computed after the fact.",
+      durationMs: null,
+      source: null,
+    },
+    {
+      key: "provisioning",
+      label: "Publisher provisioning",
+      kind: "measured",
+      ok: null,
+      detail: publishersRes.error
+        ? `publisher count failed: ${publishersRes.error.message}`
+        : `${publishersRes.count ?? 0} publisher(s) on record, ${placementsRes.count ?? 0} enabled placement(s).`,
+      durationMs: null,
+      source: "public.publishers, public.placements",
+    },
+  ];
+
+  const measured = signals.filter((signal) => signal.kind === "measured");
+  const measuredFailures = measured.filter((signal) => signal.ok === false);
+
+  return {
+    signals,
+    summary: {
+      measuredCount: measured.length,
+      measuredFailures: measuredFailures.length,
+      unverifiedCount: signals.filter((signal) => signal.kind === "unverified").length,
+      // Deliberately not "every signal is ok": an unverified signal has ok=null
+      // and would make a rolled-up verdict meaningless.
+      state: measuredFailures.length > 0 ? "degraded" : "measured-signals-ok",
+    },
+    checkedAt: new Date().toISOString(),
+    capabilities: {
+      merkleProof: {
+        supported: false,
+        reason:
+          "No Merkle tree, state root or content-addressed commitment is computed or stored. There is nothing to verify and no proof to publish.",
+      },
+      nodeMesh: {
+        supported: false,
+        reason:
+          "No node or region registry exists. Edge functions run as managed Supabase infrastructure; this project never records where they run.",
+      },
+      regionalLatency: {
+        supported: false,
+        reason:
+          "Only database round-trip time is measured here, in-process. No request originates from a region this service controls.",
+      },
+      droppedPackets: {
+        supported: false,
+        reason: "No network-level telemetry is collected at any hop.",
+      },
+      piiScrubbing: {
+        supported: false,
+        reason:
+          "No content scanner or PII scrubber runs server-side. The only redaction in this repository is CLI-side secret masking in src/lib, which protects the developer's terminal, not stored creative content.",
+      },
+      liveStream: {
+        supported: false,
+        reason:
+          "There is no websocket endpoint and no push channel. This route answers once per request; the console polls it like every other screen.",
+      },
+      signatures: {
+        supported: false,
+        reason:
+          "telemetry_events rows carry no signature and admin_governance_actions is a plain append-only table. Rows are not tamper-evident and must not be presented as if they were.",
+      },
+      availabilityWindow: {
+        supported: true,
+        detail: "Every value on this screen is computed at checkedAt from a live query.",
+      },
+    },
+  };
+}
+
+async function auditTrail() {
+  const [totalRes, acceptedRes, quarantinedRes, rejectedRes] = await Promise.all([
+    admin.from("telemetry_events").select("*", { count: "exact", head: true }),
+    admin
+      .from("telemetry_events")
+      .select("*", { count: "exact", head: true })
+      .eq("validation_state", "accepted"),
+    admin
+      .from("telemetry_events")
+      .select("*", { count: "exact", head: true })
+      .eq("validation_state", "quarantined"),
+    admin
+      .from("telemetry_events")
+      .select("*", { count: "exact", head: true })
+      .eq("validation_state", "rejected"),
+  ]);
+
+  const { data: events, error: eventsError } = await admin
+    .from("telemetry_events")
+    .select(
+      "id, event_type, validation_state, risk_score, risk_flags, recorded_at, occurred_at, session_id, sequence, publisher_id, placement_id, campaign_id, creative_id, developer_id, sdk_version",
+    )
+    .order("recorded_at", { ascending: false })
+    .limit(AUDIT_LIMIT);
+
+  if (eventsError) {
+    console.error("audit telemetry error:", eventsError.message);
+    return apiError("INTERNAL_ERROR", "Failed to load the delivery event stream.", 500);
+  }
+
+  const rows = (events ?? []) as Record<string, unknown>[];
+
+  // The governance log lives in migration 000024 and is not present on a
+  // database that has not been migrated yet. Reported as unavailable with the
+  // database's own message rather than as an empty log that looks like a
+  // quiet day.
+  const { data: governanceActions, error: governanceError } = await admin
+    .from("admin_governance_actions")
+    .select(
+      "id, actor_profile_id, actor_email, action, subject_type, subject_id, reason, previous_value, new_value, created_at",
+    )
+    .order("created_at", { ascending: false })
+    .limit(AUDIT_LIMIT);
+
+  const countError = [totalRes, acceptedRes, quarantinedRes, rejectedRes].find((r) => r.error);
+
+  return {
+    telemetry: {
+      // Totals are exact table counts; the breakdowns are derived from the
+      // fetched window only. The console labels which is which.
+      totals: countError && countError.error
+        ? { available: false, reason: countError.error.message }
+        : {
+            available: true,
+            total: totalRes.count ?? 0,
+            accepted: acceptedRes.count ?? 0,
+            quarantined: quarantinedRes.count ?? 0,
+            rejected: rejectedRes.count ?? 0,
+          },
+      window: {
+        size: rows.length,
+        byEventType: groupBy(rows, "event_type"),
+        byValidationState: groupBy(rows, "validation_state"),
+        truncated: rows.length >= AUDIT_LIMIT,
+      },
+      events: rows.map((row) => ({
+        id: String(row.id),
+        eventType: row.event_type ?? null,
+        validationState: row.validation_state ?? null,
+        riskScore: row.risk_score ?? null,
+        riskFlags: Array.isArray(row.risk_flags) ? row.risk_flags : [],
+        // recorded_at is the server's authoritative clock; occurred_at is the
+        // SDK's claim and can be missing or wrong, so both are exposed.
+        recordedAt: row.recorded_at ?? null,
+        occurredAt: row.occurred_at ?? null,
+        sessionId: row.session_id ?? null,
+        sequence: row.sequence ?? null,
+        publisherId: row.publisher_id ?? null,
+        placementId: row.placement_id ?? null,
+        campaignId: row.campaign_id ?? null,
+        creativeId: row.creative_id ?? null,
+        developerId: row.developer_id ?? null,
+        sdkVersion: row.sdk_version ?? null,
+      })),
+    },
+    governance: {
+      available: !governanceError,
+      reason: governanceError
+        ? `admin_governance_actions is not readable: ${governanceError.message}`
+        : null,
+      windowSize: (governanceActions ?? []).length,
+      truncated: (governanceActions ?? []).length >= AUDIT_LIMIT,
+      actions: ((governanceActions ?? []) as Record<string, unknown>[]).map((row) => ({
+        id: String(row.id),
+        actorProfileId: row.actor_profile_id ?? null,
+        actorEmail: row.actor_email ?? null,
+        action: row.action ?? null,
+        subjectType: row.subject_type ?? null,
+        subjectId: row.subject_id ?? null,
+        reason: row.reason ?? null,
+        previousValue: row.previous_value ?? null,
+        newValue: row.new_value ?? null,
+        createdAt: row.created_at ?? null,
+      })),
+    },
+    capabilities: {
+      scope: {
+        supported: true,
+        detail:
+          "telemetry_events is the append-only SDK delivery event stream written by the telemetry Edge Function (migration 000021). It records what the delivery pipeline did, not what an administrator did.",
+      },
+      adminActionAudit: {
+        supported: false,
+        reason:
+          "No table records admin console activity. Contact-submission edits and deletes have never been logged, and no row in this project records who opened the admin console. The governance log above only covers serving-gate changes made after migration 000024 was applied.",
+      },
+      tamperEvidence: {
+        supported: false,
+        reason:
+          "Neither table is append-only at the storage layer: the server-side key holds full DML on both and nothing prevents an UPDATE or DELETE. Migration 000024 revokes UPDATE and DELETE from the server role, which stops accidents, not a determined caller.",
+      },
+      signatures: {
+        supported: false,
+        reason: "No signature or hash chain is computed over either table.",
+      },
+      metadataInspection: {
+        supported: false,
+        reason:
+          "telemetry_events.metadata is deliberately not returned. It is caller-supplied JSONB and has not been reviewed for what SDKs put in it.",
+      },
+      rowLimit: AUDIT_LIMIT,
+    },
+  };
+}
+
+async function operationsOverview() {
+  const [campaigns, advertisers, developers, publishers, placements, events, moderation, audit] =
+    await Promise.all([
+      campaignsOverview(),
+      advertisersOverview(),
+      developersOverview(),
+      publishersOverview(),
+      placementsOverview(),
+      eventsOverview(),
+      moderationQueue(),
+      auditTrail(),
+    ]);
+
+  if (moderation instanceof Response || audit instanceof Response) {
+    return apiError("INTERNAL_ERROR", "Failed to assemble the operations overview.", 500);
+  }
+
+  // Narrowed explicitly: both helpers can answer with an apiError() Response,
+  // and TypeScript keeps that union even after the instanceof guard above when
+  // the value is re-read through an alias.
+  const queue = moderation as Exclude<Awaited<ReturnType<typeof moderationQueue>>, Response>;
+  const auditLog = audit as Exclude<Awaited<ReturnType<typeof auditTrail>>, Response>;
+  const { count: blockedAdvertisers } = await admin
+    .from("advertisers")
+    .select("*", { count: "exact", head: true })
+    .eq("can_run_campaigns", false);
+  const { count: suspendedPublishers } = await admin
+    .from("publishers")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "suspended");
+  const { count: telemetryRecent } = await admin
+    .from("telemetry_events")
+    .select("*", { count: "exact", head: true })
+    .gte("recorded_at", events.since);
+
+  const byStatus = queue.summary.byCampaignStatus;
+  const inFlight = Object.entries(byStatus)
+    .filter(([status]) => status !== "archived")
+    .reduce((total, [, count]) => total + count, 0);
+
+  const telemetryTotals = auditLog.telemetry.totals;
+  const quarantined =
+    telemetryTotals.available === true ? telemetryTotals.quarantined : null;
+
+  // Each card carries its own provenance so a reader never has to guess
+  // whether a number is a live count, a windowed sample, or nothing at all.
+  const cards = [
+    {
+      key: "activeCampaigns",
+      label: "Active campaigns",
+      available: true,
+      value: campaigns.activeCount,
+      unit: "campaigns",
+      detail: "Exact count of campaigns with status 'active'.",
+      source: "public.campaigns",
+      scope: "total",
+    },
+    {
+      key: "campaignsInFlight",
+      label: "Campaigns not archived",
+      available: true,
+      value: inFlight,
+      unit: "campaigns",
+      detail: `Derived from the ${queue.summary.windowSize} most recently updated campaigns in the review queue window.`,
+      source: "public.campaigns",
+      scope: "window",
+    },
+    {
+      key: "moderationBacklog",
+      label: "Campaigns not servable",
+      available: true,
+      value: queue.summary.needsAttention,
+      unit: "campaigns",
+      detail: "Blocked by campaign_activation_blockers() and not active or archived.",
+      source: "public.campaign_activation_blockers()",
+      scope: "window",
+    },
+    {
+      key: "creativesAwaitingValidation",
+      label: "Creatives awaiting validation",
+      available: true,
+      value: (queue.summary.byCreativeStatus.pending ?? 0) +
+        (queue.summary.byCreativeStatus.uploaded ?? 0),
+      unit: "creatives",
+      detail: "campaign_creatives rows in 'pending' or 'uploaded'.",
+      source: "public.campaign_creatives",
+      scope: "window",
+    },
+    {
+      key: "serveEvents24h",
+      label: "Ad serves (24h)",
+      available: true,
+      value: events.serveCount,
+      unit: "serves",
+      detail: `ad_serve_log rows since ${events.since}.`,
+      source: "public.ad_serve_log",
+      scope: "window",
+    },
+    {
+      key: "impressions24h",
+      label: "Impressions (24h)",
+      available: true,
+      value: events.impressionCount,
+      unit: "impressions",
+      detail: `ad_impressions rows since ${events.since}.`,
+      source: "public.ad_impressions",
+      scope: "window",
+    },
+    {
+      key: "interactions24h",
+      label: "Interactions (24h)",
+      available: true,
+      value: events.interactionCount,
+      unit: "interactions",
+      detail: `ad_interactions rows since ${events.since}.`,
+      source: "public.ad_interactions",
+      scope: "window",
+    },
+    {
+      key: "telemetryEvents24h",
+      label: "Telemetry events (24h)",
+      available: true,
+      value: telemetryRecent ?? 0,
+      unit: "events",
+      detail: `telemetry_events rows by the server clock since ${events.since}.`,
+      source: "public.telemetry_events",
+      scope: "window",
+    },
+    {
+      key: "quarantinedEvents",
+      label: "Quarantined events (all time)",
+      available: quarantined !== null,
+      value: quarantined,
+      unit: "events",
+      detail:
+        quarantined === null
+          ? "Count unavailable."
+          : "telemetry_events in validation_state 'quarantined'.",
+      source: "public.telemetry_events",
+      scope: "total",
+    },
+    {
+      key: "gatedAdvertisers",
+      label: "Advertisers blocked from serving",
+      available: true,
+      value: blockedAdvertisers ?? 0,
+      unit: "advertisers",
+      detail: "advertisers.can_run_campaigns = false.",
+      source: "public.advertisers",
+      scope: "total",
+    },
+    {
+      key: "suspendedPublishers",
+      label: "Suspended publishers",
+      available: true,
+      value: suspendedPublishers ?? 0,
+      unit: "publishers",
+      detail: "publishers.status = 'suspended'.",
+      source: "public.publishers",
+      scope: "total",
+    },
+    {
+      key: "enabledPlacements",
+      label: "Enabled placements",
+      available: true,
+      value: placements.enabledCount,
+      unit: `of ${placements.totalCount}`,
+      detail: "placements.enabled = true.",
+      source: "public.placements",
+      scope: "total",
+    },
+    {
+      key: "platformAccounts",
+      label: "Accounts on platform",
+      available: true,
+      value: `${advertisers.totalCount} advertisers / ${developers.totalCount} developers / ${publishers.totalCount} publishers`,
+      unit: "",
+      detail: "Row counts on each role table.",
+      source: "public.advertisers, public.developer_accounts, public.publishers",
+      scope: "total",
+    },
+    {
+      key: "edgeUptime",
+      label: "Edge availability",
+      available: false,
+      value: null,
+      unit: "",
+      detail:
+        "Not instrumented. No request log, error counter or uptime history is stored, so availability cannot be computed for any window.",
+      source: null,
+      scope: "unavailable",
+    },
+    {
+      key: "regionMesh",
+      label: "Regions / node mesh",
+      available: false,
+      value: null,
+      unit: "",
+      detail:
+        "Not instrumented. No node or region registry exists; edge functions run as managed infrastructure that this project never enumerates.",
+      source: null,
+      scope: "unavailable",
+    },
+    {
+      key: "settlementSync",
+      label: "Settlement synchronisation",
+      available: false,
+      value: null,
+      unit: "",
+      detail:
+        "Not instrumented. settle_rewards computes payouts on demand and reward_ledger records accrual, but no run history, cursor or last-success timestamp is persisted anywhere.",
+      source: null,
+      scope: "unavailable",
+    },
+    {
+      key: "openIncidents",
+      label: "Open incidents",
+      available: false,
+      value: null,
+      unit: "",
+      detail:
+        "Not instrumented. There is no incident table, no escalation record and no on-call model in this project.",
+      source: null,
+      scope: "unavailable",
+    },
+    {
+      key: "slaBreaches",
+      label: "SLA breaches",
+      available: false,
+      value: null,
+      unit: "",
+      detail:
+        "Not instrumented. No SLA target or per-record deadline is stored, so nothing can be scored against one.",
+      source: null,
+      scope: "unavailable",
+    },
+  ];
+
+  return {
+    cards,
+    recentEvents: events,
+    generatedAt: new Date().toISOString(),
+    capabilities: {
+      actions: {
+        supported: false,
+        reason:
+          "PoP ping, token freeze and every other operation in the console design have no backend command behind them. Nothing in this function or any other can be invoked to run them.",
+        },
+      batchOperations: {
+        supported: false,
+        reason:
+          "No bulk endpoint exists. The one supported write is a single advertiser serving gate per PATCH /admin/accounts/gate.",
+      },
+      governanceLog: auditLog.capabilities,
+      note: "Every value above was read on this request. Nothing is cached, sampled from a design mock, or carried over from a previous response.",
+    },
+  };
+}
+
 
 async function systemStatus() {
   // Supabase auth is healthy if we can resolve the caller's own profile.
@@ -481,6 +1633,72 @@ const handler = serveWithCors(async (req) => {
           return result instanceof Response ? result : json(result);
         }
         return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+      }
+
+      case "accounts": {
+        const sub = path[1];
+
+        if (!sub) {
+          if (req.method !== "GET") {
+            return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+          }
+          const result = await accountsDirectory();
+          return result instanceof Response ? result : json(result);
+        }
+
+        if (sub === "gate") {
+          if (req.method !== "PATCH") {
+            return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+          }
+          const body = await req.text();
+          let parsed;
+          try {
+            parsed = body ? JSON.parse(body) : {};
+          } catch {
+            return apiError("INVALID_JSON", "Request body must be valid JSON.", 400);
+          }
+          // The actor comes from the verified JWT, never from the body: the
+          // audit row has to name the person the server authenticated.
+          const result = await updateAdvertiserGate(parsed, {
+            profileId: user.id,
+            email: user.email || "",
+          });
+          return result instanceof Response ? result : json(result);
+        }
+
+        return apiError("NOT_FOUND", "Not found.", 404);
+      }
+
+      case "moderation": {
+        if (req.method !== "GET") {
+          return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+        }
+        const result = await moderationQueue();
+        return result instanceof Response ? result : json(result);
+      }
+
+      case "health": {
+        if (req.method !== "GET") {
+          return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+        }
+        const result = await healthSignals();
+        return result instanceof Response ? result : json(result);
+      }
+
+      case "audit": {
+        if (req.method !== "GET") {
+          return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+        }
+        const result = await auditTrail();
+        return result instanceof Response ? result : json(result);
+      }
+
+      case "operations": {
+        if (req.method !== "GET") {
+          return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+        }
+        const result = await operationsOverview();
+        return result instanceof Response ? result : json(result);
       }
 
       default:

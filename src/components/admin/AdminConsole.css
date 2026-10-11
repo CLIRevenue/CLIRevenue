@@ -3,29 +3,39 @@
    Operations control plane — genuine visual composition
    ================================================================ */
 
-/* ---------- design tokens ------------------------------------------ */
+/* ---------- design tokens (mapped to main design system) ----------- */
 .adm-root {
-  --adm-bg:          #060608;
-  --adm-bg-grid:     rgba(255, 255, 255, 0.018);
-  --adm-surface:     #0b0b0f;
-  --adm-raised:      #101015;
-  --adm-border:      #1a1a22;
-  --adm-border-soft: #131318;
-  --adm-text:        #f4f4f5;
-  --adm-text-dim:    #a1a1aa;
-  --adm-muted:       #71717a;
-  --adm-muted-dim:   #3f3f46;
-  --adm-red:         #dc2626;
-  --adm-red-bright:  #ef4444;
-  --adm-red-dim:     #7f1d1d;
-  --adm-red-bg:      rgba(220, 38, 38, 0.07);
-  --adm-green:       #22c55e;
-  --adm-green-bg:    rgba(34, 197, 94, 0.07);
-  --adm-amber:       #f59e0b;
-  --adm-amber-bright:#fbbf24;
-  --adm-amber-bg:    rgba(245, 158, 11, 0.07);
-  --adm-mono:        'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
-  --adm-sans:        'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Structural tokens → main design system */
+  --adm-bg:          var(--bg);
+  --adm-bg-grid:     var(--hair);
+  --adm-surface:     var(--surface);
+  --adm-raised:      var(--elevated);
+  --adm-border:      var(--border);
+  --adm-border-soft: var(--hair);
+  --adm-text:        var(--text);
+  --adm-text-dim:    var(--text-muted);
+  --adm-muted:       var(--muted);
+  --adm-muted-dim:   var(--ink-4);
+
+  /* Admin brand token (distinct from status) */
+  --adm-brand:       #dc2626;
+  --adm-brand-bright:#ef4444;
+  --adm-brand-dim:   #7f1d1d;
+  --adm-brand-bg:    rgba(220, 38, 38, 0.07);
+
+  /* Status tokens → semantic mappings */
+  --adm-status-error:  var(--accent-error);
+  --adm-status-error-bg:  rgba(251, 113, 133, 0.07);
+  --adm-status-ok:     var(--ok);
+  --adm-status-ok-bg:     rgba(74, 222, 128, 0.07);
+  --adm-status-amber:  var(--amber);
+  --adm-status-amber-bg:  var(--amber-wash);
+
+  /* Fonts → main design system */
+  --adm-mono:        var(--mono);
+  --adm-sans:        var(--sans);
+
+  /* Admin-specific layout tokens (preserved) */
   --adm-sidebar-w:   208px;
   --adm-topbar-h:    44px;
   --adm-radius:      var(--radius-md);
@@ -81,7 +91,7 @@
   font-weight: 600;
   letter-spacing: .16em;
   text-transform: uppercase;
-  color: var(--adm-red);
+  color: var(--adm-brand);
   white-space: nowrap;
   display: flex;
   align-items: center;
@@ -92,7 +102,7 @@
   display: block;
   width: 5px;
   height: 5px;
-  background: var(--adm-red);
+  background: var(--adm-brand);
   border-radius: 1px;
   flex-shrink: 0;
 }
@@ -141,9 +151,9 @@
   font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
-  background: var(--adm-red-bg);
-  color: var(--adm-red-bright);
-  border: 1px solid var(--adm-red-dim);
+  background: var(--adm-brand-bg);
+  color: var(--adm-brand-bright);
+  border: 1px solid var(--adm-brand-dim);
   border-radius: var(--adm-radius);
   padding: 2px 7px;
   line-height: 1;
@@ -164,12 +174,12 @@
   line-height: 1;
 }
 .adm-topbar__logout:hover {
-  border-color: var(--adm-red);
-  color: var(--adm-red-bright);
-  background: var(--adm-red-bg);
+  border-color: var(--adm-brand);
+  color: var(--adm-brand-bright);
+  background: var(--adm-brand-bg);
 }
 .adm-topbar__logout:focus-visible {
-  outline: 1px solid var(--adm-red);
+  outline: 1px solid var(--adm-brand);
   outline-offset: 2px;
 }
 
@@ -232,9 +242,9 @@
   border-color: var(--adm-border);
 }
 .adm-nav__btn--active {
-  background: var(--adm-red-bg);
-  color: var(--adm-red-bright);
-  border-color: var(--adm-red-dim);
+  background: var(--adm-brand-bg);
+  color: var(--adm-brand-bright);
+  border-color: var(--adm-brand-dim);
   font-weight: 600;
 }
 .adm-nav__btn--active::before {
@@ -244,7 +254,7 @@
   top: 5px;
   bottom: 5px;
   width: 2px;
-  background: var(--adm-red);
+  background: var(--adm-brand);
   border-radius: 0 1px 1px 0;
 }
 .adm-nav__icon {
@@ -320,9 +330,9 @@
   font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--adm-green);
-  background: var(--adm-green-bg);
-  border: 1px solid rgba(34, 197, 94, .15);
+  color: var(--adm-status-ok);
+  background: var(--adm-status-ok-bg);
+  border: 1px solid rgba(74, 222, 128, .15);
   border-radius: var(--adm-radius);
   padding: 4px 9px;
   line-height: 1;
@@ -331,7 +341,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--adm-green);
+  background: var(--adm-status-ok);
   animation: adm-pulse 2s ease-in-out infinite;
 }
 /* The muted pill is a neutral state, not a live one: no colour, no pulse.
@@ -348,12 +358,12 @@
 }
 /* Amber is "in play but not settled" — new work, work in progress. */
 .adm-status-pill--amber {
-  color: var(--adm-amber);
-  background: var(--adm-amber-bg);
-  border-color: rgba(245, 158, 11, .18);
+  color: var(--adm-status-amber);
+  background: var(--adm-status-amber-bg);
+  border-color: rgba(96, 165, 250, .18);
 }
 .adm-status-pill--amber .adm-status-pill__dot {
-  background: var(--adm-amber);
+  background: var(--adm-status-amber);
 }
 @keyframes adm-pulse {
   0%, 100% { opacity: 1; }
@@ -531,14 +541,14 @@
   white-space: nowrap;
   line-height: 1.4;
 }
-.adm-badge--active    { background: var(--adm-green-bg); color: var(--adm-green); border-color: rgba(34,197,94,.18); }
-.adm-badge--draft     { background: var(--adm-amber-bg); color: var(--adm-amber); border-color: rgba(245,158,11,.18); }
-.adm-badge--paused    { background: var(--adm-amber-bg); color: var(--adm-amber); border-color: rgba(245,158,11,.18); }
-.adm-badge--archived  { background: rgba(113,113,122,.06); color: var(--adm-muted); border-color: rgba(113,113,122,.18); }
-.adm-badge--completed { background: rgba(113,113,122,.06); color: var(--adm-muted); border-color: rgba(113,113,122,.18); }
-.adm-badge--suspended { background: var(--adm-red-bg); color: var(--adm-red-bright); border-color: rgba(220,38,38,.18); }
-.adm-badge--enabled   { background: var(--adm-green-bg); color: var(--adm-green); border-color: rgba(34,197,94,.18); }
-.adm-badge--disabled  { background: rgba(113,113,122,.06); color: var(--adm-muted); border-color: rgba(113,113,122,.18); }
+.adm-badge--active    { background: var(--adm-status-ok-bg); color: var(--adm-status-ok); border-color: rgba(74, 222, 128, .18); }
+.adm-badge--draft     { background: var(--adm-status-amber-bg); color: var(--adm-status-amber); border-color: rgba(96, 165, 250, .18); }
+.adm-badge--paused    { background: var(--adm-status-amber-bg); color: var(--adm-status-amber); border-color: rgba(96, 165, 250, .18); }
+.adm-badge--archived  { background: rgba(113, 113, 122, .06); color: var(--adm-muted); border-color: rgba(113, 113, 122, .18); }
+.adm-badge--completed { background: rgba(113, 113, 122, .06); color: var(--adm-muted); border-color: rgba(113, 113, 122, .18); }
+.adm-badge--suspended { background: var(--adm-status-error-bg); color: var(--adm-status-error); border-color: rgba(251, 113, 133, .18); }
+.adm-badge--enabled   { background: var(--adm-status-ok-bg); color: var(--adm-status-ok); border-color: rgba(74, 222, 128, .18); }
+.adm-badge--disabled  { background: rgba(113, 113, 122, .06); color: var(--adm-muted); border-color: rgba(113, 113, 122, .18); }
 
 /* ---------- system status strip ----------------------------------- */
 .adm-system-strip {
@@ -591,10 +601,10 @@
   transition: background .2s;
 }
 .adm-health__dot--ok {
-  background: var(--adm-green);
+  background: var(--adm-status-ok);
 }
 .adm-health__dot--fail {
-  background: var(--adm-red);
+  background: var(--adm-status-error);
 }
 
 /* ---------- events ------------------------------------------------- */
@@ -654,11 +664,11 @@
 
 /* ---------- loading / error --------------------------------------- */
 .adm-error {
-  background: var(--adm-red-bg);
-  border: 1px solid var(--adm-red-dim);
+  background: var(--adm-status-error-bg);
+  border: 1px solid rgba(251, 113, 133, .25);
   border-radius: var(--adm-radius);
   padding: 10px 14px;
-  color: var(--adm-red-bright);
+  color: var(--adm-status-error);
   font-family: var(--adm-mono);
   font-size: 10px;
   margin-bottom: 14px;
@@ -678,7 +688,7 @@
   width: 10px;
   height: 10px;
   border: 1.5px solid var(--adm-border);
-  border-top-color: var(--adm-red);
+  border-top-color: var(--adm-status-error);
   border-radius: 50%;
   animation: adm-spin .7s linear infinite;
   flex-shrink: 0;

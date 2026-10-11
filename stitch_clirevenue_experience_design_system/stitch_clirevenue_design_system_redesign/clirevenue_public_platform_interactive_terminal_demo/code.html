@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><style>@layer base{html,body{width:100%;margin:0;padding:0;background-color:#0d1017;color:#cbd5e1;}body{overscroll-behavior-y:none;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}.pb-safe{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 0.5rem);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}
+  .neu-extrude {
+    box-shadow: 8px 8px 20px rgba(0,0,0,0.65), -5px -5px 16px rgba(255,255,255,0.05), inset 0 1px 1px rgba(255,255,255,0.15);
+  }
+  .neu-extrude-sm {
+    box-shadow: 4px 4px 12px rgba(0,0,0,0.55), -3px -3px 8px rgba(255,255,255,0.05), inset 0 1px 1px rgba(255,255,255,0.2);
+  }
+  .neu-inset {
+    box-shadow: inset 4px 4px 10px rgba(0,0,0,0.65), inset -3px -3px 8px rgba(255,255,255,0.04);
+  }
+  .glass-card {
+    background: linear-gradient(135deg, rgba(29, 34, 48, 0.65) 0%, rgba(16, 20, 30, 0.8) 100%);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 8px 8px 22px rgba(0,0,0,0.6), -4px -4px 14px rgba(255,255,255,0.04), inset 0 1px 1.5px rgba(255,255,255,0.22), inset 0 -1px 2px rgba(0,0,0,0.5);
+  }
+  .glass-pill {
+    background: linear-gradient(145deg, rgba(35, 42, 60, 0.7), rgba(18, 22, 34, 0.85));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 4px 4px 12px rgba(0,0,0,0.5), -2px -2px 6px rgba(255,255,255,0.05), inset 0 1px 1px rgba(255,255,255,0.25);
+  }
+</style><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-background": "#cbd5e1", "on-primary-fixed": "#001945", "primary-fixed-dim": "#b0c6ff", "tertiary": "#22d3ee", "surface-container-low": "#131722", "surface-container": "#181d2a", "on-tertiary-fixed": "#001f24", "inverse-primary": "#0058ca", "on-tertiary-container": "#002f35", "surface-bright": "#363941", "surface-container-highest": "#2e3546", "secondary-fixed": "#f8d8ff", "error-container": "#93000a", "primary-fixed": "#d9e2ff", "on-primary": "#002d6e", "primary": "#a5b4fc", "surface-variant": "#2a3142", "outline": "#64748b", "secondary-container": "#c084fc", "on-secondary-fixed-variant": "#74009f", "inverse-on-surface": "#2d3038", "surface-container-high": "#222839", "on-tertiary": "#00363d", "secondary": "#e879f9", "inverse-surface": "#cbd5e1", "background": "#0d1017", "secondary-fixed-dim": "#ecb2ff", "on-primary-fixed-variant": "#00429b", "surface": "#0d1017", "tertiary-fixed-dim": "#00daf3", "on-secondary-fixed": "#320047", "tertiary-fixed": "#9cf0ff", "surface-dim": "#090c12", "on-secondary": "#520071", "on-error-container": "#ffdad6", "surface-tint": "#b0c6ff", "surface-container-lowest": "#07090e", "on-error": "#690005", "on-surface": "#cbd5e1", "outline-variant": "#334155", "on-surface-variant": "#94a3b8", "tertiary-container": "#0891b2", "on-tertiary-fixed-variant": "#004f58", "on-secondary-container": "#480063", "primary-container": "#4f46e5", "error": "#f87171", "on-primary-container": "#e0e7ff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.875rem", "full": "9999px" }, spacing: { "space-xl": "2.5rem", "space-lg": "1.5rem", "gutter": "1rem", "margin": "1rem", "gutter-desktop": "1.5rem", "margin-tablet": "2rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "margin-desktop": "3rem", "space-md": "1rem" }, fontFamily: { "headline-sm": ["Geist"], "headline-lg-mobile": ["Geist"], "label-code-md": ["JetBrains Mono"], "display-xl": ["Geist"], "display-xl-mobile": ["Geist"], "headline-lg": ["Geist"], "label-code-lg": ["JetBrains Mono"], "body-sm": ["Inter"], "body-lg": ["Inter"], "label-code-xs": ["JetBrains Mono"], "body-md": ["Inter"], "headline-md": ["Geist"] }, fontSize: { "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "500" }], "headline-lg-mobile": ["26px", { "lineHeight": "34px", "fontWeight": "600" }], "label-code-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "display-xl": ["56px", { "lineHeight": "64px", "fontWeight": "700" }], "display-xl-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }], "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }], "label-code-lg": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }], "label-code-xs": ["10px", { "lineHeight": "14px", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }], "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+      background-image: 
+        radial-gradient(ellipse 70% 40% at 20% 0%, rgba(34, 211, 238, 0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 85% 25%, rgba(192, 132, 252, 0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 50% at 50% 80%, rgba(79, 70, 229, 0.06) 0%, transparent 80%);
+      background-attachment: fixed;
+    }
+  </style>
+</head><body class="bg-[#0d1017] font-body-md text-body-md text-slate-300 antialiased min-h-screen flex flex-col relative"><header class="fixed top-0 w-full z-50 pt-safe bg-[#0d1017]/70 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.65)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="clirevenue-logo(dark).png" class="h-8 w-auto object-contain flex-shrink-0 drop-shadow-[0_2px_8px_rgba(34,211,238,0.3)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzNSc1o0cj1Y0BlcyFg4F597ja9zaT8r6nYCCsRPGnUOQgHXRnAud6OFWhX77uSE_BTS6FQb2t0Jzjf8mAhgOkxYHhKeCcdRhSNXf8lBeJqA9nQcZI_NWUr7Su8ocHH6XnsTXq8Tw7I4JrFFishNaz17nDQVJzYW4ljUoIgaZ8q8sMZPcp_CNi9c82rI3WTDmm_RE0mh_5Xo6N19ELCVn-8NjXQZ9HCpQBKYlCq7JK2elwI7n46arrKRndJYd68Gr3RA"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-slate-200 tracking-tight truncate font-semibold">CLIRevenue</span><span class="hidden xs:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-950/50 border border-cyan-500/20 text-cyan-300 font-label-code-xs text-label-code-xs tracking-wider shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)]"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_6px_#22d3ee]"></span>LIVE</span></div><span class="font-label-code-xs text-label-code-xs text-slate-400 truncate">Overview</span></div></div><div class="flex items-center gap-space-xs flex-shrink-0"><button aria-label="Telemetry Status" class="h-10 px-3 rounded-full flex items-center gap-1.5 glass-pill text-cyan-300 font-label-code-xs text-label-code-xs hover:border-cyan-400/40 transition-all active:scale-95"><span class="material-symbols-outlined text-[15px]">terminal</span><span class="hidden sm:inline">v2.4</span></button><button aria-label="Account Switcher" class="w-10 h-10 rounded-full flex items-center justify-center p-0.5 glass-pill hover:border-cyan-400/40 transition-all active:scale-95"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-inner" src="https://lh3.googleusercontent.com/aida/AEtjO1WVWAtvZmc9-s2eOe5neWGNBHeC6JwCfz7LaN_j1t3Phfn8MLi8eWF54x_5nADvLgkLdE9Xt8DUWIYEDDm4Wzr5mSeICApS72UcDzUNo9UF40FkeaJSin-0rMZlsiM8P_E1I7qAiVZHlwgoLZ41sABxBR4uCaR8LiAOY-bEm1rRsCXGs41AFmwDHzCXfd3SwmYIZIPSPWkcL7mwqj6vutfi2NIjXCa-QHTp8XTAWyUd1ut-utzIw4RHidESeaVJjX4E7UAJfoNu"/></button></div></div></header><main class="flex-1 w-full pt-16 pb-24"><div class="flex flex-col w-full text-slate-300">
+<!-- Kinetic Announcement Bar -->
+<div class="px-margin pt-space-md pb-space-xs">
+<div class="w-full p-px rounded-full bg-gradient-to-r from-cyan-400/30 via-indigo-500/25 to-fuchsia-500/35 shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
+<div class="flex items-center justify-between px-space-md py-1.5 rounded-full bg-[#111520]/80 backdrop-blur-xl border border-white/[0.08] shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)]">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0 shadow-[0_0_8px_#22d3ee]"></span>
+<span class="font-label-code-xs text-label-code-xs text-cyan-300/90 truncate uppercase tracking-wider">
+            v2.4 SDK RELEASE • DEV MONETIZATION ENGINE
+          </span>
+</div>
+<span class="font-label-code-xs text-label-code-xs text-fuchsia-300 font-semibold flex-shrink-0 ml-2 px-1.5 py-0.5 rounded-full bg-fuchsia-950/60 border border-fuchsia-500/25">HOT</span>
+</div>
+</div>
+</div>
+<!-- Hero Content -->
+<div class="px-margin pt-space-md pb-space-md flex flex-col gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-slate-200 font-semibold tracking-tight leading-tight">
+        Monetize CLI tools &amp; AI agents <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-indigo-200 to-fuchsia-300 drop-shadow-[0_2px_12px_rgba(34,211,238,0.25)]">without selling out.</span>
+</h1>
+<p class="font-body-md text-body-md text-slate-400 leading-relaxed">
+        Non-intrusive, developer-native sponsored placements in terminal stdout, CLI outputs, and LLM coding assistant tool responses.
+      </p>
+</div>
+<!-- Quick Action / Install Command Box -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-[#090c13]/80 neu-inset border border-white/[0.05]">
+<div class="flex items-center gap-2 min-w-0 font-label-code-xs text-label-code-xs overflow-hidden pl-1">
+<span class="text-cyan-400 select-none font-bold">$</span>
+<span class="text-slate-300/90 truncate font-label-code-xs" id="install-cmd">curl -fsSL https://clirev.dev/install.sh | bash</span>
+</div>
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-lg glass-pill text-cyan-300 hover:text-cyan-200 hover:border-cyan-400/40 active:scale-95 transition-all flex-shrink-0" id="copy-btn" onclick="copyInstallCmd()" title="Copy to clipboard">
+<span class="material-symbols-outlined text-[15px]" id="copy-icon">content_copy</span>
+<span class="font-label-code-xs text-label-code-xs uppercase tracking-wider font-semibold" id="copy-text">Copy</span>
+</button>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="flex-1 py-3 px-space-md rounded-xl bg-gradient-to-r from-indigo-500/90 via-purple-600/90 to-fuchsia-600/90 text-slate-100 font-label-code-md text-label-code-md font-semibold tracking-wide flex items-center justify-center gap-2 border border-white/20 shadow-[0_8px_20px_rgba(99,102,241,0.35),inset_0_1px_2px_rgba(255,255,255,0.4)] active:scale-[0.98] transition-transform">
+<span>Start Monetizing (Free)</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+<button class="p-3 rounded-xl glass-pill text-slate-300 flex items-center justify-center hover:text-cyan-300 hover:border-cyan-400/30 active:scale-95 transition-all" title="Read Documentation">
+<span class="material-symbols-outlined text-[20px]">menu_book</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Live Simulated Interactive Terminal -->
+<div class="px-margin pb-space-lg">
+<div class="rounded-2xl glass-card p-space-md flex flex-col gap-space-sm relative overflow-hidden">
+<!-- Glow ambient backdrop -->
+<div class="absolute -top-16 -right-16 w-52 h-52 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -bottom-16 -left-16 w-48 h-48 bg-fuchsia-500/10 rounded-full blur-3xl pointer-events-none"></div>
+<!-- Terminal Header -->
+<div class="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-red-400/80 shadow-[0_0_6px_rgba(248,113,113,0.5)]"></span>
+<span class="w-2.5 h-2.5 rounded-full bg-amber-400/80 shadow-[0_0_6px_rgba(251,191,36,0.5)]"></span>
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-400/80 shadow-[0_0_6px_rgba(52,211,153,0.5)]"></span>
+<span class="font-label-code-xs text-label-code-xs text-slate-400 ml-2 truncate">zsh — worker@node-01</span>
+</div>
+<span class="font-label-code-xs text-label-code-xs px-2.5 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 tracking-wide uppercase shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] font-semibold">
+          Live Interactive
+        </span>
+</div>
+<!-- Disclaimer Flag -->
+<div class="bg-[#0b0e15]/70 neu-inset px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 border border-white/[0.04]">
+<span class="material-symbols-outlined text-cyan-400 text-[14px]">info</span>
+<span class="font-label-code-xs text-label-code-xs text-slate-400 uppercase tracking-wider truncate">
+          [Illustrative preview — simulated CLI output]
+        </span>
+</div>
+<!-- Terminal Output Screen -->
+<div class="bg-[#080b11]/90 neu-inset p-space-sm rounded-xl font-label-code-xs text-label-code-xs space-y-2 select-text overflow-x-auto leading-relaxed border border-white/[0.04]">
+<div class="flex items-center gap-2">
+<span class="text-cyan-400">$</span>
+<span class="text-slate-200">ai-agent run --task="optimize-migrations"</span>
+</div>
+<div class="text-slate-400">
+          &gt; Analyzing schema: postgres_v14_public<br/>
+          &gt; Indexed 42 relations in 18ms. No bottlenecks found.
+        </div>
+<!-- Native Sponsored Placement Card in ASCII Style -->
+<div class="p-3 rounded-xl bg-gradient-to-br from-[#121623] to-[#0c0f18] border border-white/[0.08] shadow-[4px_4px_12px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<span class="px-1.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 font-bold text-[9px] uppercase tracking-widest shadow-[0_0_8px_rgba(34,211,238,0.2)]">
+              [SPONSOR]
+            </span>
+<span class="text-slate-400 text-[10px]">served via clirev-edge (1.8ms)</span>
+</div>
+<div class="flex flex-col gap-0.5 pt-0.5">
+<div class="text-cyan-300 font-semibold flex items-center gap-1">
+<span>neon.tech</span>
+<span class="text-slate-500">•</span>
+<span class="text-slate-300 font-normal">Serverless Postgres for GitHub branches</span>
+</div>
+<div class="text-fuchsia-300 text-[10px]">
+              &gt;&gt; Claim $100 dev grant: <span class="underline">https://neon.tech/clirev</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 pt-1">
+<span class="text-cyan-400">$</span>
+<span class="text-slate-400 flex items-center">
+            ready for next command<span class="inline-block w-1.5 h-3.5 bg-cyan-400 ml-1 animate-pulse shadow-[0_0_6px_#22d3ee]"></span>
+</span>
+</div>
+</div>
+<!-- Interactive Play Trigger -->
+<div class="flex items-center justify-between pt-1">
+<span class="font-label-code-xs text-label-code-xs text-slate-400">Simulated CPM: ~$42.00</span>
+<button class="px-3 py-1.5 rounded-lg glass-pill text-indigo-300 hover:text-indigo-200 transition-all font-label-code-xs text-label-code-xs flex items-center gap-1 active:scale-95" onclick="triggerSimulate(this)">
+<span class="material-symbols-outlined text-[14px]">replay</span>
+<span>Replay Ping</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Visual Core Architecture Banner -->
+<div class="px-margin pb-space-lg">
+<div class="relative rounded-2xl glass-card p-space-md">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-cyan-300 text-[20px] drop-shadow-[0_0_6px_rgba(34,211,238,0.4)]">hub</span>
+<span class="font-label-code-sm text-headline-sm text-slate-200 font-semibold">Decentralized Telemetry Mesh</span>
+</div>
+<span class="font-label-code-xs text-label-code-xs text-fuchsia-300 uppercase font-semibold px-2 py-0.5 rounded-full bg-fuchsia-950/50 border border-fuchsia-500/20">Encrypted Edge</span>
+</div>
+<div class="rounded-xl overflow-hidden p-1 bg-[#090c13]/80 neu-inset border border-white/[0.05] mb-space-sm">
+<img class="w-full h-36 object-cover rounded-lg brightness-90 shadow-inner" data-alt="Futuristic glowing developer terminal interface showing cybernetic network nodes, electric cyan neon vector graphs, dark UI background with ultraviolet code syntax and server telemetry diagnostics." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPtlZGcv3xnQMr3_lcJTWix7aT7aUFDmlOSiuNyfXXFs1vR_QLEdQ0QISDjV_hkXLj0TTmnEVVVf-oAl4HwN6asboS32HqwyZVCVjKpmtV5alkxhEjBMiXNK1jU6mwlEPxwEUpRhzlxmRVXTSETGru5uHGpKXf77sIs0YrJMKw40dzWQjoJZc_SBAOQsxTvXjdM9NdelcfrXjUXm6JLf_OLtSArEIY0peh1sJs8BULjcGeLrekumW9"/>
+</div>
+<p class="font-body-sm text-body-sm text-slate-400 leading-relaxed">
+        Every injection packet is cryptographically verified with zero client execution pause. Built strictly for command-line native developers.
+      </p>
+</div>
+</div>
+<!-- Value Pillars -->
+<div class="px-margin pb-space-lg flex flex-col gap-space-sm">
+<div class="flex flex-col gap-1 pb-space-xs">
+<span class="font-label-code-xs text-label-code-xs text-cyan-300 tracking-widest uppercase font-semibold">Engine Architecture</span>
+<h2 class="font-headline-sm text-headline-sm text-slate-200 font-semibold">Architected for strict dev respect</h2>
+</div>
+<!-- Pillar 1 -->
+<div class="p-space-md rounded-2xl glass-card flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="w-9 h-9 rounded-xl glass-pill flex items-center justify-center text-cyan-300">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+</div>
+<span class="font-label-code-xs text-label-code-xs px-2.5 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-500/25 text-cyan-300 font-bold">&lt; 2ms PAYLOAD</span>
+</div>
+<h3 class="font-label-code-lg text-label-code-lg text-slate-200 font-semibold mt-1">Zero Latency Impact</h3>
+<p class="font-body-sm text-body-sm text-slate-400 leading-relaxed">
+        Pulls cached micro-payloads via edge PoPs. If network times out at 15ms, stdout yields directly with zero blocking.
+      </p>
+</div>
+<!-- Pillar 2 -->
+<div class="p-space-md rounded-2xl glass-card flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="w-9 h-9 rounded-xl glass-pill flex items-center justify-center text-indigo-300">
+<span class="material-symbols-outlined text-[20px]">target</span>
+</div>
+<span class="font-label-code-xs text-label-code-xs px-2.5 py-0.5 rounded-full bg-indigo-950/60 border border-indigo-500/25 text-indigo-300 font-bold">LOCAL CONTEXT</span>
+</div>
+<h3 class="font-label-code-lg text-label-code-lg text-slate-200 font-semibold mt-1">Contextual Target Engine</h3>
+<p class="font-body-sm text-body-sm text-slate-400 leading-relaxed">
+        Matches relevant tools only (Docker, Rust, Next.js, Cloudflare). No creepy consumer retargeting or tracking cookies.
+      </p>
+</div>
+<!-- Pillar 3 -->
+<div class="p-space-md rounded-2xl glass-card flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="w-9 h-9 rounded-xl glass-pill flex items-center justify-center text-fuchsia-300">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+</div>
+<span class="font-label-code-xs text-label-code-xs px-2.5 py-0.5 rounded-full bg-fuchsia-950/60 border border-fuchsia-500/25 text-fuchsia-300 font-bold">100% ANONYMOUS</span>
+</div>
+<h3 class="font-label-code-lg text-label-code-lg text-slate-200 font-semibold mt-1">Strict Dev Privacy</h3>
+<p class="font-body-sm text-body-sm text-slate-400 leading-relaxed">
+        Zero telemetry harvesting. Ephemeral SHA-256 hashed session nonces prevent device fingerprinting entirely.
+      </p>
+</div>
+</div>
+<!-- Test Drive SDK Integration Card -->
+<div class="px-margin pb-space-lg">
+<div class="p-space-md rounded-2xl glass-card flex flex-col gap-space-md">
+<div class="flex flex-col gap-1">
+<span class="font-label-code-xs text-label-code-xs text-cyan-300 tracking-widest uppercase font-semibold">Quick Implementation</span>
+<h3 class="font-headline-sm text-headline-sm text-slate-200 font-semibold">Integrate in 3 lines of code</h3>
+</div>
+<!-- Language Switcher Tabs -->
+<div class="flex items-center gap-1.5 p-1.5 rounded-xl bg-[#090c13]/80 neu-inset border border-white/[0.04] overflow-x-auto">
+<button class="sdk-tab flex-1 py-1.5 px-2.5 rounded-lg font-label-code-xs text-label-code-xs text-slate-200 glass-pill font-medium transition-all" onclick="switchTab('node', this)">Node/npm</button>
+<button class="sdk-tab flex-1 py-1.5 px-2.5 rounded-lg font-label-code-xs text-label-code-xs text-slate-400 hover:text-slate-200 transition-all" onclick="switchTab('python', this)">Python</button>
+<button class="sdk-tab flex-1 py-1.5 px-2.5 rounded-lg font-label-code-xs text-label-code-xs text-slate-400 hover:text-slate-200 transition-all" onclick="switchTab('go', this)">Go</button>
+<button class="sdk-tab flex-1 py-1.5 px-2.5 rounded-lg font-label-code-xs text-label-code-xs text-slate-400 hover:text-slate-200 transition-all" onclick="switchTab('rust', this)">Rust</button>
+</div>
+<!-- Code Snippet Box -->
+<div class="p-space-sm rounded-xl bg-[#080b11]/90 neu-inset border border-white/[0.04] font-label-code-xs text-label-code-xs text-slate-300 overflow-x-auto leading-relaxed" id="code-snippet-container">
+<span class="text-slate-400">// Node.js SDK</span><br/>
+<span class="text-cyan-300">import</span> { CLIRevenue } <span class="text-cyan-300">from</span> <span class="text-fuchsia-300">'@clirev/sdk'</span>;<br/><br/>
+<span class="text-cyan-300">const</span> clirev = <span class="text-cyan-300">new</span> CLIRevenue({ key: <span class="text-fuchsia-300">'cli_live_token'</span> });<br/>
+<span class="text-cyan-300">await</span> clirev.renderFooter({ tag: <span class="text-fuchsia-300">'docker'</span> });
+      </div>
+<div class="flex items-center justify-between text-slate-400 font-label-code-xs text-label-code-xs">
+<span class="flex items-center gap-1 text-cyan-300">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+          Zero Dependencies
+        </span>
+<span class="text-slate-400">Bundle Size: ~3.4kb</span>
+</div>
+</div>
+</div>
+<!-- Advertiser Spotlight Visual Box -->
+<div class="px-margin pb-space-lg">
+<div class="p-space-md rounded-2xl glass-card flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-code-xs text-label-code-xs text-fuchsia-300 uppercase font-semibold tracking-wider">For Developer Brands</span>
+<span class="px-2.5 py-0.5 rounded-full bg-slate-800/60 border border-white/[0.08] text-slate-300 font-label-code-xs text-label-code-xs shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">Self-serve</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-slate-200 font-semibold leading-snug">Reach engineers at the exact moment of workflow intent</h3>
+<div class="rounded-xl overflow-hidden p-1 bg-[#090c13]/80 neu-inset border border-white/[0.05] mb-1">
+<img class="w-full h-32 object-cover rounded-lg shadow-inner" data-alt="Modern dark developer workspace with high-tech monitors exhibiting electric cyan and magenta code telemetry, minimalist ergonomic hardware setup with glowing futuristic mood lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTHxD6qTYunIztKntpWQjIYIhmNAASTmy2EIjMPZ9LI2uRI6DSJIfRuWV2UBHonlGpopShMbs7B0azmxHEl0gSphUGgZn5JEANxLQgGI8Yjv4JLBiHWMfp2h0thcRtHrBUVWQkRxRFw5os7sseMUd6dHaM7FZotDAB-8pG7YYHGJkviP45URhgdsc7ZGvAYg8O1lYRAEOgOBpVdUiIokV_sfskuwYOR6DNim4dJgDX4hqEuLA_eI9R"/>
+</div>
+<p class="font-body-sm text-body-sm text-slate-400 leading-relaxed">
+        Target database admins running migration scripts, DevOps launching terraform recipes, or AI agents searching for API endpoints.
+      </p>
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<div class="p-space-sm rounded-xl bg-[#0a0d15]/80 neu-inset border border-white/[0.04] flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-slate-400 uppercase">Average CTR</span>
+<span class="font-label-code-lg text-headline-sm text-cyan-300 font-bold drop-shadow-[0_2px_8px_rgba(34,211,238,0.25)]">3.84%</span>
+<span class="text-[10px] text-slate-400">Terminal Stdout Native</span>
+</div>
+<div class="p-space-sm rounded-xl bg-[#0a0d15]/80 neu-inset border border-white/[0.04] flex flex-col">
+<span class="font-label-code-xs text-label-code-xs text-slate-400 uppercase">Active Repos</span>
+<span class="font-label-code-lg text-headline-sm text-fuchsia-300 font-bold drop-shadow-[0_2px_8px_rgba(232,121,249,0.25)]">1,420+</span>
+<span class="text-[10px] text-slate-400">Monetized CLI packages</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Honest Metrics Disclaimer Banner -->
+<div class="px-margin pb-space-lg">
+<div class="p-space-sm rounded-xl bg-[#0a0d15]/80 neu-inset border border-white/[0.04] flex items-start gap-2">
+<span class="material-symbols-outlined text-slate-400 text-[16px] flex-shrink-0 mt-0.5">verified_user</span>
+<p class="font-body-sm text-body-sm text-slate-400 leading-relaxed">
+        Performance statistics and simulated yields displayed are for technical illustration. Payouts dynamically settle in USDC or Stripe Connect based on validated impressions.
+      </p>
+</div>
+</div>
+<!-- Developer Footer & Quick Status -->
+<div class="px-margin pb-space-xl pt-space-md flex flex-col gap-space-md glass-card rounded-t-3xl border-b-0">
+<div class="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span>
+<span class="font-label-code-xs text-label-code-xs text-slate-300 font-medium">SYSTEMS OPERATIONAL • 99.99%</span>
+</div>
+<span class="font-label-code-xs text-label-code-xs text-slate-400">EDGE: IAD1 (1ms)</span>
+</div>
+<div class="grid grid-cols-2 gap-space-md font-label-code-xs text-label-code-xs">
+<div class="flex flex-col gap-2">
+<span class="text-cyan-300 uppercase font-semibold tracking-wider">Resources</span>
+<a class="text-slate-400 hover:text-slate-200 transition-colors" href="#">SDK Documentation</a>
+<a class="text-slate-400 hover:text-slate-200 transition-colors" href="#">REST Telemetry API</a>
+<a class="text-slate-400 hover:text-slate-200 transition-colors" href="#">LLM Agent Tool Spec</a>
+</div>
+<div class="flex flex-col gap-2">
+<span class="text-fuchsia-300 uppercase font-semibold tracking-wider">Community</span>
+<a class="text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1" href="#">
+<span>GitHub Org</span>
+<span class="material-symbols-outlined text-[12px]">open_in_new</span>
+</a>
+<a class="text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1" href="#">
+<span>Discord Server</span>
+<span class="material-symbols-outlined text-[12px]">open_in_new</span>
+</a>
+<a class="text-slate-400 hover:text-slate-200 transition-colors" href="#">Ethical Ad Charter</a>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs text-slate-400 font-label-code-xs text-label-code-xs border-t border-white/[0.06]">
+<span>© 2025 CLIRevenue Engine Inc.</span>
+<span>MIT Open Core</span>
+</div>
+</div>
+</div>
+<script>
+  function copyInstallCmd() {
+    const cmd = "curl -fsSL https://clirev.dev/install.sh | bash";
+    navigator.clipboard.writeText(cmd).then(() => {
+      const copyIcon = document.getElementById('copy-icon');
+      const copyText = document.getElementById('copy-text');
+      if (copyIcon && copyText) {
+        copyIcon.innerText = 'check';
+        copyText.innerText = 'COPIED';
+        setTimeout(() => {
+          copyIcon.innerText = 'content_copy';
+          copyText.innerText = 'COPY';
+        }, 2000);
+      }
+    });
+  }
+
+  function switchTab(lang, element) {
+    document.querySelectorAll('.sdk-tab').forEach(btn => {
+      btn.className = 'sdk-tab flex-1 py-1.5 px-2.5 rounded-lg font-label-code-xs text-label-code-xs text-slate-400 hover:text-slate-200 transition-all';
+    });
+    element.className = 'sdk-tab flex-1 py-1.5 px-2.5 rounded-lg font-label-code-xs text-label-code-xs text-slate-200 glass-pill font-medium transition-all';
+
+    const container = document.getElementById('code-snippet-container');
+    if (!container) return;
+
+    if (lang === 'node') {
+      container.innerHTML = `<span class="text-slate-400">// Node.js SDK</span><br><span class="text-cyan-300">import</span> { CLIRevenue } <span class="text-cyan-300">from</span> <span class="text-fuchsia-300">'@clirev/sdk'</span>;<br><br><span class="text-cyan-300">const</span> clirev = <span class="text-cyan-300">new</span> CLIRevenue({ key: <span class="text-fuchsia-300">'cli_live_token'</span> });<br><span class="text-cyan-300">await</span> clirev.renderFooter({ tag: <span class="text-fuchsia-300">'docker'</span> });`;
+    } else if (lang === 'python') {
+      container.innerHTML = `<span class="text-slate-400"># Python SDK</span><br><span class="text-cyan-300">from</span> clirevenue <span class="text-cyan-300">import</span> Engine<br><br>rev = Engine(api_key=<span class="text-fuchsia-300">"cli_live_token"</span>)<br>rev.print_sponsored_footer(context=[<span class="text-fuchsia-300">"pytorch"</span>, <span class="text-fuchsia-300">"cuda"</span>])`;
+    } else if (lang === 'go') {
+      container.innerHTML = `<span class="text-slate-400">// Go Module</span><br><span class="text-cyan-300">import</span> <span class="text-fuchsia-300">"github.com/clirev/sdk-go"</span><br><br>client := clirev.New(<span class="text-fuchsia-300">"cli_live_token"</span>)<br>client.RenderStdOut(clirev.Context{Tag: <span class="text-fuchsia-300">"kubernetes"</span>})`;
+    } else if (lang === 'rust') {
+      container.innerHTML = `<span class="text-slate-400">// Rust Crate</span><br><span class="text-cyan-300">use</span> clirev_sdk::TelemetryEngine;<br><br><span class="text-cyan-300">let</span> engine = TelemetryEngine::init(<span class="text-fuchsia-300">"cli_live_token"</span>)?;<br>engine.inject_sponsor_notice(<span class="text-fuchsia-300">"cargo"</span>);`;
+    }
+  }
+
+  function triggerSimulate(btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<span class="material-symbols-outlined text-[14px] animate-spin text-cyan-400">refresh</span><span>Pinging...</span>`;
+    setTimeout(() => {
+      btn.innerHTML = `<span class="material-symbols-outlined text-[14px] text-cyan-300">done</span><span>Resolved (1.2ms)</span>`;
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+      }, 1500);
+    }, 600);
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-[#0d1017]/75 backdrop-blur-2xl border-t border-white/[0.08] shadow-[0_-8px_24px_rgba(0,0,0,0.65)]" data-active-classes="text-cyan-300"><div class="h-16 px-space-xs flex items-center justify-around"><a aria-current="page" class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl transition-all text-cyan-300 glass-pill border-cyan-400/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_2px_8px_rgba(34,211,238,0.2)]" data-path="overview" href="#"><span class="material-symbols-outlined text-[20px] drop-shadow-[0_0_6px_rgba(34,211,238,0.4)]">analytics</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight font-semibold">Overview</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl text-slate-400 hover:text-slate-200 transition-colors active:scale-95" data-path="developers-and-sdk" href="#"><span class="material-symbols-outlined text-[20px]">code_blocks</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">SDK</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl text-slate-400 hover:text-slate-200 transition-colors active:scale-95" data-path="advertisers" href="#"><span class="material-symbols-outlined text-[20px]">storefront</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Ads</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl text-slate-400 hover:text-slate-200 transition-colors active:scale-95" data-path="campaigns-and-placements" href="#"><span class="material-symbols-outlined text-[20px]">ad_units</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Campaigns</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-12 px-space-xs rounded-xl text-slate-400 hover:text-slate-200 transition-colors active:scale-95" data-path="console" href="#"><span class="material-symbols-outlined text-[20px]">terminal</span><span class="font-label-code-xs text-label-code-xs mt-0.5 tracking-tight">Console</span></a></div></nav></body></html>
