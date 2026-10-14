@@ -427,11 +427,11 @@
 
    Every host must own a stacking context (position:relative; z-index:0) or
    the z-index:-1 pseudo escapes to the page root. */
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost) {
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline) {
   position: relative;
   z-index: 0;
 }
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost)::before {
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline)::before {
   content: "";
   position: absolute;
   top: -2px;
@@ -455,8 +455,8 @@
   animation: clr-glow 20s linear infinite;
   pointer-events: none;
 }
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):hover::before,
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):focus-visible::before {
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline):hover::before,
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline):focus-visible::before {
   opacity: 1;
 }
 @keyframes clr-glow {
@@ -466,7 +466,7 @@
 }
 /* Reduced motion asks for less MOTION, not less content: stop the cycling,
    keep the hover reveal. */
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost)::before {
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline)::before {
   animation: none;
 }
 
@@ -474,17 +474,26 @@
    Deliberately NOT transitioned: a press should land on the frame it is
    clicked, not ease into place. Declaring a `transition` here would replace
    the colour transitions the button rules already set. */
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost) {
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline) {
   transform-origin: 50% 100%;
 }
 /* The repo's own `.btn:active:not(:disabled){transform:translate(0)}`
-   also sits at (0,3,0) and is LATER in the bundle, so a plain (0,3,0)
-   press rule ties with it and silently loses — the press then computes
-   to an identity matrix and looks like nothing happened. Repeating the
-   ancestor inside :is() lifts this to (0,4,0). :is() takes the highest
-   specificity of its arguments, so the doubling is a real bump, not a
-   no-op — and it beats the competitor without an !important. */
-.clr-surface:is(.clr-surface) :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):active {
+   sits at (0,3,0) and is LATER in the bundle, so a press at equal
+   specificity ties with it and silently loses — the press then computes
+   to an identity matrix and looks like nothing happened.
+
+   The ancestor is a real one (`.clr-surface`) in its own compound, which
+   is worth exactly one class: (0,1,0) + :is() 1 + :not() 1 + :active 1
+   = (0,4,0). That clears the competitor without an !important.
+
+   NOTE, having got this wrong once: `:is(.clr-surface)` in the SAME
+   compound as `.clr-surface` is not a specificity doubling. It means
+   "this element matches .clr-surface AND :is(.clr-surface)", i.e. the
+   class twice — lightningcss correctly collapses it to
+   `.clr-surface.clr-surface`, which matches nothing at all. Specificity
+   is raised by chaining a real ancestor (.a .b) or by !important, never
+   by repeating a selector against itself. */
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline):active {
   transform: translateY(1px) scale(.978);
 }
 
@@ -551,7 +560,7 @@
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
-                   .placement-slot__cta, .switcher__btn):not(.nav-link-plain){
+                   .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain){
     position:relative;
     z-index:0;
   }
@@ -562,7 +571,7 @@
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
-                   .placement-slot__cta, .switcher__btn):not(.nav-link-plain)::before{
+                   .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain)::before{
     top:-2px;left:-2px;
     width:calc(100% + 4px);height:calc(100% + 4px);
     z-index:-1;padding:2px;border-radius:inherit;
@@ -584,12 +593,12 @@
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
-                   .placement-slot__cta, .switcher__btn):not(.nav-link-plain):hover::before,
+                   .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain):hover::before,
   .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
-                   .placement-slot__cta, .switcher__btn):not(.nav-link-plain):focus-visible::before{
+                   .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain):focus-visible::before{
     opacity:1;
   }
 
@@ -673,13 +682,45 @@
    beats any stylesheet declaration without !important — so while the
    cursor is genuinely near the button the drift still wins, and the
    moment it leaves, the rule above takes over and the button sits flat.
-   :is() takes the highest specificity of its arguments, so repeating
-   the ancestor is what lifts this clear of the (0,3,0) competitor. */
-.clr-surface:is(.clr-surface) :is(button, .btn, .btn--primary, .btn--ghost,
-  .lbtn, .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn, .sdk-btn,
-  .adv-nav__btn, .adv-password__btn, .placement-slot__cta, .switcher__btn
-  ):hover:not(:disabled) {
+
+   Six real classes here (.clr-surface, :is(), :not(), :hover, and two
+   :not() guards) = (0,6,0) against App.css's (0,3,0). The
+   :not(:focus-visible) guard is load-bearing: line 279's focus ring must
+   survive, so this rule must not fire while the button is focused. */
+.clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn, .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn, .sdk-btn, .adv-nav__btn, .adm-topbar__logout, .clrhead-cta a, .adv-password__btn, .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain):hover:not(:disabled):not(:focus-visible) {
   transform: none;
+  box-shadow: none;
+}
+
+/* SELECTOR FORMATTING IS NOT COSMETIC HERE. A newline inside a selector
+   is a DESCENDANT COMBINATOR in CSS — it is not ignored the way a newline
+   inside a JSX tag is. These three rules were first written wrapped across
+   lines, which silently turned `):not(.adv-link)` + `:hover` into
+   `):not(.adv-link) :hover` — "a hovered descendant of the button" —
+   which matches nothing. Every rule below is therefore on ONE line, and
+   the guard that caught it is: a selector line must never end mid-compound.
+
+   App.css ships AFTER this file in the bundle (`.btn:hover` lands at
+   byte 160084, `.clr-surface .btn:hover` at 104699), so at equal
+   specificity App.css wins and the landing's hover pair never applies.
+   That is why a filled primary went white-on-white on hover: App.css
+   paints `background: var(--signal-text)` — near-white here — and
+   `color: #ffffff`. Both colours move together or neither does. */
+.clr-surface :is(.btn--primary, .lbtn--primary):not(.adv-link, .form__note, .sdk-inline):hover:not(:disabled) {
+  background: var(--ld-bg);
+  border-color: var(--ld-line-strong);
+  color: var(--ld-ink);
+}
+/* `.is-ghost` covers the header CTA pair, but some of them carry no
+   variant class at all -- just `.btn` plus `.clrhead-sm`. Those tie with
+   App.css's generic `.btn:hover:not(:disabled)` at (0,3,0) and lose on
+   bundle order, which is why the header's "Sign up" was washing amber.
+   Listing `.btn`/`.lbtn` here and excluding the filled variants costs
+   nothing and closes the gap. */
+.clr-surface :is(.btn--ghost, .lbtn--ghost, .is-ghost, .btn, .lbtn):not(.btn--primary):not(.lbtn--primary):not(.adv-link, .form__note, .sdk-inline):hover:not(:disabled) {
+  background: var(--ld-bg-tint);
+  border-color: var(--ld-ink-2);
+  color: var(--ld-ink);
 }
 
 /* ── the wordmark, wherever the footer happens to live ──────────────

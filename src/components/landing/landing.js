@@ -612,53 +612,112 @@ export { marqueeFx };
    in an <a>; here the anchor IS the button, so the class sits on the same
    element as .lbtn and is queried directly. */
 function magneticFx(root) {
-  /* Every button that has a box, not just the handful that opted in
-     with .magnetic. The underline links are excluded on purpose: a
-     ring drawn around a bare text link would invent a box that the
-     design does not have. */
+  /* Every button that has a box, not just the handful that opted in with
+     .magnetic. The underline links are excluded on purpose: a ring drawn
+     around a bare text link would invent a box the design does not have.
+
+     Two things this used to get wrong, both of which look like "the effect
+     is missing from some buttons" rather than like bugs:
+
+     1. It walked the DOM once and closed over those elements. React
+        re-creates the header CTAs whenever the auth state settles, so
+        every button that was swapped after mount had listeners on a
+        detached node and simply did nothing. Delegation resolves the
+        target at event time, so a re-render cannot orphan anything.
+     2. The drift is written INLINE, and inline outranks every stylesheet
+        declaration that is not !important -- which silently killed
+        chrome.css's `:active` press. The press is folded into the same
+        inline value so there is exactly one writer of `transform`. */
+  /* NOT scoped to .clr-surface. The eight themed surfaces wrap themselves in
+     .clr-surface, but the landing page does not -- it is its own token host
+     and owns the light hero. A `.clr-surface .lbtn` selector therefore never
+     matched a single button on the landing, which is exactly the "the
+     buttons have a different animation on this page" report. The classes
+     themselves are unique enough that both hosts can be selected at once,
+     and landingFx is only ever mounted on the page that owns `root`. */
   const SELECTOR = [
     '.magnetic',
-    '.clr-surface button',
-    '.clr-surface .btn',
-    '.clr-surface .lbtn',
-    '.clr-surface .adv-btn',
-    '.clr-surface .sdk-btn',
-    '.clr-surface .adv-nav__btn',
-    '.clr-surface .adv-password__btn',
-    '.clr-surface .placement-slot__cta',
-    '.clr-surface .switcher__btn',
+    'button',
+    '.btn',
+    '.lbtn',
+    '.adv-btn',
+    '.sdk-btn',
+    '.adv-nav__btn',
+    '.adm-topbar__logout',
+    '.adv-password__btn',
+    '.placement-slot__cta',
+    '.switcher__btn',
+    '.cmd-copy',
   ].join(',');
-  const TEXT_ONLY = new Set(['adv-link', 'nav-links', 'form__note', 'sdk-inline']);
-  const nodes = Array.from(root.querySelectorAll(SELECTOR)).filter((el) => {
-    if (TEXT_ONLY.has(el.className)) return false;
-    if (el.closest('.nav-links')) return false;
-    const r = el.getBoundingClientRect();
-    /* A control with no box of its own is a text-style control. */
-    return r.height >= 30 && r.width >= 60;
-  });
+  const TEXT_ONLY = new Set(['adv-link', 'nav-links', 'form__note', 'sdk-inline', 'clr-subnav']);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!nodes.length || reduced) return () => {};
+  if (reduced) return () => {};
+  const doc = root.ownerDocument || document;
   const strength = 0.28;
   const radius = 90;
-  const off = [];
-  nodes.forEach((el) => {
-    const move = (e) => {
-      const r = el.getBoundingClientRect();
-      const dx = e.clientX - (r.left + r.width / 2);
-      const dy = e.clientY - (r.top + r.height / 2);
-      const d = Math.hypot(dx, dy);
-      if (d > radius) { el.style.transform = ''; return; }
-      const f = 1 - d / radius;
-      el.style.transform = `translate3d(${(dx * strength * f).toFixed(2)}px,${(dy * strength * f * 1.15).toFixed(2)}px,0)`;
-    };
-    const leave = () => { el.style.transform = ''; };
-    el.addEventListener('pointermove', move);
-    el.addEventListener('pointerleave', leave);
-    off.push(() => {
-      el.removeEventListener('pointermove', move);
-      el.removeEventListener('pointerleave', leave);
-      el.style.transform = '';
-    });
-  });
-  return () => off.forEach((fn) => fn());
+  const PRESS = 'scale(.978) translateY(1px)';
+  let cur = null;
+  let held = false;
+  let px = 0;
+  let py = 0;
+  /* A control with no box of its own is a text-style control. */
+  const boxy = (el) => {
+    const classes = (el.className || '').toString().split(/\s+/);
+    for (const c of classes) if (TEXT_ONLY.has(c)) return false;
+    if (el.closest('.nav-links')) return false;
+    if (el.closest('.clr-subnav')) return false;
+    const r = el.getBoundingClientRect();
+    return r.height >= 30 && r.width >= 60;
+  };
+  const resolve = (t) => {
+    if (!t || !t.closest) return null;
+    const el = t.closest(SELECTOR);
+    if (!el || !root.contains(el)) return null;
+    return boxy(el) ? el : null;
+  };
+  const paint = () => {
+    if (!cur) return;
+    const r = cur.getBoundingClientRect();
+    const dx = px - (r.left + r.width / 2);
+    const dy = py - (r.top + r.height / 2);
+    const d = Math.hypot(dx, dy);
+    if (d > radius) { cur.style.transform = held ? PRESS : ''; return; }
+    const f = 1 - d / radius;
+    cur.style.transform = (held ? PRESS + ' ' : '') +
+      'translate3d(' + (dx * strength * f).toFixed(2) + 'px,' + (dy * strength * f * 1.15).toFixed(2) + 'px,0)';
+  };
+  const onMove = (e) => {
+    if (e.pointerType && e.pointerType !== 'mouse') return;
+    const el = resolve(e.target);
+    if (el !== cur) {
+      if (cur && !held) cur.style.transform = '';
+      cur = el;
+      held = false;
+    }
+    if (!cur) return;
+    px = e.clientX;
+    py = e.clientY;
+    paint();
+  };
+  const onDown = (e) => {
+    const el = resolve(e.target);
+    if (el && el === cur) { held = true; paint(); }
+  };
+  const onUp = () => {
+    if (!held) return;
+    held = false;
+    paint();
+  };
+  doc.addEventListener('pointermove', onMove, { passive: true });
+  doc.addEventListener('pointerdown', onDown, { passive: true });
+  window.addEventListener('pointerup', onUp, { passive: true });
+  window.addEventListener('pointercancel', onUp, { passive: true });
+  return () => {
+    doc.removeEventListener('pointermove', onMove);
+    doc.removeEventListener('pointerdown', onDown);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onUp);
+    if (cur) cur.style.transform = '';
+    cur = null;
+  };
 }

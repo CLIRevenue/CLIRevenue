@@ -885,8 +885,13 @@
      — an unstyled block, which is why the links ran together as one
      unbroken string of text. */
   .foot{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(0,2.2fr);
-    column-gap:56px;row-gap:24px;align-items:start}
-  .foot > .heartfoot{grid-column:1;grid-row:1}
+    column-gap:56px;row-gap:26px;align-items:start;
+    padding-left:clamp(20px,4.2vw,52px);padding-right:clamp(20px,4.2vw,52px)}
+  /* The heart sits directly under the wordmark in the same grid cell, so
+     without this the two marks read as one stacked badge rather than as
+     two separate controls. row-gap already separates the cells; this is
+     the gap inside the cell. */
+  .foot > .heartfoot{grid-column:1;grid-row:1;margin:0 0 6px}
   .foot-brand{grid-column:1;grid-row:2;margin:0;font-size:17px;font-weight:600;letter-spacing:-.02em}
   .foot-cols{grid-column:2;grid-row:1 / span 2;display:grid;
     grid-template-columns:repeat(3,minmax(0,1fr));gap:22px 34px}
@@ -924,15 +929,28 @@
   .foot-col:hover h5::after,.foot-col:focus-within h5::after{transform:scaleX(1)}
 
   /* Links get a sweep underline and a 3px nudge. Both are transform-only
-     so the underline animates without touching layout. */
-  .foot-col a{position:relative;display:inline-block;font-size:13.6px;
+     so the underline animates without touching layout. The selector is
+     `.foot-links a` and not `.foot-col a` on purpose: the Product column
+     also holds two real buttons, and (0,1,1) beats every `.lbtn--*` rule
+     at (0,1,0) — left as `.foot-col a` they would have inherited the
+     link's 13.6px type, `padding:4px 0` and grey ink, and the buttons
+     would have collapsed to bare underlined text. */
+  .foot-links{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+  .foot-links a{position:relative;display:inline-block;font-size:13.6px;
     color:var(--ink-2);padding:4px 0;
     transition:color .2s ease-out,transform .2s ease-out}
-  .foot-col a::after{content:"";position:absolute;left:0;right:0;bottom:2px;height:1px;
+  .foot-links a::after{content:"";position:absolute;left:0;right:0;bottom:2px;height:1px;
     background:currentColor;opacity:0;transform:scaleX(0);transform-origin:left center;
     transition:transform .28s var(--ease-out),opacity .28s ease-out}
-  .foot-col a:hover,.foot-col a:focus-visible{color:var(--ink);transform:translateX(3px)}
-  .foot-col a:hover::after,.foot-col a:focus-visible::after{opacity:.55;transform:scaleX(1)}
+  .foot-links a:hover,.foot-links a:focus-visible{color:var(--ink);transform:translateX(3px)}
+  .foot-links a:hover::after,.foot-links a:focus-visible::after{opacity:.55;transform:scaleX(1)}
+
+  /* The role pair sit under the column they replace, at button weight
+     rather than link weight — they are the two routes off this page.
+     flex-wrap so the narrow two-column layout stacks them instead of
+     letting them overflow. */
+  .foot-cta{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+  .foot-cta .lbtn{flex:none}
 
   @media (max-width:900px){
     .foot{grid-template-columns:minmax(0,1fr);row-gap:22px}
@@ -946,7 +964,7 @@
   }
   @media (prefers-reduced-motion: reduce){
     .foot-col{animation:none}
-    .foot-col a:hover,.foot-col a:focus-visible{transform:none}
+    .foot-links a:hover,.foot-links a:focus-visible{transform:none}
   }
   .burst{position:absolute;inset:0;pointer-events:none}
   @keyframes fly{

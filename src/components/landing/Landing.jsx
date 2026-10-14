@@ -354,20 +354,29 @@ export default function Landing() {
         <div className="foot-cols">
           <div className="foot-col">
             <h5>Network</h5>
-            <a href="#platform">Platform</a>
-            <a href="#trust">Trust</a>
-            <a href="#advertisers">Advertisers</a>
+            <nav className="foot-links">
+              <a href="#platform">Platform</a>
+              <a href="#trust">Trust</a>
+              <a href="#advertisers">Advertisers</a>
+            </nav>
           </div>
           <div className="foot-col">
             <h5>Product</h5>
-            <a href="#how">How it works</a>
-            <a href="#preview">Preview</a>
-            <a href="/developer">Developer docs</a>
+            <nav className="foot-links">
+              <a href="#how">How it works</a>
+              <a href="#preview">Preview</a>
+            </nav>
+            <div className="foot-cta">
+              <a className="lbtn lbtn--ghost lbtn--sm" href="/developer" onClick={spaNav}>For developer</a>
+              <a className="lbtn lbtn--ghost lbtn--sm" href="/advertiser" onClick={spaNav}>For advertiser</a>
+            </div>
           </div>
           <div className="foot-col">
             <h5>Account</h5>
-            <a href="/login">Log in</a>
-            <a href="/signup">Sign up</a>
+            <nav className="foot-links">
+              <a href="/login" onClick={spaNav}>Log in</a>
+              <a href="/signup" onClick={spaNav}>Sign up</a>
+            </nav>
           </div>
         </div>
         <p className="foot-base">
