@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 import { navigateApp } from '../../hooks/useAppRoute.js'
 import { useAuth, authNavState } from '../auth/authState.js'
 import { LogoutButton } from '../auth/LogoutButton.jsx'
-import HeartFooter from './HeartFooter.jsx'
 import { landingFx } from './landing.js'
 import './chrome.css'
 
@@ -116,7 +115,6 @@ export default function PageChrome({ active, subnav, children, footer }) {
 
       {children}
 
-      <div className="clr-pagefoot"><HeartFooter /></div>
       {footer || null}
     </div>
   )

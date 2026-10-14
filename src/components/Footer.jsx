@@ -1,6 +1,7 @@
 import useAppRoute from '../hooks/useAppRoute.js'
 import { useEffect, useState } from 'react'
 import './Footer.css'
+import HeartFooter from './landing/HeartFooter.jsx'
 
 export default function Footer() {
   const path = useAppRoute()
@@ -47,6 +48,8 @@ export default function Footer() {
           <a className="sitefoot__link" href="/terms">Terms & Conditions</a>
           <a className="sitefoot__link" href="mailto:clirevenue@gmail.com">Contact</a>
         </nav>
+
+        <HeartFooter />
 
         <p className="sitefoot__copy">
           © {year} CLIRevenue. All rights reserved.

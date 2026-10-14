@@ -677,3 +677,34 @@
   --clr-word-a: #ffffff;
   --clr-word-b: #ff1f2d;
 }
+
+/* ── a themed button follows the cursor; it does not lift ──────��────
+   The repo's own `.btn:hover:not(:disabled){transform:translate(-2px,-2px)}`
+   is a lift, and it reads as "raised off the page" on a surface that is
+   supposed to be flat and graph-paper. Neutralise it here and let the
+   magnetic drift be the only motion.
+
+   magneticFx writes el.style.transform INLINE, and an inline style
+   beats any stylesheet declaration without !important — so while the
+   cursor is genuinely near the button the drift still wins, and the
+   moment it leaves, the rule above takes over and the button sits flat.
+   :is() takes the highest specificity of its arguments, so repeating
+   the ancestor is what lifts this clear of the (0,3,0) competitor. */
+.clr-surface:is(.clr-surface) :is(button, .btn, .btn--primary, .btn--ghost,
+  .lbtn, .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn, .sdk-btn,
+  .adv-nav__btn, .adv-password__btn, .placement-slot__cta, .switcher__btn
+  ):hover:not(:disabled) {
+  transform: none;
+}
+
+/* ── the wordmark, wherever the footer happens to live ──────────────
+   The site footer is rendered as a SIBLING of .clr-surface, not inside
+   it, so a rule scoped to .clr-surface never reached it and the "Revenue"
+   half fell back to Footer.css's --electric-cyan. These selectors are
+   written off .sitefoot instead, at a specificity that cannot tie with
+   the two existing `.sitefoot__name em` declarations. */
+.sitefoot .sitefoot__inner .sitefoot__name { color: var(--clr-word-a, #ffffff); }
+.sitefoot .sitefoot__inner .sitefoot__name em {
+  font-style: normal;
+  color: var(--clr-word-b, #ff1f2d);
+}

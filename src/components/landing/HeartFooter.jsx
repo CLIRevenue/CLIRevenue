@@ -81,12 +81,12 @@ export default function HeartFooter() {
             />
           </svg>
         </span>
-        <span className="heart__count">{label}</span>
+        {/* The count is the only thing that changes on click, so it carries
+            the live region. It used to sit beside a sentence that said so,
+            which is a worse trade: a decorative caption is read out loud on
+            every navigation, and the number is what actually matters. */}
+        <span className="heart__count" role="status" aria-live="polite">{label}</span>
       </button>
-
-      <span className="heart__note" role="status" aria-live="polite">
-        {mine ? 'Thanks — noted on every page from now on.' : 'Enjoying the site? Leave a heart.'}
-      </span>
 
       <span className="heart__bursts" aria-hidden="true">
         {bursts.map((b) => (
