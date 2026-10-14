@@ -28,11 +28,6 @@
   color: var(--on-surface);
 }
 
-.sitefoot__logo {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-}
 
 .sitefoot__mark {
   font-family: var(--mono);

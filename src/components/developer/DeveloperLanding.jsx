@@ -301,7 +301,7 @@ function Quickstart() {
         ))}
       </ol>
       <p className="sdk-note">
-        <Rich>Prefer to drive the SDK by hand? The <code>init()</code> reference below covers the programmatic path, including how one CLIRevenue instance is shared across every placement on a page.</Rich>
+        <Rich>Prefer to drive the SDK by hand? The reference below covers the programmatic path, including how one CLIRevenue instance is shared across every placement on a page.</Rich>
       </p>
     </div>
   )
@@ -495,18 +495,6 @@ function Faq() {
    numbered rail, specimen tables and code-led flows.
    ------------------------------------------------------------------ */
 
-/* The hero plate's snippet, hoisted so the copy control and the <pre>
-   cannot disagree about the raw text — one source for both. */
-const HERO_SNIPPET = `import { init } from '${PACKAGE_NAME}'
-
-const PLACEMENT = 'console-workbench'
-const cli = init(key, { baseUrl })
-
-const { served } = await cli.render(
-  PLACEMENT,
-  '#ad-region',
-)`
-
 export default function DeveloperLanding() {
   return (
     <section className="sdk-page" aria-label="CLIRevenue SDK">
@@ -540,17 +528,6 @@ export default function DeveloperLanding() {
                   Documentation
                 </a>
               </div>
-            </div>
-
-            <div className="sdk-plate">
-              <div className="sdk-code__bar">
-                <span className="sdk-code__tag">integration</span>
-                <span className="sdk-plate__meta">{PACKAGE_NAME}</span>
-                <CopyButton text={HERO_SNIPPET} label="integration snippet" />
-              </div>
-              <pre className="sdk-code__pre">
-                <code>{HERO_SNIPPET}</code>
-              </pre>
             </div>
           </div>
 

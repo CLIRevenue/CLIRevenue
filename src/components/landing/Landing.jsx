@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import './landing.css'
 import { landingFx } from './landing.js'
+import HeartFooter from './HeartFooter.jsx'
 import { spaNav } from '../../hooks/useAppRoute.js'
 
 const STEPS = [
@@ -338,14 +339,18 @@ export default function Landing() {
 
         <section id="start" className="wrap sec">
           <div className="cta-band" data-reveal>
-            <h2 className="pickable"><span data-pick>Put a sponsor line in your terminal.</span></h2>
-            <p>Run the setup against a clean project, keep the settings backup, and see your first qualified impression before you decide anything.</p>
+            <div className="cta-band__copy">
+              <h2 className="pickable"><span data-pick>Put a sponsor line in your terminal.</span></h2>
+              <p>Run the setup against a clean project, keep the settings backup, and see your first qualified impression before you decide anything.</p>
+            </div>
             <a className="lbtn lbtn--primary" href="/signup">Start earning — free</a>
           </div>
         </section>
       </main>
 
       <footer className="foot">
+        <HeartFooter />
+        <p className="foot-brand"><span className="brand-cli">CLI</span><span className="brand-revenue">Revenue</span></p>
         <div className="foot-cols">
           <div>
             <h5>Network</h5>

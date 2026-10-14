@@ -173,14 +173,7 @@
    outside the <pre>, so nothing interactive is nested inside the code. */
 
 .sdk-code,
-.sdk-plate {
-  position: relative;
-  min-width: 0;
-  border: 1px solid var(--hair);
-  border-left: var(--border-w-2) solid var(--signal);
-  border-radius: var(--radius-md);
-  background: var(--panel);
-}
+
 
 .sdk-code__bar {
   display: flex;
@@ -201,9 +194,23 @@
   color: var(--ink-4);
 }
 
+/* A code sample must scroll inside its own box, never widen the page. The
+   figure is a flex container and the step is a grid item, and both default to
+   min-width:auto -- so the <pre> below them was sized by its longest line
+   (625px) instead of by the column (333px) and spilled 170px past the
+   viewport. min-width:0 is the fix; overflow-x on the <pre> alone is not,
+   because the blowout happens one level above it. */
+.sdk-code,
+.sdk-qs__step {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .sdk-code__pre {
   margin: 0;
   padding: 15px 16px;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
   font-family: var(--mono);
   font-size: 12.5px;
@@ -219,16 +226,7 @@
 
 /* The hero plate keeps the film terminal's hard offset: the device the
    product already uses to say "artifact, not panel". */
-.sdk-plate {
-  box-shadow: 10px 10px 0 0 rgba(255, 255, 255, 0.045);
-}
 
-.sdk-plate__meta {
-  font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.1em;
-  color: var(--ink-4);
-}
 
 /* Copy control. The compound selectors outrank the shared .btn--ghost /
    .btn--sm classes the button also carries, so the success state really
@@ -236,29 +234,16 @@
    bar carries a copy control too, so it joins the same two selectors —
    one sizing rule, not a second one. */
 .sdk-code .sdk-copy,
-.sdk-plate .sdk-copy {
-  padding: 4px 10px;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
+
 
 .sdk-code .sdk-copy--done,
 .sdk-code .sdk-copy--done:hover:not(:disabled),
-.sdk-plate .sdk-copy--done,
-.sdk-plate .sdk-copy--done:hover:not(:disabled) {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: var(--bg);
-}
+
 
 /* The plate bar is a three-child flex row now: tag at the start, then
    the package meta and the copy control packed against the trailing
    edge (the meta takes the slack, the bar's gap separates the two). */
-.sdk-plate .sdk-plate__meta {
-  margin-left: auto;
-}
+
 
 /* ---------- inline technical reference ---------- */
 
@@ -851,9 +836,6 @@
     gap: 5px;
   }
 
-  .sdk-plate {
-    box-shadow: 6px 6px 0 0 rgba(255, 255, 255, 0.045);
-  }
 
   .sdk-page [id] {
     scroll-margin-top: 72px;

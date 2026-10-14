@@ -904,7 +904,8 @@
     background:radial-gradient(circle,rgba(123,60,255,.28),transparent 62%);
     filter:blur(20px);pointer-events:none;
   }
-  .cta-band h3{margin:0;font-size:clamp(23px,3vw,31px);letter-spacing:-.028em;font-weight:600;position:relative}
+  .cta-band__copy{flex:1 1 340px;min-width:0;position:relative}
+  .cta-band h2{margin:0;font-size:clamp(23px,3vw,31px);line-height:1.16;letter-spacing:-.028em;font-weight:600;position:relative}
   .cta-band p{margin:10px 0 0;color:rgba(11,11,14,.66);font-size:15px;max-width:48ch;position:relative}
   .cta-band .lbtn{position:relative;background:#0b0b0e;color:#fff}
   .cta-band .lbtn:hover{background:#1b1b21}
@@ -1489,3 +1490,7 @@
   @media (prefers-reduced-motion: reduce){
     .trust .tcell:hover,.role:hover{box-shadow:none}
   }
+
+  /* ── the wordmark is the only mark (landing copy) ─────────── */
+  .landing .brand-cli{color:#fff}
+  .landing .brand-revenue{color:#ff1f2d}

@@ -1,0 +1,145 @@
+/* The heart strip that closes every page. It is a button, so it wears the same
+   rainbow ring as every other button on the site — the rule lives in
+   chrome.css and reaches in here by class name. */
+
+.heartfoot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 26px 0 6px;
+  margin-top: 8px;
+  border-top: 1px solid var(--line, rgba(255, 255, 255, 0.09));
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+}
+
+.heart {
+  position: relative;
+  z-index: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 20px 0 16px;
+  border-radius: var(--ld-r7);
+  border: 1px solid var(--line-strong, rgba(255, 255, 255, 0.17));
+  background: var(--surface, #121216);
+  color: var(--ink-2, #a2a2ad);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.22s ease-out, border-color 0.22s ease-out, transform 0.22s ease-out;
+}
+
+.heart:hover {
+  color: var(--ink, #f2f2f4);
+  border-color: var(--ink-3, #74747f);
+}
+
+.heart__shape {
+  display: inline-flex;
+  color: #5b5b66;
+  transform-origin: 50% 58%;
+  transition: color 0.22s ease-out, transform 0.22s ease-out;
+}
+
+.heart:hover .heart__shape {
+  color: var(--ink, #f2f2f4);
+  transform: scale(1.08);
+}
+
+/* A heart that has already been pressed reads as filled, not as a highlight. */
+.heartfoot.is-mine .heart {
+  color: #ff4d63;
+  border-color: rgba(255, 77, 99, 0.42);
+}
+.heartfoot.is-mine .heart__shape {
+  color: #ff4d63;
+}
+
+.heartfoot.is-pulsing .heart__shape {
+  animation: heart-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  22% { transform: scale(0.82); }
+  48% { transform: scale(1.3); }
+  70% { transform: scale(0.94); }
+  100% { transform: scale(1); }
+}
+
+.heart__count {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* One ring that leaves the button and fades — the ripple you would see if the
+   whole control had been struck rather than only its glyph. */
+.heartfoot.is-pulsing .heart::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 77, 99, 0.6);
+  animation: heart-ripple 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes heart-ripple {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(1.32); opacity: 0; }
+}
+
+.heart__note {
+  font-size: 13px;
+  color: var(--ink-3, #74747f);
+}
+
+/* Four glyphs peel off the button on the click. */
+.heart__bursts {
+  position: absolute;
+  left: 26px;
+  bottom: 26px;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+/* One burst particle is described by three numbers, handed in per particle
+   from BURSTS in HeartFooter.jsx. Declared here (with neutral defaults) so
+   the var() references have a definition somewhere in src CSS. */
+.heart__burst {
+  --dx: 0px;
+  --dy: -40px;
+  --r: 0deg;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 11px;
+  height: 10px;
+  border-radius: 50% 50% 12% 50%;
+  background: #ff4d63;
+  opacity: 0;
+  animation: heart-fly 0.86s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes heart-fly {
+  0% { transform: translate(0, 0) rotate(0deg) scale(0.4); opacity: 0.9; }
+  70% { opacity: 0.55; }
+  100% {
+    transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(0.9);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heartfoot.is-pulsing .heart__shape,
+  .heartfoot.is-pulsing .heart::after,
+  .heart__burst {
+    animation: none !important;
+  }
+  .heart__bursts { display: none; }
+}

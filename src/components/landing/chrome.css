@@ -514,3 +514,160 @@
 @media (prefers-reduced-motion: reduce) {
   .route-veil { animation-duration: 1ms; }
 }
+
+  /* ── resize hardening ───────────────────────────────────────
+     Two shapes collapsed on narrow or wide viewports for reasons
+     that had nothing to do with width: the login form's grid track
+     was a bare `auto`, so with a flex ancestor it resolved to the
+     minimum content size (56px) and clipped its own submit button;
+     and a form card inside a flex shell had no width of its own, so
+     it inherited the collapse. Both are fixed by giving the track
+     and the card an explicit size. */
+  .clr-surface .form,
+  .clr-surface .adv-form{grid-template-columns:1fr;width:100%}
+  .clr-surface .panel,
+  .clr-surface .adv-panel{width:100%;min-width:0}
+  /* src/index.css turns .adv-shell__inner into a ROW flex with a gap,
+     so the login panel sits BESIDE the "back to site" note as a
+     shrinkable sibling and collapses to its min-content width: the
+     submit button was clipped to 54px inside a 56px track, and
+     `minmax(0,1fr)` made it worse by resolving to a circular zero.
+     A column with stretched children removes the shrink entirely,
+     and this is the theme layer's job because index.css is not
+     ours to edit. */
+  .clr-surface .adv-shell,
+  .clr-surface .adv-shell__inner{flex-direction:column;align-items:stretch}
+  .clr-surface .adv-panel{flex:0 0 auto}
+  .clr-surface .adv-shell__inner--narrow{gap:14px}
+
+  /* ── every button wears the front-page treatment ─────────────
+     The landing's header button is the reference: a masked rainbow
+     ring on hover, a press on click, and a magnetic drift that pulls
+     the control a few pixels toward the cursor. Those three were
+     previously scoped to a single `.magnetic` opt-in class, so most
+     buttons on the site had neither the ring nor the drift.
+
+     One selector list drives all three, and it deliberately excludes
+     the text-style controls — the underline links and bare
+     `.nav-links` section buttons have no box, so a ring around them
+     would invent a box that is not there. */
+  .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
+                   .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
+                   .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
+                   .clrhead-cta a, .adv-password__btn,
+                   .placement-slot__cta, .switcher__btn):not(.nav-link-plain){
+    position:relative;
+    z-index:0;
+  }
+  /* The ring itself. padding IS the ring thickness; mask punches the
+     content box out so the middle stays transparent over a ghost
+     button, which has no fill to hide behind. */
+  .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
+                   .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
+                   .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
+                   .clrhead-cta a, .adv-password__btn,
+                   .placement-slot__cta, .switcher__btn):not(.nav-link-plain)::before{
+    top:-2px;left:-2px;
+    width:calc(100% + 4px);height:calc(100% + 4px);
+    z-index:-1;padding:2px;border-radius:inherit;
+    background:linear-gradient(45deg,#ff0000,#ff7300,#fffb00,#48ff00,
+      #00ffd5,#002bff,#7a00ff,#ff00c8,#ff0000);
+    background-size:400%;
+    -webkit-mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000);
+            mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000);
+    -webkit-mask-clip:content-box,border-box;
+            mask-clip:content-box,border-box;
+    -webkit-mask-composite:xor;
+            mask-composite:exclude;
+    filter:blur(3px);
+    opacity:0;transition:opacity .3s ease-in-out;
+    animation:clr-glow 20s linear infinite;
+    pointer-events:none;
+  }
+  .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
+                   .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
+                   .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
+                   .clrhead-cta a, .adv-password__btn,
+                   .placement-slot__cta, .switcher__btn):not(.nav-link-plain):hover::before,
+  .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
+                   .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
+                   .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
+                   .clrhead-cta a, .adv-password__btn,
+                   .placement-slot__cta, .switcher__btn):not(.nav-link-plain):focus-visible::before{
+    opacity:1;
+  }
+
+  /* ── the FAQ tiles open and close on an animation ────────────
+     <details> is kept rather than replaced with a button + panel:
+     it carries keyboard support, the a11y wiring and the no-JS case
+     for free. What it does not carry is a transition — the UA flips
+     the content's display, so it snaps. ::details-content with
+     `allow-discrete` is the sanctioned way to animate that flip in
+     both directions; where the selector is unsupported the tile
+     still works, it just opens instantly. */
+  @supports selector(::details-content){
+    .clr-surface :is(.advx-faq__item, .sdk-faq__item)::details-content{
+      block-size:0;
+      overflow:hidden;
+      opacity:0;
+      transition:block-size .42s var(--ease-out), opacity .28s ease-out,
+                 content-visibility .42s allow-discrete;
+    }
+    .clr-surface :is(.advx-faq__item, .sdk-faq__item)[open]::details-content{
+      block-size:auto;
+      opacity:1;
+    }
+    /* The answer slides the last few pixels, so the panel reads as
+       opening rather than as the page growing. It cannot hang off
+       ::details-content directly — a pseudo-element may not be
+       followed by a combinator — so it rides the answer paragraph. */
+    .clr-surface :is(.advx-faq__a, .sdk-faq__a){
+      transform:translateY(-10px);
+      transition:transform .42s var(--ease-out);
+    }
+    .clr-surface :is(.advx-faq__item, .sdk-faq__item)[open] :is(.advx-faq__a, .sdk-faq__a){
+      transform:none;
+    }
+  }
+  /* The +/- sign becomes a chevron and turns as the tile opens. */
+  .clr-surface :is(.advx-faq__q, .sdk-faq__q) > .advx-faq__sign,
+  .clr-surface :is(.advx-faq__q, .sdk-faq__q) > .sdk-faq__sign{
+    transition:transform .34s var(--ease-out), background-color .2s ease-out;
+  }
+  .clr-surface .advx-faq__item[open] .advx-faq__sign,
+  .clr-surface .sdk-faq__item[open] .sdk-faq__sign{transform:rotate(180deg)}
+
+  /* ── the wordmark is the only mark ──────────────────────────
+     Every logo has been removed: the brand is the two words and
+     nothing else, split across two colours so it is legible as a
+     wordmark rather than as run-together text. Declared here as
+     well as on .landing because the landing is not a
+     .clr-surface, and both wordmarks live in the same document. */
+  .brand-cli,
+  .clr-surface .brand-cli,
+  .landing .brand-cli,
+  .sitefoot__name,
+  .clr-surface .sitefoot__name{color:var(--clr-word-a,#fff)}
+  .brand-revenue,
+  .clr-surface .brand-revenue,
+  .landing .brand-revenue,
+  .sitefoot__name em,
+  .clr-surface .sitefoot__name em,
+  .landing .foot-brand .brand-revenue{color:var(--clr-word-b,#ff1f2d);font-style:normal}
+  .foot-brand{margin:0 0 22px;font-size:17px;font-weight:600;letter-spacing:-.02em}
+  .sitefoot__name em{font-style:normal}
+
+  /* The heart needs a surface to stand on when it is rendered after page
+     content rather than inside a footer. */
+  .clr-pagefoot{max-width:var(--gutter,28px);width:100%;padding:0 var(--gutter,28px) 34px;
+    margin:0 auto;color:var(--ink,inherit)}
+
+/* The wordmark is text, not an image: CLI in white, Revenue in red. Named so a
+   rebrand is a two-token change, and DEFINED here (the rules above only
+   consume them) because responsive-contract requires every var() used in src
+   CSS to resolve to a definition somewhere in src CSS. landing.css carries the
+   same pair for the landing, which is not a .clr-surface. */
+.clr-surface {
+  --clr-word-a: #ffffff;
+  --clr-word-b: #ff1f2d;
+}

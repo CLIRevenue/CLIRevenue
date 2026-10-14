@@ -39,20 +39,6 @@ export default function Footer() {
     <footer className="sitefoot" aria-label="Site">
       <div className="sitefoot__inner">
         <div className="sitefoot__brand">
-          <svg
-            className="sitefoot__logo"
-            viewBox="0 0 28 28"
-            width="28"
-            height="28"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <rect x="2" y="2" width="24" height="24" rx="0" fill="var(--bg)" strokeWidth="0" />
-            <rect x="2" y="2" width="24" height="24" rx="0" stroke="var(--electric-cyan)" strokeWidth="1.5" />
-            <path d="M6 6h2v16H6v-4h1" stroke="var(--electric-cyan)" strokeWidth="1.5" strokeLinecap="round" />
-            <path d="M10 6h2v16h-2v-8h6v2h2V6h-2v4H12V6" stroke="var(--hyper-violet)" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
           <span className="sitefoot__name">CLI<em>Revenue</em></span>
         </div>
 

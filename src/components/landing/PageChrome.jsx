@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react'
 import { navigateApp } from '../../hooks/useAppRoute.js'
 import { useAuth, authNavState } from '../auth/authState.js'
 import { LogoutButton } from '../auth/LogoutButton.jsx'
+import HeartFooter from './HeartFooter.jsx'
+import { landingFx } from './landing.js'
 import './chrome.css'
 
 /* onClick for an in-app anchor: keep the href, intercept the navigation so
@@ -53,6 +55,13 @@ export default function PageChrome({ active, subnav, children, footer }) {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  /* The landing's pointer effects -- magnetic buttons above all -- live in
+     landingFx and were only ever mounted on the landing page, so every other
+     surface got the CSS ring and press but no drift. The effects are all
+     query-scoped and no-op when they find nothing, so running them here is
+     safe on every route. */
+  useEffect(() => landingFx(document.body), [])
 
   return (
     <div className="clr-surface">
@@ -107,6 +116,7 @@ export default function PageChrome({ active, subnav, children, footer }) {
 
       {children}
 
+      <div className="clr-pagefoot"><HeartFooter /></div>
       {footer || null}
     </div>
   )

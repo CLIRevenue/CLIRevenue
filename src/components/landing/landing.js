@@ -612,7 +612,30 @@ export { marqueeFx };
    in an <a>; here the anchor IS the button, so the class sits on the same
    element as .lbtn and is queried directly. */
 function magneticFx(root) {
-  const nodes = Array.from(root.querySelectorAll('.magnetic'));
+  /* Every button that has a box, not just the handful that opted in
+     with .magnetic. The underline links are excluded on purpose: a
+     ring drawn around a bare text link would invent a box that the
+     design does not have. */
+  const SELECTOR = [
+    '.magnetic',
+    '.clr-surface button',
+    '.clr-surface .btn',
+    '.clr-surface .lbtn',
+    '.clr-surface .adv-btn',
+    '.clr-surface .sdk-btn',
+    '.clr-surface .adv-nav__btn',
+    '.clr-surface .adv-password__btn',
+    '.clr-surface .placement-slot__cta',
+    '.clr-surface .switcher__btn',
+  ].join(',');
+  const TEXT_ONLY = new Set(['adv-link', 'nav-links', 'form__note', 'sdk-inline']);
+  const nodes = Array.from(root.querySelectorAll(SELECTOR)).filter((el) => {
+    if (TEXT_ONLY.has(el.className)) return false;
+    if (el.closest('.nav-links')) return false;
+    const r = el.getBoundingClientRect();
+    /* A control with no box of its own is a text-style control. */
+    return r.height >= 30 && r.width >= 60;
+  });
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!nodes.length || reduced) return () => {};
   const strength = 0.28;
