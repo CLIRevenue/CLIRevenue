@@ -1,0 +1,63 @@
+# CLIRevenue — Advertiser UI Work — Handoff Report
+
+**Owner of this work:** independent QA / UI redesign agent
+**Branch:** `backend-real-delivery`
+**Date:** pending
+
+---
+
+## STOP — all pending work halted as requested.
+
+No further edits, tests, or cleanup are being performed in this session.
+
+---
+
+## What I completed
+
+### 1. Independent read-only audit of the advertiser-facing UI
+- Reverse-engineered the app-shell: `/app/advertiser` tabs (Overview · Campaigns · Analytics · Billing · Account), the shared design system (`AdvertiserUI.jsx` + `console/ui.jsx` + `App.css` tokens), and the `useAdvertiserCampaigns` hook.
+- Audited the API contract: `src/lib/advertiserApi.js` (`fetchAdvertiserCampaigns`, `createAdvertiserCampaign`, `updateAdvertiserCampaign`, `archiveAdvertiserCampaign`, `setActiveCampaign`, `validateCampaignInput`, creative pipeline) — all money kept in integer cents, backends authoritative, no invented metrics.
+- Audited the validation contract: `src/lib/campaignRules.js` (`validateCreativeFile`, `MAX_CREATIVE_BYTES`, `CREATIVE_MIME_TYPES`).
+- Audited the existing test suite: `tests/advertiser-real-data.test.js` (metrics come from backend rows, never literals), `tests/campaign-lifecycle.test.js` (state machine), `tests/advertiser-demo-beat.test.jsx`.
+
+### 2. Redesign edits (advertiser screens I own)
+- `src/components/advertiser/AdvertiserCampaigns.jsx` — accessible form fields wired with `useId`, `aria-invalid`, `aria-describedby`, and a stable `FormNotice` success banner; persistent `form__ok` success slot above the submit button.
+- `src/components/advertiser/AdvertiserOverview.jsx` — chart now renders `AdvBarChart` only when rows exist else shared `AdvEmpty` (accessible zero state).
+- `src/components/advertiser/AdvertiserAnalytics.jsx` — trend chart empty state wired to shared `AdvEmpty`; accessible chart labels on all chart blocks.
+- `src/components/advertiser/advertiser.css` — responsive app-form fields, narrow-screen tab rail fix, detail row collapse; scoped `.adv-*` additions only, no shared tokens edited.
+
+### 3. Verification
+- Advertiser-only tests: `tests/campaign-lifecycle.test.js`, `tests/advertiser-real-data.test.js`, `tests/advertiser-demo-beat.test.js` → **44/44 passed**, exit 0.
+- Full root frontend suite: **852/855 passed** (48 test files). Pre-existing, unrelated failures recorded below.
+
+### 4. Coordinate-note
+- Shared design-system/app-shell files (`AdvertiserUI.jsx`, `console/ui.jsx`, `App.css`, `src/index.css`) were NOT edited by me — the amber→red replacement in `src/index.css` is pre-existing concurrent work owned by another agent and is outside my scope.
+
+---
+
+## What is left
+
+1. **Pre-existing failures NOT caused by me** (active owner: other agent; needs a decision on their amber-red token swap):
+   - `tests/emission-layer.test.jsx` — asserts `--signal` = `255,31,45` (signal-red). `src/index.css` was concurrently changed to `--signal: #F5B942` (amber) + `--signal-dark: #D4A01A` + `--signal-soft: rgba(245,185,66,0.14)`. Fails the palette contract test. Owned by the shared-root-design work.
+   - `tests/ui-polish.test.js` — asserts `:root` palette is only black/white/signal-red (`#ff1f2d`). `src/index.css` amber hexes (`#F5B942`, `#D4A01A`) now violate it. Same owner.
+
+2. **Cleanup to do (not yet run)** — remove the temporary WSL vitest helper scripts I created for verification:
+   - `run-vitest-root.cjs`
+   - `run-vitest-root-advertiser.cjs`
+   - `run-vitest-root-ad.cjs`
+   - `run-tests-single-file.cjs`
+   - `run-ui-polish-check.cjs`
+   - `run-vitest-wsl-full.cjs` (if present)
+
+3. **Unfinished due to the STOP** — the full-suite confirmation of these cleanup steps and a final consolidated test-exit-code summary were not completed because I was asked to halt.
+
+---
+
+## Files changed (by me, in this session)
+
+- `src/components/advertiser/AdvertiserCampaigns.jsx` (+150 insertions)
+- `src/components/advertiser/AdvertiserOverview.jsx` (+5 insertions)
+- `src/components/advertiser/AdvertiserAnalytics.jsx` (+8 insertions)
+- `src/components/advertiser/advertiser.css` (+47 insertions, −27 deletions)
+
+No backend, schema, auth, or developer-experience files were touched.

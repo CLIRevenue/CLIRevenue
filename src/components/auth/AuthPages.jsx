@@ -1,3 +1,4 @@
+import PageChrome from '../landing/PageChrome.jsx'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabaseConfigured } from '../../lib/api.js'
 import { useAuth, roleHome } from './authState.js'
@@ -98,18 +99,23 @@ function PasswordField({ label, value, onChange, name, autoComplete }) {
 }
 
 export function AuthShell({ eyebrow, title, body, children, footer, backHref = '/' }) {
-  // One product: reuse adv-shell/panel/form/button primitives.
+  // One product: reuse adv-shell/panel/form/button primitives, and wear
+  // the same header as the rest of the site via PageChrome. Every auth
+  // screen — login, signup, and all four confirmation states — renders
+  // through here, so this one edit themes all of them.
   return (
-    <section className="adv-shell" aria-label={title}>
-      <div className="adv-shell__inner adv-shell__inner--narrow">
-        <p className="form__note"><button type="button" className="adv-link" onClick={() => navigateApp(backHref)}>← Back to site</button></p>
-        <p className="eyebrow eyebrow--plain">{eyebrow}</p>
-        <h2 className="block__title">{title}</h2>
-        {body ? <p className="block__body">{body}</p> : null}
-        <div className="panel adv-panel">{children}</div>
-        {footer ? <p className="form__note">{footer}</p> : null}
-      </div>
-    </section>
+    <PageChrome>
+      <section className="adv-shell" aria-label={title}>
+          <div className="adv-shell__inner adv-shell__inner--narrow">
+          <p className="form__note"><button type="button" className="adv-link" onClick={() => navigateApp(backHref)}>← Back to site</button></p>
+          <p className="eyebrow eyebrow--plain">{eyebrow}</p>
+          <h2 className="block__title">{title}</h2>
+          {body ? <p className="block__body">{body}</p> : null}
+          <div className="panel adv-panel">{children}</div>
+          {footer ? <p className="form__note">{footer}</p> : null}
+        </div>
+      </section>
+    </PageChrome>
   )
 }
 

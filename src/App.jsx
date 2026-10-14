@@ -1,9 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import Atmosphere from './components/Atmosphere.jsx'
-import Cinema from './components/Cinema.jsx'
-import Console from './components/console/Console.jsx'
+import Landing from './components/landing/Landing.jsx'
 import AdminConsole from './components/admin/AdminConsole.jsx'
-import Conversion from './components/conv/Conversion.jsx'
 import AdvertiserApp from './components/advertiser/AdvertiserApp.jsx'
 import DeveloperApp from './components/developer/DeveloperApp.jsx'
 import DeveloperLanding from './components/developer/DeveloperLanding.jsx'
@@ -12,13 +10,30 @@ import { AuthProvider } from './components/auth/AuthProvider.jsx'
 import { LoginPage, SignupPage, AuthCallbackPage } from './components/auth/AuthPages.jsx'
 import { RequireRole, AuthLoadingScreen } from './components/auth/RequireAuth.jsx'
 import { useAuth, roleHome } from './components/auth/authState.js'
-import PublicHeader from './components/PublicHeader.jsx'
+import PageChrome from './components/landing/PageChrome.jsx'
 import Footer from './components/Footer.jsx'
 import PrivacyPolicyPage from './components/PrivacyPolicyPage.jsx'
 import TermsConditionsPage from './components/TermsConditionsPage.jsx'
 import useAppRoute, { navigateApp } from './hooks/useAppRoute.js'
 import './components/advertiser/advertiser.css'
 import './App.css'
+
+/* one delegated pointer listener for every spotlight card on the page. */
+import SpotlightTracker from './components/cine/SpotlightTracker.jsx'
+
+/* The transition veil. React remounts this the instant the path changes
+   (because the key changes), which is what replays the CSS sweep -- so the
+   animation costs no JavaScript and cannot desync from the router. The
+   previous path is held in a ref rather than state so that StrictMode's
+   double-render does not render the veil twice. */
+function RouteVeil() {
+  const path = useAppRoute()
+  const last = useRef(null)
+  const seen = last.current !== null && last.current !== path
+  last.current = path
+  if (!seen) return null
+  return <div className="route-veil" key={path} aria-hidden="true" />
+}
 
 function RoleRedirect() {
   const { loading, isAuthenticated, role } = useAuth()
@@ -45,7 +60,6 @@ function Routes() {
     return (
       <>
         <Atmosphere />
-        <PublicHeader />
         <LoginPage />
         <Footer />
       </>
@@ -56,7 +70,6 @@ function Routes() {
     return (
       <>
         <Atmosphere />
-        <PublicHeader />
         <SignupPage />
         <Footer />
       </>
@@ -129,8 +142,9 @@ function Routes() {
     return (
       <>
         <Atmosphere />
-        <PublicHeader />
-        <PrivacyPolicyPage />
+        <PageChrome>
+          <PrivacyPolicyPage />
+        </PageChrome>
         <Footer />
       </>
     )
@@ -140,8 +154,9 @@ function Routes() {
     return (
       <>
         <Atmosphere />
-        <PublicHeader />
-        <TermsConditionsPage />
+        <PageChrome>
+          <TermsConditionsPage />
+        </PageChrome>
         <Footer />
       </>
     )
@@ -179,11 +194,7 @@ function Routes() {
   return (
     <>
       <Atmosphere />
-      <PublicHeader />
-      <Cinema />
-      <Console />
-      <Conversion />
-      <Footer />
+      <Landing />
     </>
   )
 }
@@ -191,6 +202,12 @@ function Routes() {
 function App() {
   return (
     <AuthProvider>
+      {/* Two global render layers, both decorative and both above the router:
+          the WebGL canvas that scrolls with the page, and the one delegated
+          pointer listener that drives every spotlight card. Neither knows
+          which route is mounted, so neither has to be re-created per route. */}
+      <SpotlightTracker />
+      <RouteVeil />
       <Routes />
     </AuthProvider>
   )

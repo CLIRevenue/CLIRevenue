@@ -891,3 +891,13 @@
    only, and the global prefers-reduced-motion block already takes every
    duration to zero: no infinite loop, no scroll listener, no transform
    left waiting. */
+
+/* A short lead-in under a quickstart step title. The old steps were pure
+   code with no prose, so this has no precedent here. */
+.sdk-qs__note {
+  margin: 0 0 10px;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 60ch;
+}

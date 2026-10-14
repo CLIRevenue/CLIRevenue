@@ -22,7 +22,7 @@
  *    public page therefore put the section's chapter number and first line of
  *    copy behind the header.
  *
- * A third, softer one: two in-app anchors (`PublicHeader`'s Developer /
+ * A third, softer one: two in-app anchors (the shared header's Developer /
  * Advertiser, and the advertiser page's cross-link) issued full document
  * requests, which reboot the app and replay the entire intro film. The href must
  * stay — it is what makes a link copyable and middle-clickable — but a plain left
@@ -76,8 +76,8 @@ describe('every static in-page anchor resolves to a real id', () => {
   it('the survey found the anchors it was supposed to find', () => {
     // A zero-hit inventory would make every assertion below vacuously true.
     expect(staticHashHrefs.length).toBeGreaterThan(0)
-    expect(allIds.has('money')).toBe(true)
-    expect(allIds.has('revenue-split')).toBe(true)
+    expect(allIds.has('how')).toBe(true)
+    expect(allIds.has('start')).toBe(true)
   })
 
   it('no href points at an id that does not exist', () => {
@@ -103,16 +103,7 @@ describe('an anchor never crosses a route boundary', () => {
 
   it('no file that renders on the public page anchors to a route-scoped id', () => {
     const publicPageFiles = [
-      'src/components/PromoAd.jsx',
-      'src/components/console/ConsoleMasthead.jsx',
-      'src/components/scenes/TheWait.jsx',
-      'src/components/scenes/TheAd.jsx',
-      'src/components/scenes/TheMoney.jsx',
-      'src/components/scenes/TheExperience.jsx',
-      'src/components/scenes/TheIncentive.jsx',
-      'src/components/scenes/AdvertiserDemo.jsx',
-      'src/components/conv/Conversion.jsx',
-      'src/components/console/Console.jsx',
+      'src/components/landing/Landing.jsx',
     ]
     const offenders = []
     for (const path of publicPageFiles) {
@@ -128,71 +119,10 @@ describe('an anchor never crosses a route boundary', () => {
     // `#developer` versus `#developers` is a one-character difference that no
     // reader would notice and no amount of clicking would explain.
     expect(allIds.has('developer')).toBe(false)
-    expect(allIds.has('developers')).toBe(true)
     const offenders = [...sourceByPath.entries()]
       .filter(([, src]) => /href="#developer"/.test(src))
       .map(([path]) => path)
     expect(offenders).toEqual([])
-  })
-})
-
-describe('the six mechanism cards resolve to what their copy promises', () => {
-  const promo = read('src/components/PromoAd.jsx')
-
-  function cards() {
-    return [...promo.matchAll(/cta:\s*'([^']+)',\s*\n\s*href:\s*'(#[^']+)'/g)].map((m) => ({
-      cta: m[1],
-      href: m[2],
-    }))
-  }
-
-  it('all six are collected', () => {
-    expect(cards()).toHaveLength(6)
-  })
-
-  it('every card CTA lands on a real id', () => {
-    expect(cards().filter((c) => !allIds.has(c.href.slice(1)))).toEqual([])
-  })
-
-  it('no card CTA is a self-anchor', () => {
-    /* Only the split card was one: it is rendered inside #money, so #money
-       was the single target that provably moved the page by zero pixels. Its
-       replacement is the flow diagram the card describes, which sits directly
-       above it in the same chapter. mech_01 also targets #money, and that one
-       is correct — it is rendered a chapter earlier and means "read the
-       funding model", which is the next chapter. */
-    const split = cards().find((c) => c.cta === 'Verify the split')
-    expect(split.href).toBe('#revenue-split')
-    const funding = cards().find((c) => c.cta === 'Read the funding model')
-    expect(funding.href).toBe('#money')
-  })
-
-  it('the split target is the diagram, not the chapter', () => {
-    const flow = read('src/components/RevenueFlow.jsx')
-    expect(flow).toMatch(/className="revenue-flow" id="revenue-split"/)
-  })
-})
-
-describe('the console journey resolves', () => {
-  const masthead = read('src/components/console/ConsoleMasthead.jsx')
-
-  it('every journey step anchors to a real id', () => {
-    const hrefs = [...masthead.matchAll(/href:\s*'(#[^']+)'/g)].map((m) => m[1])
-    expect(hrefs).toHaveLength(4)
-    expect(hrefs.filter((h) => !allIds.has(h.slice(1)))).toEqual([])
-  })
-
-  it('all four parties survive the removal of the console advertiser panel', () => {
-    // The panel was the target of step 01. Retargeting it at film chapter 03
-    // keeps a component titled "One loop. Four parties." showing four parties,
-    // instead of silently dropping the advertiser to make an anchor resolve.
-    expect(masthead).toMatch(/label: 'Advertiser'/)
-    expect(masthead).toMatch(/href: '#advertiserDemo'/)
-    expect(masthead).not.toMatch(/href: '#advertiser'/)
-  })
-
-  it('the comment above the journey no longer claims every anchor is local', () => {
-    expect(masthead).not.toMatch(/Each one is a real anchor into the console below/)
   })
 })
 
@@ -249,22 +179,14 @@ describe('an anchor lands content below the fixed header', () => {
 })
 
 describe('smooth scrolling is preserved', () => {
-  const useCinema = read('src/hooks/useCinema.js')
-
-  it('Lenis still handles anchors on the public page', () => {
-    expect(useCinema).toMatch(/anchors:\s*true/)
-  })
-
   it('the fix is CSS-only: no scroll arithmetic was added to JS', () => {
     /* scroll-margin-top is honoured by both Lenis and native anchor jumps, so
        the correct fix had no JavaScript in it at all. A JS offset would have
        fought Lenis and broken the native path on the two landing routes. */
     for (const [path, src] of sourceByPath) {
       if (!/\.(jsx?|tsx?)$/.test(path)) continue
-      if (path === 'src/components/RevenueFlow.jsx') continue
       expect(src, path).not.toMatch(/scroll-margin|scrollMargin/)
     }
-    expect(read('src/components/RevenueFlow.jsx')).not.toMatch(/scroll-margin|scrollMargin/)
   })
 })
 
@@ -379,23 +301,32 @@ describe('spaNav: an in-app anchor navigates without a document request', () => 
 })
 
 describe('the in-app anchors that were throwing away the SPA are intercepted', () => {
-  it('the header keeps both a real href and the interception', () => {
-    const src = read('src/components/PublicHeader.jsx')
-    expect(src).toMatch(/import \{ navigateApp, spaNav \} from '\.\.\/hooks\/useAppRoute\.js'/)
-    for (const href of ['/developer', '/advertiser']) {
-      expect(src).toMatch(
-        new RegExp(`<a className="btn btn--ghost btn--sm" href="${href}" onClick=\\{spaNav\\}>`),
-      )
+  it('the shared header keeps both a real href and the interception', () => {
+    // The nav must be crawlable with JavaScript off (real hrefs) AND must
+    // not throw the SPA away when it is on. Losing either half is the bug:
+    // an href alone means a full document reload, a handler alone means a
+    // header that only exists for people with a working router.
+    const src = read('src/components/landing/PageChrome.jsx')
+    expect(src).toMatch(/import \{ navigateApp \} from '\.\.\/\.\.\/hooks\/useAppRoute\.js'/)
+    expect(src).toMatch(/navigateApp\(href\)/)
+    // the three section routes come from LINKS; the two auth routes are
+    // literal hrefs on the CTA pair. Both must be real hrefs.
+    for (const href of ['/', '/developer', '/advertiser']) {
+      expect(src).toContain(`{ href: '${href}', label:`)
     }
+    for (const href of ['/login', '/signup']) {
+      expect(src).toContain(`href="${href}"`)
+    }
+    expect(src).toMatch(/onClick=\{spa\}/)
   })
 
-  it('href stays immediately after className, so the control-language test can still read it', () => {
-    /* tests/header-control-language.test.js matches
-       `className="([^"]*)"\s+href="/developer"` to prove the anchors wear the
-       same classes as Log in. Reordering these two attributes would silently
-       turn that suite into "the anchor was not found". */
-    const src = read('src/components/PublicHeader.jsx')
-    expect(src).toMatch(/className="btn btn--ghost btn--sm"\s+href="\/developer"/)
+  it('every header route link carries a real href, never a bare "#"', () => {
+    const src = read('src/components/landing/PageChrome.jsx')
+    expect(src).not.toMatch(/href="#"[^\n]*onClick/)
+    // href sits between key and onClick, so the markup reads as a real link
+    // first and an interceptor second. Whitespace-tolerant: the attributes
+    // are one per line, and a single-line regex silently matches nothing.
+    expect(src).toMatch(/key=\{l\.href\}\s+href=\{l\.href\}\s+onClick=\{spa\}/)
   })
 
   it('the advertiser cross-link to the developer page navigates in-app too', () => {
@@ -416,10 +347,9 @@ describe('the route table still owns the destinations the CTAs promise', () => {
   const app = read('src/App.jsx')
 
   it('the closing chapter sends an advertiser and a developer to their own onboarding', () => {
-    expect(app).toMatch(/AdvertiserLanding/)
-    expect(app).toMatch(/DeveloperLanding/)
-    const cta = read('src/components/scenes/Cta.jsx')
-    expect(cta).toMatch(/ctaScene/)
+    const cta = read('src/components/landing/Landing.jsx')
+    expect(cta).toMatch(/href=\"\/advertiser\"/)
+    expect(cta).toMatch(/href=\"\/developer\"/)
   })
 
   it('the two onboarding routes are reachable without a signed-in role', () => {

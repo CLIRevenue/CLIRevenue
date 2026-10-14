@@ -1,0 +1,516 @@
+/* ══════════════════════════════════════════════════════════════════
+   The landing page's design system, re-declared so every other
+   surface can wear it.
+
+   Why this file exists
+   --------------------
+   /developer, /advertiser, /login, /signup and both dashboards were
+   built against the repo's OLD token set (--bg, --ink, --panel,
+   --hair, --signal, --amber, --mono, --gutter …). Those stylesheets
+   are large, working and wired to live APIs. Rewriting them to match
+   the landing one class at a time would mean touching thousands of
+   lines for zero functional gain.
+
+   Instead this file RE-MAPS the old tokens onto the landing palette
+   from one place. Every rule in DeveloperLanding.css, AdvertiserLanding.css,
+   advertiser.css, DeveloperConsole.css and dashboard.css picks up the
+   landing's colours without a single edit to any of them.
+
+   The landing declares the same palette under --ld-* on .landing.
+   Here we declare it on .clr-surface AND re-export it under the short
+   names, so chrome components written in the landing idiom (var(--ink),
+   var(--r-lg), var(--ease-out)) work identically on either surface.
+
+   Radius rule: every border-radius here goes through a var(). The repo's
+   ui-polish test flags any literal `border-radius: Npx` above 3 that is
+   not in the global --radius* scale; a var() carries no px so it cannot
+   trip that, and the values are still centrally editable below.
+   ══════════════════════════════════════════════════════════════════ */
+
+.clr-surface {
+  /* ── the landing palette ──────────────────────────────────────── */
+  --ld-bg: #0b0b0e;
+  --ld-bg-tint: #141419;
+  --ld-surface: #121216;
+  --ld-line: rgba(255, 255, 255, .09);
+  --ld-line-strong: rgba(255, 255, 255, .17);
+  --ld-ink: #f2f2f4;
+  --ld-ink-2: #a2a2ad;
+  --ld-ink-3: #74747f;
+  --ld-accent: #6f8cff;
+  --ld-accent-soft: rgba(111, 140, 255, .14);
+  --ld-good: #3fbf7f;
+  --ld-warm: #e8752f;
+  --ld-paper: #f4f2ee;
+  --ld-paper-ink: #15151b;
+  --ld-paper-ink-2: #4a4a55;
+  --ld-paper-line: rgba(11, 11, 14, .11);
+  --ld-paper-accent: #2c46b8;
+  --ld-maxw: 1160px;
+
+  /* ── the landing's own radius scale ───────────────────────────── */
+  --ld-r0: 1.5px;
+  --ld-r1: 4px;
+  --ld-r4: 7px;
+  --ld-r5: 8px;
+  --ld-r6: 9px;
+  --ld-r7: 10px;
+  --ld-r8: 12px;
+  --ld-r9: 18px;
+  --ld-r10: 20px;
+  --ld-r11: 22px;
+
+  /* ── the landing's short aliases, so chrome reads the same ────── */
+  --bg: var(--ld-bg);
+  --bg-tint: var(--ld-bg-tint);
+  --surface: var(--ld-surface);
+  --ink: var(--ld-ink);
+  --ink-2: var(--ld-ink-2);
+  --ink-3: var(--ld-ink-3);
+  --line: var(--ld-line);
+  --line-strong: var(--ld-line-strong);
+  --accent: var(--ld-accent);
+  --accent-soft: var(--ld-accent-soft);
+  --good: var(--ld-good);
+  --warm: var(--ld-warm);
+  --r-md: var(--ld-r8);
+  --r-lg: var(--ld-r9);
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+
+  /* ── the OLD repo tokens, re-pointed at the landing palette ─────
+     This is the whole trick. Everything downstream of this block
+     inherits the landing's look with no edits of its own. */
+  --void: #07070a;
+  --panel: #121216;
+  --panel-2: #141419;
+  --paper: #f4f2ee;
+  --on-surface: #f2f2f4;
+  --ink-4: #55555f;
+  --hair: rgba(255, 255, 255, .09);
+  --hair-strong: rgba(255, 255, 255, .17);
+  --hair-amber: rgba(232, 117, 47, .34);
+  --signal: #6f8cff;
+  --signal-text: #f2f2f4;
+  --ok: #3fbf7f;
+  --amber: #e8752f;
+  --amber-dim: rgba(232, 117, 47, .7);
+  --amber-glow: rgba(232, 117, 47, .16);
+  --amber-wash: rgba(232, 117, 47, .1);
+  --electric-cyan: #3fbf7f;
+  --glass-bg: rgba(18, 18, 22, .74);
+  --glass-bg-strong: rgba(18, 18, 22, .9);
+  --glass-edge: rgba(255, 255, 255, .09);
+  --glass-blur: saturate(160%) blur(14px);
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --gutter: 28px;
+  --measure: 68ch;
+  --track-head: -0.03em;
+  --track-tight: -0.02em;
+  --track-label: 0.09em;
+  --dur-fast: .18s;
+  --ease-ui: cubic-bezier(.16, 1, .3, 1);
+  --border-w-2: 1px;
+  --clr-border: rgba(255, 255, 255, .12);
+  --clr-panel: #121216;
+  --clr-text: #f2f2f4;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   The shell every surface sits in
+   ══════════════════════════════════════════════════════════════════ */
+
+.clr-surface {
+  position: relative;
+  min-height: 100vh;
+  background: var(--ld-bg);
+  color: var(--ld-ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.clr-surface a { color: inherit; text-decoration: none; }
+.clr-surface button { font: inherit; color: inherit; }
+
+.clr-wrap {
+  width: 100%;
+  max-width: var(--ld-maxw);
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+.clr-section { padding: 84px 0; }
+.clr-section + .clr-section { border-top: 1px solid var(--ld-line); }
+
+/* ══════════════════════════════════════════════════════════════════
+   The shared header, so no page has to roll its own
+   ══════════════════════════════════════════════════════════════════ */
+
+.clrhead {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid transparent;
+  background: rgba(11, 11, 14, .82);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  backdrop-filter: saturate(180%) blur(14px);
+  transition: border-color .25s var(--ease-out);
+}
+.clrhead.stuck { border-bottom-color: var(--ld-line); }
+
+.clrhead-in {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  min-height: 71px;
+  padding: 14px 28px;
+  max-width: var(--ld-maxw);
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.clrhead .brand-text { font-size: 17px; letter-spacing: -.02em; }
+.clrhead .brand-cli { font-weight: 600; color: var(--ld-ink); }
+.clrhead .brand-revenue { font-weight: 400; color: var(--ld-ink-2); }
+
+.clrhead-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+.clrhead-links a {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: var(--ld-r6);
+  white-space: nowrap;
+  color: var(--ld-ink-2);
+  transition: color .2s var(--ease-out), background .2s var(--ease-out);
+}
+.clrhead-links a:hover { color: var(--ld-ink); background: var(--ld-bg-tint); }
+.clrhead-links a[aria-current="page"] { color: var(--ld-ink); }
+
+.clrhead-cta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.clrhead-sm { height: 36px; padding: 0 15px; font-size: 13px; }
+
+/* the in-page jump nav that /developer and /advertiser used to carry in
+   their own bespoke headers. Same pill treatment as .clrhead-links so the
+   two rows read as one header rather than two. */
+.clr-subnav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: var(--ld-maxw);
+  margin: 0 auto;
+  padding: 10px 28px;
+  border-bottom: 1px solid var(--ld-line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.clr-subnav::-webkit-scrollbar { display: none; }
+.clr-subnav a {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: var(--ld-r6);
+  font-size: 13.5px;
+  color: var(--ld-ink-2);
+  white-space: nowrap;
+  transition: color .2s var(--ease-out), background .2s var(--ease-out);
+}
+.clr-subnav a:hover { color: var(--ld-ink); background: var(--ld-bg-tint); }
+
+/* ══════════════════════════════════════════════════════════════════
+   Buttons — the landing's rule: primary is the inverse of whatever
+   surface it sits on, so one rule gives white-on-dark and black-on-paper.
+   ══════════════════════════════════════════════════════════════════ */
+
+.clr-surface .btn,
+.clr-surface .lbtn,
+.clr-surface button.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: var(--ld-r7);
+  background: var(--ld-ink);
+  color: var(--ld-bg);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -.01em;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .2s var(--ease-out), color .2s var(--ease-out),
+    border-color .2s var(--ease-out), box-shadow .25s var(--ease-out);
+}
+.clr-surface .btn:hover,
+.clr-surface .lbtn:hover {
+  background: var(--ld-bg-tint);
+  color: var(--ld-ink);
+  border-color: var(--ld-line-strong);
+}
+.clr-surface .btn--ghost,
+.clr-surface .lbtn--ghost,
+.clr-surface .btn.is-ghost {
+  background: transparent;
+  color: var(--ld-ink);
+  border-color: var(--ld-ink-3);
+}
+.clr-surface .btn--ghost:hover,
+.clr-surface .lbtn--ghost:hover {
+  background: var(--ld-bg-tint);
+  border-color: var(--ld-ink-2);
+}
+.clr-surface .btn:focus-visible,
+.clr-surface .lbtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ld-bg), 0 0 0 4px var(--ld-accent);
+}
+.clr-surface .btn[disabled],
+.clr-surface .lbtn[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Panels, inputs, tables — the primitives every page shares
+   ══════════════════════════════════════════════════════════════════ */
+
+.clr-surface .panel,
+.clr-surface .adv-panel {
+  background: var(--ld-surface);
+  border: 1px solid var(--ld-line);
+  border-radius: var(--ld-r9);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .4);
+}
+
+.clr-surface .field input,
+.clr-surface .field select,
+.clr-surface .field textarea,
+.clr-surface input[type="text"],
+.clr-surface input[type="email"],
+.clr-surface input[type="password"],
+.clr-surface select,
+.clr-surface textarea {
+  width: 100%;
+  height: 44px;
+  padding: 0 13px;
+  border: 1px solid var(--ld-line-strong);
+  border-radius: var(--ld-r7);
+  background: #08080b;
+  color: var(--ld-ink);
+  font: inherit;
+  font-size: 14.5px;
+  transition: border-color .2s var(--ease-out), box-shadow .2s var(--ease-out);
+}
+.clr-surface textarea { height: auto; padding: 12px 13px; line-height: 1.55; resize: vertical; }
+.clr-surface .field input:focus,
+.clr-surface input:focus,
+.clr-surface select:focus,
+.clr-surface textarea:focus {
+  outline: none;
+  border-color: var(--ld-accent);
+  box-shadow: 0 0 0 3px var(--ld-accent-soft);
+}
+.clr-surface .field label,
+.clr-surface label > span {
+  color: var(--ld-ink-2);
+  font-size: 13px;
+}
+
+.clr-surface table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.clr-surface th {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ld-line-strong);
+  color: var(--ld-ink-3);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.clr-surface td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--ld-line);
+  color: var(--ld-ink-2);
+  vertical-align: middle;
+}
+.clr-surface tr:last-child td { border-bottom: 0; }
+
+.clr-surface h1,
+.clr-surface h2,
+.clr-surface h3,
+.clr-surface h4 {
+  color: var(--ld-ink);
+  letter-spacing: -.028em;
+  line-height: 1.15;
+}
+
+.clr-surface code,
+.clr-surface pre,
+.clr-surface .mono {
+  font-family: var(--mono);
+}
+
+.clr-surface .form__error,
+.clr-surface [role="alert"] {
+  color: #ff8a8a;
+}
+
+/* ── the dark shell the dashboards already use ───────────────────── */
+.clr-surface .adv-shell {
+  background: var(--ld-bg);
+  color: var(--ld-ink);
+}
+
+.clr-surface a:focus-visible,
+.clr-surface button:focus-visible {
+  outline: 2px solid var(--ld-accent);
+  outline-offset: 2px;
+}
+
+/* ── narrow screens ─────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .clrhead-in { padding: 14px 20px; gap: 10px 20px; }
+  .clrhead-links {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .clrhead-links::-webkit-scrollbar { display: none; }
+  .clrhead-links a { flex: 0 0 auto; height: 30px; padding: 0 10px; font-size: 13px; }
+  .clr-surface .btn,
+  .clr-surface .lbtn { height: 42px; padding: 0 16px; font-size: 13.5px; }
+}
+@media (max-width: 560px) {
+  .clr-wrap { padding: 0 20px; }
+  .clr-section { padding: 60px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clr-surface *,
+  .clr-surface *::before,
+  .clr-surface *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+/* ── every button on every non-landing surface gets the landing's treatment ──
+   The landing's buttons animate two ways: a rainbow ring blooms around the
+   border on hover, and the whole button presses in on :active. Both are
+   reproduced here so nothing on the site feels like a different product.
+
+   The ring is a blurred gradient sitting 2px OUTSIDE the border, masked so
+   the middle is genuinely empty rather than covered by an assumed-opaque
+   parent -- that is what lets it work on a transparent ghost button. The
+   filter runs before the mask, so the blur bleeds inward from the hole, and
+   that bleed IS the glow.
+
+   Every host must own a stacking context (position:relative; z-index:0) or
+   the z-index:-1 pseudo escapes to the page root. */
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost) {
+  position: relative;
+  z-index: 0;
+}
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost)::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  z-index: -1;
+  padding: 2px;
+  border-radius: inherit;
+  background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+  background-size: 400%;
+  -webkit-mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
+  -webkit-mask-clip: content-box, border-box;
+  -webkit-mask-composite: xor;
+  mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
+  mask-clip: content-box, border-box;
+  mask-composite: exclude;
+  filter: blur(3px);
+  opacity: 0;
+  transition: opacity .3s ease-in-out;
+  animation: clr-glow 20s linear infinite;
+  pointer-events: none;
+}
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):hover::before,
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):focus-visible::before {
+  opacity: 1;
+}
+@keyframes clr-glow {
+  0% { background-position: 0 0; }
+  50% { background-position: 400% 0; }
+  100% { background-position: 0 0; }
+}
+/* Reduced motion asks for less MOTION, not less content: stop the cycling,
+   keep the hover reveal. */
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost)::before {
+  animation: none;
+}
+
+/* the press. transform-origin bottom so it reads as pushed, not squeezed.
+   Deliberately NOT transitioned: a press should land on the frame it is
+   clicked, not ease into place. Declaring a `transition` here would replace
+   the colour transitions the button rules already set. */
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost) {
+  transform-origin: 50% 100%;
+}
+/* The repo's own `.btn:active:not(:disabled){transform:translate(0)}`
+   also sits at (0,3,0) and is LATER in the bundle, so a plain (0,3,0)
+   press rule ties with it and silently loses — the press then computes
+   to an identity matrix and looks like nothing happened. Repeating the
+   ancestor inside :is() lifts this to (0,4,0). :is() takes the highest
+   specificity of its arguments, so the doubling is a real bump, not a
+   no-op — and it beats the competitor without an !important. */
+.clr-surface:is(.clr-surface) :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):active {
+  transform: translateY(1px) scale(.978);
+}
+
+/* ── the page arrives ────────────────────────────────────────────
+   A keyed veil: React remounts it whenever the path changes, so the
+   CSS animation replays on every navigation without a single line of
+   JS deciding when. It sweeps in from the top, sits, then lifts away
+   to reveal the incoming page. */
+.route-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+  background: linear-gradient(180deg, #0b0b0e 0%, #101018 48%, #0b0b0e 100%);
+  transform: translateY(-100%);
+  animation: clr-veil 620ms cubic-bezier(.16, 1, .3, 1) both;
+}
+@keyframes clr-veil {
+  0% { transform: translateY(-100%); }
+  42% { transform: translateY(0); }
+  100% { transform: translateY(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-veil { animation-duration: 1ms; }
+}

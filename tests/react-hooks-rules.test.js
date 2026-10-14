@@ -148,7 +148,7 @@ describe('the frontend tree obeys the Rules of Hooks', () => {
 
   it('has the rule that names this bug enabled as an error, not disabled', async () => {
     const eslint = new ESLint({ cwd: ROOT })
-    const config = await eslint.calculateConfigForFile('src/components/console/OrbitRing.jsx')
+    const config = await eslint.calculateConfigForFile('src/components/auth/AuthProvider.jsx')
     const severity = config.rules?.['react-hooks/rules-of-hooks']
     expect(Array.isArray(severity) ? severity[0] : severity).toBe(2)
   })
@@ -160,17 +160,4 @@ describe('the frontend tree obeys the Rules of Hooks', () => {
     expect(offenders).toEqual([])
   })
 
-  it('keeps the reduced-motion preference read at the top level of OrbitRing', () => {
-    // The specific shape that blanked the site: a component that wants a
-    // preference value wrote it into state from an effect instead of calling
-    // the hook directly. Asserted on the file, because this is the one
-    // component on the public landing page whose crash took down every route.
-    const src = readFileSync(join(SRC, 'components/console/OrbitRing.jsx'), 'utf8')
-    const body = src.slice(src.indexOf('function OrbitRing('))
-    const call = body.match(/usePrefersReducedMotion\(\)/)
-    expect(call).not.toBeNull()
-    // Between the component opening and the call there must be no effect
-    // callback, which is exactly where the original violation sat.
-    expect(body.slice(0, call.index)).not.toMatch(/\buseEffect\s*\(/)
-  })
 })

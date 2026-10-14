@@ -44,6 +44,7 @@ import { navigateApp } from '../../hooks/useAppRoute.js'
 import { Panel } from '../console/ui.jsx'
 import CopyButton from '../CopyButton.jsx'
 import clirevenue from '../../lib/clirevenue.js'
+import PageChrome from '../landing/PageChrome.jsx'
 import './DeveloperLanding.css'
 
 /* ------------------------------------------------------------------
@@ -219,40 +220,51 @@ function DownloadSection() {
 }
 /* ------------------------------------------------------------------
    The quickstart is short enough to sit above the fold: the five things
-   a developer has to do, in order. Every API symbol here exists today
-   in the repository; nothing is invented.
+   a developer has to do, in order. Every command shown here exists
+   today in the repository; nothing is invented.
    ------------------------------------------------------------------ */
 
 const QUICKSTART_STEPS = [
   {
     n: '1',
     lang: 'shell',
+    title: 'Register, and collect your key',
+    body: 'Sign up on the website and we issue a unique publisher key. One key maps to exactly one CLI, and that CLI can carry as many ad slots as you need. Want slots in a second CLI? Request a second key.',
+    code: `clirevenue keys`,
+  },
+  {
+    n: '2',
+    lang: 'shell',
     title: 'Install the SDK',
     code: `npm install ${PACKAGE_NAME}`,
   },
   {
-    n: '2',
-    lang: 'js',
-    title: 'Create / get a publishable key',
-    code: `// The key lives in your build environment, not in this file.\nconst key = import.meta.env.VITE_CLIREVENUE_PUBLISHABLE_KEY`,
-  },
-  {
     n: '3',
-    lang: 'js',
-    title: 'Initialize CLIRevenue',
-    code: `import { init } from '${PACKAGE_NAME}'\n\nconst cli = init(key, {\n  baseUrl: import.meta.env.VITE_API_BASE_URL,\n})`,
+    lang: 'shell',
+    title: 'Run setup and paste your key',
+    body: 'The setup command verifies the key, then writes clirevenue.json next to your project.',
+    code: `npx clirevenue sdk
+
+? paste your key › clv_7f2a91c0
+✓ verified · clirevenue.json`,
   },
   {
     n: '4',
-    lang: 'js',
-    title: 'Select a placement',
-    code: `const PLACEMENT = 'console-workbench'`,
+    lang: 'shell',
+    title: 'Configure your slots in the CLI',
+    body: 'Open whichever CLI you build for and set where each ad slot sits and how big it is.',
+    code: `claude-code
+
+// /slots
+status-bar inline 60x1
+sidebar-foot stacked 280x24`,
   },
   {
     n: '5',
-    lang: 'js',
-    title: 'Render an ad',
-    code: `const { served, dispose } = await cli.render(PLACEMENT, '#ad-region')\nif (!served) {\n  // No fill: render your own fallback instead.\n}\n\n// When the slot unmounts, stop watching for viewability.\ndispose()`,
+    lang: 'shell',
+    title: 'Done — ads arrive on their own',
+    body: 'Once a slot is configured, ads are delivered into it automatically. There is no per-impression work on your side.',
+    code: `✓ 2 slots live · automatic`,
   },
 ]
 
@@ -272,6 +284,7 @@ function Quickstart() {
             </span>
             <div className="sdk-qs__body">
               <h4 className="sdk-qs__title">{step.title}</h4>
+              {step.body ? <p className="sdk-qs__note">{step.body}</p> : null}
               <CodeBlock
                 label={step.lang}
                 action={
@@ -288,7 +301,7 @@ function Quickstart() {
         ))}
       </ol>
       <p className="sdk-note">
-        <Rich>The CLIRevenue instance is created once per page and shared by every placement. Call `destroy()` when the owner surface is removed, for example in a React effect cleanup.</Rich>
+        <Rich>Prefer to drive the SDK by hand? The <code>init()</code> reference below covers the programmatic path, including how one CLIRevenue instance is shared across every placement on a page.</Rich>
       </p>
     </div>
   )
@@ -497,158 +510,142 @@ const { served } = await cli.render(
 export default function DeveloperLanding() {
   return (
     <section className="sdk-page" aria-label="CLIRevenue SDK">
-      <header className="sdk-top">
-        <button
-          type="button"
-          className="sdk-top__brand"
-          onClick={() => navigateApp('/')}
-        >
-          CLI<em>Revenue</em>
-        </button>
-        <span className="sitehead__nav-link sdk-top__path">/developer</span>
-        <nav className="sdk-top__nav" aria-label="Developer page">
-          <a className="sdk-top__link" href="#install">
-            Install
-          </a>
-          <a className="sdk-top__link" href="#documentation">
-            Docs
-          </a>
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => navigateApp('/login')}
-          >
-            Log in
-          </button>
-        </nav>
-      </header>
+      <PageChrome active="/developer"
+        subnav={
+          <>
+            <a href="#install">Install</a>
+            <a href="#documentation">Docs</a>
+          </>
+        }
+      >
+        <div className="sdk-page__inner">
+          <div className="sdk-hero">
+            <div className="sdk-hero__lede">
+              <p className="eyebrow eyebrow--plain">01 — CLIRevenue SDK</p>
+              <h1 className="sdk-hero__title">
+                Monetize your terminal application
+                <span className="sdk-hero__accent"> with native advertising.</span>
+              </h1>
+              <p className="sdk-hero__body">
+                The CLIRevenue SDK asks the CLIRevenue gateway for an ad,
+                renders it in a reserved region of your interface, and
+                counts the impression once the ad is genuinely visible. It
+                never touches your terminal output.
+              </p>
+              <div className="sdk-hero__actions">
+                <a className="btn btn--primary" href="#install">
+                  Install with npm
+                </a>
+                <a className="btn btn--ghost" href="#documentation">
+                  Documentation
+                </a>
+              </div>
+            </div>
 
-      <div className="sdk-page__inner">
-        <div className="sdk-hero">
-          <div className="sdk-hero__lede">
-            <p className="eyebrow eyebrow--plain">01 — CLIRevenue SDK</p>
-            <h1 className="sdk-hero__title">
-              Monetize your terminal application
-              <span className="sdk-hero__accent"> with native advertising.</span>
-            </h1>
-            <p className="sdk-hero__body">
-              The CLIRevenue SDK asks the CLIRevenue gateway for an ad,
-              renders it in a reserved region of your interface, and
-              counts the impression once the ad is genuinely visible. It
-              never touches your terminal output.
-            </p>
-            <div className="sdk-hero__actions">
-              <a className="btn btn--primary" href="#install">
-                Install with npm
-              </a>
-              <a className="btn btn--ghost" href="#documentation">
-                Documentation
-              </a>
+            <div className="sdk-plate">
+              <div className="sdk-code__bar">
+                <span className="sdk-code__tag">integration</span>
+                <span className="sdk-plate__meta">{PACKAGE_NAME}</span>
+                <CopyButton text={HERO_SNIPPET} label="integration snippet" />
+              </div>
+              <pre className="sdk-code__pre">
+                <code>{HERO_SNIPPET}</code>
+              </pre>
             </div>
           </div>
 
-          <div className="sdk-plate">
-            <div className="sdk-code__bar">
-              <span className="sdk-code__tag">integration</span>
-              <span className="sdk-plate__meta">{PACKAGE_NAME}</span>
-              <CopyButton text={HERO_SNIPPET} label="integration snippet" />
-            </div>
-            <pre className="sdk-code__pre">
-              <code>{HERO_SNIPPET}</code>
-            </pre>
-          </div>
-        </div>
+          <div className="sdk-body">
+            <nav className="sdk-rail" aria-label="On this page">
+              <p className="sdk-rail__label">On this page</p>
+              <ol className="sdk-rail__list">
+                {SECTIONS.map((section) => (
+                  <li className="sdk-rail__item" key={section.id}>
+                    <a className="sdk-rail__link" href={`#${section.id}`}>
+                      <span className="sdk-rail__n">{section.n}</span>
+                      {section.label}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
 
-        <div className="sdk-body">
-          <nav className="sdk-rail" aria-label="On this page">
-            <p className="sdk-rail__label">On this page</p>
-            <ol className="sdk-rail__list">
-              {SECTIONS.map((section) => (
-                <li className="sdk-rail__item" key={section.id}>
-                  <a className="sdk-rail__link" href={`#${section.id}`}>
-                    <span className="sdk-rail__n">{section.n}</span>
-                    {section.label}
-                  </a>
-                </li>
-              ))}
-            </ol>
-          </nav>
-
-          <div className="sdk-main">
-            <section className="sdk-block" id="install">
-              <Quickstart />
-            </section>
-
-            <div className="sdk-row sdk-row--a">
-              <section className="sdk-block">
-                <PublishableKey />
+            <div className="sdk-main">
+              <section className="sdk-block" id="install">
+                <Quickstart />
               </section>
-              <section className="sdk-block">
-                <Placements />
-              </section>
-            </div>
 
-            <section className="sdk-block" id="download">
-              <header className="sdk-head">
-                <h3 className="sdk-head__title" id="distribution">
-                  Distribution
-                </h3>
-                <p className="sdk-head__sub">Where the SDK comes from.</p>
-              </header>
-              <DownloadSection />
-            </section>
+              <div className="sdk-row sdk-row--a">
+                <section className="sdk-block">
+                  <PublishableKey />
+                </section>
+                <section className="sdk-block">
+                  <Placements />
+                </section>
+              </div>
 
-            <section className="sdk-block">
-              <Delivery />
-            </section>
-
-            <div className="sdk-row sdk-row--b">
-              <section className="sdk-block">
-                <Sizing />
-              </section>
-              <section className="sdk-block">
-                <Analytics />
-              </section>
-            </div>
-
-            <section className="sdk-block">
-              <Lifecycle />
-            </section>
-
-            <section className="sdk-block" id="faq" aria-labelledby="faq-title">
-              <Faq />
-            </section>
-
-            <section className="sdk-block">
-              <Panel className="sdk-panel">
+              <section className="sdk-block" id="download">
                 <header className="sdk-head">
-                  <h3 className="sdk-head__title" id="documentation">
-                    Where the documentation lives
+                  <h3 className="sdk-head__title" id="distribution">
+                    Distribution
                   </h3>
+                  <p className="sdk-head__sub">Where the SDK comes from.</p>
                 </header>
-                {/* The topic list used to be an anchor whose onClick called
-                    navigateApp('/developer') — the page this link is already
-                    on. It looked clickable and did nothing, which is worse
-                    than not offering it: a reader who clicked it concluded the
-                    documentation was missing. The reference lives in the
-                    repository, not on the site, so the sentence is prose and
-                    says exactly where to look. */}
-                <p className="sdk-p">
-                  The full reference is grouped under{' '}
-                  <code className="sdk-inline">docs/developer/</code> in this
-                  repository — getting-started, installation, sdk, placements,
-                  ad-slots, configuration, analytics, troubleshooting. Those
-                  files are the current, website-side reference; the SDK package
-                  itself lives in <code className="sdk-inline">packages/sdk</code>{' '}
-                  and is versioned there a separate workstream.
-                </p>
-              </Panel>
-            </section>
-          </div>
-        </div>
+                <DownloadSection />
+              </section>
 
-      </div>
-    </section>
+              <section className="sdk-block">
+                <Delivery />
+              </section>
+
+              <div className="sdk-row sdk-row--b">
+                <section className="sdk-block">
+                  <Sizing />
+                </section>
+                <section className="sdk-block">
+                  <Analytics />
+                </section>
+              </div>
+
+              <section className="sdk-block">
+                <Lifecycle />
+              </section>
+
+              <section className="sdk-block" id="faq" aria-labelledby="faq-title">
+                <Faq />
+              </section>
+
+              <section className="sdk-block">
+                <Panel className="sdk-panel">
+                  <header className="sdk-head">
+                    <h3 className="sdk-head__title" id="documentation">
+                      Where the documentation lives
+                    </h3>
+                  </header>
+                  {/* The topic list used to be an anchor whose onClick called
+                      navigateApp('/developer') — the page this link is already
+                      on. It looked clickable and did nothing, which is worse
+                      than not offering it: a reader who clicked it concluded the
+                      documentation was missing. The reference lives in the
+                      repository, not on the site, so the sentence is prose and
+                      says exactly where to look. */}
+                  <p className="sdk-p">
+                    The full reference is grouped under{' '}
+                    <code className="sdk-inline">docs/developer/</code> in this
+                    repository — getting-started, installation, sdk, placements,
+                    ad-slots, configuration, analytics, troubleshooting. Those
+                    files are the current, website-side reference; the SDK package
+                    itself lives in <code className="sdk-inline">packages/sdk</code>{' '}
+                    and is versioned there a separate workstream.
+                  </p>
+                </Panel>
+              </section>
+            </div>
+          </div>
+
+        </div>
+    
+      </PageChrome>
+</section>
   )
 }
 

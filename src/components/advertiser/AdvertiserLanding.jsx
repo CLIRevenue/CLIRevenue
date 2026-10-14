@@ -42,6 +42,7 @@ import { Panel } from '../console/ui.jsx'
 import CopyButton from '../CopyButton.jsx'
 import { ADVERTISER_AUDIENCES } from '../../lib/advertiserApi.js'
 import { CAMPAIGN_STATUSES, TRANSITIONS } from '../../lib/campaignRules.js'
+import PageChrome from '../landing/PageChrome.jsx'
 import './AdvertiserLanding.css'
 
 /* On this page. The masthead carries the same jumps the developer
@@ -621,87 +622,77 @@ function FinalCta() {
 export default function AdvertiserLanding() {
   return (
     <section className="advx-page" aria-label="CLIRevenue for advertisers">
-      <header className="advx-top">
-        <button type="button" className="advx-top__brand" onClick={() => navigateApp('/')}>
-          CLI<em>Revenue</em>
-        </button>
-        <span className="sitehead__nav-link advx-top__path">/advertiser</span>
-        <nav className="advx-top__nav" aria-label="Advertiser page">
-          {JUMPS.map((jump) => (
-            <a className="advx-top__link" href={jump.href} key={jump.href}>
-              {jump.label}
+      <PageChrome active="/advertiser"
+        subnav={
+          JUMPS.map((j) => (
+            <a href={j.href} key={j.href}>
+              {j.label}
             </a>
-          ))}
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => navigateApp('/login')}
-          >
-            Log in
-          </button>
-        </nav>
-      </header>
+          ))
+        }
+      >
+        <div className="advx-page__inner">
+          <div className="advx-hero">
+            <div className="advx-hero__lede">
+              <p className="eyebrow eyebrow--plain">01 — CLIRevenue Advertiser</p>
+              <h1 className="advx-hero__title">
+                Reach developers inside
+                <span className="advx-hero__accent"> the tools they already use.</span>
+              </h1>
+              <p className="advx-hero__body">
+                CLIRevenue sells one sponsored slot inside real developer tools. You write the
+                brief, choose one of five developer audiences, set a budget in dollars, and
+                activate. Delivery serves your campaign only while it is eligible, counts an
+                impression only when the slot is genuinely seen, and reports spend, clicks, and
+                conversions back to your console.
+              </p>
+              <div className="advx-hero__actions">
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={() => navigateApp('/signup')}
+                >
+                  Start advertising
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={() => navigateApp('/login')}
+                >
+                  Log in
+                </button>
+              </div>
+            </div>
 
-      <div className="advx-page__inner">
-        <div className="advx-hero">
-          <div className="advx-hero__lede">
-            <p className="eyebrow eyebrow--plain">01 — CLIRevenue Advertiser</p>
-            <h1 className="advx-hero__title">
-              Reach developers inside
-              <span className="advx-hero__accent"> the tools they already use.</span>
-            </h1>
-            <p className="advx-hero__body">
-              CLIRevenue sells one sponsored slot inside real developer tools. You write the
-              brief, choose one of five developer audiences, set a budget in dollars, and
-              activate. Delivery serves your campaign only while it is eligible, counts an
-              impression only when the slot is genuinely seen, and reports spend, clicks, and
-              conversions back to your console.
-            </p>
-            <div className="advx-hero__actions">
-              <button
-                type="button"
-                className="btn btn--primary"
-                onClick={() => navigateApp('/signup')}
-              >
-                Start advertising
-              </button>
-              <button
-                type="button"
-                className="btn btn--ghost"
-                onClick={() => navigateApp('/login')}
-              >
-                Log in
-              </button>
+            <div className="advx-plate">
+              <div className="advx-code__bar">
+                <span className="advx-code__tag">campaign brief</span>
+                <span className="advx-plate__meta">created as draft</span>
+                <CopyButton
+                  text={BRIEF_SNIPPET}
+                  label="campaign brief JSON"
+                  baseClass="advx-copy"
+                />
+              </div>
+              <pre className="advx-code__pre">
+                <code>{BRIEF_SNIPPET}</code>
+              </pre>
             </div>
           </div>
 
-          <div className="advx-plate">
-            <div className="advx-code__bar">
-              <span className="advx-code__tag">campaign brief</span>
-              <span className="advx-plate__meta">created as draft</span>
-              <CopyButton
-                text={BRIEF_SNIPPET}
-                label="campaign brief JSON"
-                baseClass="advx-copy"
-              />
-            </div>
-            <pre className="advx-code__pre">
-              <code>{BRIEF_SNIPPET}</code>
-            </pre>
+          <div className="advx-main">
+            <HowItWorks />
+            <Workflow />
+            <Targeting />
+            <Creative />
+            <Measurement />
+            <Safety />
+            <Faq />
+            <FinalCta />
           </div>
         </div>
-
-        <div className="advx-main">
-          <HowItWorks />
-          <Workflow />
-          <Targeting />
-          <Creative />
-          <Measurement />
-          <Safety />
-          <Faq />
-          <FinalCta />
-        </div>
-      </div>
-    </section>
+    
+      </PageChrome>
+</section>
   )
 }

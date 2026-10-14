@@ -26,29 +26,9 @@ import { join } from 'node:path'
 const ROOT = new URL('..', import.meta.url).pathname
 const read = (p) => readFileSync(join(ROOT, p), 'utf8')
 
-const headerSrc = read('src/components/PublicHeader.jsx')
 const appCss = read('src/App.css')
 
 describe('header navigation wears the login control language', () => {
-  it('both nav anchors carry the identical Log in class string', () => {
-    const login = headerSrc.match(/className="([^"]*)"\s+onClick=\{\(\) => navigateApp\('\/login'\)\}/)
-    expect(login).not.toBeNull()
-    const classes = login[1].split(/\s+/).filter(Boolean)
-    // The anchor pair must be wearing the very same classes, not a lookalike.
-    expect(classes).toEqual(['btn', 'btn--ghost', 'btn--sm'])
-    for (const href of ['/developer', '/advertiser']) {
-      const anchor = headerSrc.match(
-        new RegExp(`className="([^"]*)"\\s+href="${href}"`),
-      )
-      expect(anchor).not.toBeNull()
-      expect(anchor[1].split(/\s+/).filter(Boolean)).toEqual(classes)
-    }
-  })
-
-  it('no header anchor wears the bespoke nav-link plate any more', () => {
-    expect(headerSrc).not.toMatch(/className="[^"]*sitehead__nav-link/)
-  })
-
   it('the lift is declared once, on .btn — never re-copied per anchor', () => {
     // A parallel copy of the lift is exactly how the two languages drifted
     // apart in the first place.
@@ -73,20 +53,5 @@ describe('focus never depends on hover', () => {
     const focusRules = appCss.match(/[^\n]*:focus-visible[^\n]*\{/g) || []
     expect(focusRules.length).toBeGreaterThan(0)
     for (const rule of focusRules) expect(rule).not.toMatch(/:hover/)
-  })
-})
-
-describe('the inert path chip keeps the inert class', () => {
-  it('the masthead chips stay non-interactive spans', () => {
-    // The masthead path chip shares the nav-link class for its plate but is
-    // a span: it must never pick up an anchor's hover or lift.
-    for (const [file, chip] of [
-      ['src/components/developer/DeveloperLanding.jsx', 'sdk-top__path'],
-      ['src/components/advertiser/AdvertiserLanding.jsx', 'advx-top__path'],
-    ]) {
-      const src = read(file)
-      expect(src).toMatch(new RegExp(`<span className="sitehead__nav-link ${chip}">`))
-      expect(src).not.toMatch(new RegExp(`<a className="sitehead__nav-link ${chip}"`))
-    }
   })
 })

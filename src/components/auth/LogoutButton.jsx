@@ -1,7 +1,7 @@
 import { useAuth, authNavState } from './authState.js'
 
 /**
- * Logout for the surfaces that do not render PublicHeader — the /app
+ * Logout for the surfaces that render their own chrome — the /app
  * dashboards. Visibility is still decided by authNavState(), the same
  * single source the header reads, so this control appears and disappears
  * with exactly the auth state the rest of the navigation sees.

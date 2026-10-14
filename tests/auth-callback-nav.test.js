@@ -263,21 +263,26 @@ describe('auth wiring (source-level)', () => {
     expect(src).toMatch(/hash\.startsWith\('#\/auth\/callback'\)/)
   })
 
-  it('PublicHeader derives its auth controls from the shared mapping', () => {
-    const src = read('src/components/PublicHeader.jsx')
+  it('the shared header derives its auth controls from the shared mapping', () => {
+    const src = read('src/components/landing/PageChrome.jsx')
     // RC3: each surface decided visibility itself and hid Login on /login.
     expect(src).toContain('authNavState')
+    expect(src).toContain('nav.showLogin')
+    expect(src).toContain('nav.showLogout')
     expect(src).not.toMatch(/path\.startsWith\('\/login'\)/)
     expect(src).not.toMatch(/path\.startsWith\('\/signup'\)/)
   })
 
-  it('PublicHeader offers a Logout control', () => {
+  it('the shared header offers a Logout control', () => {
     // RC4: the only signOut() call in the product lived in the
     // account-deletion danger zone.
-    expect(read('src/components/PublicHeader.jsx')).toMatch(/showLogout/)
+    const src = read('src/components/landing/PageChrome.jsx')
+    expect(src).toContain('<LogoutButton')
+    // and the component it delegates to is the one that calls signOut()
+    expect(read('src/components/auth/LogoutButton.jsx')).toMatch(/signOut\('\/'\)/)
   })
 
-  it('the dashboards — which render no PublicHeader — also offer Logout', () => {
+  it('the dashboards — which carry no shared header — also offer Logout', () => {
     for (const file of [
       'src/components/advertiser/AdvertiserApp.jsx',
       'src/components/developer/DeveloperApp.jsx',

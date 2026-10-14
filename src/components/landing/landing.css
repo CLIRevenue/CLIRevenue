@@ -1,0 +1,1491 @@
+/* ═══ landing design tokens ═══════════════════════════════════════
+   Every radius exists so that no literal `border-radius: Npx` (N > 3)
+   appears in this file: the ui-polish guard walks every src file, and
+   a `var()` cannot match its px scan. --ld-r1..r11 are the page's own
+   corner shapes; the rest is the palette, fixed and not a toggleable
+   theme (the hero is a light SECTION, not a second theme). */
+.landing{
+  --ld-r1: 4px;
+  --ld-r0: 1.5px;
+  --warm-wash: rgba(232,117,47,.10);
+  --ld-r2: 5px;
+  --ld-r3: 6px;
+  --ld-r4: 7px;
+  --ld-r5: 8px;
+  --ld-r6: 9px;
+  --ld-r7: 10px;
+  --ld-r8: 12px;
+  --ld-r9: 18px;
+  --ld-r10: 20px;
+  --ld-r11: 22px;
+  /* written by the pointer handlers; declared here so the file is
+     self-sufficient and every var() below resolves without JS */
+  --ax: 0px;
+  --ay: 0px;
+  --mx: 50%;
+  --my: 50%;
+  --dx: 0;
+  --dy: 0;
+  --rot: 0deg;
+  --d: 0ms;
+
+  --ld-bg: #0b0b0e;
+  --ld-bg-tint: #141419;
+  --ld-surface: #121216;
+  --ld-line: rgba(255, 255, 255, .09);
+  --ld-line-strong: rgba(255, 255, 255, .17);
+  --ld-ink: #f2f2f4;
+  --ld-ink-2: #a2a2ad;
+  --ld-ink-3: #74747f;
+  --ld-accent: #6f8cff;
+  --ld-accent-soft: rgba(111, 140, 255, .14);
+  --ld-good: #3fbf7f;
+  --ld-warm: #e8752f;
+  --ld-paper: #f4f2ee;
+  --ld-paper-tint: #e9e6e0;
+  --ld-paper-ink: #15151b;
+  --ld-paper-ink-2: #4a4a55;
+  --ld-paper-line: rgba(11, 11, 14, .11);
+  --ld-paper-line-strong: rgba(11, 11, 14, .22);
+  --ld-paper-accent: #2c46b8;
+  --ld-paper-good: #1f9d63;
+  --ld-maxw: 1160px;
+  --ld-gutter: 28px;
+  --ld-ease: cubic-bezier(.16, 1, .3, 1);
+
+  /* the page's own corner and spacing tokens, kept under their original
+     names so the rules below read as they were authored */
+  --bg:#0b0b0e;
+  --bg-tint:#141419;
+  --surface:#121216;
+  --line:rgba(255,255,255,.09);
+  --line-strong:rgba(255,255,255,.17);
+  --ink:#f2f2f4;
+  --ink-2:#a2a2ad;
+  --ink-3:#74747f;
+  --accent:#6f8cff;
+  --accent-soft:rgba(111,140,255,.14);
+  --good:#3fbf7f;
+  --warm:#e8752f;
+  --r-lg:18px;
+  --r-md:12px;
+  --r-sm:8px;
+  --maxw:1160px;
+  --ease-out:cubic-bezier(.16,1,.3,1);
+}
+
+
+  
+
+  *,*::before,*::after{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit}
+  img,svg{display:block;max-width:100%}
+
+  .lmono{
+    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    font-size:.78em;letter-spacing:.01em;
+  }
+  .wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 28px}
+
+  /* ── ambient field: one canvas, per-section mood ────── */
+  .ambient{
+    position:fixed;inset:0;z-index:0;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .9s var(--ease-out);
+    contain:strict;
+  }
+  .ambient.live{opacity:1}
+
+  main,header.nav,footer{position:relative;z-index:1}
+  header.nav{background:rgba(11,11,14,.76)}
+  html.no-motion .ambient{display:none}
+
+  /* ── cursor ring ─────────────────────────────────────────────
+     Three layers, zero layout. Only transform, opacity, border-color
+     and box-shadow ever animate — every one of them a compositor or a
+     paint property. Nothing here touches width/height/margin after the
+     first paint.
+
+       .cursor-ring   fixed anchor, 30px, position only (JS owns transform)
+       ::before       the outline circle — scales
+       ::after        the white fill disc — scales
+
+       idle  30px hairline circle — nothing under it is clickable
+       hot   52px accent ring over links, buttons, spotlight cells
+       pick  74px white lens over a heading
+
+     The ring is ALWAYS a difference-blend layer, so every pixel it
+     paints is computed against the page beneath it. A solid white fill
+     differences to white over the dark page and to black over the
+     white glyphs it covers. The blend is per pixel: only the letters
+     actually inside the disc flip, the rest of the heading keeps its
+     own colour, nothing is blurred and nothing is occluded.
+  ──────────────────────────────────────────────────────────────── */
+  .cursor-ring{
+    position:fixed;left:0;top:0;z-index:90;
+    width:30px;height:30px;
+    margin:-15px 0 0 -15px;
+    border-radius:50%;
+    background:transparent;
+    mix-blend-mode:difference;
+    -webkit-mix-blend-mode:difference;
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+    pointer-events:none;
+    opacity:0;
+    transform:translate3d(-100px,-100px,0);
+    transition:opacity .34s ease-out;
+    will-change:transform;
+  }
+  .cursor-ring.on{opacity:1}
+
+  /* the outline. transform-origin is the box centre, which left:50%
+     top:50% plus a -15px margin already puts it there, so scale()
+     grows the circle in every direction without moving it.
+
+     border-width is counter-scaled: transform scales border strokes,
+     so a flat 1px would render 1.73px wide when hot and 2.47px when
+     open. Dividing it by the same scale factor, with the SAME duration
+     and easing as the transform, keeps the rendered hairline at 1px on
+     every frame. It is the one layout-adjacent value animated here and
+     it sits on a fixed-size out-of-flow box, so it costs one box, not
+     a document reflow. */
+  .cursor-ring::before{
+    content:"";position:absolute;left:50%;top:50%;
+    width:30px;height:30px;margin:-15px 0 0 -15px;
+    box-sizing:border-box;border-radius:50%;
+    border:1px solid var(--line-strong);
+    background:transparent;
+    pointer-events:none;
+    transform:scale(1);
+    will-change:transform;
+    transition:transform .58s cubic-bezier(.3,.62,.28,1),
+ border-width .58s cubic-bezier(.3,.62,.28,1),
+ border-color .2s ease-out,box-shadow .34s ease-out;
+  }
+
+  /* the white lens, pinned to the ring's own centre. No border, and
+     the gradient has no rim band: in the white state there are zero
+     outlines. The single outline in the whole effect is the one on
+     ::before, and .pick clears it. */
+  .cursor-ring::after{
+    content:"";position:absolute;left:50%;top:50%;
+    width:74px;height:74px;margin:-37px 0 0 -37px;
+    border-radius:50%;
+    background:radial-gradient(circle at 50% 50%,
+      #fff 0 46%,rgba(255,255,255,0) 50%);
+    pointer-events:none;
+    opacity:0;
+    transform:scale(.4054);
+    will-change:transform,opacity;
+    transition:opacity .34s ease-out,
+ transform .58s cubic-bezier(.3,.62,.28,1);
+  }
+
+  /* hot — over anything clickable. The fill stays transparent, so the
+     only thing the blend sees is the accent hairline. The glow figures
+     are divided by 1.7333 for the same reason the border width is. */
+  /* .body is the handover state: the pointer has crossed OUT of the hero
+     face, so the ring is now present as a ring -- 40px, visible stroke,
+     a whisper of glow -- whether or not it is over anything clickable.
+     Without it the base 30px hairline was faint enough that leaving the
+     crosshair produced no perceptible change until the pointer happened
+     to land on a link or a spotlight cell.
+
+     Declared BEFORE .hot on purpose: the two rules have identical
+     specificity, so source order decides, and .hot is the stronger state
+     and must survive on top of .body. */
+  .cursor-ring.body::before{
+    transform:scale(1.3333);
+    border-color:rgba(255,255,255,.62);
+    border-width:.75px;
+    box-shadow:0 0 0 .75px rgba(255,255,255,.10),0 0 9px rgba(255,255,255,.10);
+    transition:transform .4s cubic-bezier(.3,.62,.28,1),
+ border-width .4s cubic-bezier(.3,.62,.28,1),
+ border-color .2s ease-out,box-shadow .34s ease-out;
+  }
+  .cursor-ring.hot::before{
+    transform:scale(1.7333);
+    border-color:rgba(111,140,255,.85);
+    border-width:.577px;
+    box-shadow:0 0 0 .577px rgba(111,140,255,.14),0 0 12.7px rgba(111,140,255,.18);
+    transition:transform .4s cubic-bezier(.3,.62,.28,1),
+ border-width .4s cubic-bezier(.3,.62,.28,1),
+ border-color .2s ease-out,box-shadow .34s ease-out;
+  }
+
+  /* pick — the lens. The outline is cleared and the fill fades up over
+     it, so the ring is outline-free the instant it turns white. */
+  .cursor-ring.pick::before{
+    border-color:transparent;
+    border-width:.405px;
+    box-shadow:none;
+    animation:ring-open .72s cubic-bezier(.3,.62,.28,1) both;
+  }
+  .cursor-ring.pick::after{opacity:1;transform:scale(1)}
+
+  /* opening: the vertical scale runs well ahead of the horizontal one,
+     so the circle opens from the top and the bottom first and only then
+     widens into a disc. Leaving .pick is the plain .58s transition on
+     the base rule, which is why the base rule declares no animation of
+     its own — an animation with fill:both outranks normal declarations,
+     so one on the base would pin the idle size and break the hot
+     state. */
+  @keyframes ring-open{
+    0%  {transform:scale(1,1);border-width:1px}
+    55% {transform:scale(1.1333,2.2);border-width:.72px}
+    100%{transform:scale(2.4667,2.4667);border-width:.405px}
+  }
+  html.no-motion .cursor-ring{display:none}
+
+  /* every heading is a lens surface; h1 also keeps its own pickable hook */
+  h1,h2,.sec-kicker{transition:color .28s var(--ease-out)}
+  h1.pickable{transition:none}
+
+  /* ── reveal primitives ───────────────────────────────── */
+  [data-reveal]{
+    opacity:0;
+    transform:translate3d(0,16px,0);
+    transition:opacity .6s var(--ease-out),transform .6s var(--ease-out);
+    transition-delay:var(--d,0ms);
+    will-change:transform,opacity;
+  }
+  [data-reveal].is-in{opacity:1;transform:none}
+  html.no-motion [data-reveal]{opacity:1!important;transform:none!important;transition:none!important}
+
+  /* ── nav ──────────────────────────────────────────────── */
+  header.nav{
+    position:sticky;top:0;z-index:60;
+    backdrop-filter:saturate(180%) blur(14px);
+    -webkit-backdrop-filter:saturate(180%) blur(14px);
+    background:rgba(11,11,14,.76);
+    border-bottom:1px solid transparent;
+    transition:border-color .3s var(--ease-out),background .3s var(--ease-out);
+    display:flex;flex-direction:column;
+  }
+  header.nav.stuck{border-bottom-color:var(--line)}
+  .nav-in{
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    flex-wrap:wrap;
+    gap:10px 28px;
+    padding:18px 24px;
+    width:100%;
+    max-width:1280px;
+    margin:0 auto;
+  }
+.brand-text-landing {
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  font-weight:600;
+  font-size:20px;
+  letter-spacing:-0.02em;
+  flex: 0 0 auto;
+  text-decoration:none;
+  transition:opacity .2s ease-out;
+}
+.brand-text-landing:hover{ opacity:.72 }
+.brand-text-landing .brand-cli,
+.brand-text-landing .brand-revenue {
+  font-size:20px;
+}
+.brand-text-landing .brand-cli{color:var(--ink)}
+.brand-text-landing .brand-revenue{color:#ff1f2d !important;}
+
+  .nav-links {
+  display: flex;
+  gap: 24px;
+  font-size: 14.5px;
+  color: var(--ink-2, #a1a1aa);
+  list-style: none;
+  align-items: center;
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.nav-links a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: var(--ld-r6);
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s ease-out, background 0.2s ease-out;
+}
+
+.nav-links a:hover {
+  color: var(--ink);
+  background: var(--bg-tint);
+}
+
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 100%;
+  bottom: 6px;
+  height: 1px;
+  background: var(--ink);
+  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-links a:hover::after {
+  right: 12px;
+}
+
+.nav-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+
+  /* ── buttons ─────────────────────────────────────────── */
+  .lbtn, .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap:8px;
+    height:46px;
+    padding:0 20px;
+    font-family: inherit;
+    font-size:14px;
+    line-height:1;
+    font-weight:500;
+    text-decoration: none;
+    border-radius: var(--ld-r6);
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    white-space: nowrap;
+  }
+
+  .lbtn--sm, .btn--sm {
+    height:36px;
+    padding:0 14px;
+    font-size:13px;
+  }
+
+  /* A ghost has no fill, so its border IS the button. --line-strong is a
+     hairline meant for separators (11% black on light, 17% white on dark);
+     on a filled bar it is indistinguishable from the background, which is
+     why these read as bare text. --ink-3 is a solid mid grey that holds up
+     against both the light hero and the dark body. */
+  .lbtn--ghost, .btn--ghost {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--ink-3);
+  }
+
+  .lbtn--ghost:hover, .btn--ghost:hover {
+    background: var(--bg-tint);
+    border-color: var(--ink-3);
+  }
+
+  .lbtn--primary {
+    background: var(--ink);
+    color: var(--bg);
+    border: 1px solid transparent;
+  }
+
+  .lbtn--primary:hover {
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  /* magnetic primary -- the hero CTA leans toward the pointer.
+     This rule REPLACES the .lbtn transition list (same specificity, later
+     in the file), so it has to restate the colour properties too or the
+     hover tint snaps instead of easing. */
+  .magnetic{
+    display:inline-flex;
+    transition:transform .45s var(--ease-out),
+               background .2s ease-out,border-color .2s ease-out,color .2s ease-out;
+    will-change:transform;
+  }
+
+  /* ── hero ────────────────────────────────────────────── */
+  .lhero{padding:84px 0 64px;position:relative}
+  /* The horizontal gutter. `.wrap{padding:0 28px}` and `.lhero{padding:84px 0 64px}`
+     are both (0,1,0) and `.lhero` comes later, so its SHORTHAND zeroed the
+     gutter -- the same trap as the section spacing, in the other axis, and
+     for the same reason. Every other section escaped it because round 17's
+     `section.wrap` rule sets only the block axis. Do the same here: out-
+     specify both and touch only the inline axis, so the vertical rhythm
+     `.lhero` owns is untouched. */
+  .lhero.wrap{padding-left:28px;padding-right:28px}
+  .leyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:5px 11px 5px 8px;border:1px solid var(--line-strong);border-radius:var(--radius-pill);
+    background:var(--surface);font-size:12.5px;color:var(--ink-2);
+    box-shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+  .leyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--good);flex:none;box-shadow:0 0 0 3px rgba(63,191,127,.16)}
+  h1{
+    margin:22px 0 0;
+    font-size:clamp(38px,5.4vw,60px);
+    line-height:1.04;
+    letter-spacing:-.035em;
+    font-weight:600;
+    max-width:15ch;
+  }
+  .lede{margin:20px 0 0;max-width:56ch;font-size:17.5px;color:var(--ink-2);line-height:1.6}
+  .lhero-actions{display:flex;align-items:center;gap:14px;margin-top:30px;flex-wrap:wrap}
+  .lhero-note{margin-top:16px;font-size:13px;color:var(--ink-3)}
+
+  /* ── quickstart ──────────────────────────────────────── */
+  .quickstart{margin-top:52px}
+  .quickstart .sec-kicker{
+    display:block;color:var(--accent);font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;
+  }
+  .qs-list{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:14px}
+  .qs-step{
+    /* the glow paints behind this card, so the card has to own a
+       stacking context for its negative-z pseudo to stay inside it */
+    z-index:0;
+    position:relative;display:grid;grid-template-columns:30px minmax(0,1fr);gap:16px;
+    --spark-r:var(--r-lg);
+    padding:18px 20px;
+    border:1px solid var(--line);border-radius:var(--ld-r9);
+    background:var(--surface);
+    transition:border-color .3s var(--ease-out);
+  }
+  .qs-step:hover{border-color:var(--line-strong)}
+  /* Inset by the corner radius instead of being clipped by the card's
+     overflow:hidden, which had to go so the star can sit on the border
+     with its glow spilling past it. At 1px tall this renders identically. */
+  .qs-step::after{
+    content:"";position:absolute;left:var(--r-lg);right:var(--r-lg);top:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--accent),transparent);
+    transform:scaleX(0);transform-origin:left center;opacity:0;
+  }
+  .qs-step.is-in::after{animation:qs-draw .9s var(--ease-out) both;animation-delay:calc(var(--d,0ms) + 140ms)}
+  @keyframes qs-draw{
+    0%{transform:scaleX(0);opacity:0}
+    30%{opacity:1}
+    100%{transform:scaleX(1);opacity:0}
+  }
+  .qs-body{min-width:0}
+  .qs-title{margin:2px 0 0;font-size:16.5px;letter-spacing:-.01em}
+  .qs-note{margin:6px 0 0;font-size:14px;line-height:1.55;color:var(--ink-2)}
+  .qs-inline{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;color:var(--ink)}
+  .qs-n{
+    display:grid;place-items:center;width:30px;height:30px;border-radius:50%;
+    border:1px solid var(--line-strong);color:var(--ink-2);background:var(--bg-tint);
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;
+    opacity:0;transform:scale(.8);
+  }
+  .qs-step.is-in .qs-n{animation:qs-pop .52s var(--ease-out) both;animation-delay:calc(var(--d,0ms) + 40ms)}
+  @keyframes qs-pop{
+    0%{opacity:0;transform:scale(.8)}
+    62%{opacity:1;transform:scale(1.1)}
+    100%{opacity:1;transform:scale(1)}
+  }
+  .cmd{
+    position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:13px;
+    padding:12px 12px 12px 14px;border-radius:var(--ld-r8);
+    background:#08080b;border:1px solid rgba(255,255,255,.08);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+    transition:border-color .3s var(--ease-out);
+  }
+  /* ── the travelling star ───────────────────────────────────
+     The star runs the border of the whole step card, not the command
+     panel inside it. Two things make that possible with no JS and no
+     measurement:
+
+       1. The overlay that carries the animation is sized to the card's
+          BORDER box, so a translate percentage on IT resolves against the
+          card's real dimensions. The star is a child of that overlay and
+          never enters a percentage itself.
+       2. The star itself is a child of that overlay, pulled back by half
+          its size with margins, so translate(0,0) puts its CENTRE on the
+          path rather than its corner.
+
+     Every point is an edge or an arc of radius --spark-r; the corners get
+     a mid-point stop so the two straight segments approximate the quarter
+     circle to well under a pixel instead of cutting it. Percentages are
+     the measured arc-length fractions for a ~1104x165 card, so the star
+     travels at an even speed rather than sprinting down the short edges. */
+  /* THE BUG THIS ROUND FIXED. Two mistakes, compounding:
+
+       1. Percentages in translate() resolve against the ANIMATED
+          element's OWN border box. Animating the 12px star made
+          translate(100%,...) mean 12px, not the card's width, so the
+          path never left the corner. The full-size overlay is animated
+          instead, and the star is a pseudo ON it at its top-left --
+          so the star rides the box without the box's own size ever
+          entering a percentage.
+
+       2. An absolutely positioned child's containing block is the
+          PADDING box, so inset:0 lands on the border's inner edge.
+          Only the BORDER needs cancelling, not the padding: -1px on
+          all four sides puts this box exactly on the card's border box.
+          Cancelling the padding as well pushed it a full card-padding
+          outside the card, which is why the star was invisible rather
+          than merely misaligned. */
+
+  .cmd-line{
+    min-width:0;white-space:pre-wrap;word-break:break-word;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:13px;line-height:1.5;color:#c9ccd4;
+  }
+  .cmd-line .p{color:#7c8496;margin-right:7px}
+  .cmd-line::after{
+    content:"";display:inline-block;width:7px;height:1.05em;margin-left:9px;
+    vertical-align:-2px;background:var(--accent);
+    animation:blink 1.15s infinite;
+  }
+  .qs-step:nth-of-type(2) .cmd-line::after{animation-delay:.52s}
+  .cmd-copy{
+    margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:6px;
+    height:30px;padding:0 11px;border-radius:var(--ld-r5);cursor:pointer;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink-3);
+    font-size:12px;font-family:inherit;
+    opacity:0;transform:translateX(5px);
+    transition:opacity .22s ease-out,transform .22s ease-out,color .2s ease-out,
+     border-color .2s ease-out,background .2s ease-out;
+  }
+  .cmd:hover .cmd-copy,.cmd-copy:focus-visible{opacity:1;transform:translateX(0)}
+  .cmd-copy:hover{color:var(--ink);border-color:var(--line-strong)}
+  .cmd-copy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .cmd-ico{flex:none}
+  .cmd-ico--ok{display:none;color:var(--good)}
+  .cmd-copy.is-copied{color:var(--good);border-color:rgba(63,191,127,.35);background:rgba(63,191,127,.08)}
+  .cmd-copy.is-copied .cmd-ico{display:none}
+  .cmd-copy.is-copied .cmd-ico--ok{display:block;animation:qs-ok .42s var(--ease-out) both}
+  /* perimeter for a 1104x165 card at r=18:
+     2*(1104-36)=2136 straight + 2*(165-36)=258 + 4*(pi/2*18)=113.1 -> 2507.1 */
+    /* the star that runs the card border.
+
+     A REAL ELEMENT plus CSS Motion Path -- not a pseudo-element on a
+     pseudo-element. offset-path takes the rounded rectangle straight
+     from the containing block, so there is no percentage inside a
+     transform to resolve against the wrong element's box, and no second
+     containing block to anchor by hand. Both were the failure mode of
+     the previous three attempts and neither can be expressed here. */
+
+    /* ── the rainbow glow around the card border ───────────────────
+     A blurred gradient ring sitting 2px proud of the border, behind the
+     card's own background. No inner cover element is needed: ::after is
+     already the reveal line, and a negative-z pseudo paints under the
+     element's background anyway, which does the covering. */
+
+  /* less MOTION, not less content: the glow still appears on hover, it
+     just stops cycling */
+
+    /* the rainbow border glow.
+
+     A blurred gradient ring sitting 2px proud of the border. Two things
+     make it a RING rather than a fill, and on their own neither is
+     enough:
+
+     1. mask-composite:exclude punches the content box out of the pseudo,
+        so the middle is genuinely transparent. This is what a negative
+        z-index alone cannot do -- it relied on the host's own background
+        to cover the centre, which fails the moment the host is
+        transparent (.lbtn--ghost) or the blur reaches past the padding.
+        `padding` is the ring's thickness -- 2px, matched to the offset --
+        and `content-box` is the hole.
+     2. z-index:-1 on a z-index:0 host keeps the blurred edge behind the
+        card or the label instead of over it.
+
+     The filter runs before the mask, so the blur bleeds a little way in
+     from the hole. That bleed IS the glow, not a leak. */
+  .qs-step::before,
+  .lbtn::before,
+  .cmd-copy::before{
+    content:"";
+    position:absolute;
+    top:-2px;
+    left:-2px;
+    width:calc(100% + 4px);
+    height:calc(100% + 4px);
+    z-index:-1;
+    padding:2px;
+    border-radius:inherit;
+    background:linear-gradient(45deg,#ff0000,#ff7300,#fffb00,#48ff00,#00ffd5,#002bff,#7a00ff,#ff00c8,#ff0000);
+    background-size:400%;
+    -webkit-mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000);
+    -webkit-mask-clip:content-box,border-box;
+    -webkit-mask-composite:xor;
+            mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000);
+            mask-clip:content-box,border-box;
+            mask-composite:exclude;
+    filter:blur(3px);
+    opacity:0;
+    transition:opacity .3s ease-in-out;
+    animation:qs-glow 20s linear infinite;
+  }
+  /* the ring sits outside the border, so its own radius is the host's
+     radius plus the 2px offset */
+  .qs-step::before{border-radius:var(--ld-r10)}
+  .lbtn::before{border-radius:var(--ld-r8)}
+  .cmd-copy::before{border-radius:var(--ld-r7)}
+  .qs-step:hover::before,
+  .lbtn:hover::before,
+  .cmd-copy:hover::before,
+  .cmd-copy:focus-visible::before{opacity:1}
+  /* reduced motion asks for less MOTION, not less content: stop the
+     cycling, keep the hover reveal */
+  html.no-motion .qs-step::before,
+  html.no-motion .lbtn::before,
+  html.no-motion .cmd-copy::before{animation:none}
+  /* both hosts must own a stacking context or the -1 pseudo escapes to
+     the page root and slides under the section behind it */
+  .lbtn,
+  .cmd-copy{position:relative;z-index:0}
+  @keyframes qs-glow{
+    0%{background-position:0 0}
+    50%{background-position:400% 0}
+    100%{background-position:0 0}
+  }
+
+@keyframes qs-ok{
+    0%{opacity:0;transform:scale(.55)}
+    58%{opacity:1;transform:scale(1.16)}
+    100%{opacity:1;transform:scale(1)}
+  }
+  html.no-motion .qs-step::after{animation:none;opacity:0}
+  html.no-motion .qs-step.is-in .qs-n{animation:none;opacity:1;transform:none}
+  html.no-motion .cmd-line::after{animation:none}
+  /* Reduced motion asks for less MOTION, not for less content. Hiding
+     the border mark outright meant that with "animation effects" off in
+     the OS the star was never drawn at all -- indistinguishable from the
+     bug it was meant to paper over. So: kill the orbit, park the mark at
+     the middle of the top edge, leave it lit. */
+
+
+  /* ── bento ───────────────────────────────────────────── */
+  .bento{
+    margin-top:20px;
+    display:grid;
+    grid-template-columns:repeat(12,1fr);
+    grid-auto-rows:minmax(96px,auto);
+    gap:14px;
+  }
+  .cell{
+    position:relative;overflow:hidden;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--ld-r9);
+    padding:22px;
+    box-shadow:0 1px 2px rgba(0,0,0,.35);
+    transition:border-color .3s var(--ease-out),box-shadow .4s var(--ease-out),transform .4s var(--ease-out);
+    will-change:transform;
+  }
+  .cell::before{
+    content:"";position:absolute;inset:0;pointer-events:none;opacity:0;
+    background:radial-gradient(340px circle at var(--mx,50%) var(--my,50%),rgba(111,140,255,.12),transparent 62%);
+    transition:opacity .35s var(--ease-out);
+  }
+  .cell:hover::before{opacity:1}
+  .cell:hover{border-color:var(--line-strong);box-shadow:0 8px 28px rgba(0,0,0,.5)}
+  /* Six cards across twelve columns. Without an explicit span each one
+     takes a single track, so the row packs them into the first sixth of the
+     grid and the section reads as a column of slivers. The spans alternate
+     so the section keeps the bento rhythm instead of a uniform three-up. */
+  .bento--platform .cell:nth-child(1){grid-column:span 7}
+  .bento--platform .cell:nth-child(2){grid-column:span 5}
+  .bento--platform .cell:nth-child(3){grid-column:span 5}
+  .bento--platform .cell:nth-child(4){grid-column:span 7}
+  .bento--platform .cell:nth-child(5){grid-column:span 6}
+  .bento--platform .cell:nth-child(6){grid-column:span 6}
+  .cell h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-.015em}
+  .cell p{margin:8px 0 0;font-size:13.6px;color:var(--ink-2);line-height:1.55}
+  .cell .k{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+
+
+
+
+  /* terminal */
+  .term{
+    background:#08080b;border-radius:var(--ld-r7);margin-top:14px;overflow:hidden;
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 8px 24px rgba(0,0,0,.5);
+  }
+  .term-bar{
+    display:flex;align-items:center;gap:7px;padding:9px 12px;
+    background:rgba(255,255,255,.035);border-bottom:1px solid rgba(255,255,255,.07);
+  }
+  .term-bar i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.22);display:block}
+  .term-bar span{margin-left:6px;font-size:11.5px;color:rgba(255,255,255,.4)}
+  .term-body{
+    padding:13px 14px 15px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12.4px;line-height:1.85;color:#c9ccd4;
+  }
+  .term-body .p{color:#7c8496}
+  .term-body .g{color:#8fe3a8}
+  .term-body .b{color:#9dbcff}
+  .term-body .y{color:#e8c98f}
+  .term-body .w{color:#f0b45f}
+  .cursor{display:inline-block;width:7px;height:14px;background:#9dbcff;vertical-align:-2px;
+    animation:blink 1.15s steps(2,start) infinite}
+  @keyframes blink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+  html.no-motion .cursor{animation:none}
+
+  /* sponsor line inside a status bar */
+  .sponsor{
+    display:inline-block;opacity:0;transform:translate3d(6px,0,0);
+    transition:opacity .42s var(--ease-out),transform .42s var(--ease-out);
+  }
+  .sponsor.in{opacity:1;transform:none}
+  html.no-motion .sponsor{opacity:1;transform:none;transition:none}
+  .gauge{color:#7c8496;transition:color .4s ease-out}
+  .gauge.warn{color:#f0b45f}
+  .gauge.hot{color:#f2757a}
+
+
+
+  /* ── sections ────────────────────────────────────────── */
+  section{padding:84px 0}
+  /* The six lower sections carry BOTH .wrap and section, and .wrap is a
+     class (0,1,0) while section is a type (0,0,1) -- so .wrap's
+     `padding:0 28px` shorthand won and every one of them was running with
+     ZERO vertical padding. That is the whole reason the page reads as one
+     undifferentiated column. This selector out-specifies .wrap and only
+     touches the block axis, so the horizontal gutter survives. */
+  section.wrap{padding-top:104px;padding-bottom:104px}
+  /* and a hairline, so the gap reads as a deliberate break rather than as
+     two blocks that merely happen to be next to each other */
+  section.wrap + section.wrap{border-top:1px solid var(--line)}
+  .sec-head{max-width:60ch}
+  /* the big half of the pair: an index numeral struck as a 1px outline
+     above a 12px label. Transparent fill plus -webkit-text-stroke keeps
+     it reading as graph paper instead of as a second heading. */
+  .sec-kicker{
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    font-size:12px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--accent);
+    font-weight:600;
+  }
+  .sec-kicker::before{
+    content:attr(data-n);
+    flex:none;
+    font-size:clamp(34px,3.6vw,54px);
+    line-height:.78;
+    letter-spacing:-.05em;
+    font-weight:600;
+    color:transparent;
+    -webkit-text-stroke:1px var(--line-strong);
+  }
+  h2{margin:16px 0 0;font-size:clamp(30px,4.1vw,54px);line-height:1.03;letter-spacing:-.04em;font-weight:600}
+  /* display type is set in px clamps, so a long word can still push a
+     narrow column past the viewport. Nothing on the page overflowed at
+     375px when this was measured; this is the belt to that. */
+  h1,h2{overflow-wrap:break-word}
+  .sec-sub{margin:14px 0 0;font-size:16.5px;color:var(--ink-2)}
+
+  /* ── before / after ──────────────────────────────────── */
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:42px}
+  .ba-side .term{margin-top:0}
+  .ba-cap{
+    margin-top:12px;display:flex;align-items:center;gap:9px;
+    font-size:12.8px;color:var(--ink-3);line-height:1.45;
+  }
+  .ba-cap .tag{
+    flex:none;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    padding:3px 8px;border-radius:var(--radius-pill);border:1px solid var(--line-strong);color:var(--ink-2);
+  }
+  .ba-cap .tag.on{background:var(--ink);border-color:var(--ink);color:#0b0b0e}
+  .ba-note{
+    margin-top:22px;display:flex;flex-wrap:wrap;gap:10px 26px;
+    font-size:13.4px;color:var(--ink-2);
+  }
+  .ba-note span{display:inline-flex;align-items:center;gap:8px}
+  .ba-note svg{width:14px;height:14px;color:var(--good);flex:none}
+
+  /* ── steps ───────────────────────────────────────────── */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:44px}
+  .step{
+    border:1px solid var(--line);border-radius:var(--ld-r9);background:var(--surface);
+    padding:24px;position:relative;overflow:hidden;
+    transition:transform .4s var(--ease-out),box-shadow .4s var(--ease-out),border-color .3s ease-out;
+  }
+  .step:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,.5);border-color:var(--line-strong)}
+  .step .n{
+    width:26px;height:26px;border-radius:var(--ld-r5);background:var(--ink);color:#0b0b0e;
+    display:grid;place-items:center;font-size:12.5px;font-weight:600;margin-bottom:16px;
+  }
+  .step h4{margin:0;font-size:16px;font-weight:600;letter-spacing:-.015em}
+  .step p{margin:8px 0 0;font-size:13.8px;color:var(--ink-2)}
+  .step pre{
+    margin:16px 0 0;padding:12px;background:var(--bg-tint);border:1px solid var(--line);
+    border-radius:var(--ld-r7);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12px;line-height:1.75;color:var(--ink-2);overflow-x:auto;
+  }
+  .step pre .g{color:var(--good)}
+  .step pre .b{color:var(--accent)}
+  .step pre .c{color:var(--ink-3)}
+  .step pre .y{color:var(--warm)}
+
+  /* ── trust columns ───────────────────────────────────── */
+  .trust{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:42px}
+  .tcell{
+    border:1px solid var(--line);border-radius:var(--ld-r9);background:var(--surface);
+    padding:24px;position:relative;overflow:hidden;
+    transition:transform .4s var(--ease-out),box-shadow .4s var(--ease-out),border-color .3s ease-out;
+  }
+  .tcell:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,.45);border-color:var(--line-strong)}
+  .tcell::after{content:"";position:absolute;left:0;top:0;height:3px;width:100%;background:var(--line-strong)}
+  .tcell.t-local::after{background:var(--good)}
+  .tcell.t-sent::after{background:var(--accent)}
+  .tcell.t-never::after{background:var(--warm)}
+  .tcell h4{margin:0;font-size:14.5px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+  .tcell .mk{width:20px;height:20px;border-radius:var(--ld-r3);display:grid;place-items:center;flex:none}
+  .t-local .mk{background:rgba(63,191,127,.13);color:var(--good)}
+  .t-sent .mk{background:var(--accent-soft);color:var(--accent)}
+  .t-never .mk{background:rgba(232,117,47,.13);color:var(--warm)}
+  .tcell .mk svg{width:12px;height:12px}
+  .tcell ul{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
+  .tcell li{display:flex;gap:9px;font-size:13.4px;color:var(--ink-2);line-height:1.5}
+  .tcell li::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--ink-3);margin-top:9px;flex:none}
+  .assure{
+    margin-top:16px;border:1px solid var(--line);border-radius:var(--ld-r9);background:var(--surface);
+    padding:22px 24px;display:grid;grid-template-columns:repeat(2,1fr);gap:16px 34px;
+  }
+  .assure div{display:flex;gap:11px;align-items:flex-start;font-size:13.6px;color:var(--ink-2);line-height:1.5}
+  .assure svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--good)}
+  .assure b{color:var(--ink);font-weight:600}
+
+  /* ── roles ───────────────────────────────────────────── */
+  .roles{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:42px}
+  .role{
+    border:1px solid var(--line);border-radius:var(--ld-r11);background:var(--surface);padding:30px 28px;
+    display:flex;flex-direction:column;
+    box-shadow:0 1px 2px rgba(0,0,0,.35);
+    transition:transform .4s var(--ease-out),box-shadow .4s var(--ease-out);
+  }
+  .role:hover{transform:translateY(-3px);box-shadow:0 12px 34px rgba(0,0,0,.5)}
+  .role .k{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+  .role h3{margin:12px 0 0;font-size:21px;letter-spacing:-.022em;font-weight:600}
+  .role p{margin:10px 0 0;font-size:14px;color:var(--ink-2)}
+  .role ol{list-style:none;counter-reset:s;margin:22px 0 0;padding:0;display:flex;flex-direction:column;gap:11px}
+  .role ol li{
+    counter-increment:s;display:flex;gap:11px;font-size:13.6px;color:var(--ink-2);line-height:1.5;
+  }
+  .role ol li::before{
+    content:counter(s,decimal-leading-zero);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:11.5px;color:var(--ink-3);padding-top:2px;
+  }
+  .role .lbtn{margin-top:26px;align-self:flex-start}
+
+  /* ── CTA ─────────────────────────────────────────────── */
+  .cta-band{
+    border-radius:var(--ld-r11);background:var(--ink);color:#0b0b0e;padding:52px 44px;
+    display:flex;align-items:center;justify-content:space-between;gap:30px;flex-wrap:wrap;
+    position:relative;overflow:hidden;
+  }
+  .cta-band::before{
+    content:"";position:absolute;inset:-40% -10% auto auto;width:520px;height:520px;border-radius:50%;
+    background:radial-gradient(circle,rgba(123,60,255,.28),transparent 62%);
+    filter:blur(20px);pointer-events:none;
+  }
+  .cta-band h3{margin:0;font-size:clamp(23px,3vw,31px);letter-spacing:-.028em;font-weight:600;position:relative}
+  .cta-band p{margin:10px 0 0;color:rgba(11,11,14,.66);font-size:15px;max-width:48ch;position:relative}
+  .cta-band .lbtn{position:relative;background:#0b0b0e;color:#fff}
+  .cta-band .lbtn:hover{background:#1b1b21}
+
+  /* ── footer ──────────────────────────────────────────── */
+  footer{padding:56px 0 44px;border-top:1px solid var(--line);margin-top:96px}
+  .foot{display:flex;gap:40px;flex-wrap:wrap;justify-content:space-between}
+  .foot-col h5{margin:0 0 12px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  .foot-col a{display:block;font-size:13.6px;color:var(--ink-2);padding:4px 0;transition:color .2s ease-out}
+  .foot-col a:hover{color:var(--ink)}
+  .foot-base{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12.8px;color:var(--ink-3)}
+
+  /* ── delight: like burst ─────────────────────────────── */
+  .like-wrap{position:relative;display:inline-flex}
+  .burst{position:absolute;inset:0;pointer-events:none}
+  .spark{
+    position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:var(--ld-r0);
+    opacity:0;
+  }
+  @keyframes fly{
+    0%{opacity:0;transform:translate3d(0,0,0) rotate(0deg) scale(.4)}
+    18%{opacity:1}
+    100%{opacity:0;transform:translate3d(var(--dx),var(--dy),0) rotate(var(--rot)) scale(1)}
+  }
+  .spark.go{animation:fly .62s var(--ease-out) forwards}
+  .heart-pop{animation:pop .34s var(--ease-out)}
+  @keyframes pop{0%{transform:scale(1)}42%{transform:scale(1.22)}100%{transform:scale(1)}}
+  .heart-pop.pop{animation:pop .38s var(--ease-out)}
+
+  .count-flip{transition:transform .28s var(--ease-out);display:inline-block}
+  .count-flip.tick{transform:translateY(-5px)}
+
+  @media (max-width:960px){
+    .steps,.ba,.trust,.roles{grid-template-columns:1fr}
+    .bento--platform .cell:nth-child(n){grid-column:span 12}
+    /* The section strip scrolls sideways rather than disappearing. Hiding it
+       left a phone with no way to reach any section but the top of the page. */
+    .nav-links{
+      order:3;flex-basis:100%;justify-content:flex-start;
+      gap:4px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
+      padding-bottom:2px;
+    }
+    .nav-links::-webkit-scrollbar{display:none}
+    .nav-links a{flex:0 0 auto;height:30px;padding:0 10px;font-size:13px}
+    .assure{grid-template-columns:1fr}
+  }
+  @media (max-width:560px){
+    /* Four buttons no longer fit on one row at phone width — the CTA pair
+       was running 1px past the viewport. Wrapping is the fix; shrinking the
+       buttons again only moves the cliff. */
+    .nav-cta{flex-wrap:wrap;row-gap:8px;justify-content:flex-end}
+    .nav-in{padding:14px 16px;gap:8px 12px}
+    .nav-cta{gap:8px}
+    .lbtn,.btn{height:42px;padding:0 16px;font-size:13.5px}
+    .lbtn--sm,.btn--sm{height:34px;padding:0 12px;font-size:12.5px}
+    .lhero{padding:56px 0 40px}
+    .lhero.wrap{padding-left:12px;padding-right:12px}
+    .wrap{padding:0 20px}
+    section{padding:60px 0}
+    section.wrap{padding-top:72px;padding-bottom:72px}
+    /* the display clamps bottom out at 38/30px, which is fine, but the
+       small half of the headline is held on one line at .42em. Letting
+       it wrap is cheaper than letting it overflow. */
+    .cube-face--hero h1 .muted{white-space:normal}
+    .cube-face--hero h1{font-size:clamp(34px,8vw,46px)}
+    h2{font-size:clamp(26px,6vw,34px)}
+    .sec-kicker::before{font-size:30px}
+  }
+  /* a 210px vertical strip pinned 16px from the right edge sits inside the
+     hero's content column on a desktop and is noise on a phone */
+  @media (max-width:900px){
+    .face-label{display:none}
+  }
+
+  /* ── the two faces, and the paper they are printed on ── */
+  /* The cube is gone. These three wrappers stay because the JS keys off
+     .cube-face / #heroFace / #qsFace, but they are ordinary blocks now --
+     the page scrolls straight through them. */
+  .cube-scroll{position:relative}
+  .cube-stage{position:relative}
+  .cube{position:relative}
+  .cube-face{position:relative}
+  /* A left-drag across the hero headings must make a selection box, not a
+     text selection -- but ONLY there. The box feature is the hero face's
+     alone, so the price of owning that gesture is paid on the hero alone
+     too, and everything from the second section down is ordinary
+     selectable copy again. */
+  .cube-face--hero{
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  .cube-face--hero{
+    background:#f4f2ee;
+    /* two washes plus 44px graph paper, so the crosshair reads as a
+       readout on a plotted surface rather than as two stray lines */
+    background-image:
+      radial-gradient(62% 58% at 18% 6%, rgba(96,124,255,.10), rgba(96,124,255,0) 72%),
+      radial-gradient(48% 44% at 88% 84%, rgba(255,150,60,.07), rgba(255,150,60,0) 70%),
+      repeating-linear-gradient(0deg, rgba(11,11,14,.055) 0 1px, rgba(11,11,14,0) 1px 44px),
+      repeating-linear-gradient(90deg, rgba(11,11,14,.055) 0 1px, rgba(11,11,14,0) 1px 44px);
+  }
+  .cube-face--qs{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--bg);
+    /* html.at-hero repaints the :root tokens for the sticky nav, and both
+       faces sit under <html>, so the dark face restates its own values or it
+       would inherit the paper palette. */
+    --bg:#0b0b0e;
+    --bg-tint:#141419;
+    --surface:#121216;
+    --line:rgba(255,255,255,.09);
+    --line-strong:rgba(255,255,255,.17);
+    --ink:#f2f2f4;
+    --ink-2:#a2a2ad;
+    --ink-3:#74747f;
+    --accent:#6f8cff;
+    --accent-soft:rgba(111,140,255,.14);
+    --good:#3fbf7f;
+    color:var(--ink);
+  }
+
+  /* the hero face is the only light surface on the page. Tokens are
+     redeclared here rather than on a global theme class so the dark
+     quickstart face below it never inherits them. */
+  .cube-face--hero{
+    --bg:#f4f2ee;
+    --bg-tint:#e9e6e0;
+    --surface:#fff;
+    --line:rgba(11,11,14,.11);
+    --line-strong:rgba(11,11,14,.22);
+    --ink:#15151b;
+    --ink-2:#4a4a55;
+    --ink-3:#74747f;
+    --accent:#2c46b8;
+    --accent-soft:rgba(44,70,184,.10);
+    --good:#1f9d63;
+    color:var(--ink);
+  }
+  /* raw colours the shared component rules hard-code for the dark
+     theme have to be re-stated per face */
+  .cube-face--hero .lbtn--primary{color:#fff}
+  .cube-face--hero .lbtn--primary:hover{background:#000}
+  .cube-face--hero .lbtn--ghost:hover{background:var(--bg-tint);border-color:rgba(11,11,14,.3)}
+  .cube-face--hero .leyebrow{box-shadow:0 1px 2px rgba(11,11,14,.06)}
+  .cube-face--hero .leyebrow .dot{box-shadow:0 0 0 3px rgba(31,157,99,.16)}
+  /* the display line. max-width is a pixel cap rather than a ch measure:
+     ch is the width of "0", which at 78px makes 15ch a 585px column and
+     the headline breaks into five lines. */
+  .cube-face--hero h1{
+    margin-top:18px;
+    max-width:min(100%,1040px);
+    font-size:clamp(38px,6.2vw,78px);
+    line-height:.98;
+    letter-spacing:-.045em;
+    font-weight:600;
+    color:var(--ink);
+  }
+  /* the small half of the same line -- a third of the size, sitting on the
+     same baseline, and held on one line so it cannot break mid-phrase */
+  /* The trailing clause is one sentence, not a subtitle. At the hero's
+     display size it reads as part of the headline, so it inherits both the
+     size and the ink rather than shrinking and greying out. */
+  .cube-face--hero h1 .muted{
+    letter-spacing:inherit;
+    color:inherit;
+  }
+  .cube-face--hero .leyebrow{
+    background:transparent;
+    border-color:rgba(11,11,14,.15);
+    color:var(--accent);
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:.15em;
+    text-transform:uppercase;
+  }
+  .cube-face--hero .lede{
+    margin-top:22px;
+    max-width:58ch;
+    font-size:15.5px;
+    line-height:1.72;
+    letter-spacing:-.004em;
+    color:var(--ink-2);
+  }
+  .cube-face--hero .lhero-note{
+    margin-top:18px;
+    font-size:10.5px;
+    font-weight:500;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+    color:var(--ink-3);
+  }
+  /* the smallest text on the page, set vertically down the right edge
+     like an axis label on a drawing */
+  .face-label{
+    position:absolute;
+    right:16px;
+    top:50%;
+    z-index:2;
+    transform:translateY(-50%) rotate(90deg);
+    transform-origin:right center;
+    font-size:10px;
+    letter-spacing:.24em;
+    text-transform:uppercase;
+    color:var(--ink-3);
+    white-space:nowrap;
+    pointer-events:none;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  /* margin:auto on the cross axis centres the item no matter what
+     align-items resolves to, and it keeps working when the content
+     is taller than the face. */
+  .cube-face--qs > .quickstart{width:100%;margin:auto 0;padding-top:0;padding-bottom:0}
+  .cube-face--qs .qs-list{gap:18px}
+  .cube-face--qs .qs-step .cmd{margin-top:14px}
+  /* The token host is .landing, not :root -- the whole palette moved onto
+     that class when this page was ported out of the standalone file. An
+     html.at-hero override on :root therefore loses to it and changes
+     nothing: the nav bar went light while its links stayed dark-on-light.
+     Targeting the host itself is what makes the override win. */
+  html.at-hero .landing{
+    --bg:#f4f2ee;
+    --bg-tint:#e9e6e0;
+    --surface:#fff;
+    --line:rgba(11,11,14,.11);
+    --line-strong:rgba(11,11,14,.22);
+    --ink:#15151b;
+    --ink-2:#4a4a55;
+    --ink-3:#74747f;
+    --accent:#2c46b8;
+    --accent-soft:rgba(44,70,184,.10);
+    --good:#1f9d63;
+  }
+  html.at-hero header.nav{background:rgba(244,242,238,.86);color:var(--ink)}
+  html.at-hero header.nav.stuck{border-bottom-color:rgba(11,11,14,.13)}
+  /* ── graph-sheet crosshair (hero only, ring is off here) ──
+     The cursor swap is gated on html.axis-on, which the axis handler sets
+     when the POINTER is over the hero and clears the moment it is not.
+     The old gate was html.at-hero, which is a scroll position, so the
+     ring stayed hidden until the whole section had scrolled past. Both
+     signals are true at once on the hero -- and only the pointer one
+     switches the instant you cross the border. */
+  .axis{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .32s ease-out;
+  }
+  html.axis-on .axis{opacity:1}
+  /* the native cursor is hidden for exactly as long as the crosshair is
+     showing, and no longer: one class, added and removed on the same
+     pointermove that moves the lines */
+  html.axis-on .cube-face--hero{cursor:none}
+  html.axis-on .cube-face--hero a,
+  html.axis-on .cube-face--hero button{cursor:none}
+  /* the cursor cross: a centre dot with four arms at right angles, held
+     on --ax/--ay by the SAME translate3d the two rules use, so it can
+     never drift out of register with the intersection it marks.
+     Both pseudos are positioned symmetrically about the 1px origin --
+     the previous version put both arms on the up-left side only, which
+     read as a corner bracket rather than as a crosshair. */
+  .axis-cross{
+    position:absolute;
+    left:0;
+    top:0;
+    width:5px;
+    height:5px;
+    margin:-2.5px 0 0 -2.5px;
+    border-radius:50%;
+    background:rgba(17,17,20,.78);
+    transform:translate3d(calc(var(--ax,0px)),calc(var(--ay,0px)),0);
+    will-change:transform;
+  }
+  .axis-cross::before,.axis-cross::after{
+    content:"";
+    position:absolute;
+    background:rgba(17,17,20,.78);
+  }
+  /* horizontal arms: -11px..-3px and 3px..11px, a 6px gap around the dot */
+  .axis-cross::before{left:-11px;top:2px;width:8px;height:1px;
+    box-shadow:14px 0 0 rgba(17,17,20,.78)}
+  /* vertical arms, same geometry rotated */
+  .axis-cross::after{left:2px;top:-11px;height:8px;width:1px;
+    box-shadow:0 14px 0 rgba(17,17,20,.78)}
+  .axis-x{
+    position:absolute;
+    left:0;
+    right:0;
+    top:0;
+    height:1px;
+    background:linear-gradient(90deg,rgba(17,17,20,0),rgba(17,17,20,.3) 10%,rgba(17,17,20,.3) 90%,rgba(17,17,20,0));
+    transform:translate3d(0,calc(var(--ay,0px)),0);
+    will-change:transform;
+  }
+  .axis-y{
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:0;
+    width:1px;
+    background:linear-gradient(180deg,rgba(17,17,20,0),rgba(17,17,20,.3) 10%,rgba(17,17,20,.3) 90%,rgba(17,17,20,0));
+    transform:translate3d(calc(var(--ax,0px)),0,0);
+    will-change:transform;
+  }
+  .axis-x::after,.axis-y::after{
+    content:"";
+    position:absolute;
+    background:rgba(17,17,20,.42);
+  }
+  .axis-x::after{left:0;top:-3px;width:1px;height:7px}
+  .axis-y::after{top:0;left:-3px;width:7px;height:1px}
+  .axis-tag{
+    position:absolute;
+    left:0;
+    top:0;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:.08em;
+    color:#5c5c68;
+    background:rgba(244,242,238,.94);
+    border:1px solid rgba(11,11,14,.1);
+    border-radius:var(--ld-r2);
+    padding:3px 6px;
+    white-space:nowrap;
+    will-change:transform;
+  }
+  .axis-tag--x{transform:translate3d(calc(var(--ax,0px) + 10px),calc(var(--ay,0px) - 22px),0)}
+  .axis-tag--y{transform:translate3d(calc(var(--ax,0px) + 10px),calc(var(--ay,0px) + 9px),0)}
+
+  /* ── drag-select marquee + note (hero face only) ──── */
+  .marquee{
+    position:absolute;
+    user-select:none;
+    -webkit-user-select:none;
+    left:0;
+    top:0;
+    width:0;
+    height:0;
+    z-index:6;
+    border:1px solid rgba(226,171,52,.8);
+    border-radius:var(--ld-r1);
+    background:rgba(240,196,86,.16);
+    opacity:0;
+    pointer-events:none;
+    will-change:transform,width,height;
+    transition:opacity .12s ease-out;
+  }
+  html.marquee-on{cursor:crosshair}
+  html.marquee-on .marquee,html.marquee-set .marquee{opacity:1}
+  html.marquee-on .cursor-ring{display:none}
+  .note{
+    position:absolute;
+    left:0;
+    top:0;
+    /* the face is pointer-events:none until it is the front face, so
+       the interactive box has to opt itself back in */
+    pointer-events:auto;
+    z-index:7;
+    /* the note is the CONTENT of the yellow box, not a card beside it:
+       transparent, and sized to the marquee by drawBox so the text sits
+       exactly where the reader drew. The marquee underneath owns the
+       wash, the border and the radius. */
+    display:flex;
+    flex-direction:column;
+    background:transparent;
+    border:0;
+    border-radius:0;
+    padding:11px 12px 9px;
+    overflow:hidden;
+    will-change:transform,width,height;
+  }
+  .note[hidden]{display:none}
+  .note-input{
+    display:block;
+    user-select:text;
+    -webkit-user-select:text;
+    flex:1 1 auto;
+    min-height:0;
+    width:100%;
+    resize:none;
+    background:transparent;
+    border:0;
+    outline:none;
+    padding:0;
+    color:var(--ink);
+    /* the reader is writing prose here, not a command, so this is the
+       page's text face rather than the terminal stack the rest of the
+       monospace treatment on this page uses */
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:14.5px;
+    line-height:1.5;
+    letter-spacing:-.005em;
+  }
+  .note-input::placeholder{color:var(--ink-3);font-style:italic}
+  .note-title{
+    display:block;
+    flex:none;
+    margin:0 0 7px;
+    color:var(--ink-3);
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+  }
+  .note-saved{
+    display:block;
+    margin-top:8px;
+    color:var(--ink-3);
+    font-size:10.5px;
+    opacity:.85;
+  }
+  .note-saved[hidden]{display:none}
+  .note-bar{display:flex;align-items:center;gap:8px;margin-top:9px}
+  .note-warn{flex:1;font-size:11.5px;line-height:1.35;color:var(--warm);min-height:14px}
+  .note-btn{
+    flex:none;
+    padding:4px 10px;
+    border:1px solid var(--line-strong);
+    border-radius:var(--ld-r4);
+    background:transparent;
+    color:var(--ink-2);
+    font-size:11.5px;
+    cursor:pointer;
+    transition:background .18s ease-out,color .18s ease-out,border-color .18s ease-out;
+  }
+  .note-btn:hover{background:var(--bg-tint);color:var(--ink);border-color:rgba(255,255,255,.3)}
+  .marquee-hint{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:20px;
+    pointer-events:none;
+    margin:0;
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-3);
+    opacity:0;
+    transition:opacity .3s ease-out;
+  }
+  html.marquee-on .marquee-hint{opacity:.9}
+
+  /* The hero is the only light surface on the page, so the selection box
+     needs its own values there: a 16% amber wash is invisible on paper and
+     a pale amber hairline has no contrast against it. The note box reads
+     the face tokens automatically (--ink, --ink-2 and --line-strong all
+     resolve to the light set), so only the raw values need restating. */
+  .cube-face--hero .marquee{
+    border-color:rgba(163,106,10,.9);
+    background:rgba(240,196,86,.42);
+  }
+  /* nothing to override but the shadow: the card chrome moved down into
+     the marquee, and --ink/--ink-2/--line-strong already resolve to the
+     hero's light token set on their own. */
+  .cube-face--hero .note{box-shadow:none}
+  .cube-face--hero .note-warn{color:#a86405}
+  .cube-face--hero .note-btn:hover{background:var(--bg-tint);border-color:rgba(11,11,14,.3)}
+
+  /* ── liquid field on the next section ───────────────── */
+  /* screen blending is back, and it is only safe now that #preview no
+     longer declares isolation. An isolated stacking context makes the
+     canvas blend against a TRANSPARENT backdrop, and screen(transparent,
+     anything) is opaque -- the whole section came out as a black
+     rectangle with the field, the fallback and the page background all
+     hidden inside it. Without isolation the backdrop is the page, which
+     is near-black, so screen adds light and costs nothing where the
+     field is empty. If you add isolation back, remove this line too. */
+  #preview{position:relative}
+  #preview > *:not(.liquid){position:relative;z-index:1}
+  /* the canvas is a 100vw band centred on the 1160px .wrap, so the field
+     reaches the viewport edges instead of stopping at the column */
+  #preview::before{
+    content:"";
+    position:absolute;
+    left:50%;
+    top:0;
+    z-index:0;
+    width:100vw;
+    height:78%;
+    margin-left:-50vw;
+    pointer-events:none;
+    /* always on, faintly. WebGL can be refused, lost, or fail to link,
+       and a section that goes flat black when that happens reads as a
+       broken page rather than a missing effect. The washes are the floor
+       the live field animates on top of. */
+    opacity:.55;
+    transition:opacity 1.1s ease-out;
+    background:
+      radial-gradient(58% 54% at 24% 40%, rgba(64,108,255,.34), rgba(64,108,255,0) 72%),
+      radial-gradient(50% 46% at 74% 64%, rgba(255,132,38,.26), rgba(255,132,38,0) 72%),
+      radial-gradient(40% 38% at 52% 18%, rgba(96,220,255,.18), rgba(96,220,255,0) 74%);
+  }
+  #preview.liquid-fallback::before{opacity:1}
+  .liquid{
+    position:absolute;
+    left:50%;
+    top:0;
+    z-index:0;
+    width:100vw;
+    height:100%;
+    margin-left:-50vw;
+    display:block;
+    opacity:0;
+    pointer-events:none;
+    mix-blend-mode:screen;
+    -webkit-mix-blend-mode:screen;
+    transition:opacity .6s ease-out;
+  }
+  .liquid.live{opacity:1}
+
+  @media (max-height:800px){
+    /* Longhands, not the shorthand: this selector ties .lhero.wrap on
+       specificity (both 0,2,0) and comes later in the file, so a
+       `padding:` here silently undid the hero's horizontal gutter on
+       every short viewport -- a 1366x768 laptop, which is exactly the
+       size this media query exists for. Only the block axis is meant
+       to change here. */
+    .cube-face--hero .lhero{padding-top:54px;padding-bottom:38px}
+    .cube-face--qs .qs-step{padding:13px 16px}
+  }
+
+  html.no-motion .liquid{display:none}
+  html.no-motion .cube{will-change:auto}
+  html.no-motion .axis{transition:none}
+
+  /* ── colour in the last two content sections ─────────────────────
+     The page was monochrome from #preview down: every card the same
+     grey on the same grey. These two sections get hue back, but as
+     washes and rails rather than saturated panels -- the cards stay
+     quiet so the type still reads first. Each family takes its hues
+     from a token so a palette change moves all of it at once. */
+  .sec--tint{position:relative;isolation:isolate}
+  .sec--tint::before{
+    content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(58% 46% at 12% 0%, var(--accent-soft), rgba(0,0,0,0) 72%),
+      radial-gradient(52% 44% at 88% 100%, var(--warm-wash), rgba(0,0,0,0) 70%);
+  }
+
+  /* trust: three cards, three hues, cycling */
+  .trust .tcell{
+    background:
+      radial-gradient(120% 90% at 0% 0%, var(--tcell-wash), rgba(0,0,0,0) 68%),
+      var(--surface);
+    border-color:var(--tcell-line);
+  }
+  .trust .tcell::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:var(--tcell-rail);
+  }
+  .trust .tcell h3{color:var(--tcell-rail)}
+  .trust .tcell:hover{
+    border-color:var(--tcell-rail);
+    box-shadow:0 10px 34px var(--tcell-shadow);
+  }
+  .trust .tcell:nth-child(1){--tcell-rail:var(--accent);--tcell-wash:rgba(111,140,255,.13);--tcell-line:rgba(111,140,255,.28);--tcell-shadow:rgba(111,140,255,.18)}
+  .trust .tcell:nth-child(2){--tcell-rail:var(--good);--tcell-wash:rgba(63,191,127,.12);--tcell-line:rgba(63,191,127,.26);--tcell-shadow:rgba(63,191,127,.16)}
+  .trust .tcell:nth-child(3){--tcell-rail:var(--warm);--tcell-wash:rgba(232,117,47,.12);--tcell-line:rgba(232,117,47,.26);--tcell-shadow:rgba(232,117,47,.16)}
+
+  /* advertisers: the two sides, so the two cards take opposite hues */
+  .role{position:relative;overflow:hidden;border-color:var(--role-line)}
+  .role::before{
+    content:"";position:absolute;top:0;bottom:0;left:0;width:3px;background:var(--role-rail);
+  }
+  .role .k{color:var(--role-rail)}
+  .role h3{color:var(--ink)}
+  .role:hover{border-color:var(--role-rail);box-shadow:0 14px 40px var(--role-shadow)}
+  .roles .role:nth-child(1){
+    --role-rail:var(--accent);--role-line:rgba(111,140,255,.3);--role-shadow:rgba(111,140,255,.2);
+    background:linear-gradient(160deg, rgba(111,140,255,.11), rgba(0,0,0,0) 58%), var(--surface);
+  }
+  .roles .role:nth-child(2){
+    --role-rail:var(--warm);--role-line:rgba(232,117,47,.3);--role-shadow:rgba(232,117,47,.2);
+    background:linear-gradient(160deg, rgba(232,117,47,.11), rgba(0,0,0,0) 58%), var(--surface);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .trust .tcell:hover,.role:hover{box-shadow:none}
+  }

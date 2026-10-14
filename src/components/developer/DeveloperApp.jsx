@@ -1,3 +1,4 @@
+import PageChrome from '../landing/PageChrome.jsx'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdvBarChart, AdvEmpty, AdvError, AdvLoading, AdvPageHead, AdvStats } from '../advertiser/AdvertiserUI.jsx'
 import { Panel } from '../console/ui.jsx'
@@ -208,212 +209,215 @@ export default function DeveloperApp() {
   ]
 
   return (
-    <section className="adv-shell" aria-label="Developer dashboard">
-      <div className="adv-shell__inner">
-        <nav className="adv-nav" aria-label="Developer">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              className="adv-nav__btn"
-              data-active={tab === t.id}
-              aria-current={tab === t.id ? 'page' : undefined}
-              onClick={() => setTab(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
-          <LogoutButton />
-        </nav>
+    <PageChrome active="/developer">
+      <section className="adv-shell" aria-label="Developer dashboard">
+        <div className="adv-shell__inner">
+          <nav className="adv-nav" aria-label="Developer">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className="adv-nav__btn"
+                data-active={tab === t.id}
+                aria-current={tab === t.id ? 'page' : undefined}
+                onClick={() => setTab(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+            <LogoutButton />
+          </nav>
 
-        {tab !== 'account' && tab !== 'sdk' ? (
-          <AdvPageHead
-            index="D1"
-            label="Developer"
-            title={tab === 'dashboard' ? 'Earnings at a glance.' : tab[0].toUpperCase() + tab.slice(1) + '.'}
-            body={{
-              dashboard: 'Every figure below is read live from your account — real reward balances and delivery, never estimates.',
-              earnings: 'Balances and rewards as they land, straight from your account.',
-              integrations: 'Which CLIs you\'ve connected, and how each one reads.',
-              sdk: 'Ad delivery, end to end.',
-              keys: 'Manage your publisher keys.',
-              placements: 'Manage your ad placements.',
-              analytics: 'Where your earnings came from, and what is not measured yet.',
-              account: 'Your details, security, and account controls.',
-            }[tab]}
-          />
-        ) : null}
+          {tab !== 'account' && tab !== 'sdk' ? (
+            <AdvPageHead
+              index="D1"
+              label="Developer"
+              title={tab === 'dashboard' ? 'Earnings at a glance.' : tab[0].toUpperCase() + tab.slice(1) + '.'}
+              body={{
+                dashboard: 'Every figure below is read live from your account — real reward balances and delivery, never estimates.',
+                earnings: 'Balances and rewards as they land, straight from your account.',
+                integrations: 'Which CLIs you\'ve connected, and how each one reads.',
+                sdk: 'Ad delivery, end to end.',
+                keys: 'Manage your publisher keys.',
+                placements: 'Manage your ad placements.',
+                analytics: 'Where your earnings came from, and what is not measured yet.',
+                account: 'Your details, security, and account controls.',
+              }[tab]}
+            />
+          ) : null}
 
-        {error && tab !== 'sdk' ? <AdvError message={error} onRetry={refresh} /> : null}
+          {error && tab !== 'sdk' ? <AdvError message={error} onRetry={refresh} /> : null}
 
-        {tab === 'sdk' ? (
-          <SdkSetup />
-        ) : tab === 'keys' ? (
-          <PublisherKeys />
-        ) : tab === 'placements' ? (
-          <PublisherPlacements />
-        ) : loading ? (
-          <AdvLoading label="Loading developer rewards…" />
-        ) : (
-          <>
-            {(tab === 'dashboard' || tab === 'earnings') && (
-              <>
-                <AdvStats items={stats} />
-                <div className="adv-grid adv-grid--2">
-                  <section className="panel adv-panel" aria-label="Recent rewards">
-                    <h4 className="adv-panel__title">Recent rewards</h4>
-                    <p className="adv-panel__sub">Latest entries in your reward ledger.</p>
-                    {rewards.length === 0 ? (
-                      <AdvEmpty
-                        mark="Ledger empty"
-                        title="No rewards yet"
-                        body="Rewards land here the moment a sponsored slot in one of your CLIs is served. Integrate the SDK, then watch this fill."
-                        actionLabel="Set up the SDK"
-                        onAction={() => setTab('sdk')}
-                      />
-                    ) : (
-                      <ul className="adv-activity">
-                        {rewards.slice(0, 6).map((r) => (
-                          <li key={r.id} className="adv-activity__row">
-                            <span className="adv-activity__label">
-                              {r.campaign_name || r.campaign_id || 'Reward'}
-                            </span>
-                            <span className="adv-activity__detail">
-                              {rewardStatus(r).label} · {formatCents(r.amount_cents ?? r.amountCents ?? 0)}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </section>
+          {tab === 'sdk' ? (
+            <SdkSetup />
+          ) : tab === 'keys' ? (
+            <PublisherKeys />
+          ) : tab === 'placements' ? (
+            <PublisherPlacements />
+          ) : loading ? (
+            <AdvLoading label="Loading developer rewards…" />
+          ) : (
+            <>
+              {(tab === 'dashboard' || tab === 'earnings') && (
+                <>
+                  <AdvStats items={stats} />
+                  <div className="adv-grid adv-grid--2">
+                    <section className="panel adv-panel" aria-label="Recent rewards">
+                      <h4 className="adv-panel__title">Recent rewards</h4>
+                      <p className="adv-panel__sub">Latest entries in your reward ledger.</p>
+                      {rewards.length === 0 ? (
+                        <AdvEmpty
+                          mark="Ledger empty"
+                          title="No rewards yet"
+                          body="Rewards land here the moment a sponsored slot in one of your CLIs is served. Integrate the SDK, then watch this fill."
+                          actionLabel="Set up the SDK"
+                          onAction={() => setTab('sdk')}
+                        />
+                      ) : (
+                        <ul className="adv-activity">
+                          {rewards.slice(0, 6).map((r) => (
+                            <li key={r.id} className="adv-activity__row">
+                              <span className="adv-activity__label">
+                                {r.campaign_name || r.campaign_id || 'Reward'}
+                              </span>
+                              <span className="adv-activity__detail">
+                                {rewardStatus(r).label} · {formatCents(r.amount_cents ?? r.amountCents ?? 0)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </section>
 
-                  <section className="panel adv-panel" aria-label="Reward mix">
-                    <h4 className="adv-panel__title">Reward mix</h4>
-                    <p className="adv-panel__sub">By campaign (latest entries).</p>
-                    {chartRows.length ? (
-                      <AdvBarChart rows={chartRows} valueLabel="Rewards" />
-                    ) : (
-                      <AdvEmpty
-                        mark="Nothing to chart"
-                        title="No rewards to compare"
-                        body="Once two or more campaigns pay out, this becomes a side-by-side breakdown of where your earnings come from."
-                      />
-                    )}
-                  </section>
-                </div>
-              </>
-            )}
+                    <section className="panel adv-panel" aria-label="Reward mix">
+                      <h4 className="adv-panel__title">Reward mix</h4>
+                      <p className="adv-panel__sub">By campaign (latest entries).</p>
+                      {chartRows.length ? (
+                        <AdvBarChart rows={chartRows} valueLabel="Rewards" />
+                      ) : (
+                        <AdvEmpty
+                          mark="Nothing to chart"
+                          title="No rewards to compare"
+                          body="Once two or more campaigns pay out, this becomes a side-by-side breakdown of where your earnings come from."
+                        />
+                      )}
+                    </section>
+                  </div>
+                </>
+              )}
 
-            {tab === 'integrations' && (
-              <Panel className="adv-panel">
-                <h4 className="adv-panel__title">Integrations</h4>
-                <p className="adv-panel__sub">
-                  Each coding CLI gets its own placement key, so its earnings stay separable.
-                  The CLI writes this list into clirevenue.config.json in your project.
-                </p>
-                {/* The dashboard cannot read that file — it lives in the developer's
-                    project, not on the server — so this shows the rule and the command
-                    that reports the real list. Inventing plausible-looking rows here
-                    would be the exact failure the design system forbids: a confident
-                    number that is not a measurement. */}
-                <ul className="adv-activity">
-                  <li className="adv-activity__row">
-                    <span className="adv-activity__label">One key per CLI</span>
-                    <span className="adv-activity__detail">
-                      Add a CLI, and setup provisions a placement for it. Two integrations
-                      can never share a key, so one editor's ad is never mistaken for another's.
-                    </span>
-                  </li>
-                  <li className="adv-activity__row">
-                    <span className="adv-activity__label">Many slots per key</span>
-                    <span className="adv-activity__detail">
-                      A second ad on the same page is another slot on the same key, with its
-                      own size and position — not another placement on your account.
-                    </span>
-                  </li>
-                  <li className="adv-activity__row">
-                    <span className="adv-activity__label">Positions stay in your repo</span>
-                    <span className="adv-activity__detail">
-                      clirevenue.config.json holds each slot's geometry and never contains a
-                      key, so it is safe to commit.
-                    </span>
-                  </li>
-                </ul>
-                <div className="setup__actions">
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => setTab('sdk')}
-                  >
-                    How to connect one
-                  </button>
-                </div>
-                <AdvEmpty
-                  mark="Not shown here"
-                  title="This list lives in your project, not on the server"
-                  body="Run clirevenue integrations list in your project to see the integrations and slots you have actually configured, or run npx clirevenue setup to add one."
-                />
-              </Panel>
-            )}
-
-            {tab === 'analytics' && (
-              <>
+              {tab === 'integrations' && (
                 <Panel className="adv-panel">
-                  <h4 className="adv-panel__title">Where the earnings come from</h4>
+                  <h4 className="adv-panel__title">Integrations</h4>
                   <p className="adv-panel__sub">
-                    Every reward in your ledger, newest first. Balances are on Earnings; this
-                    is the breakdown of which campaign paid what.
+                    Each coding CLI gets its own placement key, so its earnings stay separable.
+                    The CLI writes this list into clirevenue.config.json in your project.
                   </p>
-                  {rewards.length === 0 ? (
-                    <AdvEmpty
-                      mark="No history"
-                      title="This becomes a breakdown after your first reward"
-                      body="There is one reward per served impression, so there is nothing to compare until a campaign pays. This panel reads your ledger directly — no sampling, no estimates."
-                      actionLabel="Connect a CLI"
-                      onAction={() => setTab('integrations')}
-                    />
-                  ) : (
-                    <AdvBarChart rows={chartRows} valueLabel="Rewards by campaign" />
-                  )}
-                </Panel>
-
-                <Panel className="adv-panel">
-                  <h4 className="adv-panel__title">Not available yet</h4>
-                  <p className="adv-panel__sub">
-                    Stated rather than faked. Each of these would need a publisher-facing
-                    endpoint that does not exist, and a row of zeros would read as a
-                    measurement instead of the absence of one.
-                  </p>
+                  {/* The dashboard cannot read that file — it lives in the developer's
+                      project, not on the server — so this shows the rule and the command
+                      that reports the real list. Inventing plausible-looking rows here
+                      would be the exact failure the design system forbids: a confident
+                      number that is not a measurement. */}
                   <ul className="adv-activity">
                     <li className="adv-activity__row">
-                      <span className="adv-activity__label">Impressions and fill rate</span>
+                      <span className="adv-activity__label">One key per CLI</span>
                       <span className="adv-activity__detail">
-                        Delivery counts are recorded on the server, but nothing exposes them to
-                        a publisher yet.
+                        Add a CLI, and setup provisions a placement for it. Two integrations
+                        can never share a key, so one editor's ad is never mistaken for another's.
                       </span>
                     </li>
                     <li className="adv-activity__row">
-                      <span className="adv-activity__label">Per-placement breakdown</span>
+                      <span className="adv-activity__label">Many slots per key</span>
                       <span className="adv-activity__detail">
-                        Your ledger keys rewards by campaign today. Which of your own
-                        placements served one is not yet reported back.
+                        A second ad on the same page is another slot on the same key, with its
+                        own size and position — not another placement on your account.
                       </span>
                     </li>
                     <li className="adv-activity__row">
-                      <span className="adv-activity__label">Time series</span>
+                      <span className="adv-activity__label">Positions stay in your repo</span>
                       <span className="adv-activity__detail">
-                        The rewards endpoint returns recent entries rather than a range, so
-                        this panel shows what it was given instead of extrapolating a trend.
+                        clirevenue.config.json holds each slot's geometry and never contains a
+                        key, so it is safe to commit.
                       </span>
                     </li>
                   </ul>
+                  <div className="setup__actions">
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => setTab('sdk')}
+                    >
+                      How to connect one
+                    </button>
+                  </div>
+                  <AdvEmpty
+                    mark="Not shown here"
+                    title="This list lives in your project, not on the server"
+                    body="Run clirevenue integrations list in your project to see the integrations and slots you have actually configured, or run npx clirevenue setup to add one."
+                  />
                 </Panel>
-              </>
-            )}
+              )}
 
-            {tab === 'account' && <DeveloperAccount />}
-          </>
-        )}
-      </div>
-    </section>
+              {tab === 'analytics' && (
+                <>
+                  <Panel className="adv-panel">
+                    <h4 className="adv-panel__title">Where the earnings come from</h4>
+                    <p className="adv-panel__sub">
+                      Every reward in your ledger, newest first. Balances are on Earnings; this
+                      is the breakdown of which campaign paid what.
+                    </p>
+                    {rewards.length === 0 ? (
+                      <AdvEmpty
+                        mark="No history"
+                        title="This becomes a breakdown after your first reward"
+                        body="There is one reward per served impression, so there is nothing to compare until a campaign pays. This panel reads your ledger directly — no sampling, no estimates."
+                        actionLabel="Connect a CLI"
+                        onAction={() => setTab('integrations')}
+                      />
+                    ) : (
+                      <AdvBarChart rows={chartRows} valueLabel="Rewards by campaign" />
+                    )}
+                  </Panel>
+
+                  <Panel className="adv-panel">
+                    <h4 className="adv-panel__title">Not available yet</h4>
+                    <p className="adv-panel__sub">
+                      Stated rather than faked. Each of these would need a publisher-facing
+                      endpoint that does not exist, and a row of zeros would read as a
+                      measurement instead of the absence of one.
+                    </p>
+                    <ul className="adv-activity">
+                      <li className="adv-activity__row">
+                        <span className="adv-activity__label">Impressions and fill rate</span>
+                        <span className="adv-activity__detail">
+                          Delivery counts are recorded on the server, but nothing exposes them to
+                          a publisher yet.
+                        </span>
+                      </li>
+                      <li className="adv-activity__row">
+                        <span className="adv-activity__label">Per-placement breakdown</span>
+                        <span className="adv-activity__detail">
+                          Your ledger keys rewards by campaign today. Which of your own
+                          placements served one is not yet reported back.
+                        </span>
+                      </li>
+                      <li className="adv-activity__row">
+                        <span className="adv-activity__label">Time series</span>
+                        <span className="adv-activity__detail">
+                          The rewards endpoint returns recent entries rather than a range, so
+                          this panel shows what it was given instead of extrapolating a trend.
+                        </span>
+                      </li>
+                    </ul>
+                  </Panel>
+                </>
+              )}
+
+              {tab === 'account' && <DeveloperAccount />}
+            </>
+          )}
+        </div>
+
+      </section>
+    </PageChrome>
   )
 }

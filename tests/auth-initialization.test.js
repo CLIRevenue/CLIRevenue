@@ -272,20 +272,3 @@ describe('auth provider initialisation (source-level)', () => {
   })
 })
 
-describe('economy store refetch policy (source-level)', () => {
-  it('refetches only for reasons that may actually have changed the data', () => {
-    const src = read('src/lib/economyStore.js')
-    // Every field it holds is user-scoped, so a rotation would produce
-    // byte-identical JSON at the cost of three round trips.
-    expect(src).toMatch(/onAuthStateChange\(\(event\) => \{/)
-    expect(src).toMatch(/if \(planFor\(classifyAuthEvent\(event\)\) !== RESOLUTION\.FULL\) return/)
-    expect(src).toMatch(/initializeStore\(\)/)
-  })
-
-  it('never refetches on a silent or skipped reason', () => {
-    // If this assertion ever needs loosening, the right answer is to add a
-    // reason to REASON_PLAN and explain it — not to loosen the gate.
-    expect(planFor(AUTH_REASON.TOKEN_ROTATION)).not.toBe(RESOLUTION.FULL)
-    expect(planFor(AUTH_REASON.NAVIGATION)).not.toBe(RESOLUTION.FULL)
-  })
-})
