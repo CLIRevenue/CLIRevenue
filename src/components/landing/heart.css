@@ -1,16 +1,14 @@
-/* The heart strip that closes every page. It is a button, so it wears the same
-   rainbow ring as every other button on the site — the rule lives in
-   chrome.css and reaches in here by class name. */
+/* The heart that closes every page. It used to be a 46px pill on a ruled
+   strip of its own; it is now a 28px token sitting top-left of whatever
+   footer it is in, and the ruled strip went with it — the footer already
+   draws its own edge, and two horizontal rules read as two footers. */
 
 .heartfoot {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  padding: 26px 0 6px;
-  margin-top: 8px;
-  border-top: 1px solid var(--line, rgba(255, 255, 255, 0.09));
+  padding: 0;
+  margin: 0 0 6px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
 }
 
@@ -19,23 +17,51 @@
   z-index: 0;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  height: 46px;
-  padding: 0 20px 0 16px;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px 0 9px;
   border-radius: var(--ld-r7);
   border: 1px solid var(--line-strong, rgba(255, 255, 255, 0.17));
   background: var(--surface, #121216);
   color: var(--ink-2, #a2a2ad);
-  font-size: 14px;
+  font-size: 11.5px;
   font-weight: 500;
   line-height: 1;
   cursor: pointer;
   transition: color 0.22s ease-out, border-color 0.22s ease-out, transform 0.22s ease-out;
 }
 
+/* A third of the old height is a third of the old height — but 15px is
+   below anything a thumb can hit. So the visible pill shrinks and the
+   TARGET does not: this pseudo is invisible and extends the button past
+   its own box, which is the only part of the control a pointer can reach.
+   It is the reason the shrink is safe at all. */
+.heart::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  left: -12px;
+  right: -12px;
+  border-radius: inherit;
+}
+
 .heart:hover {
   color: var(--ink, #f2f2f4);
   border-color: var(--ink-3, #74747f);
+}
+
+/* Pressed for good: the control stops being an invitation. It stays focusable
+   so a keyboard user can still reach and read it, but it neither lifts nor
+   repaints. `aria-disabled` rather than `disabled` for exactly that reason —
+   `disabled` would drop it out of the tab order entirely. */
+.heart[aria-disabled="true"] {
+  cursor: default;
+}
+.heart[aria-disabled="true"]:hover {
+  transform: none;
+  color: #ff4d63;
+  border-color: rgba(255, 77, 99, 0.42);
 }
 
 .heart__shape {
@@ -47,10 +73,14 @@
 
 /* An outline until it is pressed. A filled heart on arrival reads as
    "already liked", which is a claim the counter cannot support. */
+/* The SVG carries width/height attributes; these override them so the
+   glyph's size lives in one place with the rest of the control. */
 .heart__shape svg {
+  width: 13px;
+  height: 12px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 2.2;
   stroke-linejoin: round;
 }
 .heartfoot.is-mine .heart__shape svg {
@@ -59,7 +89,19 @@
 
 .heart:hover .heart__shape {
   color: var(--ink, #f2f2f4);
-  transform: scale(1.08);
+}
+
+/* A slow breath until the heart has been pressed. This is the one control
+   on the site that is asked for exactly once and can never be un-asked, so
+   it is the one that has to work hardest to be noticed before that — and
+   it must stop the moment it has been given. */
+.heartfoot:not(.is-mine) .heart__shape {
+  animation: heart-breathe 3.4s ease-in-out infinite;
+}
+
+@keyframes heart-breathe {
+  0%, 100% { opacity: 0.68; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.07); }
 }
 
 /* A heart that has already been pressed reads as filled, not as a highlight. */
@@ -71,6 +113,8 @@
   color: #ff4d63;
 }
 
+/* The press beats the breath: a one-shot 600ms pop that starts where the
+   idle scale left off, so the two animations never fight over the glyph. */
 .heartfoot.is-pulsing .heart__shape {
   animation: heart-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -108,8 +152,8 @@
 /* Four glyphs peel off the button on the click. */
 .heart__bursts {
   position: absolute;
-  left: 26px;
-  bottom: 26px;
+  left: 14px;
+  bottom: 16px;
   width: 1px;
   height: 1px;
   pointer-events: none;
@@ -125,8 +169,8 @@
   position: absolute;
   left: 0;
   bottom: 0;
-  width: 11px;
-  height: 10px;
+  width: 7px;
+  height: 6px;
   border-radius: 50% 50% 12% 50%;
   background: #ff4d63;
   opacity: 0;
@@ -143,6 +187,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Freeze, never delete. `animation: none` here drops the fill-mode too,
+     so the heart falls back to its natural opacity and stays VISIBLE —
+     killing the animation is the request; removing the control is not. */
+  .heartfoot:not(.is-mine) .heart__shape,
   .heartfoot.is-pulsing .heart__shape,
   .heartfoot.is-pulsing .heart::after,
   .heart__burst {

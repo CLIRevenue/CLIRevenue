@@ -41,78 +41,6 @@
 .advx-page [id] {
   scroll-margin-top: 88px;
 }
-
-/* ---------- masthead ----------
-   Carried by the page itself (the site header is not mounted on this
-   route): identity left, this page's jumps and the one account action
-   right, full-bleed, one line, compacted rather than wrapped under
-   640. The path chip wears the site header's navigation control — the
-   same box as the homepage's Developer / Log in / Sign up — and is a
-   span, so it never joins the hard-lift hover group. */
-
-.advx-top {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  margin: 0 calc(var(--gutter) * -1);
-  padding: 11px var(--gutter);
-  border-bottom: 1px solid var(--hair);
-  background: var(--glass-bg);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.advx-top__brand {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 0;
-  font-family: var(--sans);
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-}
-
-.advx-top__brand em {
-  font-style: normal;
-  color: var(--amber);
-}
-
-.advx-top__path {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  cursor: default;
-}
-
-.advx-top__nav {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-left: auto;
-}
-
-.advx-top__link {
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  padding-bottom: 2px;
-  transition: color var(--dur-fast) var(--ease-ui), border-color var(--dur-fast) var(--ease-ui);
-}
-
-.advx-top__link:hover,
-.advx-top__link:focus-visible {
-  color: var(--ink);
-  border-bottom-color: var(--signal);
-}
 /* ---------- hero ----------
    The sibling of the developer hero: statement left, real artifact
    right. No framed box and no red wash — the plate itself is the
@@ -244,13 +172,6 @@
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-}
-
-.advx-code .advx-copy--done,
-.advx-code .advx-copy--done:hover:not(:disabled) {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: var(--bg);
 }
 /* ---------- body ---------- */
 

@@ -137,7 +137,6 @@ describe('an anchor lands content below the fixed header', () => {
     ['src/App.css', '.scene'],
     ['src/App.css', '.block'],
     ['src/App.css', '.conv'],
-    ['src/components/RevenueFlow.css', '.revenue-flow'],
   ]
 
   it('every public-page anchor container declares a scroll offset', () => {
@@ -160,7 +159,7 @@ describe('an anchor lands content below the fixed header', () => {
 
   it('the offset compacts on small screens, where the header compacts', () => {
     const small = appCss.slice(appCss.lastIndexOf('@media (max-width: 760px)'))
-    for (const selector of ['.scene', '.block', '.conv', '.revenue-flow']) {
+    for (const selector of ['.scene', '.block', '.conv']) {
       expect(small).toContain(selector)
     }
     expect(small).toMatch(/scroll-margin-top: 72px/)

@@ -141,16 +141,6 @@
 .clr-surface a { color: inherit; text-decoration: none; }
 .clr-surface button { font: inherit; color: inherit; }
 
-.clr-wrap {
-  width: 100%;
-  max-width: var(--ld-maxw);
-  margin: 0 auto;
-  padding: 0 28px;
-}
-
-.clr-section { padding: 84px 0; }
-.clr-section + .clr-section { border-top: 1px solid var(--ld-line); }
-
 /* ══════════════════════════════════════════════════════════════════
    The shared header, so no page has to roll its own
    ══════════════════════════════════════════════════════════════════ */
@@ -662,11 +652,6 @@
   .landing .foot-brand .brand-revenue{color:var(--clr-word-b,#ff1f2d);font-style:normal}
   .foot-brand{margin:0 0 22px;font-size:17px;font-weight:600;letter-spacing:-.02em}
   .sitefoot__name em{font-style:normal}
-
-  /* The heart needs a surface to stand on when it is rendered after page
-     content rather than inside a footer. */
-  .clr-pagefoot{max-width:var(--gutter,28px);width:100%;padding:0 var(--gutter,28px) 34px;
-    margin:0 auto;color:var(--ink,inherit)}
 
 /* The wordmark is text, not an image: CLI in white, Revenue in red. Named so a
    rebrand is a two-token change, and DEFINED here (the rules above only

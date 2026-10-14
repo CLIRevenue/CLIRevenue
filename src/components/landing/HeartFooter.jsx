@@ -2,11 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { addHeart, readHearts, readOwnHeart, writeOwnHeart } from '../../lib/heartsApi.js'
 import './heart.css'
 
+/* Halved from the pill-sized originals: the control is a third of its old
+   height, so a particle thrown 50px up would clear the viewport edge of the
+   button and read as unrelated confetti rather than as the click landing. */
 const BURSTS = [
-  { dx: -14, dy: -46, r: -22, delay: 0 },
-  { dx: 12, dy: -54, r: 18, delay: 60 },
-  { dx: -4, dy: -38, r: -8, delay: 110 },
-  { dx: 20, dy: -44, r: 26, delay: 170 },
+  { dx: -8, dy: -26, r: -22, delay: 0 },
+  { dx: 7, dy: -31, r: 18, delay: 60 },
+  { dx: -2, dy: -21, r: -8, delay: 110 },
+  { dx: 11, dy: -25, r: 26, delay: 170 },
 ]
 
 /* The heart lives at the bottom of every surface: on the landing it sits in
@@ -35,7 +38,13 @@ export default function HeartFooter() {
   }, [])
 
   const onClick = useCallback(async () => {
-    if (busy) return
+    /* One heart per visitor, permanently. `busy` alone is not the guard: it
+       clears as soon as the write resolves, so a second click one frame
+       later increments again, and nothing downstream can veto it — the RPC
+       is granted to `anon` and takes no argument, so the database will
+       happily count as many as it is told to. The only place that can
+       refuse is here, so the rule has to live here. */
+    if (busy || mine) return
     setBusy(true)
     setMine(true)
     writeOwnHeart()
@@ -60,7 +69,7 @@ export default function HeartFooter() {
       return typeof c === 'number' ? c : 1
     })
     setBusy(false)
-  }, [busy])
+  }, [busy, mine])
 
   const label = count === null ? '—' : count.toLocaleString()
 
@@ -71,7 +80,8 @@ export default function HeartFooter() {
         className="heart"
         onClick={onClick}
         aria-pressed={mine}
-        aria-label={mine ? 'You liked this site' : 'Like this site'}
+        aria-disabled={mine || undefined}
+        aria-label={mine ? 'You already liked this site' : 'Like this site'}
       >
         <span className="heart__shape" aria-hidden="true">
           <svg viewBox="0 0 32 29" width="22" height="20" focusable="false">

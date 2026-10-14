@@ -28,15 +28,6 @@
   color: var(--on-surface);
 }
 
-
-.sitefoot__mark {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--signal);
-  line-height: 1;
-}
-
 .sitefoot__name em {
   font-style: normal;
   color: var(--electric-cyan);
@@ -50,18 +41,42 @@
 }
 
 .sitefoot__link {
+  position: relative;
   font-family: var(--sans);
   font-size: 13px;
   font-weight: 500;
   color: var(--ink-2);
   text-decoration: none;
   padding: 4px 0;
-  transition: color 0.22s var(--ease-ui);
+  transition: color 0.22s var(--ease-ui), transform 0.22s var(--ease-ui);
+}
+
+/* The sweep matches the landing footer: the underline is a pseudo scaled
+   from the left, so hovering it costs a transform and nothing else. */
+.sitefoot__link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: currentColor;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.28s var(--ease-ui), opacity 0.28s var(--ease-ui);
 }
 
 .sitefoot__link:hover,
 .sitefoot__link:focus-visible {
   color: var(--ink);
+  transform: translateX(3px);
+}
+
+.sitefoot__link:hover::after,
+.sitefoot__link:focus-visible::after {
+  opacity: 0.55;
+  transform: scaleX(1);
 }
 
 .sitefoot__copy {
@@ -71,6 +86,13 @@
   letter-spacing: 0.08em;
   color: var(--ink-4);
   line-height: 1.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sitefoot__link:hover,
+  .sitefoot__link:focus-visible {
+    transform: none;
+  }
 }
 
 @media (max-width: 640px) {

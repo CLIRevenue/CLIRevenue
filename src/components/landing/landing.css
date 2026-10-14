@@ -93,26 +93,11 @@
   a{color:inherit;text-decoration:none}
   button{font:inherit;color:inherit}
   img,svg{display:block;max-width:100%}
-
-  .lmono{
-    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
-    font-size:.78em;letter-spacing:.01em;
-  }
   .wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 28px}
-
-  /* ── ambient field: one canvas, per-section mood ────── */
-  .ambient{
-    position:fixed;inset:0;z-index:0;
-    pointer-events:none;
-    opacity:0;
-    transition:opacity .9s var(--ease-out);
-    contain:strict;
-  }
   .ambient.live{opacity:1}
 
   main,header.nav,footer{position:relative;z-index:1}
   header.nav{background:rgba(11,11,14,.76)}
-  html.no-motion .ambient{display:none}
 
   /* ── cursor ring ─────────────────────────────────────────────
      Three layers, zero layout. Only transform, opacity, border-color
@@ -250,7 +235,6 @@
     55% {transform:scale(1.1333,2.2);border-width:.72px}
     100%{transform:scale(2.4667,2.4667);border-width:.405px}
   }
-  html.no-motion .cursor-ring{display:none}
 
   /* every heading is a lens surface; h1 also keeps its own pickable hook */
   h1,h2,.sec-kicker{transition:color .28s var(--ease-out)}
@@ -265,7 +249,6 @@
     will-change:transform,opacity;
   }
   [data-reveal].is-in{opacity:1;transform:none}
-  html.no-motion [data-reveal]{opacity:1!important;transform:none!important;transition:none!important}
 
   /* ── nav ──────────────────────────────────────────────── */
   header.nav{
@@ -568,8 +551,6 @@
   .cmd:hover .cmd-copy,.cmd-copy:focus-visible{opacity:1;transform:translateX(0)}
   .cmd-copy:hover{color:var(--ink);border-color:var(--line-strong)}
   .cmd-copy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .cmd-ico{flex:none}
-  .cmd-ico--ok{display:none;color:var(--good)}
   .cmd-copy.is-copied{color:var(--good);border-color:rgba(63,191,127,.35);background:rgba(63,191,127,.08)}
   .cmd-copy.is-copied .cmd-ico{display:none}
   .cmd-copy.is-copied .cmd-ico--ok{display:block;animation:qs-ok .42s var(--ease-out) both}
@@ -645,11 +626,6 @@
   .lbtn:hover::before,
   .cmd-copy:hover::before,
   .cmd-copy:focus-visible::before{opacity:1}
-  /* reduced motion asks for less MOTION, not less content: stop the
-     cycling, keep the hover reveal */
-  html.no-motion .qs-step::before,
-  html.no-motion .lbtn::before,
-  html.no-motion .cmd-copy::before{animation:none}
   /* both hosts must own a stacking context or the -1 pseudo escapes to
      the page root and slides under the section behind it */
   .lbtn,
@@ -665,9 +641,6 @@
     58%{opacity:1;transform:scale(1.16)}
     100%{opacity:1;transform:scale(1)}
   }
-  html.no-motion .qs-step::after{animation:none;opacity:0}
-  html.no-motion .qs-step.is-in .qs-n{animation:none;opacity:1;transform:none}
-  html.no-motion .cmd-line::after{animation:none}
   /* Reduced motion asks for less MOTION, not for less content. Hiding
      the border mark outright meant that with "animation effects" off in
      the OS the star was never drawn at all -- indistinguishable from the
@@ -741,7 +714,6 @@
   .cursor{display:inline-block;width:7px;height:14px;background:#9dbcff;vertical-align:-2px;
     animation:blink 1.15s steps(2,start) infinite}
   @keyframes blink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
-  html.no-motion .cursor{animation:none}
 
   /* sponsor line inside a status bar */
   .sponsor{
@@ -749,8 +721,6 @@
     transition:opacity .42s var(--ease-out),transform .42s var(--ease-out);
   }
   .sponsor.in{opacity:1;transform:none}
-  html.no-motion .sponsor{opacity:1;transform:none;transition:none}
-  .gauge{color:#7c8496;transition:color .4s ease-out}
   .gauge.warn{color:#f0b45f}
   .gauge.hot{color:#f2757a}
 
@@ -765,6 +735,11 @@
      undifferentiated column. This selector out-specifies .wrap and only
      touches the block axis, so the horizontal gutter survives. */
   section.wrap{padding-top:104px;padding-bottom:104px}
+  /* header.nav is sticky, so an anchor target flush with the viewport top
+     would land underneath it. 88px is the offset the rest of the site uses
+     for the same reason. */
+  section.wrap{scroll-margin-top:88px}
+  .cube-face{scroll-margin-top:88px}
   /* and a hairline, so the gap reads as a deliberate break rather than as
      two blocks that merely happen to be next to each other */
   section.wrap + section.wrap{border-top:1px solid var(--line)}
@@ -811,12 +786,6 @@
     padding:3px 8px;border-radius:var(--radius-pill);border:1px solid var(--line-strong);color:var(--ink-2);
   }
   .ba-cap .tag.on{background:var(--ink);border-color:var(--ink);color:#0b0b0e}
-  .ba-note{
-    margin-top:22px;display:flex;flex-wrap:wrap;gap:10px 26px;
-    font-size:13.4px;color:var(--ink-2);
-  }
-  .ba-note span{display:inline-flex;align-items:center;gap:8px}
-  .ba-note svg{width:14px;height:14px;color:var(--good);flex:none}
 
   /* ── steps ───────────────────────────────────────────── */
   .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:44px}
@@ -856,9 +825,6 @@
   .tcell.t-never::after{background:var(--warm)}
   .tcell h4{margin:0;font-size:14.5px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
   .tcell .mk{width:20px;height:20px;border-radius:var(--ld-r3);display:grid;place-items:center;flex:none}
-  .t-local .mk{background:rgba(63,191,127,.13);color:var(--good)}
-  .t-sent .mk{background:var(--accent-soft);color:var(--accent)}
-  .t-never .mk{background:rgba(232,117,47,.13);color:var(--warm)}
   .tcell .mk svg{width:12px;height:12px}
   .tcell ul{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
   .tcell li{display:flex;gap:9px;font-size:13.4px;color:var(--ink-2);line-height:1.5}
@@ -911,33 +877,85 @@
   .cta-band .lbtn:hover{background:#1b1b21}
 
   /* ── footer ──────────────────────────────────────────── */
-  footer{padding:56px 0 44px;border-top:1px solid var(--line);margin-top:96px}
-  .foot{display:flex;gap:40px;flex-wrap:wrap;justify-content:space-between}
-  .foot-col h5{margin:0 0 12px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
-  .foot-col a{display:block;font-size:13.6px;color:var(--ink-2);padding:4px 0;transition:color .2s ease-out}
-  .foot-col a:hover{color:var(--ink)}
-  .foot-base{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);
+  footer{padding:56px 0 44px;border-top:1px solid var(--line);margin-top:96px;position:relative;overflow:hidden}
+  /* Heart top-left, wordmark under it, the three link columns down the
+     right. A grid with explicit placement states that in four lines. The
+     flex it replaced left the columns stacked on each other, because the
+     inner divs had never carried `foot-col` and so matched no rule at all
+     — an unstyled block, which is why the links ran together as one
+     unbroken string of text. */
+  .foot{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(0,2.2fr);
+    column-gap:56px;row-gap:24px;align-items:start}
+  .foot > .heartfoot{grid-column:1;grid-row:1}
+  .foot-brand{grid-column:1;grid-row:2;margin:0;font-size:17px;font-weight:600;letter-spacing:-.02em}
+  .foot-cols{grid-column:2;grid-row:1 / span 2;display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));gap:22px 34px}
+  .foot-base{grid-column:1 / -1;margin:0;padding-top:22px;border-top:1px solid var(--line);
     display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12.8px;color:var(--ink-3)}
+  .foot-base + .foot-base{border-top:0;padding-top:10px;margin-top:-16px}
+  .foot-base a{color:inherit;transition:color .2s ease-out}
+  .foot-base a:hover{color:var(--ink)}
 
-  /* ── delight: like burst ─────────────────────────────── */
-  .like-wrap{position:relative;display:inline-flex}
-  .burst{position:absolute;inset:0;pointer-events:none}
-  .spark{
-    position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:var(--ld-r0);
-    opacity:0;
+  /* Each column arrives once, on load, and has long finished by the time
+     anyone scrolls this far. The 0% frame lives INSIDE the keyframes on
+     purpose: a rule-level `opacity:0` would strand these links invisible
+     whenever the animation is suppressed — which is exactly what
+     prefers-reduced-motion does to every animation on the page. */
+  .foot-col{animation:foot-in .5s var(--ease-out) both}
+  .foot-col:nth-child(1){animation-delay:.02s}
+  .foot-col:nth-child(2){animation-delay:.09s}
+  .foot-col:nth-child(3){animation-delay:.16s}
+  @keyframes foot-in{
+    from{opacity:0;transform:translateY(9px)}
+    to{opacity:1;transform:none}
   }
+
+  /* The heading carries a hairline that grows out of it when the column is
+     hovered or holds focus. The column announces itself as a group, which
+     is what the eye is actually scanning for at the bottom of a page. */
+  .foot-col h5{margin:0 0 12px;font-size:12px;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--ink-3);font-weight:600;
+    display:flex;align-items:center;gap:9px;
+    transition:color .22s ease-out}
+  .foot-col h5::after{content:"";flex:1;height:1px;background:var(--line);
+    transform:scaleX(0);transform-origin:left center;
+    transition:transform .34s var(--ease-out)}
+  .foot-col:hover h5,.foot-col:focus-within h5{color:var(--ink)}
+  .foot-col:hover h5::after,.foot-col:focus-within h5::after{transform:scaleX(1)}
+
+  /* Links get a sweep underline and a 3px nudge. Both are transform-only
+     so the underline animates without touching layout. */
+  .foot-col a{position:relative;display:inline-block;font-size:13.6px;
+    color:var(--ink-2);padding:4px 0;
+    transition:color .2s ease-out,transform .2s ease-out}
+  .foot-col a::after{content:"";position:absolute;left:0;right:0;bottom:2px;height:1px;
+    background:currentColor;opacity:0;transform:scaleX(0);transform-origin:left center;
+    transition:transform .28s var(--ease-out),opacity .28s ease-out}
+  .foot-col a:hover,.foot-col a:focus-visible{color:var(--ink);transform:translateX(3px)}
+  .foot-col a:hover::after,.foot-col a:focus-visible::after{opacity:.55;transform:scaleX(1)}
+
+  @media (max-width:900px){
+    .foot{grid-template-columns:minmax(0,1fr);row-gap:22px}
+    .foot > .heartfoot,.foot-brand,.foot-cols{grid-column:1}
+    .foot > .heartfoot{grid-row:1}
+    .foot-brand{grid-row:2}
+    .foot-cols{grid-row:3;column-gap:22px}
+  }
+  @media (max-width:560px){
+    .foot-cols{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:20px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .foot-col{animation:none}
+    .foot-col a:hover,.foot-col a:focus-visible{transform:none}
+  }
+  .burst{position:absolute;inset:0;pointer-events:none}
   @keyframes fly{
     0%{opacity:0;transform:translate3d(0,0,0) rotate(0deg) scale(.4)}
     18%{opacity:1}
     100%{opacity:0;transform:translate3d(var(--dx),var(--dy),0) rotate(var(--rot)) scale(1)}
   }
   .spark.go{animation:fly .62s var(--ease-out) forwards}
-  .heart-pop{animation:pop .34s var(--ease-out)}
   @keyframes pop{0%{transform:scale(1)}42%{transform:scale(1.22)}100%{transform:scale(1)}}
-  .heart-pop.pop{animation:pop .38s var(--ease-out)}
-
-  .count-flip{transition:transform .28s var(--ease-out);display:inline-block}
-  .count-flip.tick{transform:translateY(-5px)}
 
   @media (max-width:960px){
     .steps,.ba,.trust,.roles{grid-template-columns:1fr}
@@ -980,14 +998,6 @@
   @media (max-width:900px){
     .face-label{display:none}
   }
-
-  /* ── the two faces, and the paper they are printed on ── */
-  /* The cube is gone. These three wrappers stay because the JS keys off
-     .cube-face / #heroFace / #qsFace, but they are ordinary blocks now --
-     the page scrolls straight through them. */
-  .cube-scroll{position:relative}
-  .cube-stage{position:relative}
-  .cube{position:relative}
   .cube-face{position:relative}
   /* A left-drag across the hero headings must make a selection box, not a
      text selection -- but ONLY there. The box feature is the hero face's
@@ -1403,7 +1413,6 @@
       radial-gradient(50% 46% at 74% 64%, rgba(255,132,38,.26), rgba(255,132,38,0) 72%),
       radial-gradient(40% 38% at 52% 18%, rgba(96,220,255,.18), rgba(96,220,255,0) 74%);
   }
-  #preview.liquid-fallback::before{opacity:1}
   .liquid{
     position:absolute;
     left:50%;
@@ -1431,10 +1440,6 @@
     .cube-face--hero .lhero{padding-top:54px;padding-bottom:38px}
     .cube-face--qs .qs-step{padding:13px 16px}
   }
-
-  html.no-motion .liquid{display:none}
-  html.no-motion .cube{will-change:auto}
-  html.no-motion .axis{transition:none}
 
   /* ── colour in the last two content sections ─────────────────────
      The page was monochrome from #preview down: every card the same

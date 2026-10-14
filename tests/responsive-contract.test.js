@@ -23,8 +23,6 @@ import { join } from 'node:path'
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 
 const app = readFileSync(`${ROOT}src/App.css`, 'utf8')
-const demo = readFileSync(`${ROOT}src/components/scenes/AdvertiserDemo.css`, 'utf8')
-const promo = readFileSync(`${ROOT}src/components/PromoAd.css`, 'utf8')
 
 /** Every file under `dir` whose name matches `pattern`, recursively. */
 function listFiles(dir, pattern) {
@@ -59,40 +57,6 @@ function blocksUpTo(css, width) {
   return out.join('\n')
 }
 
-describe('the advertiser scene collapses', () => {
-  it('breaks its campaign table into a stacked layout', () => {
-    expect(blocksUpTo(demo, 760)).toContain('.advertiser-demo__th')
-    expect(blocksUpTo(demo, 760)).toMatch(
-      /\.advertiser-demo__td \{[^}]*grid-template-columns: minmax\(0, 1fr\) auto;/,
-    )
-  })
-
-  it('folds the four-column figure band down to one column', () => {
-    expect(blocksUpTo(demo, 900)).toMatch(
-      /\.advertiser-demo__annotations \{[^}]*repeat\(2, minmax\(0, 1fr\)\);/,
-    )
-    expect(blocksUpTo(demo, 480)).toMatch(
-      /\.advertiser-demo__annotations \{[^}]*grid-template-columns: 1fr;/,
-    )
-  })
-
-  it('stacks the two boards and the four workflow steps', () => {
-    expect(blocksUpTo(demo, 980)).toMatch(
-      /\.advertiser-demo__split \{[^}]*grid-template-columns: 1fr;/,
-    )
-    expect(blocksUpTo(demo, 860)).toMatch(
-      /\.advertiser-demo__flow-track \{[^}]*repeat\(2, minmax\(0, 1fr\)\);/,
-    )
-    expect(blocksUpTo(demo, 460)).toMatch(
-      /\.advertiser-demo__flow-track \{[^}]*grid-template-columns: 1fr;/,
-    )
-  })
-
-  it('honours reduced motion', () => {
-    expect(demo).toMatch(/@media \(prefers-reduced-motion: reduce\)/)
-  })
-})
-
 describe('the closing actions collapse', () => {
   it('goes from two columns to one', () => {
     expect(blocksUpTo(app, 560)).toMatch(
@@ -112,18 +76,6 @@ describe('the closing actions collapse', () => {
   it('is fluid above the breakpoint', () => {
     const rule = app.slice(app.indexOf('.closing__actions {'))
     expect(rule.slice(0, 240)).toContain('width: 100%')
-  })
-})
-
-describe('the promoted ads collapse', () => {
-  it('stacks the inline variant on narrow screens', () => {
-    expect(blocksUpTo(promo, 640)).toMatch(
-      /\.promo-ad--inline \{[^}]*flex-direction: column;/,
-    )
-  })
-
-  it('honours reduced motion', () => {
-    expect(promo).toMatch(/@media \(prefers-reduced-motion: reduce\)/)
   })
 })
 

@@ -352,19 +352,19 @@ export default function Landing() {
         <HeartFooter />
         <p className="foot-brand"><span className="brand-cli">CLI</span><span className="brand-revenue">Revenue</span></p>
         <div className="foot-cols">
-          <div>
+          <div className="foot-col">
             <h5>Network</h5>
             <a href="#platform">Platform</a>
             <a href="#trust">Trust</a>
             <a href="#advertisers">Advertisers</a>
           </div>
-          <div>
+          <div className="foot-col">
             <h5>Product</h5>
             <a href="#how">How it works</a>
             <a href="#preview">Preview</a>
             <a href="/developer">Developer docs</a>
           </div>
-          <div>
+          <div className="foot-col">
             <h5>Account</h5>
             <a href="/login">Log in</a>
             <a href="/signup">Sign up</a>

@@ -39,6 +39,11 @@ export default function Footer() {
   return (
     <footer className="sitefoot" aria-label="Site">
       <div className="sitefoot__inner">
+        {/* First cell of the grid, so the heart is the top-left thing a
+            reader meets in the footer rather than a stray control wedged
+            between the legal links and the copyright. */}
+        <HeartFooter />
+
         <div className="sitefoot__brand">
           <span className="sitefoot__name">CLI<em>Revenue</em></span>
         </div>
@@ -48,8 +53,6 @@ export default function Footer() {
           <a className="sitefoot__link" href="/terms">Terms & Conditions</a>
           <a className="sitefoot__link" href="mailto:clirevenue@gmail.com">Contact</a>
         </nav>
-
-        <HeartFooter />
 
         <p className="sitefoot__copy">
           © {year} CLIRevenue. All rights reserved.
