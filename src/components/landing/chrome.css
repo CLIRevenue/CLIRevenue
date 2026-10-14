@@ -104,7 +104,13 @@
   --radius-md: 12px;
   --radius-lg: 18px;
   --gutter: 28px;
-  --measure: 68ch;
+  /* A PAGE CONTAINER width, not a line length. Every consumer is a wrapper
+     (.sdk-page__inner, .advx-page__inner, .scene__inner, .sitefoot__inner,
+     .adv-shell__inner) — none of them is a paragraph. This was 68ch for a
+     while, which resolved to 661px and squeezed the whole developer and
+     advertiser page into a thin column. Prose on these pages is already
+     constrained by its own ch-based rules; the shell is not. */
+  --measure: 1180px;
   --track-head: -0.03em;
   --track-tight: -0.02em;
   --track-label: 0.09em;
