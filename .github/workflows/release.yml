@@ -96,6 +96,7 @@ jobs:
               "dist/errors.d.ts", "dist/errors.js",
               "dist/http.d.ts", "dist/http.js",
               "dist/index.d.ts", "dist/index.js",
+              "dist/keyFormat.d.ts", "dist/keyFormat.js",
               "dist/layout.d.ts", "dist/layout.js",
               "dist/queue.d.ts", "dist/queue.js",
               "dist/viewability.d.ts", "dist/viewability.js",
