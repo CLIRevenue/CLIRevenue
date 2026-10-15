@@ -25,7 +25,11 @@
  *   database dump useless.
  */
 
-import { isWellFormedPublisherKey } from "./publisherAuth.ts";
+import {
+  isCurrentAdsKey,
+  isLegacyAdsKey,
+  isWellFormedPublisherKey,
+} from "./keyFormat.ts";
 
 export type KeyEnvironment = "test" | "live";
 
@@ -84,8 +88,24 @@ export function publisherNameFromEmail(email: string | null | undefined): string
  *      the key" and the answer is no.
  *   2. It is a well-formed publisher key, so a bug that put some other
  *      string in the variable fails closed rather than echoing it.
- *   3. Its environment agrees with the row being reported. A pk_test_ value
- *      must never be presented as the live key or vice versa.
+ *   3. Its environment agrees with the row being reported.
+ *
+ * Condition 3 is asymmetric between the two key formats, and deliberately so.
+ *
+ * A legacy `pk_test_`/`pk_live_` key states its own environment in its prefix,
+ * so that is what gets checked: a live key must never be presented as the test
+ * key, because the prefix is what the developer will copy into config.
+ *
+ * A current `clirevenue_ads_` key carries no environment segment at all -
+ * `generateAdsKey` dropped it, because a key that announces whether it bills
+ * in the first fifteen characters is a worse capability than one that does
+ * not. Nothing is lost by dropping it, though: the environment lives in
+ * `publisher_keys.key_env`, and the only caller of this function already holds
+ * the row it is describing. So for a current key the stronger check is the one
+ * that was always implicit here - the plaintext is only ever offered alongside
+ * the row it was inserted into, and the row is the authority on its env.
+ * A current key is therefore accepted for any concrete env, and refused when
+ * `env` is null, which is the case where no row backs the claim.
  *
  * This is the only place a raw key is ever put into a response body, which is
  * what makes "shown exactly once" a property of the code rather than a
@@ -98,7 +118,15 @@ export function mayRevealPublishableKey(
   if (typeof rawKey !== "string" || rawKey.length === 0) return false;
   if (!isWellFormedPublisherKey(rawKey)) return false;
   if (env !== "test" && env !== "live") return false;
-  return rawKey.startsWith(`pk_${env}_`);
+  // Read as booleans rather than used as control flow. Every one of these
+  // predicates is declared `key is string`, so `if (isCurrentAdsKey(rawKey))`
+  // narrows the *rest of the function* to `never` - there is nothing left that
+  // is not a string - and the next `.startsWith` is a compile error. Binding
+  // the results to consts is the only way to chain them.
+  const current = isCurrentAdsKey(rawKey);
+  const legacy = isLegacyAdsKey(rawKey);
+  if (current) return true;
+  return legacy && rawKey.startsWith(`pk_${env}_`);
 }
 
 /**

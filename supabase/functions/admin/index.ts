@@ -34,6 +34,11 @@ import { serveWithCors } from "../_shared/http.ts";
 import { adminClient, getJwtUser, requireAdmin } from "../_shared/auth.ts";
 import { apiError, isUuid, json, optionsResponse, restPath } from "../_shared/http.ts";
 import { ACTIVATION_BLOCKER_MESSAGES } from "../_shared/campaignRules.ts";
+import {
+  buildAccountKeyResponse,
+  mintAccountKey,
+  readStoredAccountKey,
+} from "../_shared/accountKey.ts";
 
 const admin = adminClient();
 
@@ -45,6 +50,86 @@ const BLOCKER_BATCH = 25;
 const GOVERNANCE_REASON_MAX = 500;
 
 type Actor = { profileId: string; email: string };
+
+/**
+ * Mint an account key for one publisher, or report the one it already has.
+ *
+ * Idempotent in the only sense that matters: this is a credential, and minting
+ * a second one for a publisher that already has one would leave a live staff
+ * capability nobody is tracking - the exact failure mode
+ * `provision_publisher`'s header warns about for publishable keys. So the
+ * write is a guarded UPDATE that only fires when `account_key_hash IS NULL`,
+ * and the response distinguishes "we just created this" from "one already
+ * existed", the same `created` flag `buildProvisioningResponse` uses.
+ *
+ * The guard is an UPDATE rather than a read-then-write because two staff
+ * pressing the button at once would otherwise both read NULL and both insert.
+ * `.is("account_key_hash", null)` is inside the UPDATE, so the second one
+ * simply matches zero rows and reports the winner's row instead of clobbering
+ * it. That also makes the unique index from 000025 a backstop rather than the
+ * primary mechanism.
+ *
+ * The plaintext is returned only on the request that changed the row, and
+ * `buildAccountKeyResponse` enforces that independently of what is passed in.
+ */
+async function mintAccountKeyForPublisher(
+  publisherId: string,
+): Promise<{ accountKey: ReturnType<typeof buildAccountKeyResponse> } | Response> {
+  const { data: existing, error: readError } = await admin
+    .from("publishers")
+    .select("id, account_key_hash, account_key_prefix")
+    .eq("id", publisherId)
+    .limit(1)
+    .maybeSingle();
+
+  if (readError) {
+    console.error("account key: publisher lookup failed:", readError.message);
+    return apiError("INTERNAL_ERROR", "Failed to load the publisher.", 500);
+  }
+  if (!existing) {
+    return apiError("NOT_FOUND", "No publisher with that id.", 404);
+  }
+
+  const stored = readStoredAccountKey(existing);
+
+  if (stored.accountKeyHash) {
+    // Already provisioned. Report the prefix so staff can tell which key is in
+    // play, and say plainly that the plaintext is not recoverable - it was
+    // shown once at creation and only its sha256 was kept.
+    return { accountKey: buildAccountKeyResponse(stored.accountKeyPrefix) };
+  }
+
+  const { rawKey, keyHash, prefix } = await mintAccountKey();
+
+  const { data: updated, error: updateError } = await admin
+    .from("publishers")
+    .update({ account_key_hash: keyHash, account_key_prefix: prefix })
+    .eq("id", publisherId)
+    .is("account_key_hash", null)
+    .select("id, account_key_hash, account_key_prefix")
+    .maybeSingle();
+
+  if (updateError) {
+    console.error("account key: update failed:", updateError.message);
+    return apiError("INTERNAL_ERROR", "Failed to store the account key.", 500);
+  }
+
+  if (!updated) {
+    // The guarded UPDATE matched nothing, so another request won the race
+    // between our read and our write. Its key is the live one; ours was never
+    // stored and must not be shown.
+    const { data: winner } = await admin
+      .from("publishers")
+      .select("id, account_key_hash, account_key_prefix")
+      .eq("id", publisherId)
+      .limit(1)
+      .maybeSingle();
+    const winnerState = readStoredAccountKey(winner);
+    return { accountKey: buildAccountKeyResponse(winnerState.accountKeyPrefix) };
+  }
+
+  return { accountKey: buildAccountKeyResponse(prefix, rawKey) };
+}
 
 function badMethod(req: Request, allowed: string[]): Response | null {
   if (!allowed.includes(req.method)) {
@@ -1559,6 +1644,37 @@ const handler = serveWithCors(async (req) => {
           .limit(200);
         if (error) return apiError("INTERNAL_ERROR", "Failed to load publishers.", 500);
         return json({ publishers: data ?? [] });
+      }
+
+      case "account-keys": {
+        // The only place an account key is ever minted.
+        //
+        // Reaching this branch already means `requireAdmin` resolved
+        // profiles.role = 'admin' against the verified JWT, so the audience is
+        // already restricted to staff. That check is the reason this route
+        // lives here rather than in provision_publisher: a developer could
+        // call the latter, and handing them their own staff capability would
+        // make "internal" a property of which endpoint you happened to hit.
+        if (req.method !== "POST") {
+          return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+        }
+
+        const body = await req.text();
+        let parsed: { publisher_id?: unknown };
+        try {
+          parsed = body ? JSON.parse(body) : {};
+        } catch {
+          return apiError("INVALID_JSON", "Request body must be valid JSON.", 400);
+        }
+
+        const publisherId = parsed.publisher_id;
+        if (typeof publisherId !== "string" || !isUuid(publisherId)) {
+          return apiError("INVALID_ID", "publisher_id must be a UUID.", 400);
+        }
+
+        const result = await mintAccountKeyForPublisher(publisherId);
+        if (result instanceof Response) return result;
+        return json(result);
       }
 
       case "placements": {

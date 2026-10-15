@@ -42,7 +42,7 @@ import {
   serveWithCors,
 } from "../_shared/http.ts";
 import {
-  generatePublisherKey,
+  generateAdsKey,
   hashPublisherKey,
   keyPrefix,
 } from "../_shared/publisherAuth.ts";
@@ -203,7 +203,7 @@ async function createKey(
   publisherId: string,
   label: string | null,
 ): Promise<{ row: KeyRow; rawKey: string }> {
-  const rawKey = generatePublisherKey(KEY_ENV);
+  const rawKey = generateAdsKey();
   const keyHash = await hashPublisherKey(rawKey);
 
   const { data, error } = await admin

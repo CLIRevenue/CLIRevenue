@@ -105,6 +105,33 @@ describe('init', () => {
     expect(() => init(KEY)).not.toThrow()
   })
 
+  it('accepts a current-format ads key', () => {
+    expect(() => init(`clirevenue_ads_${'a'.repeat(30)}`)).not.toThrow()
+  })
+
+  it('accepts every legacy key still deployed in the wild', () => {
+    expect(() => init(`pk_live_${'a'.repeat(32)}`)).not.toThrow()
+    // base64url characters the old minter emitted: '-' and '_' in the body.
+    expect(() => init(`pk_live_${'-_'.repeat(16)}`)).not.toThrow()
+  })
+
+  it.each([
+    ['ads key one char short', `clirevenue_ads_${'a'.repeat(29)}`],
+    ['ads key one char long', `clirevenue_ads_${'a'.repeat(31)}`],
+    ['ads key wrong namespace', `clirevenue_ads__${'a'.repeat(30)}`],
+    ['bare account key', `clirevenue_account_${'a'.repeat(25)}`],
+    ['ads key with a 43 character body', `clirevenue_ads_${'a'.repeat(43)}`],
+  ])('rejects an %s', (_label, value) => {
+    expect(() => init(value)).toThrow(CLIRevenueConfigError)
+  })
+
+  it('says which paste is wrong in a rejected-key message', () => {
+    // The whole point of the format check is that a host can act on it. An
+    // account key pasted into init() is a realistic mistake -- it is issued by
+    // the same signup flow -- so the message has to rule it out explicitly.
+    expect(() => init(`clirevenue_account_${'a'.repeat(25)}`)).toThrow(/clirevenue_account_/)
+  })
+
   it('throws before making any network call', () => {
     const fetchImpl = vi.fn()
     expect(() => init('nope', { fetchImpl })).toThrow(CLIRevenueConfigError)
@@ -616,6 +643,38 @@ describe('impression queueing', () => {
     const fetchImpl = stubFetch([jsonResponse(400, { error: { message: 'bad' } })])
     const client = makeClient(fetchImpl, { storage })
     await expect(client.flush()).resolves.toEqual({ sent: 0, failed: 1 })
+    // drain() emptied the queue before the request went out, so a failure that
+    // is not put back is lost for good. A 4xx can be a mid-deploy rejection;
+    // the idempotency key keeps a later retry the same logical event.
+    expect(client.pendingEvents).toBe(1)
+    expect(storage.getItem('clirevenue:pending-events')).toContain('k1')
+  })
+
+  it('re-queues a failed flush with its original queuedAt so the cap still ages it out', async () => {
+    const storage = memoryStorage()
+    storage.setItem(
+      'clirevenue:pending-events',
+      JSON.stringify([{ path: '/ads/impression', body: {}, idempotencyKey: 'k1', queuedAt: 4242 }]),
+    )
+    const client = makeClient(stubFetch([jsonResponse(400, { error: { message: 'bad' } })]), {
+      storage,
+    })
+    await client.flush()
+    const requeued = JSON.parse(storage.getItem('clirevenue:pending-events')!)
+    expect(requeued).toHaveLength(1)
+    expect(requeued[0].queuedAt).toBe(4242) // not reset to Date.now()
+  })
+
+  it('does not re-queue an event the server accepted', async () => {
+    const storage = memoryStorage()
+    storage.setItem(
+      'clirevenue:pending-events',
+      JSON.stringify([{ path: '/ads/impression', body: {}, idempotencyKey: 'k1', queuedAt: 1 }]),
+    )
+    const client = makeClient(stubFetch([jsonResponse(200, {})]), { storage })
+    await expect(client.flush()).resolves.toEqual({ sent: 1, failed: 0 })
+    expect(client.pendingEvents).toBe(0)
+    expect(storage.getItem('clirevenue:pending-events')).toBeNull()
   })
 })
 
@@ -633,7 +692,46 @@ describe('placement cache', () => {
     expect(cache.find((v) => v !== null && v.requestId === 'r1')).toEqual({ requestId: 'r1' })
     now = CACHE_TTL_MS
     expect(cache.get('a')).toBeUndefined()
-    expect(cache.size).toBe(1) // lazily pruned on read
+    // 'b' was stored at now = 0 too, so it has expired as well. size() counts
+    // live entries, not raw Map entries -- it must not report a stale 'b'.
+    expect(cache.size).toBe(0)
+  })
+
+  it('size() and find() count and return live entries only', () => {
+    let now = 0
+    const cache = createPlacementCache({ now: () => now })
+    cache.set('old', { requestId: 'r-old' })
+    now = CACHE_TTL_MS
+    cache.set('fresh', { requestId: 'r-fresh' })
+    expect(cache.size).toBe(1)
+    expect(cache.find((v) => v !== null && v.requestId === 'r-old')).toBeUndefined()
+    expect(cache.find((v) => v !== null && v.requestId === 'r-fresh')).toEqual({
+      requestId: 'r-fresh',
+    })
+  })
+
+  it('honours the ttl in find(), not only in get()', () => {
+    let now = 0
+    const cache = createPlacementCache({ now: () => now })
+    cache.set('a', { requestId: 'r1' })
+    now = CACHE_TTL_MS
+    // No get() has run, so nothing has pruned lazily. find() is the reverse
+    // lookup that hands out an impressionToken to trackConversion, so it must
+    // enforce the same expiry rather than trusting a previous read.
+    expect(cache.find((v) => v !== null && v.requestId === 'r1')).toBeUndefined()
+    expect(cache.size).toBe(0)
+  })
+
+  it('prune() drops only the expired entries', () => {
+    let now = 0
+    const cache = createPlacementCache({ now: () => now })
+    cache.set('old', { requestId: 'r-old' })
+    now = CACHE_TTL_MS / 2
+    cache.set('new', { requestId: 'r-new' })
+    now = CACHE_TTL_MS
+    expect(cache.prune()).toBe(1)
+    expect(cache.size).toBe(1)
+    expect(cache.find((v) => v !== null && v.requestId === 'r-new')).toEqual({ requestId: 'r-new' })
   })
 })
 
@@ -835,10 +933,55 @@ describe('destroy', () => {
     const client = init(KEY, { baseUrl: BASE, fetchImpl, storage })
     await client.flush()
     expect(fetchImpl.calls).toHaveLength(1)
+    // stubFetch([]) rejects with a network error, so the flush sent nothing
+    // and the event was put back. destroy() removes the online listener, so a
+    // later reconnect cannot drain it -- it is still there for whoever reads
+    // the same sessionStorage.
+    expect(client.pendingEvents).toBe(1)
 
     // Re-queue and destroy: a later `online` must not revive this client.
     client.destroy()
-    expect(client.pendingEvents).toBe(0)
+    expect(client.pendingEvents).toBe(1) // destroy detaches; it does not discard
+  })
+
+  it('does not flush after destroy', async () => {
+    const storage = memoryStorage()
+    storage.setItem(
+      'clirevenue:pending-events',
+      JSON.stringify([{ path: '/ads/impression', body: {}, idempotencyKey: 'k1', queuedAt: 1 }]),
+    )
+    const fetchImpl = stubFetch([jsonResponse(200, {})])
+    const originalAdd = globalThis.addEventListener
+    const originalRemove = globalThis.removeEventListener
+    const g = globalThis as unknown as {
+      addEventListener: (t: string, fn: () => void) => void
+      removeEventListener: (t: string, fn: () => void) => void
+    }
+    // A real registry, not a no-op remove: the whole point is that destroy()
+    // takes the handler OUT of it, so the stub has to honour removal.
+    const registry = new Set<() => void>()
+    const dispatchOnline = () => registry.forEach((fn) => fn())
+    try {
+      g.addEventListener = (t, fn) => {
+        if (t === 'online') registry.add(fn)
+      }
+      g.removeEventListener = (t, fn) => {
+        if (t === 'online') registry.delete(fn)
+      }
+      const client = init(KEY, { baseUrl: BASE, fetchImpl, storage })
+      expect(registry.size).toBe(1)
+
+      client.destroy()
+      expect(registry.size).toBe(0)
+
+      dispatchOnline()
+      await Promise.resolve()
+      expect(fetchImpl.calls).toHaveLength(0)
+      expect(client.pendingEvents).toBe(1) // untouched
+    } finally {
+      g.addEventListener = originalAdd
+      g.removeEventListener = originalRemove
+    }
   })
 })
 

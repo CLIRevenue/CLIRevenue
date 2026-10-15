@@ -137,7 +137,26 @@ export async function setup(options: SetupOptions = {}): Promise<SetupOutcome> {
 
   /* Never echo the credential, only enough of it to confirm which key was used. */
   write(`${success(`Key verified (${maskKey(rawKey)})`)}\n`);
-  write(`${success(`Publisher identified: ${verified.publisherId}`)}\n`);
+
+  /*
+   * The name is the point of verification. A 200 on its own proves the string
+   * is a live capability; the name proves it resolves to a person, which is
+   * what a developer pasting a key into a setup prompt actually needs to see.
+   * It is printed here, before any file is written, so that a key pasted into
+   * the wrong project is caught while there is still nothing to undo.
+   *
+   * The `||` chain rather than `??`: the two fields are strings that can be
+   * empty, and a banner reading "Welcome! " is worse than one reading
+   * "Welcome! CLIRevenue publisher".
+   */
+  const welcomeName = verified.fullName || verified.publisherName || 'CLIRevenue publisher';
+  write(`\n${banner(`Welcome! ${welcomeName}`)}\n`);
+  write(`${info(`Publisher: ${verified.publisherId}`)}\n`);
+  if (!verified.fullName) {
+    write(
+      `${colors.dim('  Set a display name in your dashboard and it will appear here next time.')}\n`,
+    );
+  }
 
   /*
    * Step: which coding CLIs does this project serve?
@@ -419,7 +438,7 @@ async function promptForKey(): Promise<string> {
     {
       type: 'input',
       name: 'publisherKey',
-      message: 'CLIRevenue publishable key (pk_live_… or pk_test_…)',
+      message: 'CLIRevenue publishable key (clirevenue_ads_…)',
       validate: (value: string) =>
         KEY_PATTERN.test(value.trim())
           ? true

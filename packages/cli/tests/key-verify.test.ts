@@ -9,9 +9,88 @@ describe('verifyKey', () => {
   });
 
   it('rejects malformed keys', async () => {
-    await expect(verifyKey('not-a-key')).rejects.toThrow('Key must match pk_test_... or pk_live_...');
+    await expect(verifyKey('not-a-key')).rejects.toThrow('clirevenue_ads_');
     await expect(verifyKey('')).rejects.toThrow();
     await expect(verifyKey('pk_test_short')).rejects.toThrow();
+  });
+
+  it('names the account-key mistake instead of calling the key revoked', async () => {
+    /* The reason this message exists: setup and staff provisioning share one
+       signup form, so an account key reaching the setup prompt is a real
+       mistake. Reporting it as an invalid key sends the user to the dashboard
+       looking for a key they were never issued. */
+    const accountKey = `clirevenue_account_${'a'.repeat(25)}`;
+    const promise = verifyKey(accountKey);
+    await expect(promise).rejects.toThrow(/account key/i);
+    await expect(promise).rejects.not.toThrow(/revoked/i);
+    await expect(promise).rejects.not.toThrow(/clirevenue_ads_ followed by/);
+  });
+
+  it('accepts a current clirevenue_ads_ key', async () => {
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        publisherId: 'pub-new',
+        publisherName: 'Untitled publisher',
+        fullName: 'Ada Lovelace',
+        adsSeen: 12,
+        earningsMilliCents: 450,
+        slotCount: 2,
+        placements: [],
+      }),
+    };
+    vi.stubGlobal('fetch', async () => mockResponse as any);
+
+    const result = await verifyKey(`clirevenue_ads_${'A1b2C3d4E5f6G7h8I9j0KlMnOpQrSt'}`);
+    expect(result.publisherId).toBe('pub-new');
+    expect(result.fullName).toBe('Ada Lovelace');
+    expect(result.adsSeen).toBe(12);
+    expect(result.earningsMilliCents).toBe(450);
+    expect(result.slotCount).toBe(2);
+  });
+
+  it('falls back when the backend predates the display fields', async () => {
+    /* The CLI is installed from npm and the API is deployed independently, so
+       an older backend answering the current CLI is expected, not exceptional.
+       Setup must still reach the welcome banner against it. */
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      json: async () => ({ publisherId: 'pub-old', placements: [] }),
+    };
+    vi.stubGlobal('fetch', async () => mockResponse as any);
+
+    const result = await verifyKey('pk_test_abcdefghijklmnopqrstuvwxyz0123456789');
+    expect(result.fullName).toBeNull();
+    expect(result.publisherName).toBe('CLIRevenue publisher');
+    expect(result.adsSeen).toBe(0);
+    expect(result.earningsMilliCents).toBe(0);
+    expect(result.slotCount).toBe(0);
+  });
+
+  it.each([
+    ['a negative count', { adsSeen: -3 }],
+    ['a NaN count', { adsSeen: Number.NaN }],
+    ['a string count', { adsSeen: 'many' }],
+  ])('never reports %s as a real number', async (_label, overrides) => {
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        publisherId: 'pub-x',
+        publisherName: 'Acme',
+        fullName: 'Grace',
+        ...overrides,
+        placements: [],
+      }),
+    };
+    vi.stubGlobal('fetch', async () => mockResponse as any);
+
+    const result = await verifyKey('pk_test_abcdefghijklmnopqrstuvwxyz0123456789');
+    expect(result.adsSeen).toBe(0);
+    /* A broken counter must not cost the user their name. */
+    expect(result.fullName).toBe('Grace');
   });
 
   it('accepts pk_test_... keys', async () => {

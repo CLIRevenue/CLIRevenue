@@ -19,8 +19,14 @@
 import { CLIRevenueConfigError, CLIRevenueHttpError } from "./errors.ts";
 import { requestJson, type FetchLike } from "./http.ts";
 import { createPlacementCache, CACHE_TTL_MS } from "./cache.ts";
-import { createEventQueue, type EventQueue, type StorageLike } from "./queue.ts";
+import {
+  createEventQueue,
+  type EventQueue,
+  type QueuedEvent,
+  type StorageLike,
+} from "./queue.ts";
 import { createViewabilityGate, sendBeacon as defaultSendBeacon } from "./viewability.ts";
+import { isWellFormedPublisherKey } from "./keyFormat.ts";
 import {
   AD_ANCHORS,
   AD_SIZE_LIMITS,
@@ -191,8 +197,13 @@ export type TelemetryEventName = "session_started" | "page_viewed" | "ad_rendere
 export const SDK_VERSION_HEADER = "X-CLIRevenue-SDK-Version";
 export const DEFAULT_BASE_URL = "https://api.clirevenue.in";
 
-/** A key is a capability. Reject an obviously wrong one before any network. */
-const KEY_RE = /^pk_(live|test)_[A-Za-z0-9_-]{32,}$/;
+/**
+ * A key is a capability. Reject an obviously wrong one before any network.
+ *
+ * `isWellFormedPublisherKey` accepts the current `clirevenue_ads_` format and every
+ * legacy `pk_live_` / `pk_test_` key still deployed in the wild. See
+ * `./keyFormat.ts` for why the legacy branch is permanent.
+ */
 
 /** The only creative kinds this SDK knows how to place. */
 export type AdCreativeType = "image" | "video";
@@ -292,7 +303,16 @@ function randomId(): string {
   const c = globalThis.crypto;
   if (c && typeof c.randomUUID === "function") return c.randomUUID();
   const bytes = new Uint8Array(16);
-  c.getRandomValues(bytes);
+  if (c && typeof c.getRandomValues === "function") {
+    c.getRandomValues(bytes);
+  } else {
+    // No Web Crypto at all: a very old host, or a non-browser runtime. These
+    // bytes only have to be unique and canonical UUID text for the gateway's
+    // uuid column -- they are never a secret and never a security token.
+    for (let i = 0; i < bytes.length; i++) {
+      bytes[i] = Math.floor(Math.random() * 256);
+    }
+  }
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
   const hex = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -340,9 +360,12 @@ export class CLIRevenue {
   private readonly inFlight = new Map<string, Promise<ServedAd | null>>();
 
   constructor(publisherKey: string, options: CLIRevenueOptions = {}) {
-    if (typeof publisherKey !== "string" || !KEY_RE.test(publisherKey)) {
+    if (!isWellFormedPublisherKey(publisherKey)) {
       throw new CLIRevenueConfigError(
-        "init(publisherKey) requires a publishable key of the form pk_live_... or pk_test_...",
+        "init(publisherKey) requires a publishable key of the form clirevenue_ads_... " +
+          "(or a legacy pk_live_... / pk_test_... key). Check for a truncated or " +
+          "mistyped paste before anything else -- an account key (clirevenue_account_...) " +
+          "is not a publishable key and will never be accepted here.",
       );
     }
     this.publisherKey = publisherKey;
@@ -854,11 +877,29 @@ export class CLIRevenue {
     target.call(globalThis, "online", this.onlineHandler);
   }
 
-  /** Attempt to deliver every queued event. Safe to call at any time. */
+  /**
+   * Attempt to deliver every queued event. Safe to call at any time.
+   *
+   * `drain()` empties the queue before the first request goes out, so an event
+   * that fails here is already gone from storage. Counting it and moving on
+   * would lose it permanently -- and the queue exists precisely to cover a
+   * flaky reconnect, so the moment it is most needed is the moment it is most
+   * likely to lose events. Anything that does not go out is put back.
+   *
+   * Re-queued with its ORIGINAL `queuedAt`, not "now": the cap drops the oldest
+   * entry when full, so a clock reset would otherwise let a repeatedly-failing
+   * event masquerade as fresh and displace a healthy one.
+   *
+   * A 4xx is re-queued too. The request was correct when it was made and the
+   * server may be mid-deploy; the idempotency key makes a later retry the same
+   * logical event rather than a second one, and the 100-entry cap bounds how
+   * long a permanently-rejected event can sit there.
+   */
   async flush(): Promise<{ sent: number; failed: number }> {
     const events = this.queue.drain();
     let sent = 0;
     let failed = 0;
+    const undelivered: QueuedEvent[] = [];
     for (const event of events) {
       try {
         await requestJson({
@@ -876,8 +917,10 @@ export class CLIRevenue {
         sent++;
       } catch {
         failed++;
+        undelivered.push(event);
       }
     }
+    for (const event of undelivered) this.queue.enqueue(event);
     return { sent, failed };
   }
 

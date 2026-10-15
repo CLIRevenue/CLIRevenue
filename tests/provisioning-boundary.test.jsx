@@ -82,7 +82,12 @@ describe('the provisioning function mints exactly one key', () => {
     // The early return for an existing slot must come before the generator
     // is ever called, otherwise a refresh would mint a second key.
     const guard = src.indexOf('!slot.needs_key')
-    const mint = src.indexOf('generatePublisherKey(')
+    // `generateAdsKey`, not the legacy `generatePublisherKey`: the minting
+    // function was renamed when the key format changed to `clirevenue_ads_`,
+    // so the legacy name no longer appears here at all. Keep this pointed at
+    // the name the source actually calls -- a loose "some generate*( call"
+    // match would also hit a comment and stop proving anything.
+    const mint = src.indexOf('generateAdsKey(')
     expect(guard).toBeGreaterThan(-1)
     expect(mint).toBeGreaterThan(-1)
     expect(guard).toBeLessThan(mint)

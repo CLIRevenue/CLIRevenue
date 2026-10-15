@@ -8,6 +8,14 @@
  *                          call `verifyKey` makes during `clirevenue setup`)
  *   POST /cli/placements  create one placement for that publisher
  *
+ * The GET response carries more than the placements list, because it is the
+ * only round trip `clirevenue setup` and the `clirevenue` overlay both make
+ * before they have any local state: the publisher's display name and their two
+ * counters travel with it rather than costing a second authenticated call
+ * against a tighter rate limit. Everything added to this response is a
+ * non-secret display string or a counter, resolved from the publisher id that
+ * `authenticatePublisher` just proved - never from the request.
+ *
  * The create route exists because the placement editor needs a
  * `placement_key` that exists on the publisher's account before it can fetch
  * a creative, and nothing outside the admin dashboard could create one. The
@@ -23,6 +31,7 @@ import { json, apiError, optionsResponse, restPath, serveWithCors, readJsonObjec
 import { adminClient } from "../_shared/auth.ts";
 import { authenticatePublisher, createRateLimiter } from "../_shared/publisherAuth.ts";
 import { handleCreatePlacement, type PlacementRecord } from "../_shared/placementCreate.ts";
+import { fetchPublisherSummary } from "../_shared/publisherSummary.ts";
 
 /**
  * Write budget for the create route.
@@ -131,9 +140,32 @@ const handler = serveWithCors(async (req) => {
       return apiError("INTERNAL_ERROR", "Could not load placements.", 500, {}, req);
     }
 
+    // The identity and the counters the `clirevenue` overlay draws, fetched
+    // only after the key has already resolved to a publisher. That order is
+    // the security property: the summary function takes a publisher_id and
+    // trusts it completely, so every caller of it has to have got that id from
+    // `authenticatePublisher` above and from nowhere else.
+    //
+    // It degrades rather than failing. On a database that has not run migration
+    // 000025 the RPC does not exist, and this call must still return 200 with
+    // an empty name and zeroed counters - otherwise the one thing a developer
+    // needs in order to finish `clirevenue setup` is gated behind a migration
+    // landing first. See publisherSummary.ts for the full reasoning.
+    const summary = await fetchPublisherSummary(admin, auth.identity.publisherId);
+
     return json(
       {
         publisherId: auth.identity.publisherId,
+        // `publisherName` is the publisher record; `fullName` is the person's
+        // name from their profile, which is what "Welcome! <name>" should use.
+        // Both are non-secret display strings, and both are optional: a
+        // publisher created by an operator rather than by signing up has no
+        // profile name to show.
+        publisherName: summary.publisherName,
+        fullName: summary.fullName,
+        adsSeen: summary.adsSeen,
+        earningsMilliCents: summary.earningsMilliCents,
+        slotCount: summary.slotCount,
         placements: ((placements ?? []) as PlacementRow[]).map(toRecord),
       },
       200,

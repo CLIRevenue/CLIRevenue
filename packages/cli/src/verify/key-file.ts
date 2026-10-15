@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { PUBLISHER_KEY_RE } from './keyFormat.js';
 
 /**
  * Where the publishable key lives on disk, and how to read it back.
@@ -23,12 +24,17 @@ export const PUBLISHABLE_KEY_VAR_PLAIN = 'CLIREVENUE_PUBLISHABLE_KEY';
 /**
  * The shape of a CLIRevenue publishable key.
  *
- * Deliberately the same pattern `verify/key.ts` uses, so a value we happily
- * read out of a file is a value the API will actually accept. Reading a
- * malformed value would only move the failure later, to a confusing
+ * Deliberately the same pattern `verify/key.ts` applies, so a value we
+ * happily read out of a file is a value the API will actually accept. Reading
+ * a malformed value would only move the failure later, to a confusing
  * "Invalid or revoked publisher key" from the API.
+ *
+ * It is imported rather than written out here on purpose. A local copy of the
+ * pattern is a copy that can fall behind the format: when this file still
+ * matched only `pk_live_`/`pk_test_`, every current key became unreadable and
+ * `setup` re-prompted for a key it had itself written moments earlier.
  */
-export const PUBLISHABLE_KEY_PATTERN = /^pk_(live|test)_[A-Za-z0-9_-]{32,}$/;
+export const PUBLISHABLE_KEY_PATTERN = PUBLISHER_KEY_RE;
 
 /**
  * Reads the publishable key a previous `setup` wrote into `<root>/.env.local`.

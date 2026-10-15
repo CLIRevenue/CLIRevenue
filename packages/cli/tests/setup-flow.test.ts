@@ -61,6 +61,11 @@ function recorder(): { lines: string[]; text: () => string; write: (m: string) =
 /** Injected so setup runs without touching the network. */
 const fakeVerify = async (rawKey: string): Promise<VerifiedKey> => ({
   publisherId: 'pub_123',
+  fullName: 'Ada Lovelace',
+  publisherName: 'Untitled publisher',
+  adsSeen: 0,
+  earningsMilliCents: 0,
+  slotCount: 0,
   placements: [
     { id: 'p1', key: 'home-top', name: 'Home top', enabled: true, allowedAudienceId: null },
     { id: 'p2', key: 'sidebar', name: 'Sidebar', enabled: true, allowedAudienceId: null },
@@ -274,6 +279,44 @@ describe('setup: credentials stay protected', () => {
     expect(out.text()).not.toContain(KEY);
     /* Long keys are masked to their first and last four characters. */
     expect(out.text()).toContain('Key verified (pk_test_••••2345)');
+  });
+
+  it('greets the publisher by the name the backend resolved', async () => {
+    /* The whole point of the verification round trip: a 200 proves the string
+       is a live capability, the name proves it belongs to a person. Printing
+       the UUID instead is what this replaced. */
+    const root = viteProject();
+    writeFileSync(join(root, '.env.local'), `VITE_CLIREVENUE_PUBLISHABLE_KEY=${KEY}\n`);
+    const out = recorder();
+
+    await setup(options(root, out.write));
+
+    expect(out.text()).toContain('Welcome! Ada Lovelace');
+    expect(out.text()).toContain('Publisher: pub_123');
+  });
+
+  it('greets an unnamed account by its publisher name, not by nothing', async () => {
+    /* 000016 auto-creates publishers called "Untitled publisher", so a
+       brand-new account genuinely has no full name. The banner must still
+       carry something a person can recognise. */
+    const root = viteProject();
+    writeFileSync(join(root, '.env.local'), `VITE_CLIREVENUE_PUBLISHABLE_KEY=${KEY}\n`);
+    const out = recorder();
+
+    await setup({
+      ...options(root, out.write),
+      verify: async (rawKey: string) => ({
+        ...(await fakeVerify(rawKey)),
+        fullName: null,
+        publisherName: 'Acme Media',
+      }),
+    });
+
+    expect(out.text()).toContain('Welcome! Acme Media');
+    /* The failure this guards is a banner whose name is empty or `undefined`,
+       which `banner()` renders as the title followed straight by its rule. */
+    expect(out.text()).not.toMatch(/Welcome!\s*\n/);
+    expect(out.text()).not.toContain('Welcome! undefined');
   });
 
   it('keeps the key out of the committed config file', async () => {

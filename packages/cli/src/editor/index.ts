@@ -151,6 +151,16 @@ export interface EnsurePlacementOptions {
   placementKey?: string;
   /** Capability-registry id recorded when an integration is created here. */
   target?: string;
+  /**
+   * Skip the "every slotless integration gets one default-sized slot" step.
+   *
+   * The browser editor needs it: it opens showing geometry and the user drags
+   * from there. The `/clirevenue` overlay does not -- the user draws the slot
+   * themselves, so seeding a default 320x100 one first would leave them with
+   * two ads, one they placed and one they never asked for. Defaults to on, so
+   * the editor's behaviour is unchanged.
+   */
+  seedSlot?: boolean;
 }
 
 /**
@@ -169,10 +179,13 @@ export interface EnsurePlacementOptions {
 export async function ensureIntegrations(
   options: EnsurePlacementOptions,
 ): Promise<{ integrations: EditorIntegration[]; created: CreatedPlacement | null }> {
+  const seed = options.seedSlot !== false;
+
   if (options.placements.length > 0) {
     const integrations = toEditorIntegrations(options.projectRoot, options.placements);
     for (const integration of integrations) {
       if (integration.slots.length > 0) continue;
+      if (!seed) break;
       /* An integration exists but has nowhere to put its ad. Give it exactly
          one slot rather than failing: a project configured for two CLIs but
          positioned for none is a normal halfway state, not an error. */
@@ -217,7 +230,7 @@ export async function ensureIntegrations(
     label: created.name ?? created.key,
     placementKey: created.key,
   });
-  addSlot(options.projectRoot, created.key, { label: 'Ad 1' });
+  if (seed) addSlot(options.projectRoot, created.key, { label: 'Ad 1' });
 
   return {
     integrations: [
@@ -226,16 +239,21 @@ export async function ensureIntegrations(
         label: created.name ?? created.key,
         target: options.target ?? LEGACY_TARGET,
         placementKey: created.key,
-        slots: [
-          {
-            integrationId: created.key,
-            slotId: 'slot-1',
-            label: 'Ad 1',
-            placementKey: created.key,
-            layout: loadLayout(options.projectRoot, created.key),
-            enabled: true,
-          },
-        ],
+        /* Withhold the synthetic slot when none was seeded: reporting one that
+           is not in clirevenue.config.json would make the caller count an ad
+           the runtime will never render. */
+        slots: seed
+          ? [
+              {
+                integrationId: created.key,
+                slotId: 'slot-1',
+                label: 'Ad 1',
+                placementKey: created.key,
+                layout: loadLayout(options.projectRoot, created.key),
+                enabled: true,
+              },
+            ]
+          : [],
       },
     ],
     created,

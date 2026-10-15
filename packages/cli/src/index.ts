@@ -3,6 +3,8 @@ import { existsSync } from 'node:fs';
 import { Command } from 'commander';
 import { setup, SetupError } from './commands/setup.js';
 import { editor, EditorError } from './editor/index.js';
+import { overlay } from './commands/overlay.js';
+import { OverlayError } from './tui/overlay.js';
 import { install, remove, status } from './keybindings/manage.js';
 import { KEYBINDING_TARGETS, findTarget, detectTargets } from './keybindings/targets.js';
 import {
@@ -63,6 +65,28 @@ program
   .option('-i, --integration <id>', 'Open a specific CLI integration instead of the default.')
   .action(async (options: { placement?: string; integration?: string }) => {
     await editor({ placementKey: options.placement, integrationId: options.integration });
+  });
+
+/* ------------------------------------------------------------------ *
+ * The overlay
+ * ------------------------------------------------------------------ */
+
+/**
+ * `clirevenue overlay` — the terminal-native flow.
+ *
+ * No browser: the panel is drawn in the terminal and the slot is placed by
+ * dragging with the mouse, which reaches the process through SGR mouse
+ * reporting. The command is also reachable as `clirevenue /clirevenue`, since
+ * that is how it is described to developers on the dashboard, and `clirevenue`
+ * is what they will type.
+ */
+program
+  .command('overlay')
+  .alias('/clirevenue')
+  .description('Show your publisher panel and add an ad slot by dragging in this terminal.')
+  .option('-i, --integration <id>', 'Add the slot to a specific CLI integration instead of the default.')
+  .action(async (options: { integration?: string }) => {
+    await overlay({ integrationId: options.integration });
   });
 
 /* ------------------------------------------------------------------ *
@@ -368,7 +392,11 @@ program
     const message =
       error instanceof Error ? error.message : 'CLIRevenue setup failed for an unknown reason.';
     const hint =
-      error instanceof SetupError || error instanceof EditorError ? error.hint : undefined;
+      error instanceof SetupError ||
+      error instanceof EditorError ||
+      error instanceof OverlayError
+        ? error.hint
+        : undefined;
 
     process.stderr.write(`${errorLine(message)}\n`);
     if (hint) {

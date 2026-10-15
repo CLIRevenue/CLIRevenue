@@ -20,6 +20,8 @@ import {
 
 const TEST_KEY = `pk_test_${"a".repeat(43)}`;
 const LIVE_KEY = `pk_live_${"b".repeat(43)}`;
+/** The format `provision_publisher` and `publisher_keys` actually mint now. */
+const CURRENT_KEY = `clirevenue_ads_${"c".repeat(30)}`;
 
 const slot = (over: Partial<ProvisioningSlot> = {}): ProvisioningSlot => ({
   publisher_id: "11111111-1111-4111-8111-111111111111",
@@ -59,9 +61,30 @@ Deno.test("mayRevealPublishableKey", async (t) => {
     assert(mayRevealPublishableKey(LIVE_KEY, "live"));
   });
 
+  await t.step("allows a current-format key, which states no environment", () => {
+    // `clirevenue_ads_` keys deliberately dropped the live/test segment, so
+    // there is no prefix to cross-check against the row. The row is the
+    // authority: buildProvisioningResponse is only ever called with the slot
+    // the plaintext was just inserted into. Rejecting these would mean every
+    // key minted since the format change was silently discarded at the one
+    // moment it could have been shown - this assertion exists because that
+    // failure mode is invisible from the provisioning code that triggers it.
+    assert(mayRevealPublishableKey(CURRENT_KEY, "test"));
+    assert(mayRevealPublishableKey(CURRENT_KEY, "live"));
+  });
+
+  await t.step("refuses a current-format key when no row backs the env claim", () => {
+    // env === null is the case where nothing proves the key is the one the
+    // response describes. The gate stays shut for both formats.
+    assertEquals(mayRevealPublishableKey(CURRENT_KEY, null), false);
+    assertEquals(mayRevealPublishableKey(TEST_KEY, null), false);
+  });
+
   await t.step("refuses a key from the wrong environment", () => {
     // A live key must never be shown in a slot the caller thinks is test,
     // and vice versa: the label is what a developer will copy into config.
+    // Only the legacy format is checked this way, because only the legacy
+    // format says which environment it is.
     assertEquals(mayRevealPublishableKey(LIVE_KEY, "test"), false);
     assertEquals(mayRevealPublishableKey(TEST_KEY, "live"), false);
   });
@@ -78,6 +101,16 @@ Deno.test("mayRevealPublishableKey", async (t) => {
 });
 
 Deno.test("buildProvisioningResponse", async (t) => {
+  await t.step("carries a current-format key through the whole response", () => {
+    const out = buildProvisioningResponse(
+      slot({ key_prefix: CURRENT_KEY.slice(0, 24), key_label: "signup" }),
+      CURRENT_KEY,
+    );
+    assertEquals(out.key.publishableKey, CURRENT_KEY);
+    assertEquals(out.key.created, true);
+    assertEquals(out.key.prefix, CURRENT_KEY.slice(0, 24));
+  });
+
   await t.step("carries the key exactly once, when the caller minted it", () => {
     const out = buildProvisioningResponse(slot(), TEST_KEY);
     assertEquals(out.key.publishableKey, TEST_KEY);

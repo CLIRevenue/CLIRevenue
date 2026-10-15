@@ -21,11 +21,13 @@ export function createPlacementCache<T>({
 } = {}) {
   const entries = new Map<string, Entry<T>>();
 
+  const isExpired = (entry: Entry<T>): boolean => now() - entry.storedAt >= ttlMs;
+
   return {
     get(key: string): T | undefined {
       const entry = entries.get(key);
       if (!entry) return undefined;
-      if (now() - entry.storedAt >= ttlMs) {
+      if (isExpired(entry)) {
         entries.delete(key);
         return undefined;
       }
@@ -34,9 +36,22 @@ export function createPlacementCache<T>({
     set(key: string, value: T): void {
       entries.set(key, { value, storedAt: now() });
     },
-    /** Reverse lookup by value, e.g. requestId -> served ad for trackConversion. */
+    /**
+     * Reverse lookup by value, e.g. requestId -> served ad for trackConversion.
+     *
+     * Expired entries are swept here for the same reason `get()` skips them:
+     * this is the lookup that hands out an `impressionToken` to the conversion
+     * endpoint, so honouring the TTL is not cosmetic -- without it an entry
+     * that nobody has `get()`-ed since it aged out stays reachable forever, and
+     * `size` reports it as live. Sweeping while iterating is safe here because
+     * `Map` iterators tolerate deletion of the entry being visited.
+     */
     find(predicate: (value: T) => boolean): T | undefined {
-      for (const entry of entries.values()) {
+      for (const [key, entry] of entries) {
+        if (isExpired(entry)) {
+          entries.delete(key);
+          continue;
+        }
         if (predicate(entry.value)) return entry.value;
       }
       return undefined;
@@ -44,10 +59,23 @@ export function createPlacementCache<T>({
     delete(key: string): void {
       entries.delete(key);
     },
+    /** Drop every entry already past its TTL. Returns how many were removed. */
+    prune(): number {
+      let removed = 0;
+      for (const [key, entry] of entries) {
+        if (isExpired(entry)) {
+          entries.delete(key);
+          removed++;
+        }
+      }
+      return removed;
+    },
     clear(): void {
       entries.clear();
     },
     get size(): number {
+      // Live entries only, so `size` cannot report an expired entry as cached.
+      this.prune();
       return entries.size;
     },
   };

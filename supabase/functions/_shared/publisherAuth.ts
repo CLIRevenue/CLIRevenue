@@ -12,13 +12,11 @@
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { apiError } from "./http.ts";
+// Key shape lives in keyFormat.ts, which also documents why the legacy format
+// is still accepted and why the environment segment left the prefix.
+import { generateAdsKey, isWellFormedPublisherKey, keyPrefix } from "./keyFormat.ts";
 
-/** Format a publishable key so an obviously-wrong value is rejected cheaply. */
-const KEY_RE = /^pk_(live|test)_[A-Za-z0-9_-]{32,}$/;
-
-export function isWellFormedPublisherKey(key: unknown): key is string {
-  return typeof key === "string" && KEY_RE.test(key);
-}
+export { generateAdsKey, isCurrentAdsKey, isLegacyAdsKey, isWellFormedAccountKey, isWellFormedPublisherKey, keyPrefix } from "./keyFormat.ts";
 
 const hex = (bytes: Uint8Array) =>
   [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -29,18 +27,21 @@ export async function hashPublisherKey(rawKey: string): Promise<string> {
   return hex(new Uint8Array(digest));
 }
 
-/** Mint a new publishable key. The raw value is never persisted. */
+/**
+ * Mint a legacy `pk_live_`/`pk_test_` key.
+ *
+ * Retained ONLY so the test suite can produce a genuine legacy key and prove
+ * the delivery path still accepts one. Nothing new is minted in this shape:
+ * `generateAdsKey` is the minter every provisioning route calls, and the two
+ * names are deliberately not interchangeable -- if you are adding a key, you
+ * want the current format.
+ */
 export function generatePublisherKey(env: "live" | "test" = "live"): string {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   let bin = "";
   for (const b of bytes) bin += String.fromCharCode(b);
   return `pk_${env}_${btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")}`;
-}
-
-/** Short fragment for display in a dashboard. Not an authenticator. */
-export function keyPrefix(rawKey: string): string {
-  return rawKey.slice(0, 12);
 }
 
 export type PublisherIdentity = {
