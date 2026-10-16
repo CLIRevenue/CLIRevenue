@@ -112,7 +112,7 @@ export default function Landing() {
             <a className="lbtn lbtn--ghost lbtn--sm" href="/developer" onClick={spaNav}>For developers</a>
             <a className="lbtn lbtn--ghost lbtn--sm" href="/advertiser" onClick={spaNav}>For advertisers</a>
             <a className="lbtn lbtn--ghost lbtn--sm" href="/login" onClick={spaNav}>Sign in</a>
-            <a className="lbtn lbtn--primary lbtn--sm" href="/signup" onClick={spaNav}>Sign up</a>
+            <a className="lbtn lbtn--primary lbtn--sm magnetic" href="/signup" onClick={spaNav}>Sign up</a>
           </div>
         </div>
       </header>
@@ -331,7 +331,7 @@ export default function Landing() {
                 <p className="k">{r.k}</p>
                 <h3>{r.h}</h3>
                 <p>{r.p}</p>
-                <a className="lbtn lbtn--primary" href={i === 0 ? '#start' : '/advertiser'}>{r.a}</a>
+                <a className="lbtn lbtn--primary magnetic" href={i === 0 ? '#start' : '/advertiser'}>{r.a}</a>
               </article>
             ))}
           </div>
@@ -343,7 +343,7 @@ export default function Landing() {
               <h2 className="pickable"><span data-pick>Put a sponsor line in your terminal.</span></h2>
               <p>Run the setup against a clean project, keep the settings backup, and see your first qualified impression before you decide anything.</p>
             </div>
-            <a className="lbtn lbtn--primary" href="/signup">Start earning — free</a>
+            <a className="lbtn lbtn--primary magnetic" href="/signup">Start earning — free</a>
           </div>
         </section>
       </main>

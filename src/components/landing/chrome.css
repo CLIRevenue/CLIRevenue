@@ -29,9 +29,15 @@
 
 .clr-surface {
   /* ── the landing palette ──────────────────────────────────────── */
-  --ld-bg: #0b0b0e;
-  --ld-bg-tint: #141419;
-  --ld-surface: #121216;
+  /* Canvas and content surface used to sit two steps apart (#0b0b0e vs
+     #121216), which on a dark screen reads as one flat black field with
+     panels floating in it rather than cards resting on a page. The three
+     values below are now a deliberate ladder: canvas, then a raised panel,
+     then a recessed well for inputs. */
+  --ld-bg: #09090c;
+  --ld-bg-tint: #15151b;
+  --ld-surface: #17171e;
+  --ld-well: #0b0b0f;
   --ld-line: rgba(255, 255, 255, .09);
   --ld-line-strong: rgba(255, 255, 255, .17);
   --ld-ink: #f2f2f4;
@@ -81,8 +87,8 @@
      This is the whole trick. Everything downstream of this block
      inherits the landing's look with no edits of its own. */
   --void: #07070a;
-  --panel: #121216;
-  --panel-2: #141419;
+  --panel: var(--ld-surface);
+  --panel-2: var(--ld-bg-tint);
   --paper: #f4f2ee;
   --on-surface: #f2f2f4;
   --ink-4: #55555f;
@@ -97,8 +103,8 @@
   --amber-glow: rgba(232, 117, 47, .16);
   --amber-wash: rgba(232, 117, 47, .1);
   --electric-cyan: #3fbf7f;
-  --glass-bg: rgba(18, 18, 22, .74);
-  --glass-bg-strong: rgba(18, 18, 22, .9);
+  --glass-bg: rgba(23, 23, 30, .74);
+  --glass-bg-strong: rgba(23, 23, 30, .9);
   --glass-edge: rgba(255, 255, 255, .09);
   --glass-blur: saturate(160%) blur(14px);
   --radius-md: 12px;
@@ -111,17 +117,28 @@
      advertiser page into a thin column. Prose on these pages is already
      constrained by its own ch-based rules; the shell is not. */
   --measure: 1180px;
-  --track-head: -0.03em;
+  /* The landing sets its display type at -0.045em on h1 and -0.04em on h2.
+     These tokens were under-tight at -0.03em, so every console heading sat
+     visibly looser than the same words set on the marketing page. They are
+     consumed by DeveloperLanding.css, AdvertiserLanding.css and App.css, so
+     retuning them here moves the whole family at once. */
+  --track-head: -0.045em;
   --track-tight: -0.02em;
   --track-label: 0.09em;
   --dur-fast: .18s;
   --ease-ui: cubic-bezier(.16, 1, .3, 1);
   --border-w-2: 1px;
   --clr-border: rgba(255, 255, 255, .12);
-  --clr-panel: #121216;
+  --clr-panel: var(--ld-surface);
   --clr-text: #f2f2f4;
-  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  /* Typefaces are deliberately NOT re-declared here. The landing sets none
+     of its own — it inherits --sans / --mono / --display from :root, which is
+     where the brand families live (Space Grotesk, JetBrains Mono). This block
+     used to hard-code the -apple-system and ui-monospace stacks, which
+     outrank :root and rendered every console, login and dashboard in
+     Helvetica while the landing was the only page in the brand typeface.
+     That single divergence was the loudest reason the dashboards read as a
+     different product. Inheriting is the whole fix. */
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -309,7 +326,7 @@
   padding: 0 13px;
   border: 1px solid var(--ld-line-strong);
   border-radius: var(--ld-r7);
-  background: #08080b;
+  background: var(--ld-well);
   color: var(--ld-ink);
   font: inherit;
   font-size: 14.5px;
@@ -353,14 +370,49 @@
 }
 .clr-surface tr:last-child td { border-bottom: 0; }
 
+/* The developer key flows (PublisherKeys, PublisherPlacements) shipped a bare
+   <table class="key-table"> with no rule anywhere in the project, so those two
+   tables — the only ones a publisher actually reads on a regular basis — were
+   the one part of the console with no landing treatment at all. They now take
+   the same measure and voice as .adv-table. */
+.clr-surface .key-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.clr-surface .key-table th {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ld-line-strong);
+  color: var(--ld-ink-3);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.clr-surface .key-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--ld-line);
+  color: var(--ld-ink-2);
+  vertical-align: middle;
+}
+.clr-surface .key-table tbody tr:hover td { background: var(--ld-bg-tint); }
+.clr-surface .key-table tbody tr:last-child td { border-bottom: 0; }
+
+/* Display type tracks by size, the way the landing sets it: tight on the big
+   heads, barely tightened on the small ones. A flat -0.028em across all four
+   levels made 15px card titles look loose and 50px hero titles look slack. */
 .clr-surface h1,
 .clr-surface h2,
 .clr-surface h3,
 .clr-surface h4 {
   color: var(--ld-ink);
-  letter-spacing: -.028em;
   line-height: 1.15;
 }
+.clr-surface h1,
+.clr-surface h2 { letter-spacing: var(--track-head); }
+.clr-surface h3,
+.clr-surface h4 { letter-spacing: var(--track-tight); }
 
 .clr-surface code,
 .clr-surface pre,
@@ -545,17 +597,23 @@
   .clr-surface .adv-panel{flex:0 0 auto}
   .clr-surface .adv-shell__inner--narrow{gap:14px}
 
-  /* ── every button wears the front-page treatment ─────────────
+  /* ── every boxed button wears the front-page treatment ──────
      The landing's header button is the reference: a masked rainbow
-     ring on hover, a press on click, and a magnetic drift that pulls
-     the control a few pixels toward the cursor. Those three were
-     previously scoped to a single `.magnetic` opt-in class, so most
-     buttons on the site had neither the ring nor the drift.
+     ring on hover and a press on click. Both are reproduced here so
+     nothing on the site feels like a different product.
 
-     One selector list drives all three, and it deliberately excludes
-     the text-style controls — the underline links and bare
-     `.nav-links` section buttons have no box, so a ring around them
-     would invent a box that is not there. */
+     The ring is deliberately UNSCOPED by intent -- it is painted
+     behind the control and never moves it, so it is a cheap
+     affordance rather than a hazard, and it can stay on every button
+     that owns a box. It excludes the text-style controls on purpose:
+     the underline links and bare `.nav-links` section buttons have no
+     box, so a ring around them would invent one.
+
+     The THIRD effect, the magnetic drift, is NOT in this list. It
+     moves the hit target, so it is opt-in per control via `.magnetic`
+     and is driven from landing.js -- see the placement rule there. The
+     lift-neutraliser further down is scoped to `.magnetic` for the
+     same reason: it exists to make room for the drift. */
   .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
@@ -672,22 +730,29 @@
   --clr-word-b: #ff1f2d;
 }
 
-/* ── a themed button follows the cursor; it does not lift ──────��────
+/* ── a magnetic button follows the cursor; it does not lift ────────
    The repo's own `.btn:hover:not(:disabled){transform:translate(-2px,-2px)}`
    is a lift, and it reads as "raised off the page" on a surface that is
    supposed to be flat and graph-paper. Neutralise it here and let the
    magnetic drift be the only motion.
 
+   SCOPED TO `.magnetic` ON PURPOSE. This rule is a compensation for
+   landing.js: it is only correct where the drift is about to claim
+   `transform` inline. Applied to every button it would delete the lift
+   from all of them at once, and the controls that do not drift would be
+   left with no hover motion at all -- a quieter regression than the one
+   this whole pass is fixing.
+
    magneticFx writes el.style.transform INLINE, and an inline style
-   beats any stylesheet declaration without !important — so while the
+   beats any stylesheet declaration without !important -- so while the
    cursor is genuinely near the button the drift still wins, and the
-   moment it leaves, the rule above takes over and the button sits flat.
+   moment it leaves, the rule below takes over and the button sits flat.
 
    Six real classes here (.clr-surface, :is(), :not(), :hover, and two
    :not() guards) = (0,6,0) against App.css's (0,3,0). The
    :not(:focus-visible) guard is load-bearing: line 279's focus ring must
    survive, so this rule must not fire while the button is focused. */
-.clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn, .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn, .sdk-btn, .adv-nav__btn, .adm-topbar__logout, .clrhead-cta a, .adv-password__btn, .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain):hover:not(:disabled):not(:focus-visible) {
+.clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn, .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn, .sdk-btn, .adv-nav__btn, .adm-topbar__logout, .clrhead-cta a, .adv-password__btn, .placement-slot__cta, .switcher__btn, .magnetic):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain):hover:not(:disabled):not(:focus-visible) {
   transform: none;
   box-shadow: none;
 }

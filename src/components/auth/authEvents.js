@@ -20,6 +20,11 @@
  * whole point of this module — it is pure and exported so the rule can be
  * tested directly instead of being re-derived from the provider's plumbing.
  *
+ * The distinction is also load-bearing for a detail of the SDK: waking a
+ * backgrounded tab emits SIGNED_IN, not TOKEN_REFRESHED. See
+ * `isRevalidationFor` below — that is why `classifyAuthEvent` takes the
+ * caller's current identity as its second argument.
+ *
  * The vocabulary deliberately distinguishes four situations:
  *
  *   BOOT             first resolution after a page load, started by the
@@ -29,7 +34,8 @@
  *                    against the server and may show loading.
  *   SIGN_OUT         the session ended, here or in another tab.
  *   TOKEN_ROTATION   same user, new tokens. Re-validate, silently: no
- *                    loading screen, so the animation cannot replay.
+ *                    loading screen, so the animation cannot replay. This
+ *                    is the reason a backgrounded tab produces.
  *   NAVIGATION       a client-side route change. Carries no auth event at
  *                    all; named here so "navigation never re-resolves" is
  *                    part of the vocabulary rather than an omission.
@@ -98,10 +104,42 @@ const REASON_PLAN = {
   [AUTH_REASON.NAVIGATION]: RESOLUTION.NEVER,
 }
 
-/** Which situation this SDK event represents. */
-export function classifyAuthEvent(event) {
+/** True when the event carries a session for the user we already resolved.
+ *
+ * This is the whole difference between "somebody just signed in" and "the
+ * tab you were looking at is being looked at again".
+ *
+ * supabase-js does not only announce a token rotation with
+ * TOKEN_REFRESHED. It registers a `visibilitychange` listener on the window
+ * and, on every hidden -> visible transition, calls `_recoverAndRefresh()`.
+ * In its common branch — a session exists and is not near expiry — that
+ * ends with `_notifyAllSubscribers('SIGNED_IN', session)`. The identity did
+ * not change; only the page's attention did.
+ *
+ * So SIGNED_IN is ambiguous on its own and has to be read against the user
+ * we already have. Same user => TOKEN_ROTATION (re-validate, silently).
+ * No previous user, or a different one => SESSION_CHANGE (the real thing).
+ */
+function isRevalidationFor(event, context) {
+  if (event !== AUTH_EVENT.SIGNED_IN) return false
+  const { userId, nextUserId } = context || {}
+  return !!userId && !!nextUserId && userId === nextUserId
+}
+
+/**
+ * Which situation this SDK event represents.
+ *
+ * `context` is the caller's already-resolved identity —
+ * `{ userId, nextUserId }` — taken from the session object the SDK hands to
+ * the listener. Without it the answer stays the conservative
+ * SESSION_CHANGE, which is what a first load and every caller that does not
+ * track it get.
+ */
+export function classifyAuthEvent(event, context) {
   const name = typeof event === 'string' ? event : ''
-  return EVENT_REASON[name] || AUTH_REASON.SESSION_CHANGE
+  const reason = EVENT_REASON[name] || AUTH_REASON.SESSION_CHANGE
+  if (isRevalidationFor(name, context)) return AUTH_REASON.TOKEN_ROTATION
+  return reason
 }
 
 /**

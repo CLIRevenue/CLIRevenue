@@ -8,6 +8,7 @@ import {
   getInstallCommand,
   isSdkInstalled,
   installSdk,
+  compareVersions,
   InstallError,
   type InstallResult,
 } from '../src/install/sdk.js';
@@ -41,8 +42,8 @@ describe('getInstallCommand', () => {
 });
 
 describe('CLIREVENUE_SDK_VERSION', () => {
-  it('is pinned to 2.0.0', () => {
-    expect(CLIREVENUE_SDK_VERSION).toBe('2.0.0');
+  it('is pinned to 2.1.0', () => {
+    expect(CLIREVENUE_SDK_VERSION).toBe('2.1.0');
   });
 });
 
@@ -82,6 +83,30 @@ describe('detectPackageManager', () => {
   });
 });
 
+describe('compareVersions', () => {
+  it('orders releases by major, then minor, then patch', () => {
+    expect(compareVersions('2.1.0', '2.1.0')).toBe(0);
+    expect(compareVersions('2.2.0', '2.1.0')).toBeGreaterThan(0);
+    expect(compareVersions('2.1.0', '2.2.0')).toBeLessThan(0);
+    expect(compareVersions('3.0.0', '2.9.9')).toBeGreaterThan(0);
+    expect(compareVersions('2.1.1', '2.1.0')).toBeGreaterThan(0);
+  });
+
+  it('tolerates a v prefix and surrounding whitespace', () => {
+    expect(compareVersions(' v2.1.0 ', '2.1.0')).toBe(0);
+  });
+
+  it('sorts a pre-release below the plain release', () => {
+    expect(compareVersions('2.1.0-rc.1', '2.1.0')).toBeLessThan(0);
+    expect(compareVersions('2.1.0', '2.1.0-rc.1')).toBeGreaterThan(0);
+  });
+
+  it('returns NaN for an unparseable version', () => {
+    expect(compareVersions('latest', '2.1.0')).toBeNaN();
+    expect(compareVersions('2.1', '2.1.0')).toBeNaN();
+  });
+});
+
 describe('isSdkInstalled', () => {
   let tmp: string;
   let sdkPkgPath: string;
@@ -114,6 +139,27 @@ describe('isSdkInstalled', () => {
   it('returns false for other versions in node_modules', () => {
     writeFileSync(sdkPkgPath, JSON.stringify({ name: '@clirevenue/sdk', version: '1.0.3' }, null, 2));
     expect(isSdkInstalled(tmp)).toBe(false);
+  });
+
+  it('returns true for a newer SDK, so setup does not downgrade it', () => {
+    writeFileSync(sdkPkgPath, JSON.stringify({ name: '@clirevenue/sdk', version: '2.99.0' }, null, 2));
+    expect(isSdkInstalled(tmp)).toBe(true);
+  });
+
+  it('returns false for a pre-release of the required version', () => {
+    writeFileSync(sdkPkgPath, JSON.stringify({ name: '@clirevenue/sdk', version: `${CLIREVENUE_SDK_VERSION}-rc.1` }, null, 2));
+    expect(isSdkInstalled(tmp)).toBe(false);
+  });
+
+  it('returns false when package.json has no version', () => {
+    writeFileSync(sdkPkgPath, JSON.stringify({ name: '@clirevenue/sdk' }, null, 2));
+    expect(isSdkInstalled(tmp)).toBe(false);
+  });
+
+  it('honours an explicit requiredVersion', () => {
+    writeFileSync(sdkPkgPath, JSON.stringify({ name: '@clirevenue/sdk', version: '2.1.0' }, null, 2));
+    expect(isSdkInstalled(tmp, '2.1.0')).toBe(true);
+    expect(isSdkInstalled(tmp, '2.2.0')).toBe(false);
   });
 });
 
@@ -150,6 +196,23 @@ describe('installSdk', () => {
     expect(res.alreadyInstalled).toBe(true);
     expect(res.packageManager).toBe('npm');
     expect(res.command).toBe(`npm install @clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`);
+    expect(spawnFn).not.toHaveBeenCalled();
+  });
+
+  it('does not spawn when a newer SDK is already installed', async () => {
+    const sdkDir = join(tmp, 'node_modules', '@clirevenue', 'sdk');
+    mkdirSync(sdkDir, { recursive: true });
+    writeFileSync(
+      join(sdkDir, 'package.json'),
+      JSON.stringify({ name: '@clirevenue/sdk', version: '99.0.0' }, null, 2),
+    );
+
+    const spawnFn = vi.fn(() => {
+      throw new Error('spawn should not be called');
+    });
+
+    const res = await installSdk(tmp, `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION}`, { spawnFn });
+    expect(res.alreadyInstalled).toBe(true);
     expect(spawnFn).not.toHaveBeenCalled();
   });
 

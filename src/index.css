@@ -247,11 +247,13 @@
     0 4px 20px rgba(0, 0, 0, 0.4);
   --shadow-ad: 0 0 0 1px var(--hair-brand), 0 8px 32px -6px rgba(0, 0, 0, 0.6),
     0 0 24px -8px rgba(189, 0, 255, 0.24);
-  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.48),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  --shadow-neumorph: var(--neumorph-outset);
+    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.48),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    --shadow-neumorph: var(--neumorph-outset);
+    --cli-white: #fff;
+    --revenue-red: #ff1f2d;
 
-  color-scheme: dark;
+    color-scheme: dark;
 }
 
 /* ==================== LIGHT THEME ==================== */
@@ -465,9 +467,11 @@
     0 0 24px -8px rgba(138, 0, 255, 0.24);
   --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  --shadow-neumorph: var(--neumorph-outset);
+   --shadow-neumorph: var(--neumorph-outset);
+   --cli-white: #fff;
+   --revenue-red: #ff1f2d;
 
-  color-scheme: light;
+   color-scheme: light;
 }
 
 /* ==================== RESET ==================== */
@@ -706,14 +710,15 @@ html.intro-lock body {
 }
 
 .sitehead__name {
-  font-family: var(--body);
-  font-weight: 700;
-  letter-spacing: -0.01em;
+    font-family: var(--body);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--cli-white);
 }
 
 .sitehead__name em {
-  font-style: normal;
-  color: var(--electric-cyan);
+    font-style: normal;
+    color: var(--revenue-red);
 }
 
 .sitehead__nav {

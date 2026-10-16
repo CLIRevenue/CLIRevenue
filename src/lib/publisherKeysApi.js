@@ -87,7 +87,24 @@ export async function listPublisherKeys() {
 /**
  * Create a new publisher key for the developer's publisher.
  * Expects an optional label.
- * Returns { key: { ...metadata, publishableKey: string } }
+ *
+ * The wire shape is `{ key: { ...metadata, publishableKey } }`, and this
+ * function returns the INNER object, not the envelope -- so the resolved
+ * value is already the row:
+ *
+ *   { id, key_prefix, key_env, label, created_at, last_used_at, revoked_at,
+ *     publishableKey }
+ *
+ * `publishableKey` is the only time the raw key ever exists outside the
+ * server, so read it off this value directly (`created.publishableKey`).
+ * Destructuring it as `{ key, rawKey }` yields two `undefined`s -- which is
+ * how a successfully minted key used to be displayed as a mask and copied as
+ * the string "undefined".
+ *
+ * Rejects with `err.status === 409` and `err.payload.code === 'KEY_EXISTS'`
+ * when this publisher already holds an unrevoked key for its environment
+ * (`publisher_keys_active_env_key` allows one per publisher_id + key_env, and
+ * key_env is always "test"). `err.payload.existing` carries that row.
  */
 export async function createPublisherKey(label) {
   let lastErr = null

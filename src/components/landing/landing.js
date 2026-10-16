@@ -606,24 +606,47 @@ function marqueeFx(root, doc) {
 
 export { marqueeFx };
 
-/* The hero CTA leans toward the pointer. The CSS class was ported and the
-   driver was not, which is why the effect looked like it had been deleted
-   rather than like it had never arrived. The standalone wrapped a <span>
-   in an <a>; here the anchor IS the button, so the class sits on the same
-   element as .lbtn and is queried directly. */
+/* A few invitation CTAs lean toward the pointer. Purely opt-in: the control
+   must carry `.magnetic`. See SELECTOR below for what earns it. */
 function magneticFx(root) {
-  /* Every button that has a box, not just the handful that opted in with
-     .magnetic. The underline links are excluded on purpose: a ring drawn
-     around a bare text link would invent a box the design does not have.
+  /* THE PLACEMENT RULE. A button that moves is a control whose hit target
+     is no longer where it was drawn, so the class has to be spent, not
+     sprayed. It is spent on INVITATIONS -- controls that take you somewhere
+     you have not been, on a page whose entire job is to send you there:
 
-     Two things this used to get wrong, both of which look like "the effect
-     is missing from some buttons" rather than like bugs:
+       · the hero CTA and the closing CTA on the front page
+       · the front page's header "Sign up"
+       · "Install with npm" on the developer page
+       · "Start advertising" in the advertiser hero and closing CTA
+
+     and on nothing else. In particular it is NOT on:
+
+       · a form submit or a step advance (AuthPages "Continue", the sign-in
+         and sign-up submits). Pressing a target that slides out from under
+         the cursor is a usability defect, not a flourish -- the pointer
+         lands where the button was, and the click does nothing.
+       · anything inside a dashboard. There the primary button is "Create
+         key", "Run", "Save", "Activate": work, not invitation.
+       · the page chrome. A drifting Sign up in a sticky header is worse
+         than no drift, because the header is the one control a visitor
+         aims at from anywhere on the page.
+       · small or dense controls -- copy buttons, tab toggles, row actions
+         -- where three pixels of travel is most of the target.
+
+     The ring that blooms on hover is deliberately NOT scoped this way. It
+     is painted behind the control and never moves it, so it can stay a
+     cheap affordance on every boxed button; see chrome.css. What has to
+     be scoped to the opt-in is the lift-neutraliser in that same file,
+     because it exists only to make room for this drift.
+
+     Two things this got wrong historically, both of which looked like "the
+     effect is missing from some buttons" rather than like bugs:
 
      1. It walked the DOM once and closed over those elements. React
-        re-creates the header CTAs whenever the auth state settles, so
-        every button that was swapped after mount had listeners on a
-        detached node and simply did nothing. Delegation resolves the
-        target at event time, so a re-render cannot orphan anything.
+        re-creates the CTAs whenever the auth state settles, so any control
+        swapped after mount had listeners on a detached node and did
+        nothing. Delegation resolves the target at event time, so a
+        re-render cannot orphan anything.
      2. The drift is written INLINE, and inline outranks every stylesheet
         declaration that is not !important -- which silently killed
         chrome.css's `:active` press. The press is folded into the same
@@ -632,23 +655,10 @@ function magneticFx(root) {
      .clr-surface, but the landing page does not -- it is its own token host
      and owns the light hero. A `.clr-surface .lbtn` selector therefore never
      matched a single button on the landing, which is exactly the "the
-     buttons have a different animation on this page" report. The classes
-     themselves are unique enough that both hosts can be selected at once,
-     and landingFx is only ever mounted on the page that owns `root`. */
-  const SELECTOR = [
-    '.magnetic',
-    'button',
-    '.btn',
-    '.lbtn',
-    '.adv-btn',
-    '.sdk-btn',
-    '.adv-nav__btn',
-    '.adm-topbar__logout',
-    '.adv-password__btn',
-    '.placement-slot__cta',
-    '.switcher__btn',
-    '.cmd-copy',
-  ].join(',');
+     buttons have a different animation on this page" report. Querying the
+     bare class sidesteps the question: both hosts mount this, and the
+     opt-in travels with the markup. */
+  const SELECTOR = '.magnetic';
   const TEXT_ONLY = new Set(['adv-link', 'nav-links', 'form__note', 'sdk-inline', 'clr-subnav']);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduced) return () => {};

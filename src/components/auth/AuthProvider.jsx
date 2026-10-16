@@ -108,6 +108,15 @@ export function AuthProvider({ children }) {
   // one's answer was discarded by the generation fence. It also makes a
   // StrictMode double-mount resolve once instead of twice.
   const bootStarted = useRef(false)
+
+  // The identity this provider has already resolved. The auth listener
+  // needs it to read SIGNED_IN correctly: supabase emits SIGNED_IN when a
+  // backgrounded tab is looked at again, so the event alone cannot say
+  // whether somebody signed in or the page merely got attention. Held in a
+  // ref because the listener is registered once, in an effect that does not
+  // depend on the resolved state — reading `state` there would be a stale
+  // closure, and reading it during render is what the compiler lint rejects.
+  const settledUserId = useRef(null)
   // `loading` gates the resolution, not the result: a caller that must not
   // show the role-check animation (a token rotation) resolves silently.
   // Defaults to the historical behaviour for every direct refresh() call.
@@ -151,6 +160,7 @@ export function AuthProvider({ children }) {
       }
 
       if (!session) {
+        settledUserId.current = null
         setState({ ...ANONYMOUS, error: exchangeError })
         return
       }
@@ -167,6 +177,7 @@ export function AuthProvider({ children }) {
       const flush = await flushPendingProfile(uid, user?.email)
       const rows = flush.flushed ? await readAccountRows(uid) : resolved
       if (stale()) return
+      settledUserId.current = uid
       setState({
         loading: false,
         session,
@@ -199,8 +210,11 @@ export function AuthProvider({ children }) {
       void refresh()
     }
     startBoot()
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      const reason = classifyAuthEvent(event)
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      const reason = classifyAuthEvent(event, {
+        userId: settledUserId.current,
+        nextUserId: userIdFromSession(session),
+      })
       const plan = planFor(reason)
       // A client-side route change is not an auth event. Treating it as one
       // is what made every nav click re-read the session.
@@ -209,11 +223,13 @@ export function AuthProvider({ children }) {
         startBoot()
         return
       }
-      // TOKEN_ROTATION lands here as SILENT: the same user, new tokens. The
-      // resolution still runs — the token changed, so re-validating is
-      // correct — but it may not enter the loading state, so the
-      // full-screen role-check animation cannot replay on a page that is
-      // already working.
+      // TOKEN_ROTATION lands here as SILENT: the same user, new tokens —
+      // which is what every tab switch and every return from another app
+      // produces, because supabase re-announces the session it already has
+      // on `visibilitychange`. The resolution still runs; the token did
+      // change, so re-validating against the server stays correct. It just
+      // may not enter the loading state, so the full-screen role-check
+      // animation cannot replay on a page that is already working.
       refresh({ loading: plan === RESOLUTION.FULL })
     })
     return () => {
@@ -318,6 +334,10 @@ export function AuthProvider({ children }) {
    *  on a dashboard they can no longer use. */
   const signOut = useCallback(async (next = '/') => {
     generation.current += 1
+    // Clear the remembered identity before the SDK can re-announce
+    // anything, so a session that arrives after this is read as a real
+    // sign-in rather than as a revalidation of the user we just dropped.
+    settledUserId.current = null
     let failure = null
     try {
       const { error } = await supabase.auth.signOut()

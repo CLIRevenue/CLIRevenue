@@ -272,9 +272,9 @@ function Quickstart() {
   return (
     <div className="sdk-qs">
       <header className="sdk-head sdk-head--lg">
-        <h3 className="sdk-head__title" id="quickstart">
+        <h2 className="sdk-head__title" id="quickstart">
           Quickstart
-        </h3>
+        </h2>
       </header>
       <ol className="sdk-qs__steps">
         {QUICKSTART_STEPS.map((step) => (
@@ -330,9 +330,9 @@ function PublishableKey() {
   return (
     <Panel className="sdk-panel">
       <header className="sdk-head">
-        <h3 className="sdk-head__title" id="publishable-key">
+        <h2 className="sdk-head__title" id="publishable-key">
           Publishable key
-        </h3>
+        </h2>
       </header>
       <p className="sdk-p">
         A publishable key is an identifier. It is what the browser uses
@@ -373,9 +373,9 @@ function Lifecycle() {
   return (
     <Panel className="sdk-panel">
       <header className="sdk-head">
-        <h3 className="sdk-head__title" id="lifecycle">
+        <h2 className="sdk-head__title" id="lifecycle">
           Lifecycle
-        </h3>
+        </h2>
       </header>
       <ul className="sdk-states">
         {LIFECYCLE_STATES.map((state) => (
@@ -462,9 +462,9 @@ function Faq() {
   return (
     <>
       <header className="sdk-head">
-        <h3 className="sdk-head__title" id="faq-title">
+        <h2 className="sdk-head__title" id="faq-title">
           Frequently asked questions
-        </h3>
+        </h2>
       </header>
       <div className="sdk-faq">
         {FAQ_ITEMS.map((item) => (
@@ -521,7 +521,7 @@ export default function DeveloperLanding() {
                 never touches your terminal output.
               </p>
               <div className="sdk-hero__actions">
-                <a className="btn btn--primary" href="#install">
+                <a className="btn btn--primary magnetic" href="#install">
                   Install with npm
                 </a>
                 <a className="btn btn--ghost" href="#documentation">
@@ -562,9 +562,9 @@ export default function DeveloperLanding() {
 
               <section className="sdk-block" id="download">
                 <header className="sdk-head">
-                  <h3 className="sdk-head__title" id="distribution">
+                  <h2 className="sdk-head__title" id="distribution">
                     Distribution
-                  </h3>
+                  </h2>
                   <p className="sdk-head__sub">Where the SDK comes from.</p>
                 </header>
                 <DownloadSection />
@@ -594,9 +594,9 @@ export default function DeveloperLanding() {
               <section className="sdk-block">
                 <Panel className="sdk-panel">
                   <header className="sdk-head">
-                    <h3 className="sdk-head__title" id="documentation">
+                    <h2 className="sdk-head__title" id="documentation">
                       Where the documentation lives
-                    </h3>
+                    </h2>
                   </header>
                   {/* The topic list used to be an anchor whose onClick called
                       navigateApp('/developer') — the page this link is already
@@ -649,9 +649,9 @@ function Placements() {
   return (
     <Panel className="sdk-panel">
       <header className="sdk-head">
-        <h3 className="sdk-head__title" id="placements">
+        <h2 className="sdk-head__title" id="placements">
           Placements
-        </h3>
+        </h2>
       </header>
       <p className="sdk-p">
         A placement is a named advertising surface. When you render an ad
@@ -719,9 +719,9 @@ function Delivery() {
   return (
     <Panel className="sdk-panel">
       <header className="sdk-head sdk-head--lg">
-        <h3 className="sdk-head__title" id="render">
+        <h2 className="sdk-head__title" id="render">
           Rendering an ad, and recording the events that matter
-        </h3>
+        </h2>
       </header>
       <p className="sdk-p">
         Request the ad for a placement, then render it. The cleanest way
@@ -781,9 +781,9 @@ function Sizing() {
   return (
     <Panel className="sdk-panel">
       <header className="sdk-head">
-        <h3 className="sdk-head__title" id="sizing">
+        <h2 className="sdk-head__title" id="sizing">
           Sizing and positioning
-        </h3>
+        </h2>
       </header>
       <p className="sdk-p">
         Ad sizing and positioning are handled by the SDK, not by the page,
@@ -849,9 +849,9 @@ function Analytics() {
   return (
     <Panel className="sdk-panel">
       <header className="sdk-head">
-        <h3 className="sdk-head__title" id="analytics">
+        <h2 className="sdk-head__title" id="analytics">
           Analytics
-        </h3>
+        </h2>
       </header>
       <p className="sdk-p">
         The SDK reports — it assigns meaning. Impressions and clicks are

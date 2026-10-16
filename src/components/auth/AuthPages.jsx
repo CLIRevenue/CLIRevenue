@@ -1,4 +1,5 @@
 import PageChrome from '../landing/PageChrome.jsx'
+import AuthCurve from './AuthCurve.jsx'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabaseConfigured } from '../../lib/api.js'
 import { useAuth, roleHome } from './authState.js'
@@ -98,15 +99,19 @@ function PasswordField({ label, value, onChange, name, autoComplete }) {
   )
 }
 
-export function AuthShell({ eyebrow, title, body, children, footer, backHref = '/' }) {
+export function AuthShell({ eyebrow, title, body, children, footer, backHref = '/', mode = 'login' }) {
   // One product: reuse adv-shell/panel/form/button primitives, and wear
   // the same header as the rest of the site via PageChrome. Every auth
   // screen — login, signup, and all four confirmation states — renders
   // through here, so this one edit themes all of them.
+  //
+  // `mode` is the one piece of state the shell cannot infer: the curve has to
+  // know whether it is drawing the login dip or the signup S before it draws.
   return (
     <PageChrome>
       <section className="adv-shell" aria-label={title}>
           <div className="adv-shell__inner adv-shell__inner--narrow">
+          <AuthCurve mode={mode} />
           <p className="form__note"><button type="button" className="adv-link" onClick={() => navigateApp(backHref)}>← Back to site</button></p>
           <p className="eyebrow eyebrow--plain">{eyebrow}</p>
           <h2 className="block__title">{title}</h2>
@@ -214,6 +219,7 @@ export function LoginPage() {
 
   return (
     <AuthShell
+      mode="login"
       eyebrow="CLIRevenue · Login"
       title="Welcome back."
       body="Sign in to reach your console. Your role on the account decides which one opens."
@@ -375,6 +381,7 @@ export function SignupPage() {
   if (confirmation) {
     return (
       <AuthShell
+        mode="signup"
         eyebrow="CLIRevenue · Signup"
         title={confirmation.existing ? 'Email already in use.' : 'Check your email.'}
         body={
@@ -449,6 +456,7 @@ export function SignupPage() {
 
   return (
     <AuthShell
+      mode="signup"
       eyebrow="CLIRevenue · Signup"
       title="Create your account."
       body="Two steps: your login, then who you are. Choose Advertiser or Developer — your console follows your role, not a picker."

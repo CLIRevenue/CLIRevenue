@@ -595,7 +595,7 @@ function FinalCta() {
         take payments.
       </p>
       <div className="advx-cta__actions">
-        <button type="button" className="btn btn--primary" onClick={() => navigateApp('/signup')}>
+        <button type="button" className="btn btn--primary magnetic" onClick={() => navigateApp('/signup')}>
           Start advertising
         </button>
         <button type="button" className="btn btn--ghost" onClick={() => navigateApp('/login')}>
@@ -649,7 +649,7 @@ export default function AdvertiserLanding() {
               <div className="advx-hero__actions">
                 <button
                   type="button"
-                  className="btn btn--primary"
+                  className="btn btn--primary magnetic"
                   onClick={() => navigateApp('/signup')}
                 >
                   Start advertising

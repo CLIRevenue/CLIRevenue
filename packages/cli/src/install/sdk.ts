@@ -46,6 +46,39 @@ export function getInstallCommand(
   }
 }
 
+function parseVersion(version: string): { parts: [number, number, number]; pre: string } | null {
+  const match = /^v?(\d+)\.(\d+)\.(\d+)(-.+)?$/.exec(version.trim());
+  if (!match) return null;
+  return {
+    parts: [Number(match[1]), Number(match[2]), Number(match[3])],
+    pre: match[4] ?? '',
+  };
+}
+
+/**
+ * Compare two versions: negative if `a` is older, 0 if the same, positive if
+ * newer. `NaN` if either side is unparseable.
+ *
+ * Only the numeric `major.minor.patch` prefix decides precedence, and a
+ * pre-release suffix sorts below the plain release it precedes, so `2.1.0-rc.1`
+ * does not satisfy a requirement for `2.1.0`. Two pre-releases of the same
+ * numeric version are ordered by comparing their suffixes as strings -- close
+ * enough to tell `rc.1` from `rc.2`, but not full semver precedence.
+ */
+export function compareVersions(a: string, b: string): number {
+  const left = parseVersion(a);
+  const right = parseVersion(b);
+  if (!left || !right) return a === b ? 0 : NaN;
+
+  for (let i = 0; i < 3; i += 1) {
+    if (left.parts[i] !== right.parts[i]) return left.parts[i] - right.parts[i];
+  }
+  if (left.pre === right.pre) return 0;
+  if (!left.pre) return 1;
+  if (!right.pre) return -1;
+  return left.pre < right.pre ? -1 : 1;
+}
+
 export function isSdkInstalled(
   root: string,
   requiredVersion = CLIREVENUE_SDK_VERSION,
@@ -61,7 +94,18 @@ export function isSdkInstalled(
       readFileSync(packageJsonPath, 'utf8'),
     ) as { version?: string };
 
-    return packageJson.version === requiredVersion;
+    if (!packageJson.version) {
+      return false;
+    }
+
+    /*
+     * `>=`, not `===`. An exact match treated a newer SDK as absent, so
+     * running setup on a project already ahead of this pin reinstalled the
+     * older version over it -- a 2.0.1 install was silently replaced by the
+     * pin's 2.0.0. Anything at or above the pin satisfies setup; only an
+     * older SDK gets (re)installed.
+     */
+    return compareVersions(packageJson.version, requiredVersion) >= 0;
   } catch {
     return false;
   }

@@ -118,7 +118,7 @@ export async function setup(options: SetupOptions = {}): Promise<SetupOutcome> {
     const installed = await install(project.root);
     write(
       installed.alreadyInstalled
-        ? `${success(`@clirevenue/sdk@${CLIREVENUE_SDK_VERSION} is already installed`)}\n`
+        ? `${success(`@clirevenue/sdk ${CLIREVENUE_SDK_VERSION} or newer is already installed`)}\n`
         : `${success(
             `@clirevenue/sdk@${CLIREVENUE_SDK_VERSION} installed with ${installed.packageManager}`,
           )}\n`,

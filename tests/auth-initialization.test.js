@@ -19,6 +19,10 @@
  *      event, including TOKEN_REFRESHED. Every field it holds is
  *      user-scoped, so a rotation produced byte-identical JSON at the cost
  *      of three round trips.
+ *   4. Fixing (1) for TOKEN_REFRESHED alone was not enough. supabase-js
+ *      also announces a wake-up as SIGNED_IN — see the "a tab that is
+ *      looked at again" suite — so the classification needs the caller's
+ *      already-resolved identity to tell a rotation from a sign-in.
  *
  * The rule those three all reduce to: *a token rotation is not a session
  * change*. A rotation swaps the access and refresh tokens for the SAME
@@ -110,6 +114,92 @@ describe('auth event classification', () => {
   })
 })
 
+describe('a tab that is looked at again', () => {
+  // supabase-js registers a `visibilitychange` listener on the window and,
+  // on every hidden -> visible transition, runs _recoverAndRefresh(). In its
+  // common branch — a session exists and is not near expiry — that ends with
+  // _notifyAllSubscribers('SIGNED_IN', session). So the event that replays
+  // the role check on every tab switch is SIGNED_IN, not TOKEN_REFRESHED,
+  // and the event alone cannot tell the two situations apart.
+
+  const ME = 'user-1'
+
+  it('reads a SIGNED_IN for the user it already has as a token rotation', () => {
+    expect(
+      classifyAuthEvent(AUTH_EVENT.SIGNED_IN, { userId: ME, nextUserId: ME }),
+    ).toBe(AUTH_REASON.TOKEN_ROTATION)
+  })
+
+  it('resolves that case silently, so the animation cannot replay', () => {
+    // The regression, restated as the user's report: leave the site, come
+    // back, and the full-screen "Checking session and role…" plays again.
+    const reason = classifyAuthEvent(AUTH_EVENT.SIGNED_IN, { userId: ME, nextUserId: ME })
+    expect(mayShowLoading(reason)).toBe(false)
+    expect(planFor(reason)).toBe(RESOLUTION.SILENT)
+  })
+
+  it('still re-validates on that case — silent, not skipped', () => {
+    const reason = classifyAuthEvent(AUTH_EVENT.SIGNED_IN, { userId: ME, nextUserId: ME })
+    expect(planFor(reason)).not.toBe(RESOLUTION.NEVER)
+    // The role can have changed server-side while the tab was away, so the
+    // check still runs; the user just never sees it happen.
+    expect(mayShowLoading(AUTH_REASON.SESSION_CHANGE)).toBe(true)
+  })
+
+  it('keeps a real sign-in a session change', () => {
+    // First sign-in: nothing was resolved yet.
+    expect(classifyAuthEvent(AUTH_EVENT.SIGNED_IN, { userId: null, nextUserId: ME })).toBe(
+      AUTH_REASON.SESSION_CHANGE,
+    )
+    // A different user in the same slot: an account swap is an identity
+    // change and must animate, not pass as a rotation.
+    expect(classifyAuthEvent(AUTH_EVENT.SIGNED_IN, { userId: 'user-2', nextUserId: ME })).toBe(
+      AUTH_REASON.SESSION_CHANGE,
+    )
+    expect(mayShowLoading(
+      classifyAuthEvent(AUTH_EVENT.SIGNED_IN, { userId: 'user-2', nextUserId: ME }),
+    )).toBe(true)
+  })
+
+  it('keeps the no-context answer conservative', () => {
+    // Every existing caller and the first page load get this. It must not
+    // become a free pass for skipping validation.
+    expect(classifyAuthEvent(AUTH_EVENT.SIGNED_IN)).toBe(AUTH_REASON.SESSION_CHANGE)
+    for (const context of [undefined, null, {}, { userId: ME }, { nextUserId: ME }, 0, '']) {
+      expect(classifyAuthEvent(AUTH_EVENT.SIGNED_IN, context)).toBe(AUTH_REASON.SESSION_CHANGE)
+    }
+  })
+
+  it('narrows the rule to SIGNED_IN and leaves every other event alone', () => {
+    // A genuine SIGNED_OUT must never be mistaken for a wake-up, and the
+    // boot must still be the once-per-provider resolution it was.
+    const ctx = { userId: ME, nextUserId: ME }
+    for (const event of Object.values(AUTH_EVENT)) {
+      if (event === AUTH_EVENT.SIGNED_IN) continue
+      expect(classifyAuthEvent(event, ctx)).toBe(classifyAuthEvent(event))
+    }
+    expect(classifyAuthEvent(AUTH_EVENT.SIGNED_OUT, ctx)).toBe(AUTH_REASON.SIGN_OUT)
+    expect(classifyAuthEvent(AUTH_EVENT.INITIAL_SESSION, ctx)).toBe(AUTH_REASON.BOOT)
+  })
+
+  it('the provider hands the classifier the identity it resolved', () => {
+    const src = read('src/components/auth/AuthProvider.jsx')
+    // The listener is registered once with a stale closure over the
+    // resolved state, so the identity has to travel in a ref.
+    expect(src).toMatch(/const settledUserId = useRef\(null\)/)
+    expect(src).toMatch(/userId: settledUserId\.current/)
+    // ...and it is set only where the session's user actually settles.
+    expect(src).toMatch(/settledUserId\.current = uid/)
+    expect(src).toMatch(/settledUserId\.current = null/)
+    // Sign-out drops it first, so a session arriving afterwards is read as
+    // a real sign-in rather than as a revalidation of the dropped user.
+    const signOut = src.slice(src.indexOf('const signOut ='))
+    expect(signOut.indexOf('settledUserId.current = null')).toBeLessThan(
+      signOut.indexOf('supabase.auth.signOut()'),
+    )
+  })
+})
+
 describe('auth event resolution plan', () => {
   it('answers every reason, so an unmapped reason is a visible FULL', () => {
     for (const reason of REASONS) {
@@ -169,8 +259,8 @@ describe('auth event resolution plan', () => {
 describe('auth provider initialisation (source-level)', () => {
   it('classifies before it acts — the listener receives the event', () => {
     const src = read('src/components/auth/AuthProvider.jsx')
-    expect(src).toMatch(/onAuthStateChange\(\(event\) => \{/)
-    expect(src).toMatch(/const reason = classifyAuthEvent\(event\)/)
+    expect(src).toMatch(/onAuthStateChange\(\(event, session\) => \{/)
+    expect(src).toMatch(/const reason = classifyAuthEvent\(\s*event\b/)
     expect(src).toMatch(/const plan = planFor\(reason\)/)
     // The old form ignored the event entirely.
     expect(src).not.toMatch(/onAuthStateChange\(\(\) => \{/)

@@ -262,44 +262,46 @@ export default function PublisherPlacements() {
                   Create new placement
                 </button>
               </div>
-              <table className="key-table">
-                <thead>
-                  <tr>
-                    <th>Placement Key</th>
-                    <th>Name</th>
-                    <th>Enabled</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {placements.map((placement) => (
-                    <tr key={placement.id}>
-                      <td>
-                        <code className="key-prefix">{placement.key}</code>
-                      </td>
-                      <td>{placement.name || '—'}</td>
-                      <td>
-                        {placement.enabled ? (
-                          <span className="badge badge--outline badge--live">
-                            Enabled
-                          </span>
-                        ) : (
-                          <span className="badge badge--outline badge--error">
-                            Disabled
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {/* We cannot update or delete placements via the publisher-facing endpoints */}
-                        {/* So we only show the placement and note that modifications are not available */}
-                        <span className="setup__note">
-                          View only — edit via <code>clirevenue editor</code>
-                        </span>
-                      </td>
+              <div className="adv-tablewrap">
+                <table className="key-table">
+                  <thead>
+                    <tr>
+                      <th>Placement Key</th>
+                      <th>Name</th>
+                      <th>Enabled</th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {placements.map((placement) => (
+                      <tr key={placement.id}>
+                        <td>
+                          <code className="key-prefix">{placement.key}</code>
+                        </td>
+                        <td>{placement.name || '—'}</td>
+                        <td>
+                          {placement.enabled ? (
+                            <span className="badge badge--outline badge--live">
+                              Enabled
+                            </span>
+                          ) : (
+                            <span className="badge badge--outline badge--error">
+                              Disabled
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          {/* We cannot update or delete placements via the publisher-facing endpoints */}
+                          {/* So we only show the placement and note that modifications are not available */}
+                          <span className="setup__note">
+                            View only — edit via <code>clirevenue editor</code>
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </>
           )}
         </div>

@@ -13,7 +13,11 @@ export default function PublisherKeys() {
   const [error, setError] = useState(null)
   const [keys, setKeys] = useState([])
   const [creating, setCreating] = useState(false)
-  const [createdKey, setCreatedKey] = useState(null) // { key: ..., rawKey: string }
+  // The created row exactly as the Edge Function returned it: the flat
+  // publisher_keys row plus `publishableKey`, which exists on this one
+  // response and nowhere else. createPublisherKey() already unwraps the
+  // envelope, so this is NOT { key: {...}, rawKey } -- see the copy below.
+  const [createdKey, setCreatedKey] = useState(null)
   const [revokingKeyId, setRevokingKeyId] = useState(null) // keyId being revoked
   const [newLabel, setNewLabel] = useState('')
 
@@ -70,12 +74,23 @@ export default function PublisherKeys() {
       const result = await createPublisherKey(newLabel)
       setCreatedKey(result)
       setTab('created')
-      setCreating(false)
-      // Optionally, we can clear the label and refetch keys after a delay
-      // but we keep the created key visible until the user dismisses it.
     } catch (err) {
       console.error('Failed to create publisher key:', err)
-      setError('Could not create publisher key. Please try again.')
+      // `publisher_keys_active_env_key` allows exactly one unrevoked key per
+      // (publisher_id, key_env) and key_env is always "test", so a second key
+      // can only be created after the first is revoked. That is a conflict the
+      // developer can act on, not a server fault -- naming the key that is in
+      // the way is the difference between a dead end and a next step.
+      if (err?.status === 409 && err?.payload?.code === 'KEY_EXISTS') {
+        const existing = err.payload.existingKey || {}
+        const named = existing.label ? ` (“${existing.label}”)` : ''
+        setError(
+          `An active key already exists in this environment${named}. Cancel, ` +
+          'revoke it, then create the replacement.'
+        )
+      } else {
+        setError('Could not create publisher key. Please try again.')
+      }
     } finally {
       setCreating(false)
     }
@@ -133,28 +148,6 @@ export default function PublisherKeys() {
     )
   }
 
-  if (error) {
-    return (
-      <Panel className="adv-panel">
-        <AdvPageHead
-          index="D?"
-          label="Publisher Keys"
-          title="Error loading publisher keys"
-        />
-        <div className="panel adv-panel" aria-label="Error">
-          <p className="adv-panel__sub">{error}</p>
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={fetchKeys}
-          >
-            Try again
-          </button>
-        </div>
-      </Panel>
-    )
-  }
-
   if (tab === 'creating') {
     return (
       <Panel className="adv-panel">
@@ -197,7 +190,7 @@ export default function PublisherKeys() {
             </button>
           </div>
           {error && (
-                 <p className="setup__text-error">
+                 <p className="setup__text-error" role="alert">
                    {error}
                  </p>
           )}
@@ -206,9 +199,52 @@ export default function PublisherKeys() {
     )
   }
 
+  // The full-page failure view belongs to the LIST, which is the only view
+  // with a retry that makes sense: re-running the list is what recovers it.
+  // While the form is open this branch used to render first and replace the
+  // form with an error page whose only action reloaded the list -- so a
+  // missing label, or a rejected create, stranded the developer with no way
+  // back to the form but a browser reload.
+  if (error && tab === 'list') {
+    return (
+      <Panel className="adv-panel">
+        <AdvPageHead
+          index="D?"
+          label="Publisher Keys"
+          title="Error loading publisher keys"
+        />
+        <div className="panel adv-panel" aria-label="Error">
+          <p className="adv-panel__sub">{error}</p>
+          <div className="setup__actions">
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={fetchKeys}
+            >
+              Try again
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={() => { setError(null); setTab('creating') }}
+            >
+              Create a key instead
+            </button>
+          </div>
+        </div>
+      </Panel>
+    )
+  }
+
   if (tab === 'created') {
-    const { key, rawKey } = createdKey
-    const fragment = key?.key_prefix || null
+    // createPublisherKey() returns the row itself -- publisher_keysApi.js
+    // already did `return json.key`. Reading it as `{ key, rawKey }` found
+    // two undefined properties, so the plate showed the literal fallback
+    // "pk_test_•••" and CopyButton copied `undefined`: the key was minted on
+    // the server and then thrown away in the UI, which is what "creating a
+    // key in-site does not work" looked like.
+    const rawKey = createdKey?.publishableKey || null
+    const fragment = createdKey?.key_prefix || null
     const display = rawKey
       ? `${rawKey.slice(0, 8)}${MASK}`
       : `${fragment || 'pk_test_'}${MASK}`
@@ -233,7 +269,14 @@ export default function PublisherKeys() {
                 {display}
               </code>
               <span className="setup__keyactions">
-                <CopyButton text={rawKey} label="key" baseClass="setup__copy" />
+                {rawKey ? (
+                  <CopyButton text={rawKey} label="key" baseClass="setup__copy" />
+                ) : (
+                  <span className="setup__text-error">
+                    This response carried no key value. Revoke the key and create
+                    another.
+                  </span>
+                )}
               </span>
             </div>
             <p className="setup__note">
@@ -252,6 +295,14 @@ export default function PublisherKeys() {
               I've copied the key
             </button>
           </div>
+          {/* Dismissing re-runs the list, which can fail on its own. The key
+              is already in the developer's hands at that point, so the plate
+              stays and the failure is reported beside it. */}
+          {error && (
+            <p className="setup__text-error" role="alert">
+              {error}
+            </p>
+          )}
         </div>
       </Panel>
     )
@@ -291,59 +342,61 @@ export default function PublisherKeys() {
                   Create new key
                 </button>
               </div>
-              <table className="key-table">
-                <thead>
-                  <tr>
-                    <th>Label</th>
-                    <th>Key Prefix</th>
-                    <th>Created</th>
-                    <th>Last Used</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {keys.map((key) => (
-                    <tr key={key.id}>
-                      <td>{key.label || '-'}</td>
-                      <td>
-                        <code className="key-prefix">{key.key_prefix}</code>
-                      </td>
-                      <td>{new Date(key.created_at).toLocaleString()}</td>
-                      <td>
-                        {key.last_used_at ? (
-                          new Date(key.last_used_at).toLocaleString()
-                        ) : (
-                          <span className="text--muted">Never</span>
-                        )}
-                      </td>
-                      <td>
-                        {key.revoked_at ? (
-                          <span className="badge badge--outline badge--error">
-                            Revoked
-                          </span>
-                        ) : (
-                          <span className="badge badge--outline badge--live">
-                            Active
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {key.revoked_at ? null : (
-                          <button
-                            type="button"
-                            className="btn btn--ghost btn--sm"
-                            onClick={() => handleRevokeKey(key.id)}
-                            disabled={revokingKeyId === key.id}
-                          >
-                            {revokingKeyId === key.id ? 'Revoking…' : 'Revoke'}
-                          </button>
-                        )}
-                      </td>
+              <div className="adv-tablewrap">
+                <table className="key-table">
+                  <thead>
+                    <tr>
+                      <th>Label</th>
+                      <th>Key Prefix</th>
+                      <th>Created</th>
+                      <th>Last Used</th>
+                      <th>Status</th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {keys.map((key) => (
+                      <tr key={key.id}>
+                        <td>{key.label || '-'}</td>
+                        <td>
+                          <code className="key-prefix">{key.key_prefix}</code>
+                        </td>
+                        <td>{new Date(key.created_at).toLocaleString()}</td>
+                        <td>
+                          {key.last_used_at ? (
+                            new Date(key.last_used_at).toLocaleString()
+                          ) : (
+                            <span className="text--muted">Never</span>
+                          )}
+                        </td>
+                        <td>
+                          {key.revoked_at ? (
+                            <span className="badge badge--outline badge--error">
+                              Revoked
+                            </span>
+                          ) : (
+                            <span className="badge badge--outline badge--live">
+                              Active
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          {key.revoked_at ? null : (
+                            <button
+                              type="button"
+                              className="btn btn--ghost btn--sm"
+                              onClick={() => handleRevokeKey(key.id)}
+                              disabled={revokingKeyId === key.id}
+                            >
+                              {revokingKeyId === key.id ? 'Revoking…' : 'Revoke'}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </>
           )}
         </div>
