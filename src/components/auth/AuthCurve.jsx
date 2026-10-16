@@ -1,11 +1,11 @@
 /**
- * AuthCurve — the ribbon that sits above every auth screen.
+ * AuthCurve — the ribbon that is the background of every auth screen.
  *
  * One component covers login, signup and the four signup confirmation states
  * because `AuthShell` is the only place all of them share. It takes a `mode`,
  * draws the matching curve, and runs the word trail along it forever.
  *
- * Three things this deliberately does *not* do:
+ * Five things this deliberately does *not* do:
  *
  *  - It does not keep the scroll offset in state. Sixty writes a second into
  *    React would re-render the auth form sixty times a second for an effect
@@ -21,13 +21,35 @@
  *  - It does not repoint the `textPath` href. Only one path is ever mounted,
  *    under a fixed id, so the reference never has to be resolved again —
  *    Safari does not reliably re-resolve a changed `textPath` href.
+ *
+ *  - It does not let the trail exist before the ribbon does. A second copy of
+ *    the path, white, inside a mask is stroked with the same dash as the
+ *    visible line, so the words are revealed by the draw instead of sliding
+ *    around in front of a page that has not arrived yet.
+ *
+ *  - It does not glow with a filter. The halo underneath is a third copy of
+ *    the path, wider and fainter, stroked by the same pass as the line above
+ *    it. A CSS filter has to be rasterised into its own buffer, and because
+ *    the trail moves every frame that buffer is reallocated every frame —
+ *    measured at about 17fps with the filter and 46 without, on this layer
+ *    alone. A stroke costs nothing extra to get the same glow.
+ *
+ *  - It does not carry a switcher. It used to export one, and the tabs it
+ *    drew sat above the email field as the first thing in the reading column
+ *    — two buttons answering a question the page below them already answers.
+ *    A sign-up form already has a link to sign in under its submit button,
+ *    and a second copy above the fold is noise wearing a costume. The ribbon
+ *    is scenery; it does not get to navigate.
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import usePrefersReducedMotion from '../../hooks/usePrefersReducedMotion.js'
-import { navigateApp } from '../../hooks/useAppRoute.js'
 import {
-  CURVE_ORDER,
+  DRAW_MASK_ID,
+  EDGE_FADE_ID,
+  EDGE_FADE_STOPS,
+  EDGE_MASK_ID,
   GRADIENT_ID,
+  MASK_REGION,
   PATH_ID,
   PATH_REF,
   advance,
@@ -39,10 +61,16 @@ import {
 } from '../../lib/authCurve.js'
 import './AuthCurve.css'
 
+/**
+ * The ribbon. `mode` selects the curve; everything else about the draw is
+ * measured from the DOM, so there is nothing to keep in sync with the markup.
+ */
 export default function AuthCurve({ mode = 'login' }) {
   const curve = curveFor(mode)
   const reduced = usePrefersReducedMotion()
   const pathRef = useRef(null)
+  const haloRef = useRef(null)
+  const maskPathRef = useRef(null)
   const trailRef = useRef(null)
   const trailPathRef = useRef(null)
   const trail = useMemo(() => buildTrail(curve.label), [curve.label])
@@ -52,31 +80,47 @@ export default function AuthCurve({ mode = 'login' }) {
    * the line wipes itself on every visit instead of only appearing once. The
    * transition lives in CSS, so it has to be taken out of the inline style
    * before the reset lands or the reset would animate too.
-   */
+   *
+* The mask copy is written in the same breath as the visible line, and so is
+ * the halo underneath it. They share a `d`, so they share a length, and the
+ * whole point of both is that they arrive *with* the ribbon — written a frame
+ * apart the glow would lead the line and the words would appear behind a page
+ * that had not turned up yet.
+ */
   const draw = useCallback(() => {
     const path = pathRef.current
+    const halo = haloRef.current
+    const maskPath = maskPathRef.current
     if (!path) return
     const total = path.getTotalLength()
     if (!(total > 0)) return
     const { dasharray, dashoffset } = dashPair(total)
+    const lines = [halo, path, maskPath].filter(Boolean)
 
-    path.style.transition = 'none'
-    path.style.strokeDasharray = dasharray
-    path.style.strokeDashoffset = reduced ? '0' : dashoffset
-    path.style.opacity = '1'
+    for (const line of lines) {
+      line.style.transition = 'none'
+      line.style.strokeDasharray = dasharray
+      line.style.strokeDashoffset = reduced ? '0' : dashoffset
+      line.style.opacity = '1'
+    }
 
     if (reduced) return
 
     // Force the hidden state to be committed before the next write. Without
     // this both values land in the same frame and the line simply appears.
     void path.getBoundingClientRect()
-    path.style.transition = ''
-    path.style.strokeDashoffset = '0'
+    for (const line of lines) {
+      line.style.transition = ''
+      line.style.strokeDashoffset = '0'
+    }
   }, [reduced])
 
+  // `curve.id` is a dependency in its own right: navigating from /login to
+  // /signup swaps the path but leaves `draw` identical, so without it the
+  // second curve would appear already drawn.
   useEffect(() => {
     draw()
-  }, [draw])
+  }, [draw, curve.id])
 
   useEffect(() => {
     if (reduced) return undefined
@@ -111,67 +155,80 @@ export default function AuthCurve({ mode = 'login' }) {
     return () => cancelAnimationFrame(frame)
   }, [mode, reduced])
 
-  /**
-   * The already-active tab re-draws instead of navigating: pushing `/login`
-   * while already on `/login` changes nothing, so the ribbon would never
-   * respond to the click that was supposed to draw it.
-   */
-  const onTab = useCallback(
-    (event, item) => {
-      if (item.id === curve.id) {
-        event.preventDefault()
-        draw()
-        return
-      }
-      navigateApp(item.href)
-    },
-    [curve.id, draw],
-  )
-
   return (
-    <div className="auth-curve">
-      <div className="auth-curve__stage">
-        <svg
-          className="auth-curve-svg"
-          viewBox="0 0 100 60"
-          preserveAspectRatio="xMidYMid slice"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <defs>
-            {/* The stops are styled from CSS, not from a `stopColor`
-                attribute: presentation attributes do not substitute
-                `var()`, so a token on them would silently resolve to nothing. */}
-            <linearGradient id={GRADIENT_ID} x1="0" y1="0" x2="1" y2="1">
-              <stop className="auth-curve__stop auth-curve__stop--hi" offset="0" />
-              <stop className="auth-curve__stop auth-curve__stop--lo" offset="1" />
-            </linearGradient>
-          </defs>
+    <div className="auth-curve" aria-hidden="true">
+      <svg
+        className="auth-curve-svg"
+        viewBox="0 0 100 60"
+        preserveAspectRatio="xMidYMid slice"
+        focusable="false"
+      >
+        <defs>
+          {/* The stops are styled from CSS, not from a `stopColor`
+              attribute: presentation attributes do not substitute
+              `var()`, so a token on them would silently resolve to nothing. */}
+          <linearGradient id={GRADIENT_ID} x1="0" y1="0" x2="1" y2="1">
+            <stop className="auth-curve__stop auth-curve__stop--hi" offset="0" />
+            <stop className="auth-curve__stop auth-curve__stop--lo" offset="1" />
+          </linearGradient>
+
+          {/* What makes the edges soft. A radial falloff from the middle of the
+              page, so the ribbon dissolves into the background instead of
+              stopping at a rectangle. */}
+          <radialGradient id={EDGE_FADE_ID} cx="50%" cy="50%" r="62%">
+            {EDGE_FADE_STOPS.map((stop) => (
+              <stop
+                key={stop.key}
+                className={`auth-curve__fade auth-curve__fade--${stop.key}`}
+                offset={stop.offset}
+              />
+            ))}
+          </radialGradient>
+
+          <mask
+            id={EDGE_MASK_ID}
+            maskUnits="userSpaceOnUse"
+            x={MASK_REGION.x}
+            y={MASK_REGION.y}
+            width={MASK_REGION.width}
+            height={MASK_REGION.height}
+          >
+            <rect
+              className="auth-curve__fade-fill"
+              x={MASK_REGION.x}
+              y={MASK_REGION.y}
+              width={MASK_REGION.width}
+              height={MASK_REGION.height}
+              fill={`url(#${EDGE_FADE_ID})`}
+            />
+          </mask>
+
+          {/* The reveal. A white copy of the same path, stroked with the same
+              dash, so the trail is only painted where the ribbon has been. */}
+          <mask
+            id={DRAW_MASK_ID}
+            maskUnits="userSpaceOnUse"
+            x={MASK_REGION.x}
+            y={MASK_REGION.y}
+            width={MASK_REGION.width}
+            height={MASK_REGION.height}
+          >
+            <path ref={maskPathRef} className="auth-curve__mask-line" d={curve.d} />
+          </mask>
+        </defs>
+
+        <g mask={`url(#${EDGE_MASK_ID})`}>
+          {/* Underneath, not on top: a wider fainter copy of the same path. The
+              glow costs one extra stroke instead of one extra buffer. */}
+          <path ref={haloRef} className="auth-curve__halo" d={curve.d} />
           <path ref={pathRef} id={PATH_ID} className="auth-curve__line" d={curve.d} />
-          <text className="auth-curve__trail" ref={trailRef}>
+          <text className="auth-curve__trail" ref={trailRef} mask={`url(#${DRAW_MASK_ID})`}>
             <textPath ref={trailPathRef} href={PATH_REF} startOffset="0%">
               {trail}
             </textPath>
           </text>
-        </svg>
-      </div>
-      <div className="auth-curve__tabs" role="group" aria-label="Log in or create an account">
-        {CURVE_ORDER.map((id) => {
-          const item = curveFor(id)
-          const active = item.id === curve.id
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={active ? 'auth-curve__tab btn btn--primary btn--sm' : 'auth-curve__tab btn btn--ghost btn--sm'}
-              aria-current={active ? 'page' : undefined}
-              onClick={(event) => onTab(event, item)}
-            >
-              {item.label}
-            </button>
-          )
-        })}
-      </div>
+        </g>
+      </svg>
     </div>
   )
 }

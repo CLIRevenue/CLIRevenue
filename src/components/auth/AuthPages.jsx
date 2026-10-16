@@ -107,13 +107,36 @@ export function AuthShell({ eyebrow, title, body, children, footer, backHref = '
   //
   // `mode` is the one piece of state the shell cannot infer: the curve has to
   // know whether it is drawing the login dip or the signup S before it draws.
+  //
+  // There is no switcher above the form and no replay counter to keep. The
+  // ribbon draws once when the page arrives; getting from sign in to sign up is
+  // the link under the submit button, where it belongs, and a second pair of
+  // buttons above the email field only stole the first thing a reader looked
+  // at.
+  //
+  // `adv-shell--auth` is the hook the layout hangs off. The shell itself is
+  // shared with the dashboards and `/advertiser`, which genuinely do scroll,
+  // so the one-screen treatment cannot be a change to `.adv-shell` — it has to
+  // be something only an auth screen opts into. See `AuthCurve.css`, which is
+  // this feature's only stylesheet and therefore the natural home for it.
+  //
+  // The back link sits on the eyebrow's row rather than on a row of its own.
+  // It was its own row, and that row cost 21px plus a gap on the one screen
+  // where there is no slack left: the signup form is 427px tall and on a
+  // 1366x768 laptop the column was 42px over. It is also the right place —
+  // the link is page metadata, and so is the eyebrow, and the header 73px
+  // above already offers Home / Developers / Advertisers and the wordmark for
+  // anyone who wants to leave. Sharing one row costs nothing and says both
+  // things at once.
   return (
     <PageChrome>
-      <section className="adv-shell" aria-label={title}>
-          <div className="adv-shell__inner adv-shell__inner--narrow">
-          <AuthCurve mode={mode} />
-          <p className="form__note"><button type="button" className="adv-link" onClick={() => navigateApp(backHref)}>← Back to site</button></p>
-          <p className="eyebrow eyebrow--plain">{eyebrow}</p>
+      <section className="adv-shell adv-shell--auth" aria-label={title}>
+        <AuthCurve mode={mode} />
+        <div className="adv-shell__inner adv-shell__inner--narrow">
+          <div className="adv-shell__meta">
+            <p className="form__note"><button type="button" className="adv-link" onClick={() => navigateApp(backHref)}>← Back to site</button></p>
+            <p className="eyebrow eyebrow--plain">{eyebrow}</p>
+          </div>
           <h2 className="block__title">{title}</h2>
           {body ? <p className="block__body">{body}</p> : null}
           <div className="panel adv-panel">{children}</div>

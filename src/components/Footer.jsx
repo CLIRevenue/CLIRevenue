@@ -17,6 +17,14 @@ export default function Footer() {
     clean === '/app' ||
     clean.startsWith('/app/')
 
+  /* The auth screens are the other pages that do without a footer. The form
+     is the page; the header and the form together are one screen, and the
+     only thing the footer was doing was pushing the submit button below the
+     fold. The legal links it carries are one tap away in the header on every
+     other page, and an auth page is not a page anyone scrolls to read
+     boilerplate from. */
+  const isAuth = clean === '/login' || clean === '/signup'
+
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('theme')
     return saved === 'light' ? 'light' : 'dark'
@@ -32,7 +40,7 @@ export default function Footer() {
     return () => window.removeEventListener('storage', handler)
   }, [])
 
-  if (isDashboard) return null
+  if (isDashboard || isAuth) return null
 
   const year = new Date().getFullYear()
 

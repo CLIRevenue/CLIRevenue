@@ -96,7 +96,7 @@
   .wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 28px}
   .ambient.live{opacity:1}
 
-  main,header.nav,footer{position:relative;z-index:1}
+  main,header.nav,.landing footer{position:relative;z-index:1}
   header.nav{background:rgba(11,11,14,.76)}
 
   /* ── cursor ring ─────────────────────────────────────────────
@@ -261,53 +261,89 @@
     display:flex;flex-direction:column;
   }
   header.nav.stuck{border-bottom-color:var(--line)}
+  /* The wordmark, the section links and the four calls to action are one row
+     and they stay one row. This used to say `flex-wrap: wrap`, which meant the
+     header was allowed to become two rows — and it did, at every width: the
+     nav sat 45px lower than the wordmark on a 1440px screen, where there was
+     room to spare, because `wrap` was answering a question about width that
+     nobody asked. The room was never the problem; the permission was.
+
+     At narrow widths the three groups genuinely do not fit (brand 109px, nav
+     1095px, buttons 432px against a 1280px row), and the answer to that is not
+     to break the line. It is to pan it — see the 960px block, where the row
+     becomes a single horizontal scroller. */
   .nav-in{
     display:flex;
     align-items:center;
     justify-content:flex-start;
-    flex-wrap:wrap;
-    gap:10px 28px;
+    flex-wrap:nowrap;
+    gap:10px 20px;
     padding:18px 24px;
     width:100%;
     max-width:1280px;
     margin:0 auto;
+    min-width:0;
   }
 .brand-text-landing {
   display:inline-flex;
   align-items:center;
   gap:2px;
   font-weight:600;
-  font-size:20px;
+  font-size:18px;
   letter-spacing:-0.02em;
   flex: 0 0 auto;
+  /* The one thing in the header that may not reflow is the product's own
+     name: "CLI" over "Revenue" reads as two words. */
+  white-space: nowrap;
   text-decoration:none;
   transition:opacity .2s ease-out;
 }
 .brand-text-landing:hover{ opacity:.72 }
 .brand-text-landing .brand-cli,
 .brand-text-landing .brand-revenue {
-  font-size:20px;
+  font-size:18px;
 }
 .brand-text-landing .brand-cli{color:var(--ink)}
 .brand-text-landing .brand-revenue{color:#ff1f2d !important;}
 
+  /* The only part of the header that gives way. It shrinks first and, if it
+     still runs out of room, it pans inside its own column — see the 960px
+     block, which stops it shrinking altogether and hands the panning to the
+     whole row. */
   .nav-links {
   display: flex;
-  gap: 24px;
-  font-size: 14.5px;
+  gap: 16px;
+  font-size: 13px;
   color: var(--ink-2, #a1a1aa);
   list-style: none;
   align-items: center;
   flex: 1 1 auto;
+  /* A floor, not a preference. `min-width: 0` alone lets this column shrink to
+     nothing at phone width, and a header whose navigation has zero width is a
+     worse answer than one that wraps: nothing wraps, the links are simply gone.
+     Below the 900px block this stops shrinking altogether and the whole row
+     pans instead — but between there and here it still shrinks, so it needs a
+     floor it cannot pass. 300px is about three links. */
+  min-width: 300px;
   justify-content: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.nav-links::-webkit-scrollbar { display: none }
 
+/* Sizes for the one-row promise. The nav and the four buttons together need
+     ~1692px unscaled against a 1232px row at 1440, so something had to give
+     and what gave is everything's padding and tracking rather than the content:
+     nothing is hidden and nothing pans at desktop width. Measured after the
+     change: 95 + 552 + 377 + 40 = ~1064px of content in a 1232px row.
+     The links are the longest single group, so they give the most. */
 .nav-links a {
   position: relative;
   display: inline-flex;
   align-items: center;
-  height: 34px;
-  padding: 0 12px;
+  height: 32px;
+  padding: 0 9px;
   border-radius: var(--ld-r6);
   color: inherit;
   text-decoration: none;
@@ -335,12 +371,20 @@
   right: 12px;
 }
 
+/* The four calls to action never wrap. A pair of buttons sitting at a
+     different height from each other looks like a mistake even when it is not;
+     the row pans instead. */
 .nav-cta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 9px;
   margin-left: auto;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
+/* Scoped, because `lbtn--sm` is a general size step and the landing header is
+   the only place that has to fit four of them beside six links. */
+.nav-cta .lbtn--sm { height: 32px; padding: 0 11px; font-size: 12px; }
 
 
   /* ── buttons ─────────────────────────────────────────── */
@@ -877,7 +921,16 @@
   .cta-band .lbtn:hover{background:#1b1b21}
 
   /* ── footer ──────────────────────────────────────────── */
-  footer{padding:56px 0 44px;border-top:1px solid var(--line);margin-top:96px;position:relative;overflow:hidden}
+  /* Scoped to the landing on purpose. `landing.css` is in the bundle on every
+     route — `App.jsx` imports `Landing.jsx` statically, and `Landing.jsx`
+     imports this file — so a bare `footer` selector here also matched the
+     SHARED site footer on /login and /signup. That footer had been inheriting
+     56px of top padding, 44px of bottom padding and a 96px top margin that only
+     this page ever asked for: 402px of document height the auth screens did
+     not know they were paying for, which is why they could not fit on one
+     screen. The landing's own footer is `<footer className="foot">`, and it is
+     inside `<div className="landing">`. */
+  .landing footer{padding:56px 0 44px;border-top:1px solid var(--line);margin-top:96px;position:relative;overflow:hidden}
   /* Heart top-left, wordmark under it, the three link columns down the
      right. A grid with explicit placement states that in four lines. The
      flex it replaced left the columns stacked on each other, because the
@@ -978,24 +1031,38 @@
   @media (max-width:960px){
     .steps,.ba,.trust,.roles{grid-template-columns:1fr}
     .bento--platform .cell:nth-child(n){grid-column:span 12}
-    /* The section strip scrolls sideways rather than disappearing. Hiding it
-       left a phone with no way to reach any section but the top of the page. */
+    /* The section links shrink a little further at tablet width. They do not
+       move to their own row: the row used to promote them with
+       `order:3; flex-basis:100%`, which is what made the header two rows on
+       every screen — 45px of offset between the wordmark and the nav at 1440,
+       in a row that had room. Nothing is hidden and nothing pans at desktop
+       width; below that the nav scrolls inside its own column rather than
+       pushing the buttons off the end. */
     .nav-links{
-      order:3;flex-basis:100%;justify-content:flex-start;
-      gap:4px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
-      padding-bottom:2px;
+      gap:10px;
     }
-    .nav-links::-webkit-scrollbar{display:none}
-    .nav-links a{flex:0 0 auto;height:30px;padding:0 10px;font-size:13px}
+    .nav-links a{flex:0 0 auto;height:30px;padding:0 7px;font-size:12.5px}
     .assure{grid-template-columns:1fr}
   }
+  @media (max-width:900px){
+    /* Below here the nav cannot keep shrinking without becoming a sliver, so
+       it stops and the *row* becomes the scroller instead. The promise is
+       about layout, not about width: everything stays on one line at every
+       size, and below this the line pans. This is the same trade the console
+       header makes, for the same reason — a nav column squeezed to nothing is
+       not "responsive", it is gone. */
+    .nav-in{overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+    .nav-in::-webkit-scrollbar{display:none}
+    .nav-links{flex:0 0 auto;min-width:0;overflow:visible}
+  }
   @media (max-width:560px){
-    /* Four buttons no longer fit on one row at phone width — the CTA pair
-       was running 1px past the viewport. Wrapping is the fix; shrinking the
-       buttons again only moves the cliff. */
-    .nav-cta{flex-wrap:wrap;row-gap:8px;justify-content:flex-end}
+    /* Four buttons do not fit on one row at phone width, and this block used
+       to answer that by wrapping them — which is how one line became two rows
+       of uneven height. The row pans sideways instead, so the header is one
+       line at all widths and the buttons keep their own baseline. */
     .nav-in{padding:14px 16px;gap:8px 12px}
-    .nav-cta{gap:8px}
+    .nav-links{gap:8px}
+    .nav-cta .lbtn--sm{height:30px;padding:0 9px;font-size:11.5px}
     .lbtn,.btn{height:42px;padding:0 16px;font-size:13.5px}
     .lbtn--sm,.btn--sm{height:34px;padding:0 12px;font-size:12.5px}
     .lhero{padding:56px 0 40px}

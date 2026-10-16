@@ -1,64 +1,169 @@
 /*
- * AuthCurve — the ribbon above the auth forms.
+ * AuthCurve — the ribbon that is the background of the auth pages.
  *
  * The colours are declared here, on `.auth-curve`, and not in `:root`. A token
  * added to `:root` acquires an obligation to be mirrored in `.light-theme`, and
- * these three blues are a hero flourish for one component: they have no
- * business in the global palette.
+ * these blues are a hero flourish for one component: they have no business in
+ * the global palette.
  *
  * The SVG scales itself, so nothing below is in device pixels. The stroke
  * width, the font size and the letter spacing are all user units on a 100x60
- * viewBox, which is why they look small in this file and large on the page.
+ * viewBox, which is why they look small in this file and enormous on the page.
  */
 
+/*
+ * Full bleed, and deliberately not a panel.
+ *
+ * The layer is out of flow and pinned to the shell, so the ribbon is the page
+ * and the form is what sits on it. Its containing block is `.adv-shell`, not
+ * `.adv-shell__inner` — which is why the layer is a direct child of the shell
+ * rather than a child of the reading column, and why the two are siblings here
+ * rather than nested.
+ *
+ * `pointer-events: none` because the whole point is that the form is still the
+ * page: the ribbon is scenery and must not intercept a click on the sign-in
+ * button that happens to sit on top of it.
+ */
 .auth-curve {
   --auth-curve-blue-hi: #3b82f6;
   --auth-curve-blue-lo: #1d4ed8;
   --auth-curve-ink: #ffffff;
   --auth-curve-edge: rgba(4, 12, 38, 0.55);
-  --auth-curve-glow: rgba(37, 99, 235, 0.38);
-  --auth-curve-h: clamp(116px, 17vw, 186px);
+  --auth-curve-glow: rgba(37, 99, 235, 0.42);
 
-  display: grid;
-  gap: 12px;
-  margin: -8px 0 2px;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
 /*
- * The stage clips. Both curves span nearly the full height of the viewBox, so
- * at any scale that fills the width they run off the top and the bottom —
- * which is the point: the ribbon reads as a line continuing past the frame
- * rather than a shape that was shrunk to fit inside it.
+ * The reading column has to paint over the ribbon. An absolutely positioned
+ * layer sits above in-flow content in the same stacking context whatever its
+ * z-index says, so the column is lifted rather than the layer lowered: a
+ * negative z-index would put the ribbon behind `.adv-shell`'s own opaque
+ * background and make it disappear.
+ *
+ * The combinator is the whole mechanism — the layer is always the first child
+ * of the shell, so it always precedes the column.
  */
-.auth-curve__stage {
+.auth-curve ~ .adv-shell__inner {
   position: relative;
-  height: var(--auth-curve-h);
-  overflow: hidden;
-  border: 1px solid var(--ld-line);
-  border-radius: var(--ld-r9);
-  background: var(--ld-well);
-  box-shadow: inset 0 1px 0 var(--ld-line-strong);
+  z-index: 1;
 }
 
-/* `slice` rather than `none`: a non-uniform scale would stretch the trail's
-   glyphs along one axis, and a stretched word is worse than no word. */
+/*
+ * `slice` rather than `none`: a non-uniform scale would stretch the trail's
+ * glyphs along one axis, and a stretched word is worse than no word. `slice`
+ * fills the shell with the wider of the two ratios and lets the ribbon run off
+ * the top and the bottom, which is the point — the line continues past the
+ * frame instead of being shrunk to fit inside it.
+ */
 .auth-curve-svg {
   display: block;
   width: 100%;
   height: 100%;
-  pointer-events: none;
 }
 
 .auth-curve__stop--hi { stop-color: var(--auth-curve-blue-hi); }
 .auth-curve__stop--lo { stop-color: var(--auth-curve-blue-lo); }
 
+/*
+ * The soft edge. Nothing here draws a rectangle: the mask is a radial falloff,
+ * so the ribbon thins out and is gone well before the viewport boundary and the
+ * page background takes over. That is what replaces the frame this used to
+ * have — a border and a radius made a box; a falloff makes a background.
+ */
+.auth-curve__fade { stop-color: var(--auth-curve-ink); }
+.auth-curve__fade--in { stop-opacity: 1; }
+.auth-curve__fade--mid { stop-opacity: 1; }
+.auth-curve__fade--soft { stop-opacity: 0.28; }
+.auth-curve__fade--out { stop-opacity: 0; }
+.auth-curve__fade-fill { fill: url(#auth-curve-fade); }
+
+/*
+ * The glow is a stroke, not a filter.
+ *
+ * This used to be `filter: drop-shadow(0 0 14px …)` on the line, and it made
+ * the whole page crawl. Measured over three alternating passes, holding
+ * everything else constant: ~17fps with the filter, ~46fps without it. A CSS
+ * filter on an element has to be rasterised into its own buffer, and because
+ * the trail inside the masked group moves every frame, that buffer is
+ * invalidated and reallocated every frame across the full 1280x931 layer. The
+ * masks were innocent — turning them off changed nothing.
+ *
+ * A wider, fainter copy of the same stroke underneath is visually almost the
+ * same and costs nothing extra, because a stroke is drawn by the same pass
+ * that draws the line above it.
+ */
+.auth-curve__halo {
+  fill: none;
+  stroke: var(--auth-curve-blue-lo);
+  /*
+   * Proportional to the line, not an absolute: 5.8 against a stroke of 3.2 is
+   * the same 1.8x bloom the ribbon had when the line was 8 and the halo 15,
+   * and when the line was 5 and the halo 9. Thinning one without the other
+   * turns a glow into a smear.
+   */
+  stroke-width: 5.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.34;
+  transition:
+    stroke-dashoffset 1200ms cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 260ms linear;
+}
+
+/*
+ * The ribbon and its mask twin carry the identical transition, and so does the
+ * halo. The mask is what makes the words arrive with the line instead of ahead
+ * of it, and that only holds while all of them are easing on the same curve
+ * over the same duration.
+ */
 .auth-curve__line {
   fill: none;
   stroke: url(#auth-curve-grad);
-  /* Wide enough that the trail sits on the line rather than beside it. */
-  stroke-width: 11;
+  /*
+   * User units, not pixels. The `slice` scale is about sixteen on a desktop, so
+   * this is a band roughly 55px thick.
+   *
+   * It was 8 — about 134px, a slab — then 5. The trail still has to sit
+   * *inside* the ribbon rather than beside it, which is the only reason the
+   * stroke is heavy at all, and that requirement is about the ratio between the
+   * two, not the absolute size. At 3.2 with the trail at 1.4 the ratio is 44%
+   * (it was 45% at the start) while the band is barely more than half its
+   * original weight: the page behind the form shows through, which is what a
+   * background is for.
+   *
+   * Below about 2.5 the band stops reading as a ribbon and starts reading as a
+   * stripe with letters painted on it, and the letters stop being words. That
+   * is the floor, not an accident.
+   */
+  stroke-width: 3.2;
+  /*
+   * `round` on the join, not the default `miter`. These paths are meant to read
+   * as one continuous gesture and they are not: `T 48 38` continues from
+   * `Q 20 22, 42 25` at a slightly different angle, which leaves a kink at
+   * (42, 25), and the signup path changes direction at both of its joints. A
+   * miter turns every one of those into a spike. Rounding costs nothing and is
+   * the difference between a drawn curve and a folded one.
+   */
   stroke-linecap: round;
-  filter: drop-shadow(0 0 6px var(--auth-curve-glow));
+  stroke-linejoin: round;
+  transition:
+    stroke-dashoffset 1200ms cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 260ms linear;
+}
+
+/* The same path, in white, under a mask. Never visible itself. */
+.auth-curve__mask-line {
+  fill: none;
+  stroke: var(--auth-curve-ink);
+  /* Identical to the line it reveals: a different width would let the words
+     appear at the edge of the ribbon instead of inside it. */
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   transition:
     stroke-dashoffset 1200ms cubic-bezier(0.65, 0, 0.35, 1),
     opacity 260ms linear;
@@ -66,41 +171,261 @@
 
 /*
  * The trail is white with a dark keyline behind it. On its own, white on the
- * light end of the gradient is only about 3.6:1 — legible, not comfortable at
- * 40px. The keyline is what makes it comfortable, and `paint-order` is what
- * keeps the glyph shape from being eaten by the stroke.
+ * light end of the gradient is barely over 3:1 — legible, not comfortable at
+ * this size. The keyline is what makes it comfortable, and `paint-order` is
+ * what keeps the glyph shape from being eaten by the stroke.
  */
 .auth-curve__trail {
   font-family: var(--mono);
-  font-size: 6.2px;
+  /* Under half the stroke width: the glyphs are inscribed in the ribbon, not
+     sitting on top of it. The 44% ratio is the contract, so this number moves
+     with `stroke-width` and never independently. */
+  font-size: 2.2px;
   font-weight: 700;
-  letter-spacing: 0.18px;
+  letter-spacing: 0.1px;
   fill: var(--auth-curve-ink);
   stroke: var(--auth-curve-edge);
-  stroke-width: 0.45px;
+  stroke-width: 0.18px;
   paint-order: stroke fill;
 }
 
-.auth-curve__tabs {
+/* ── one screen ─────────────────────────────────────────────────────────────
+   The auth pages are the only pages on this site with nothing below the fold:
+   a header and a form, both visible at once. Three things were quietly making
+   that impossible, and all three are real defects rather than taste.
+
+   1. A bare `footer` selector in the landing stylesheet was adding 56px of top
+      padding, 44px of bottom padding and a 96px top margin to the shared site
+      footer. `landing.css` loads on every route, so /login and /signup were
+      paying 402px of document height for a page margin only the marketing page
+      ever wanted. Fixed where it lives, in landing.css.
+
+   2. The footer itself. It was three things at once on this page — a legal
+      notice, a copyright line and a marketing control (the heart) — none of
+      which a reader arrives at /login to read. Footer.jsx already declined to
+      render on /app/**, because a dashboard has no room for one; the auth
+      screens now say the same thing. The legal links it carried are one tap
+      away in the header everywhere else, and an auth page is not a page anyone
+      scrolls down to read boilerplate from.
+
+   3. Two `min-height: 100vh`-family floors — `#root` at 100svh in index.css,
+      `.adv-shell` at 100svh in index.css, and `.clr-surface` at 100vh in
+      chrome.css — plus the shell's own 104px/96px padding, which exists on
+      every other page to clear a header that is not always there. Each is
+      taller than the window once the header has taken its 73px, so together
+      they made the document one and a half viewports tall.
+
+   The frame has to be `#root` and not `.clr-surface`, because App.jsx renders
+   the footer as a SIBLING of PageChrome's surface — so the surface is not an
+   element the footer could ever sit inside. `:has()` is the only way to say
+   "when an auth form is mounted, the page is the window", and it is new to
+   this codebase on purpose: it appears here and nowhere else, and only because
+   there is no other way to size an ancestor from a descendant.
+
+   `height` with `overflow-y: auto`, not `overflow: hidden`. On a screen tall
+   enough, `scrollHeight === clientHeight` and nothing moves at all. On a
+   genuinely short one, the form scrolls INSIDE the page instead of losing its
+   submit button off the bottom edge — a clipped submit button is a dead form.
+   `100dvh` rather than `100vh` so a mobile URL bar cannot push the form below
+   the fold. The `#root` id also outranks every class rule below it regardless of
+   which file happens to be imported last. */
+#root:has(.adv-shell--auth) {
+  height: 100dvh;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
-/*
- * The tabs borrow the product's own button so they cannot drift away from the
- * rest of the language. They are deliberately *not* `.magnetic`: a switcher
- * that leans away from the pointer while you are choosing where to go is the
- * exact failure the drift rule exists to prevent.
- */
-.auth-curve__tab {
-  font-family: var(--mono);
-  letter-spacing: var(--track-label);
+/* The surface gives up its viewport floor and becomes the flexible middle of
+   the column. There is no footer inside it on this page, so what is left is a
+   header, the form, and whatever the form does not fill. */
+#root:has(.adv-shell--auth) .clr-surface {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Same for the shell: the flexible middle of the column, and the other pages'
+   104px top padding dropped. `.adv-shell` is written twice because advertiser.css
+   sets that padding on a plain class and is imported AFTER this file — a single
+   class would lose on load order rather than on merit. */
+#root:has(.adv-shell--auth) .adv-shell.adv-shell--auth {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 24px var(--gutter);
+}
+
+/* The column is centred with auto margins, NOT with `justify-content: center`.
+
+   `justify-content` centres unconditionally. The moment the column is taller
+   than the shell the first rows go ABOVE the container and are simply gone: on
+   a 1280x800 window the back link and the eyebrow were landing at a negative
+   top, behind the sticky header, with nothing to scroll back to. An auto block
+   margin resolves to zero when there is no free space and centres when there
+   is, so the column either sits in the middle of the window or starts at the
+   top and overflows downward, where `#root` can scroll it.
+
+   Three classes on the selector beat `advertiser.css`'s `margin: 0 auto` on
+   `.adv-shell__inner`, so this does not depend on import order. */
+#root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .adv-shell__inner--narrow { margin-block: auto; }
+
+/* The eyebrow and the back link share one row. Two pieces of page metadata,
+   side by side, instead of two stacked rows with a gap between them — which is
+   where the 29px came from that the signup form needed on a 768px screen.
+
+   `flex-wrap: wrap` is deliberate and it never wraps in practice: the two items
+   are short and the column is 640px. It is there so that at 320px the eyebrow
+   drops below the link instead of the two colliding. The `margin: 0` is needed
+   because both `.form__note` and `.eyebrow` are reset to `margin: 0` by their
+   own rules, and the row is a flex container, so nothing here is negotiable. */
+#root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .adv-shell__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+#root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .adv-shell__meta > * {
+  margin: 0;
+}
+
+/* A short window: hand the air back to the column rather than making the reader
+   scroll for it. The vertical gap comes off too, because on a 760px-tall screen
+   fourteen pixels of it is the difference between the submit button being on the
+   page and being under the footer. `--gutter` is the project's own side spacing,
+   declared in chrome.css, so this introduces no new token. */
+@media (max-height: 860px) {
+  #root:has(.adv-shell--auth) .adv-shell.adv-shell--auth {
+    padding: 16px var(--gutter);
+  }
+  #root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .adv-shell__inner--narrow { gap: 10px; }
+}
+
+/* Below that the signup form is the long one, and it is the only thing on the
+   site that has not fitted a short window. Two hundred pixels of breathing room
+   come off the panel and the gaps — about 40px of slack, which is the difference
+   between the submit button being on the page and being one scroll down.
+   `.adv-panel`'s own 24px padding is set on a plain class in advertiser.css,
+   which loads later, so the selector carries both names. */
+@media (max-height: 780px) {
+  #root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .adv-shell__inner--narrow { gap: 8px; }
+  #root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .panel.adv-panel { padding: 16px; }
+}
+
+@media (max-height: 720px) {
+  #root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .adv-shell__inner--narrow { gap: 6px; }
+  #root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .panel.adv-panel { padding: 14px; }
+}
+
+/* 720p and the short half of a 768px screen — the band where 768 is still not
+   enough but 800 is. The 720 tier above assumes you have 720 and gives you
+   back ~40px, which is not enough on a 1280x720 window: the column came out
+   30px over even after the back link moved onto the eyebrow's row.
+
+   So this tier goes further, and only here: the shell's own padding drops to
+   12px, the gaps to 5, the panel's padding to 12, and the body's leading comes
+   in from 1.55 to 1.45. That is about 29px, which clears it. None of it is
+   visible as a change in design — 12px of shell padding and 5px of gap are
+   inside the range every other breakpoint here already uses.
+
+   What it does NOT do is shrink the form or the prose. Those two are the
+   reason the page exists and the reader came for them; a signup form with the
+   explanation cut off the top is a worse answer than a few pixels of scroll.
+
+   Below about 640px tall nothing else is left to give and the page scrolls
+   inside `#root`, which is the fallback this whole block was built around:
+   nothing is clipped, the submit button is still reachable, and the ribbon
+   still fills the window. */
+@media (max-height: 760px) {
+  #root:has(.adv-shell--auth) .adv-shell.adv-shell--auth {
+    padding: 4px var(--gutter);
+  }
+  #root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .adv-shell__inner--narrow { gap: 4px; }
+  #root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .panel.adv-panel { padding: 10px; }
+  #root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .adv-shell__inner--narrow > .block__body { line-height: 1.45; }
+  #root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .adv-shell__inner--narrow > .block__title { font-size: 38px; }
+}
+
+/* ── the shell's own prose ──
+   Two pieces of text on the auth pages were being lost, and neither for the
+   reason it looked like.
+
+   The body under the heading — "Two steps: your login, then who you are" —
+   paints `#a2a2ad` on `#09090c`. On flat ground that is about 7:1 and fine.
+   But the ribbon crosses behind it, and a 16px line of mid-grey reading over a
+   lit blue curve is a different colour from the same grey reading on black.
+
+   The note under the box — "Your role is set once at signup and decides which
+   console you can reach" — is worse. `.form__note` asks for `var(--ink-4)`, and
+   `--ink-4` is not one of the tokens the chrome bridge re-exports, so it falls
+   through to an index.css value: `#55555f`. At 9.5px in monospace that is
+   roughly 2.6:1, which does not clear WCAG AA for text at any size. It was not
+   being outshone by the ribbon, it was simply unreadable.
+
+   Both are direct children of the column, and the `>` is what keeps this
+   honest: the panel has micro-notes of its own at the same 9.5px ("Required
+   fields are marked *", "Pick Advertiser or Developer to show the profile
+   fields") which are captions inside a card and are meant to recede. Lifting
+   every `.form__note` on the page would lift those too, and a caption that
+   shouts is as wrong as a note that disappears.
+
+   The back link 20px above gets the same treatment as the closing note,
+   because it is the same element and it sits on the same background; leaving
+   one legible and the other at 2.6:1 would not be a decision. */
+#root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .adv-shell__inner--narrow > .block__body {
+  color: var(--ld-ink);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+#root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .adv-shell__meta > .form__note,
+#root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .adv-shell__inner--narrow > .form__note {
+  color: var(--ld-ink-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+/* The lines inside the panel that carry an ACTION get the same lift, for the
+   same reason, and they are the last thing on the page that matters.
+
+   The ribbon used to carry a Sign in / Sign up switcher. It is gone, by
+   request — so the only way between the two auth screens is now the pair of
+   links under the form: "No account? Create one" on sign in, "Have an
+   account? Log in" on sign up, plus "Forgot password?". All three are
+   `.adv-link` buttons inside a `.form__note`, and `.adv-link` has no colour
+   rule of its own anywhere in the project, so they inherit the note's
+   `#55555f` — about 2.6:1. A page that removed its switcher and left the
+   replacement at 2.6:1 has not replaced anything.
+
+   `:has()` picks out the notes that contain an action, so the panel's genuine
+   captions stay where they were: "Step 1 of 2 - credentials" and "Pick
+   Advertiser or Developer to show the profile fields" are labels for the
+   fields below them, and they are still fine at 9.5px inside a card. Only the
+   lines a reader has to be able to read AND click move up.
+
+   The action itself goes to `--ld-ink` and the words around it to
+   `--ld-ink-2`, so the line reads as one sentence with one bright word in it
+   rather than as a caption with a link hidden inside. */
+#root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .panel.adv-panel .form__note:has(.adv-link) {
+  color: var(--ld-ink-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+#root:has(.adv-shell--auth) .adv-shell.adv-shell--auth .panel.adv-panel .adv-link {
+  color: var(--ld-ink);
+  font-size: 12.5px;
+  font-weight: 500;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .auth-curve__line {
+  .auth-curve__line,
+  .auth-curve__halo,
+  .auth-curve__mask-line {
     transition: none;
-    filter: none;
   }
 }
