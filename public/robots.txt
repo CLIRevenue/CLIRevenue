@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /app/
+Disallow: /auth/callback
+Disallow: /login
+Disallow: /signup
+
+Sitemap: https://clirevenue.in/sitemap.xml
