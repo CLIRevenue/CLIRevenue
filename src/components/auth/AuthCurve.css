@@ -139,7 +139,7 @@
    * stripe with letters painted on it, and the letters stop being words. That
    * is the floor, not an accident.
    */
-  stroke-width: 3.2;
+  stroke-width: 5;
   /*
    * `round` on the join, not the default `miter`. These paths are meant to read
    * as one continuous gesture and they are not: `T 48 38` continues from
@@ -161,7 +161,7 @@
   stroke: var(--auth-curve-ink);
   /* Identical to the line it reveals: a different width would let the words
      appear at the edge of the ribbon instead of inside it. */
-  stroke-width: 3.2;
+  stroke-width: 5;
   stroke-linecap: round;
   stroke-linejoin: round;
   transition:

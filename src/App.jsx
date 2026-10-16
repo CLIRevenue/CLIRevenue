@@ -15,6 +15,7 @@ import Footer from './components/Footer.jsx'
 import PrivacyPolicyPage from './components/PrivacyPolicyPage.jsx'
 import TermsConditionsPage from './components/TermsConditionsPage.jsx'
 import useAppRoute, { navigateApp } from './hooks/useAppRoute.js'
+import { setRouteMetadata } from './seo/routeMeta.js'
 import './components/advertiser/advertiser.css'
 import './App.css'
 
@@ -55,6 +56,9 @@ function RoleRedirect() {
 function Routes() {
   const path = useAppRoute()
   const clean = (path.split('?')[0].split('#')[0] || '/').replace(/\/+$/, '') || '/'
+  useEffect(() => {
+    setRouteMetadata(clean)
+  }, [clean])
 
   if (clean === '/login') {
     return (
