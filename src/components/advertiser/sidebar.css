@@ -63,33 +63,6 @@
   overflow: visible;
 }
 
-.adv-side__brand {
-  display: flex;
-  align-items: baseline;
-  gap: 1px;
-  padding: 2px 10px 0;
-  min-height: 34px;
-  text-decoration: none;
-  color: var(--ink);
-  /* The text effect on the wordmark: a periwinkle-to-cream gradient
-     clipped to the glyphs. On hover a wider highlight sweeps across it
-     and the whole mark lifts a pixel. It is the one place on this
-     surface with a gradient, which is why it reads as the brand rather
-     than as another heading. */
-  background: linear-gradient(96deg, var(--signal), var(--text) 62%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-size: 220% 100%;
-  background-position: 0% 50%;
-  transition: background-position .55s var(--ease-ui), transform .18s var(--ease-ui);
-  white-space: nowrap;
-  overflow: hidden;
-}
-.adv-side__brand-cli { font-size: 17px; font-weight: 600; letter-spacing: -.02em; }
-.adv-side__brand-revenue { font-size: 17px; font-weight: 400; }
-.adv-side__brand:hover { background-position: 100% 50%; transform: translateY(-1px); }
-
 .adv-side__collapse {
   position: absolute;
   top: 18px;
@@ -114,11 +87,10 @@
    without unmounting — the labels fade and slide so the icons can take
    the space, and `visibility` rather than `display` keeps them out of the
    tab order and off the accessibility tree without a second render. */
-.adv-console[data-collapsed] .adv-side__brand-revenue,
 .adv-console[data-collapsed] .adv-nav__label,
 .adv-console[data-collapsed] .adv-side__where { opacity: 0; visibility: hidden; transform: translateX(-6px); }
-.adv-console[data-collapsed] .adv-side__brand { padding-right: 0; }
-.adv-console[data-collapsed] .adv-nav__btn { justify-content: center; padding-inline: 0; }
+.adv-console[data-collapsed] .adv-nav__btn,
+.adv-console[data-collapsed] .adv-side__settings { justify-content: center; padding-inline: 0; }
 /* The collapse control moves to the foot when the rail is icons-only,
    because at 72px the top-right corner is the corner the first nav icon
    wants. */
@@ -365,6 +337,18 @@
 .adv-settings__close-mark { width: 14px; height: 14px; fill: currentColor; }
 
 .adv-settings__body { padding: 18px 20px; overflow-y: auto; scrollbar-width: thin; }
+
+/* AccountPage is built for a full-width page column: its detail rows are
+   a 190px label column beside a 1fr value column. Inside a 680px dialog
+   behind a second panel, that leaves the value column too narrow for a
+   real address or a UUID, and the value ran on into the panel's rounded
+   corner and read as clipped rather than as wrapped. One column here, and
+   the values are allowed to break anywhere — a UUID has no spaces, so
+   word-break is not a suggestion for it. */
+.adv-settings__body .adv-grid--2,
+.adv-settings__body .adv-grid--split { grid-template-columns: minmax(0, 1fr); }
+.adv-settings__body .adv-detail div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+.adv-settings__body .adv-detail dd { overflow-wrap: anywhere; }
 .adv-settings__foot {
   display: flex;
   justify-content: flex-end;
@@ -382,6 +366,13 @@
 .adv-settings__foot .adv-nav__btn {
   appearance: none;
   cursor: pointer;
+  /* Destructive, so it gets no glow. The global ring is a rainbow, and a
+     rainbow around the one control that ends your session is the exact
+     opposite of what the control is saying. The pseudo is killed in
+     chrome.css by excluding this footer from the ring's host list —
+     that rule is specific enough that a local override cannot win, and
+     losing to it would have left the glow in place. */
+  box-shadow: none;
   padding: 9px 16px;
   font-family: var(--mono);
   font-size: var(--c-text-small);
@@ -419,7 +410,6 @@
    preference in one place rather than rule by rule. */
 @media (prefers-reduced-motion: reduce) {
   .adv-console,
-  .adv-side__brand,
   .adv-nav__label,
   .adv-nav__glyph,
   .adv-side .adv-nav__btn,

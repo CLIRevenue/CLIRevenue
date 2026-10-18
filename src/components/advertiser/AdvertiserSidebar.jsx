@@ -138,16 +138,13 @@ export default function AdvertiserSidebar({ items, active, onNavigate, onOpenSet
 
   return (
     <aside ref={rootRef} className="adv-side" aria-label="Advertiser navigation">
-      {/* The watermark, and the only thing left of the header. The old
-          header was a 73px band of sticky glass across the top of every
-          page carrying a wordmark, three links and two buttons; a rail
-          already holds the navigation, so all of that was a second place
-          to look for the same thing, and 93,440px of backdrop-filter to
-          keep it there. */}
-      <a className="adv-side__brand" href="/advertiser" aria-label="CLIRevenue">
-        <span className="adv-side__brand-cli">CLI</span>
-        <span className="adv-side__brand-revenue">Revenue</span>
-      </a>
+      {/* No wordmark. The old header was a 73px band of sticky glass
+          carrying a wordmark, three links and two buttons; the rail took
+          the navigation and then took the wordmark too, because a second
+          copy of the product name is not navigation and it is not an
+          identity either — the tab already says so, and a name you have
+          to look at in order to use the thing is not helping anyone. The
+          top of the rail belongs to the controls and to nothing else. */}
 
       <button
         type="button"
