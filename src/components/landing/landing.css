@@ -629,19 +629,20 @@
         z-index alone cannot do -- it relied on the host's own background
         to cover the centre, which fails the moment the host is
         transparent (.lbtn--ghost) or the blur reaches past the padding.
-        `padding` is the ring's thickness -- 3px, matched to the offset --
+        `padding` is the ring's thickness -- 5px, matched to the 5px offset --
         and `content-box` is the hole.
 
         THICKNESS IS BOUNDED BY THE BLUR, and that is the whole reason
         this ring read as fog rather than as an outline. A 2px band under
         a 3px blur is blurred by more than its own width: the edges are
         smeared across the band and what survives is roughly one pixel of
-        haze. Widen the band to 3px and drop the blur to 1.5px -- half the
-        band -- and the stroke has a core again. The two numbers move
+        haze. Widen the band to 5px and drop the blur to 1px -- a fifth of
+        the band -- and the stroke has a core again. The two numbers move
         together for that reason; changing either alone makes it thinner
         or softer than intended, which is how three separate "the outline
         is too thin" reports happened on the same ring. These values now
-        match the two ring definitions in chrome.css. */
+        match the two ring definitions in chrome.css.
+
      2. z-index:-1 on a z-index:0 host keeps the blurred edge behind the
         card or the label instead of over it.
 
