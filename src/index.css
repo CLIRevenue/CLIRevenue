@@ -925,20 +925,18 @@ html.intro-lock body {
   letter-spacing: var(--track-tight);
   outline: none;
   position: relative;
-  /* `clip`, not `hidden`, and the six-pixel margin is load-bearing.
-     Every button in the product wears a rainbow ring on hover: a
-     `::before` sitting 5px outside the border, in a pseudo whose own
-     5px padding IS the band, blurred 1px. This element is 1px of
-     border, so the ring's outer edge lands 6px out.
-     `overflow: hidden` clips to the PADDING box, which put that ring
-     entirely outside the clip — so the ring was invisible on every
-     `.btn` in the product: every primary button, every ghost button,
-     the console header's Sign in and Sign up, every form submit. Only
-     the landing's own `.lbtn` kept it, which is exactly the report
-     that some buttons had the ring and others did not. `overflow: clip`
-     takes a clip margin, and 6px admits precisely the ring. */
+  /* `clip`, not `hidden`. Both clip to the PADDING box, but only `clip`
+     takes a clip margin — and a margin is not free: it also admits the
+     control's own overflowing content, which is a second thing to audit
+     every time a button grows an icon or a badge.
+
+     Nothing needs it now. The ring sits INSIDE the padding box
+     (`inset: 0` in chrome.css), so the clip that protects the hover
+     sweep clips nothing the ring owns, and the six-pixel margin that used
+     to admit it went with it. The clip itself is load-bearing: without
+     it the primary button's `::after` sweep runs off both sides of the
+     button instead of being masked by it. */
   overflow: clip;
-  overflow-clip-margin: 6px;
 }
 
 .btn:focus-visible {

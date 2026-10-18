@@ -543,10 +543,10 @@ body {
    here — because `.lbtn` is the landing's own class and is not a `.btn`,
    so it does not inherit the first one, and without a clip of its own
    the sweep runs off both sides of the hero CTA. Six pixels admits the
-   ring on both, which sits 5px out plus 1px of border. */
+   ring on both, which sits 5px out plus 1px of border. The ring has since
+   moved inside that edge, so the margin went with it. */
 .lbtn--primary {
   overflow: clip;
-  overflow-clip-margin: 6px;
 }
 .btn--primary::after,
 .btn--signal::after,

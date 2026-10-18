@@ -659,8 +659,8 @@
    border on hover, and the whole button presses in on :active. Both are
    reproduced here so nothing on the site feels like a different product.
 
-   The ring is a blurred gradient sitting 2px OUTSIDE the border, masked so
-   the middle is genuinely empty rather than covered by an assumed-opaque
+   The ring is a blurred gradient inset into the button's own edge, masked
+   so the middle is genuinely empty rather than covered by an assumed-opaque
    parent -- that is what lets it work on a transparent ghost button. The
    filter runs before the mask, so the blur bleeds inward from the hole, and
    that bleed IS the glow.
@@ -674,17 +674,27 @@
 :is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline, .note-btn, .heart)::before {
   content: "";
   position: absolute;
-  top:-5px;
-  left:-5px;
-  width: calc(100% + 10px);
-  height: calc(100% + 10px);
+  /* Inset, not outset, and the reason is arithmetic rather than taste.
+     `padding` is the band, so the band's outer edge is wherever this box
+     sits; outset by 5px and `border-radius: inherit` traces an arc of R
+     where the edge it has to follow is R+5, which is not the same curve
+     and leaves a gap at every corner. Inset, `inherit` is the host's own
+     radius and the band lands exactly on the button's edge. This also
+     works for a host with a 9999px pill radius, which no outset offset can
+     be hand-tuned for. border-box comes from the reset in index.css, and
+     it is what makes the 2px padding pull INWARD instead of inflating the
+     box outward from the inset edge. */
+  inset: 0;
   z-index: -1;
-  /* padding IS the ring. 3px, not 2px: a 2px band under a 1.5px blur came
-     back looking thinner than a hairline, because the blur eats the band's
-     own edges before you ever see them. The blur is what makes it a glow
-     rather than a stroke, so it is now small enough that the stroke it
-     softens survives it. */
-  padding: 5px;
+  /* padding IS the ring, and 2px is where it stops looking like trim. At 5px
+     the band was thick enough to read as a coloured border sitting on the
+     button -- plastic, not light -- because a ring is only a glow for as
+     long as it is too thin to be an edge. The blur is what makes it a glow
+     rather than a stroke, and the rule is that the blur stays a fraction of
+     the band: at 2px that is 0.5px, so the band's own edges survive to be
+     seen instead of being eaten by the glow meant to soften them. Change the
+     band and the blur moves with it; neither is a number you set alone. */
+  padding: 2px;
   border-radius: inherit;
   background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
   background-size: 400%;
@@ -694,7 +704,7 @@
   mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
   mask-clip: content-box, border-box;
   mask-composite: exclude;
-  filter:blur(1px);
+  filter:blur(.5px);
   opacity: 0;
   transition: opacity .3s ease-in-out;
   /* No animation here. background-position repaints the whole gradient, and
@@ -823,19 +833,28 @@
     position:relative;
     z-index:0;
   }
-  /* The ring itself. padding IS the ring thickness; mask punches the
-     content box out so the middle stays transparent over a ghost
-     button, which has no fill to hide behind. 3px, not 2px, and a 1.5px
-     blur rather than 3px — the same correction the simpler list above got:
-     a blur wider than the band it softens erases the band. */
+  /* The ring itself. padding IS the ring thickness; the mask punches the
+     content box out so the middle stays transparent over a ghost button,
+     which has no fill to hide behind. 5px of band, 1px of blur — a blur
+     wider than the band it softens erases the band.
+
+     `inset: 0` puts the pseudo on the host's PADDING box, so the band's
+     outer edge is the button's own inner edge and `border-radius: inherit`
+     traces the same arc as the edge it sits on. That is the whole reason
+     for it. Outset by 5px and `inherit` becomes the wrong radius by 5px:
+     an arc of R where the edge it must follow is R+5 leaves a visible gap
+     at every corner, and no amount of tuning the blur hides it, because
+     the two curves are not the same curve. Inset has no such arithmetic —
+     it is correct for every radius in the product at once, which matters
+     when the hosts span --radius-pill, --radius-md, --ld-r8 and the rest
+     and each one used to need its own hand-computed override. */
   :is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn,
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
                    .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart)::before{
-    top:-5px;left:-5px;
-    width:calc(100% + 10px);height:calc(100% + 10px);
-    z-index:-1;padding:5px;border-radius:inherit;
+    inset:0;
+    z-index:-1;padding:2px;border-radius:inherit;
     background:linear-gradient(45deg,#ff0000,#ff7300,#fffb00,#48ff00,
       #00ffd5,#002bff,#7a00ff,#ff00c8,#ff0000);
     background-size:400%;
@@ -845,7 +864,7 @@
             mask-clip:content-box,border-box;
     -webkit-mask-composite:xor;
             mask-composite:exclude;
-    filter:blur(1px);
+    filter:blur(.5px);
     opacity:0;transition:opacity .3s ease-in-out;
     pointer-events:none;
   }

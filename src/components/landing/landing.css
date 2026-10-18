@@ -661,17 +661,17 @@
      So there are two now, both in chrome.css, both scoped
      `:is(.clr-surface, .adm-root, .landing)` and both carrying `.qs-step`
      and `.cmd-copy` in their class list. The rules below still apply:
-     the radius per host, the hover reveal, and the reduced-motion guard.
-     What they no longer need to supply is the band itself. */
+     the hover reveal, the reduced-motion guard and the stacking context.
+     What they no longer need to supply is the band, or the radius — an
+     inset ring inherits the right one. */
   /* The cycle runs on the HOVER pair, not on the base rule. A background
      animation repaints the whole gradient every frame, and at opacity 0
      none of it is visible -- so the base rule was animating a pseudo that
      nobody could see, on every button on the page, forever. */
-  /* the ring sits outside the border, so its own radius is the host's
-     radius plus the 3px offset */
-  .qs-step::before{border-radius:var(--ld-r10)}
-  .lbtn::before{border-radius:var(--ld-r8)}
-  .cmd-copy::before{border-radius:var(--ld-r7)}
+  /* no per-host radius any more: the ring is inset, so `inherit` traces the
+     host's own edge arc and the right radius is the host's radius. The
+     three overrides this replaces were each computed by hand from an
+     outset offset, and each was wrong by exactly that offset. */
   .qs-step:hover::before,
   .lbtn:hover::before,
   .cmd-copy:hover::before,
