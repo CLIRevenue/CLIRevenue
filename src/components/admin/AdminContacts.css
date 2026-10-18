@@ -5,7 +5,7 @@
 .adm-contacts {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--adm-space-4);
 }
 
 .adm-contacts__list {
@@ -28,11 +28,11 @@
 
 .adm-contacts__name {
   font-family: var(--adm-mono);
-  font-size: 12px;
+  font-size: var(--adm-text-body)
 }
 
 .adm-contacts__empty {
-  padding: 32px;
+  padding: var(--adm-space-8);
   text-align: center;
   color: var(--adm-muted);
 }
@@ -43,38 +43,38 @@
 
 .adm-contacts__message-label {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--adm-track);
   color: var(--adm-text-dim);
-  margin-bottom: 6px;
+  margin-bottom: var(--adm-space-2);
 }
 
 .adm-contacts__message {
   font-family: var(--adm-mono);
-  font-size: 12px;
+  font-size: var(--adm-text-body);
   line-height: 1.5;
   color: var(--adm-text);
   background: var(--adm-bg-grid);
-  padding: 12px;
+  padding: var(--adm-space-3);
   border: 1px solid var(--adm-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--adm-radius-sm);
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .adm-contacts__actions {
-  margin-top: 12px;
+  margin-top: var(--adm-space-3);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--adm-space-4);
 }
 
 .adm-contacts__status-label {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--adm-track);
   color: var(--adm-text-dim);
 }
 
@@ -83,9 +83,9 @@
   border: 1px solid var(--adm-border);
   color: var(--adm-text);
   font-family: var(--adm-mono);
-  font-size: 12px;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
+  font-size: var(--adm-text-body);
+  padding: var(--adm-space-2) var(--adm-space-3);
+  border-radius: var(--adm-radius-sm);
 }
 
 .adm-contacts__notes {
@@ -93,97 +93,105 @@
   border: 1px solid var(--adm-border);
   color: var(--adm-text);
   font-family: var(--adm-mono);
-  font-size: 12px;
-  padding: 12px;
-  border-radius: var(--radius-md);
+  font-size: var(--adm-text-body);
+  padding: var(--adm-space-3);
+  border-radius: var(--adm-radius-sm);
   resize: vertical;
 }
 
 .adm-contacts__buttons {
   display: flex;
-  gap: 12px;
+  gap: var(--adm-space-4);
 }
 
+/* The inbox had a third button system: its own size, its own radius token,
+   its own two-letter tracking, and a save action painted in amber. Marking a
+   ticket handled is not a warning, and a control that does not share the
+   console's button geometry is a control the eye has to re-learn on every
+   page. Geometry is now .adm-gov-btn's, token for token. */
 .adm-contacts__btn {
   font-family: var(--adm-mono);
-  font-size: 11px;
+  font-size: var(--adm-text-micro);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 8px 16px;
+  letter-spacing: var(--adm-track);
+  padding: var(--adm-space-1) var(--adm-space-3);
   border: 1px solid var(--adm-border);
-  border-radius: var(--radius-md);
-  background: var(--adm-bg);
-  color: var(--adm-text);
+  border-radius: var(--adm-radius-sm);
+  background: var(--adm-surface);
+  color: var(--adm-muted);
   cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-ui);
+  transition: color .12s, border-color .12s, background .12s;
 }
 
 .adm-contacts__btn:hover:not(:disabled) {
-  border-color: var(--adm-amber);
-  color: var(--adm-amber);
+  color: var(--adm-text-dim);
+  border-color: var(--adm-muted-dim);
 }
 
 .adm-contacts__btn--save {
-  background: var(--adm-amber);
-  color: #000;
-  border-color: var(--adm-amber);
+  background: var(--adm-brand);
+  color: var(--adm-on-brand);
+  border-color: var(--adm-brand);
 }
 
 .adm-contacts__btn--save:hover:not(:disabled) {
-  background: var(--adm-amber-bright);
-  color: #000;
+  background: var(--adm-brand-bright);
+  color: var(--adm-on-brand);
+  border-color: var(--adm-brand-bright);
 }
 
 .adm-contacts__btn--delete {
-  background: var(--adm-red-bg);
-  color: var(--adm-red-bright);
-  border-color: var(--adm-red-dim);
+  background: var(--adm-status-error-bg);
+  color: var(--adm-status-error);
+  border-color: var(--adm-status-error-dim);
 }
 
 .adm-contacts__btn--delete:hover:not(:disabled) {
-  background: var(--adm-red);
-  color: #fff;
+  background: var(--adm-status-error);
+  color: var(--adm-on-error);
+  border-color: var(--adm-status-error);
 }
 
 .adm-contacts__btn:disabled {
-  opacity: 0.5;
+  opacity: .45;
   cursor: not-allowed;
 }
 
 .adm-contacts__error {
-  color: var(--adm-red-bright);
-  font-size: 12px;
-  background: var(--adm-red-bg);
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--adm-red-dim);
+  color: var(--adm-status-error);
+  font-size: var(--adm-text-body);
+  background: var(--adm-status-error-bg);
+  padding: var(--adm-space-3) var(--adm-space-4);
+  border-radius: var(--adm-radius-sm);
+  border: 1px solid var(--adm-status-error-dim);
 }
 
 .adm-contacts__meta {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 12px;
+  gap: var(--adm-space-2);
+  margin-top: var(--adm-space-3);
 }
 
 .adm-contacts__meta-row {
   display: flex;
-  gap: 12px;
+  gap: var(--adm-space-4);
   align-items: flex-start;
 }
 
 .adm-contacts__label {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--adm-track);
   color: var(--adm-muted-dim);
   min-width: 80px;
 }
 
 .adm-contacts__value {
   font-family: var(--adm-sans);
-  font-size: 13px;
+  font-size: var(--adm-text-read);
   color: var(--adm-text);
 }
 
@@ -194,8 +202,8 @@
   right: 0;
   background: var(--adm-bg);
   border-top: 1px solid var(--adm-border);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  padding: 24px 32px;
+  border-radius: var(--adm-radius-lg) var(--adm-radius-lg) 0 0;
+  padding: var(--adm-space-6) var(--adm-space-8);
   max-height: 60vh;
   overflow-y: auto;
   z-index: 40;
@@ -205,14 +213,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: var(--adm-space-4);
 }
 
 .adm-contacts__detail-title {
   font-family: var(--adm-mono);
-  font-size: 11px;
+  font-size: var(--adm-text-small);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--adm-track);
   color: var(--adm-text);
 }
 
@@ -221,9 +229,9 @@
   border: 1px solid var(--adm-border);
   color: var(--adm-text-dim);
   font-family: var(--adm-mono);
-  font-size: 11px;
-  padding: 6px 12px;
-  border-radius: var(--radius-md);
+  font-size: var(--adm-text-small);
+  padding: var(--adm-space-1) var(--adm-space-3);
+  border-radius: var(--adm-radius-sm);
   cursor: pointer;
 }
 
@@ -237,7 +245,7 @@
   .adm-contacts__detail {
     position: fixed;
     inset: 0;
-    padding: 20px;
+    padding: var(--adm-space-5);
     max-height: 100vh;
   }
 

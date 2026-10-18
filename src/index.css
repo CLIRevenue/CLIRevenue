@@ -201,17 +201,29 @@
   --neumorph-inset: inset 1px 1px 2px rgba(255, 255, 255, 0.02), inset 0 1px 2px rgba(0, 0, 0, 0.3);
   --neumorph-outset: 2px 4px 8px rgba(0, 0, 0, 0.3), -2px -2px 4px rgba(255, 255, 255, 0.02);
 
-  /* Corners — all sharp per design contract */
-  --radius: 0px;
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
-  --radius-2xl: 0px;
+  /* Corners — the landing's scale, so there is ONE set of radii in the
+     project. These were all 0px, which read as a deliberate "sharp
+     corners" contract, but the front page has never used it: chrome.css
+     carries its own scale (--ld-r0..r11, 1.5px to 22px) and re-exported
+     --radius-md/-lg as 12/18px for everything inside .clr-surface. That
+     left every surface rendered OUTSIDE .clr-surface — which is the whole
+     admin console — with square corners, which is why the admin console
+     read as a different product rather than as a denser one. Same numbers
+     as the landing scale so the two can never drift apart again. */
+  --radius: 8px;
+  --radius-sm: 7px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 20px;
+  --radius-2xl: 22px;
   --radius-pill: 9999px;
-  --adm-radius: 0px;
-  --adm-radius-sm: 0px;
-  --adm-radius-lg: 0px;
+  /* Dead: AdminConsole.css re-declares these on .adm-root, which wins as
+     the nearer element. Kept in step anyway — .light-theme has to match
+     :root here, and --adm-radius does NOT start with --radius, so unlike
+     its siblings it is not exempt from the theme-parity test. */
+  --adm-radius: 12px;
+  --adm-radius-sm: 7px;
+  --adm-radius-lg: 18px;
 
   /* Border weights */
   --border-w: 1px;
@@ -427,15 +439,16 @@
   --neumorph-inset: inset 1px 1px 2px rgba(0, 0, 0, 0.04), inset 0 1px 2px rgba(0, 0, 0, 0.16);
   --neumorph-outset: 2px 4px 8px rgba(0, 0, 0, 0.12), -2px -2px 4px rgba(0, 0, 0, 0.04);
 
-  --radius: 0px;
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
+  --radius: 8px;
+  --radius-sm: 7px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 20px;
+  --radius-2xl: 22px;
   --radius-pill: 9999px;
-  --adm-radius: 0px;
-  --adm-radius-sm: 0px;
-  --adm-radius-lg: 0px;
+  --adm-radius: 12px;
+  --adm-radius-sm: 7px;
+  --adm-radius-lg: 18px;
 
   --border-w: 1px;
   --border-w-2: 2px;

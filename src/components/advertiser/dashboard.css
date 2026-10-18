@@ -3,9 +3,9 @@
    -------------------------------------------------------------
    The dashboard shells (developer / advertiser / admin) reuse the
    shared atoms in advertiser/AdvertiserUI.jsx and console/ui.jsx.
-   `.panel` carries no rule anywhere in the project, which meant
-   every `adv-panel` card rendered as bare padding on the void —
-   no surface, no edge, no separation between cards.
+   Every `adv-panel` card used to render as bare padding on the
+   void: no surface, no edge, no separation between cards. It
+   carries a rule in index.css now; what follows is its dashboard
 
    Everything here is scoped to `.adv-*` and `.panel.adv-*` so the
    marketing landings (which style their own `sdk-panel` /
@@ -29,14 +29,16 @@
 }
 
 .panel.adv-panel:focus-within {
-  border-color: var(--hair-amber);
+  /* Focus is not a warning. This was --hair-amber, so tabbing into a
+     card drew a caution-coloured halo around it. */
+  border-color: var(--signal);
 }
 
 .adv-panel__title {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--c-space-3);
 }
 
 /* --- status pills ------------------------------------------------
@@ -47,7 +49,7 @@
 .adv-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--c-space-1);
   vertical-align: middle;
   line-height: 1.5;
 }
@@ -81,7 +83,7 @@
 }
 
 .adv-pill[data-status='draft'] {
-  color: var(--ink-3);
+  color: var(--ink-4);
 }
 
 .adv-pill[data-status='completed'] {
@@ -108,11 +110,11 @@
 .stat__flag {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 2px;
+  gap: var(--c-space-2);
+  margin-top: var(--c-space-1);
   font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.14em;
+  font-size: var(--c-text-micro);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-4);
 }
@@ -149,7 +151,7 @@
 
 .panel.adv-loading {
   display: grid;
-  gap: 14px;
+  gap: var(--c-space-3);
   align-content: start;
   background: var(--panel);
   border: 1px solid var(--hair);
@@ -159,10 +161,10 @@
 .adv-loading__label {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--c-space-2);
   font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.16em;
+  font-size: var(--c-text-label);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-4);
 }
@@ -185,15 +187,15 @@
 
 .adv-loading__cell {
   display: grid;
-  gap: 10px;
-  padding: 16px 18px;
+  gap: var(--c-space-2);
+  padding: var(--c-space-4) var(--c-space-5);
   background: var(--panel);
 }
 
 .adv-loading__bar {
   display: block;
   height: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--hair);
   animation: clir-pulse 1.8s ease-in-out infinite;
 }
 
@@ -235,11 +237,11 @@
 .adv-empty__mark {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  margin-bottom: 14px;
+  gap: var(--c-space-2);
+  margin-bottom: var(--c-space-3);
   font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.2em;
+  font-size: var(--c-text-micro);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-4);
 }
@@ -255,8 +257,8 @@
 
 .adv-notice.adv-notice--error {
   position: relative;
-  padding-left: 32px;
-  background: rgba(255, 31, 45, 0.04);
+  padding-left: var(--c-space-7);
+  background: var(--accent-error-wash);
 }
 
 .adv-notice.adv-notice--error::before {
@@ -269,23 +271,23 @@
   place-items: center;
   width: 14px;
   height: 14px;
-  border: 1px solid var(--signal-text);
+  border: 1px solid var(--accent-error);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--c-text-micro);
   line-height: 1;
-  color: var(--signal-text);
+  color: var(--accent-error);
 }
 
 .adv-notice.adv-notice--error span:first-child {
   font-weight: 500;
-  color: var(--ink);
+  color: var(--accent-error);
 }
 
 /* --- activity rows ----------------------------------------------- */
 
 .adv-activity .adv-activity__row {
   position: relative;
-  padding-left: 14px;
+  padding-left: var(--c-space-3);
   transition:
     background var(--dur-fast) var(--ease-ui),
     padding-left var(--dur-fast) var(--ease-ui);
@@ -307,12 +309,12 @@
 }
 
 .adv-activity .adv-activity__row:hover::before {
-  background: var(--amber);
+  background: var(--signal);
 }
 
 .adv-activity__detail {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--c-text-small);
   letter-spacing: 0.02em;
 }
 
@@ -332,20 +334,24 @@
 }
 
 .adv-chart .adv-chart__row:hover .adv-chart__fill {
-  background: var(--amber);
+  background: var(--signal);
 }
 
 /* --- tab rail ---------------------------------------------------
-   Deliberately empty. `advertiser.css` already gives `.adv-nav` a
-   glass sticky rail with an inverted amber active plate, which is a
-   stronger affordance than an underline — overriding it here would
-   be a downgrade. */
+   Deliberately still empty, but the reasoning has been reversed. The
+   note used to defend `advertiser.css`'s rail for wearing an inverted
+   AMBER active plate: "a stronger affordance than an underline,
+   overriding it here would be a downgrade." It was not stronger — amber
+   is the product's warning colour, the plate measured 2.65:1 against its
+   own label, and --signal appeared nowhere else on this surface at all.
+   The rail now wears the brand accent, the label on it is --ld-on-accent,
+   and `advertiser.css` owns it. */
 
 /* --- responsive -------------------------------------------------- */
 
 @media (max-width: 640px) {
   .panel.adv-panel {
-    padding: 18px;
+    padding: var(--c-space-5);
   }
 
   .adv-empty {
@@ -353,7 +359,7 @@
   }
 
   .adv-activity .adv-activity__row {
-    padding-left: 12px;
+    padding-left: var(--c-space-3);
   }
 }
 

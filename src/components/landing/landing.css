@@ -610,7 +610,7 @@
      the previous three attempts and neither can be expressed here. */
 
     /* ── the rainbow glow around the card border ───────────────────
-     A blurred gradient ring sitting 2px proud of the border, behind the
+     A blurred gradient ring sitting 3px proud of the border, behind the
      card's own background. No inner cover element is needed: ::after is
      already the reveal line, and a negative-z pseudo paints under the
      element's background anyway, which does the covering. */
@@ -629,8 +629,19 @@
         z-index alone cannot do -- it relied on the host's own background
         to cover the centre, which fails the moment the host is
         transparent (.lbtn--ghost) or the blur reaches past the padding.
-        `padding` is the ring's thickness -- 2px, matched to the offset --
+        `padding` is the ring's thickness -- 3px, matched to the offset --
         and `content-box` is the hole.
+
+        THICKNESS IS BOUNDED BY THE BLUR, and that is the whole reason
+        this ring read as fog rather than as an outline. A 2px band under
+        a 3px blur is blurred by more than its own width: the edges are
+        smeared across the band and what survives is roughly one pixel of
+        haze. Widen the band to 3px and drop the blur to 1.5px -- half the
+        band -- and the stroke has a core again. The two numbers move
+        together for that reason; changing either alone makes it thinner
+        or softer than intended, which is how three separate "the outline
+        is too thin" reports happened on the same ring. These values now
+        match the two ring definitions in chrome.css. */
      2. z-index:-1 on a z-index:0 host keeps the blurred edge behind the
         card or the label instead of over it.
 
@@ -641,12 +652,12 @@
   .cmd-copy::before{
     content:"";
     position:absolute;
-    top:-2px;
-    left:-2px;
-    width:calc(100% + 4px);
-    height:calc(100% + 4px);
+    top:-3px;
+    left:-3px;
+    width:calc(100% + 6px);
+    height:calc(100% + 6px);
     z-index:-1;
-    padding:2px;
+    padding:3px;
     border-radius:inherit;
     background:linear-gradient(45deg,#ff0000,#ff7300,#fffb00,#48ff00,#00ffd5,#002bff,#7a00ff,#ff00c8,#ff0000);
     background-size:400%;
@@ -656,22 +667,36 @@
             mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000);
             mask-clip:content-box,border-box;
             mask-composite:exclude;
-    filter:blur(3px);
+    filter:blur(1.5px);
     opacity:0;
     transition:opacity .3s ease-in-out;
-    animation:qs-glow 20s linear infinite;
   }
+  /* The cycle runs on the HOVER pair, not on the base rule. A background
+     animation repaints the whole gradient every frame, and at opacity 0
+     none of it is visible -- so the base rule was animating a pseudo that
+     nobody could see, on every button on the page, forever. */
   /* the ring sits outside the border, so its own radius is the host's
-     radius plus the 2px offset */
+     radius plus the 3px offset */
   .qs-step::before{border-radius:var(--ld-r10)}
   .lbtn::before{border-radius:var(--ld-r8)}
   .cmd-copy::before{border-radius:var(--ld-r7)}
   .qs-step:hover::before,
   .lbtn:hover::before,
   .cmd-copy:hover::before,
-  .cmd-copy:focus-visible::before{opacity:1}
-  /* both hosts must own a stacking context or the -1 pseudo escapes to
+  .cmd-copy:focus-visible::before{opacity:1;animation:qs-glow 20s linear infinite}
+  /* less MOTION, not less content: the glow still appears on hover, it
+     just stops cycling. Kept beside the hover pair it cancels, because
+     leaving the override on the base rule would cancel a declaration that
+     is no longer there. */
+  @media (prefers-reduced-motion: reduce){
+    .qs-step:hover::before,
+    .lbtn:hover::before,
+    .cmd-copy:hover::before,
+    .cmd-copy:focus-visible::before{animation:none}
+  }
+  /* every host must own a stacking context or the -1 pseudo escapes to
      the page root and slides under the section behind it */
+  .qs-step,
   .lbtn,
   .cmd-copy{position:relative;z-index:0}
   @keyframes qs-glow{
@@ -771,7 +796,16 @@
 
 
   /* ── sections ────────────────────────────────────────── */
-  section{padding:84px 0}
+  /* Scoped to .cube-face, which is the only landing section WITHOUT a
+     .wrap (the six below all carry .wrap and are re-set by the rule that
+     follows). As a bare `section` selector this was also padding every
+     <section> in the product -- .sdk-block and .advx-block among them --
+     with 84px of top and bottom, so the developer page was 7799px of one
+     unbroken black with 168px of identical air between every pair of
+     blocks. landing.css is in the bundle on every route, so a type
+     selector written for one page is a global rule wearing a local name;
+     same leak as the bare `footer` rule below, same fix. */
+  section.cube-face{padding:84px 0}
   /* The six lower sections carry BOTH .wrap and section, and .wrap is a
      class (0,1,0) while section is a type (0,0,1) -- so .wrap's
      `padding:0 28px` shorthand won and every one of them was running with
@@ -1068,7 +1102,7 @@
     .lhero{padding:56px 0 40px}
     .lhero.wrap{padding-left:12px;padding-right:12px}
     .wrap{padding:0 20px}
-    section{padding:60px 0}
+    section.cube-face{padding:60px 0}
     section.wrap{padding-top:72px;padding-bottom:72px}
     /* the display clamps bottom out at 38/30px, which is fine, but the
        small half of the headline is held on one line at .42em. Letting

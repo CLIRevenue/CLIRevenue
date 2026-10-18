@@ -21,13 +21,38 @@
    names, so chrome components written in the landing idiom (var(--ink),
    var(--r-lg), var(--ease-out)) work identically on either surface.
 
+   .adm-root is listed alongside it for one measured reason. The admin
+   console is rendered bare at App.jsx — no PageChrome, no .clr-surface —
+   so every token it asked for fell through to index.css :root: the cool
+   blue-black of --bg/--surface, rgba(227,225,233,...) borders, and
+   (before :root's radius scale was fixed) 0px corners. That is why it
+   read as a different product. Listing the selector here is the whole
+   fix, and it deliberately grants the TOKENS and nothing else: the
+   .clr-surface X rules below never match inside an admin console.
+
+   .sdk-page / .advx-page are listed for the same reason and one more.
+   They are the outer wrapper of the two console landing pages, and
+   .clr-surface is a DESCENDANT of them, not an ancestor — custom
+   properties inherit downward, so a wrapper cannot read the tokens its own
+   child declares. Both pages painted `background: var(--void)` on that
+   wrapper, and --void at that level came from index.css :root:
+   #0B0D12, the cool blue-black of the pre-redesign palette. So the
+   console pages sat on a legacy plate with the landing's warm neutral
+   #09090c one level inside it and #17171e panels inside that — three
+   blacks, none of them related, stacked over 7799px of page. Listing the
+   wrappers is what lets them say `background: var(--ld-bg)` and mean the
+   same colour the whole product means by a canvas.
+
    Radius rule: every border-radius here goes through a var(). The repo's
    ui-polish test flags any literal `border-radius: Npx` above 3 that is
    not in the global --radius* scale; a var() carries no px so it cannot
    trip that, and the values are still centrally editable below.
    ══════════════════════════════════════════════════════════════════ */
 
-.clr-surface {
+.clr-surface,
+.adm-root,
+.sdk-page,
+.advx-page {
   /* ── the landing palette ──────────────────────────────────────── */
   /* Canvas and content surface used to sit two steps apart (#0b0b0e vs
      #121216), which on a dark screen reads as one flat black field with
@@ -38,15 +63,41 @@
   --ld-bg-tint: #15151b;
   --ld-surface: #17171e;
   --ld-well: #0b0b0f;
+  /* The sticky masthead is the canvas at 82%, not a hand-written near-black.
+     It used to carry rgba(11,11,14,.82), which matches neither the canvas
+     (#09090c) nor the page plate it sits on, so the header left a visible
+     band of a third black across the top of every console. Deriving it from
+     --ld-bg means the one value that defines the canvas also defines its own
+     frosted cover. */
+  --ld-bg-glass: rgba(9, 9, 12, .82);
   --ld-line: rgba(255, 255, 255, .09);
   --ld-line-strong: rgba(255, 255, 255, .17);
   --ld-ink: #f2f2f4;
   --ld-ink-2: #a2a2ad;
   --ld-ink-3: #74747f;
+  /* The FOURTH ink, and the only one that may legally carry small text.
+     #74747f above is a decorative rung: it measures 4.31:1 on the canvas and
+     3.86:1 on a panel, so it is under AA everywhere, and this is the whole
+     reason the admin console was failing 29 of its 70 measured elements.
+     #80808b keeps the landing's neutral hue and clears the floor on both
+     surfaces (5.09:1 canvas, 4.57:1 panel), which is what a 9-10px mono
+     label actually needs. It was already the legacy --ink-4 below; this
+     puts it in the --ld-* family so a console token can point at it. */
+  --ld-ink-4: #80808b;
   --ld-accent: #6f8cff;
   --ld-accent-soft: rgba(111, 140, 255, .14);
+  /* Text that sits ON a filled accent. The periwinkle is a mid-lightness
+     colour: white on #6f8cff measures 3.06:1 and fails AA for normal text,
+     while the near-black this canvas is built on measures about 6.4:1. So the
+     dark ink is the answer here, and it is a palette fact rather than an
+     admin-console one — declared once, next to the fill it belongs to, so no
+     downstream sheet has to re-derive it per button. */
+  --ld-on-accent: #09090c;
   --ld-good: #3fbf7f;
   --ld-warm: #e8752f;
+  /* Same question for the error fill, which is a LIGHT pink (#fb7185 from
+     :root): about 7.3:1 against the near-black, 2.69:1 against white. */
+  --ld-on-error: #0b0b0e;
   --ld-paper: #f4f2ee;
   --ld-paper-ink: #15151b;
   --ld-paper-ink-2: #4a4a55;
@@ -91,7 +142,15 @@
   --panel-2: var(--ld-bg-tint);
   --paper: #f4f2ee;
   --on-surface: #f2f2f4;
-  --ink-4: #55555f;
+  /* The fourth ink tier, asked for by advertiser.css, AdvertiserLanding.css,
+     dashboard.css and DeveloperLanding.css for column labels, code tags, rail
+     labels and footnotes. It WAS answered here — with a value from before the
+     redesign, #55555f, which is 2.6:1 on the landing's canvas and fails AA for
+     text this small. A re-export only counts if it re-exports the CURRENT
+     palette. #80808b keeps the landing's neutral hue (r=g, b ahead by 11, the
+     same relationship #74747f has to #09090c) and clears 4.5:1 on both the
+     canvas (5.09:1) and a panel (4.57:1), which is the floor for 10px mono. */
+  --ink-4: var(--ld-ink-4);
   --hair: rgba(255, 255, 255, .09);
   --hair-strong: rgba(255, 255, 255, .17);
   --hair-amber: rgba(232, 117, 47, .34);
@@ -102,6 +161,13 @@
   --amber-dim: rgba(232, 117, 47, .7);
   --amber-glow: rgba(232, 117, 47, .16);
   --amber-wash: rgba(232, 117, 47, .1);
+  /* The error HUE stays on :root on purpose — red meaning "failed" is not
+     branding, and the admin console reads it from there on purpose. A wash
+     is a surface tint though, and surfaces are what this bridge owns, so
+     the wash lives here. --accent-error itself is NOT re-exported: it is
+     correct at :root on every surface that paints this canvas. */
+  --ld-error-wash: rgba(251, 113, 133, .07);
+  --accent-error-wash: var(--ld-error-wash);
   --electric-cyan: #3fbf7f;
   --glass-bg: rgba(23, 23, 30, .74);
   --glass-bg-strong: rgba(23, 23, 30, .9);
@@ -125,6 +191,37 @@
   --track-head: -0.045em;
   --track-tight: -0.02em;
   --track-label: 0.09em;
+
+  /* Tracking for MONO UPPERCASE, which is the only uppercase in any console:
+     every label, tag, rail heading, table header and pill across the advertiser
+     page, the developer page, the dashboard and the admin console is mono at
+     9-11px. Those five stylesheets between them had been choosing freely from
+     nine values (0.04 0.06 0.07 0.08 0.12 0.14 0.16 0.18 0.2) with no rule,
+     which is why a 10px label in one panel tracked differently from the same
+     10px label in the next and why the admin console, still on --track-label's
+     0.09em, did not read as the same product as the two pages beside it.
+
+     There are exactly two jobs here, and only two.
+
+     --track-caps names something. A field name, a section, a state, a column,
+     a pill. Tracking exists to stop a handful of small caps dissolving into
+     the value beside them, and 0.14em is where that stops being true. The
+     plurality of the old values (0.12/0.14/0.16/0.18/0.2) already sat around
+     here, so this is a rounding, not a redesign.
+
+     --track-caps-tight carries DATA. An audience id you compare against the
+     API, a formula you read as arithmetic, a measured verdict in a column of
+     other verdicts, a server-supplied reason of unknown length. Tracking is
+     there to make a label legible; on data it works against the comparison
+     the data exists for, and at 0.14em "CLICKS / IMPRESSIONS x 100" stops
+     fitting the stat card it belongs in.
+
+     --track-label stays at 0.09em and is NOT one of these: it is the .eyebrow
+     role (a sans kicker at 11px on the marketing pages), and moving it would
+     re-tune the landing to suit a console. */
+  --track-caps: 0.14em;
+  --track-caps-tight: 0.05em;
+
   --dur-fast: .18s;
   --ease-ui: cubic-bezier(.16, 1, .3, 1);
   --border-w-2: 1px;
@@ -139,6 +236,63 @@
      Helvetica while the landing was the only page in the brand typeface.
      That single divergence was the loudest reason the dashboards read as a
      different product. Inheriting is the whole fix. */
+
+  /* ── the console scale ───────────────────────────────────────────
+     One type ramp and one spacing rhythm, for every surface this block
+     reaches: the two landing pages, the dashboards, the auth screens and
+     the admin console.
+
+     Before this, five stylesheets each invented their own rungs.
+     advertiser.css had 9/9.5/10/11/12/13/14/17/19. AdvertiserLanding.css had
+     ten more. DeveloperLanding.css had fourteen. dashboard.css picked three.
+     No two of them agreed, so a 13.5px label in one panel sat next to a
+     13px one in the next, and there was no way to change the voice of the
+     product without editing five files and hoping you found every call site.
+
+     The ramp is dense at the bottom on purpose. The admin console is a
+     command centre and runs one rung tighter than the marketing pages --
+     but it now picks its density by CHOOSING A RUNG, not by carrying a
+     second private scale that will drift. --adm-text-* in AdminConsole.css
+     are aliases of these; there is one vocabulary and two densities. */
+  --c-text-micro: 9px;
+  --c-text-label: 10px;
+  --c-text-small: 11px;
+  --c-text-body: 12px;
+  --c-text-read: 13px;
+  --c-text-lead: 14px;
+  --c-text-mid: 15px;
+  --c-text-prose: 16px;
+  --c-text-panel: 20px;
+  --c-text-figure: 24px;
+  --c-text-title: 26px;
+  --c-text-section: 30px;
+  --c-text-sub: 38px;
+  --c-text-hero: 54px;
+  /* The lead paragraph under a page title is fluid: it has to sit against a
+     54px hero on a 1440 screen and a 32px hero on a laptop. Keeping it a
+     clamp here rather than in two stylesheets is what makes the two landing
+     pages actually the same page. */
+  --c-text-intro: clamp(14.5px, 1.3vw, 16px);
+  --c-text-hero-fluid: clamp(32px, 3.5vw, 54px);
+  --c-text-section-fluid: clamp(23px, 2.3vw, 30px);
+  --c-text-sub-fluid: clamp(26px, 2.6vw, 38px);
+
+  /* Spacing, same argument. These files were choosing freely from a set of
+     more than thirty values (6/7/8/9/10/12/13/14/15/16/18/20/22/24/28/30/34/
+     36/40/44/52/56/64/72/76/88/96/104/120) with no way to tell a deliberate
+     step from an off-by-one. Four pixels, then multiples of it. */
+  --c-space-1: 4px;
+  --c-space-2: 8px;
+  --c-space-3: 12px;
+  --c-space-4: 16px;
+  --c-space-5: 20px;
+  --c-space-6: 24px;
+  --c-space-7: 32px;
+  --c-space-8: 40px;
+  --c-space-9: 56px;
+  --c-space-10: 72px;
+  --c-space-11: 96px;
+  --c-space-12: 120px;
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -167,7 +321,7 @@
   top: 0;
   z-index: 40;
   border-bottom: 1px solid transparent;
-  background: rgba(11, 11, 14, .82);
+  background: var(--ld-bg-glass);
   -webkit-backdrop-filter: saturate(180%) blur(14px);
   backdrop-filter: saturate(180%) blur(14px);
   transition: border-color .25s var(--ease-out);
@@ -440,7 +594,12 @@
 
 .clr-surface .form__error,
 .clr-surface [role="alert"] {
-  color: #ff8a8a;
+  /* Was #ff8a8a: a third error pink, hardcoded, sitting on a bare
+     [role="alert"] catch-all that outranked every per-component error rule in
+     the product and would not follow --accent-error into the light theme.
+     Red-for-failed is meaning, so the hue stays on :root by design; this just
+     stops inventing a fourth one. */
+  color: var(--accent-error);
 }
 
 /* ── the dark shell the dashboards already use ───────────────────── */
@@ -515,12 +674,17 @@
 .clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline)::before {
   content: "";
   position: absolute;
-  top: -2px;
-  left: -2px;
-  width: calc(100% + 4px);
-  height: calc(100% + 4px);
+  top: -3px;
+  left: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
   z-index: -1;
-  padding: 2px;
+  /* padding IS the ring. 3px, not 2px: a 2px band under a 1.5px blur came
+     back looking thinner than a hairline, because the blur eats the band's
+     own edges before you ever see them. The blur is what makes it a glow
+     rather than a stroke, so it is now small enough that the stroke it
+     softens survives it. */
+  padding: 3px;
   border-radius: inherit;
   background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
   background-size: 400%;
@@ -530,15 +694,19 @@
   mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
   mask-clip: content-box, border-box;
   mask-composite: exclude;
-  filter: blur(3px);
+  filter: blur(1.5px);
   opacity: 0;
   transition: opacity .3s ease-in-out;
-  animation: clr-glow 20s linear infinite;
+  /* No animation here. background-position repaints the whole gradient, and
+     this pseudo exists on EVERY button on the site forever; at opacity 0 none
+     of it is visible, so cycling it was pure cost. It is declared on the
+     hover pair below, where there is something to look at. */
   pointer-events: none;
 }
 .clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline):hover::before,
 .clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline):focus-visible::before {
   opacity: 1;
+  animation: clr-glow 20s linear infinite;
 }
 @keyframes clr-glow {
   0% { background-position: 0 0; }
@@ -546,8 +714,12 @@
   100% { background-position: 0 0; }
 }
 /* Reduced motion asks for less MOTION, not less content: stop the cycling,
-   keep the hover reveal. */
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline)::before {
+   keep the hover reveal. It moves to the hover pair because the animation
+   now lives there — left on the base rule it would be cancelling a
+   declaration that is no longer there, which reads as a rule that does
+   nothing and quietly becomes one that does the wrong thing. */
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline):hover::before,
+.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline):focus-visible::before {
   animation: none;
 }
 
@@ -653,15 +825,17 @@
   }
   /* The ring itself. padding IS the ring thickness; mask punches the
      content box out so the middle stays transparent over a ghost
-     button, which has no fill to hide behind. */
+     button, which has no fill to hide behind. 3px, not 2px, and a 1.5px
+     blur rather than 3px — the same correction the simpler list above got:
+     a blur wider than the band it softens erases the band. */
   .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
                    .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain)::before{
-    top:-2px;left:-2px;
-    width:calc(100% + 4px);height:calc(100% + 4px);
-    z-index:-1;padding:2px;border-radius:inherit;
+    top:-3px;left:-3px;
+    width:calc(100% + 6px);height:calc(100% + 6px);
+    z-index:-1;padding:3px;border-radius:inherit;
     background:linear-gradient(45deg,#ff0000,#ff7300,#fffb00,#48ff00,
       #00ffd5,#002bff,#7a00ff,#ff00c8,#ff0000);
     background-size:400%;
@@ -671,9 +845,8 @@
             mask-clip:content-box,border-box;
     -webkit-mask-composite:xor;
             mask-composite:exclude;
-    filter:blur(3px);
+    filter:blur(1.5px);
     opacity:0;transition:opacity .3s ease-in-out;
-    animation:clr-glow 20s linear infinite;
     pointer-events:none;
   }
   .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
@@ -687,6 +860,24 @@
                    .clrhead-cta a, .adv-password__btn,
                    .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain):focus-visible::before{
     opacity:1;
+    animation:clr-glow 20s linear infinite;
+  }
+  /* Same reduced-motion guard the simpler list above carries: keep the
+     hover reveal, stop the cycling. A gradient sliding round a ring is
+     motion, and the reveal is not. */
+  @media (prefers-reduced-motion: reduce){
+    .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
+                     .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
+                     .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
+                     .clrhead-cta a, .adv-password__btn,
+                     .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain):hover::before,
+    .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
+                     .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
+                     .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
+                     .clrhead-cta a, .adv-password__btn,
+                     .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain):focus-visible::before{
+      animation:none;
+    }
   }
 
   /* ── the FAQ tiles open and close on an animation ────────────

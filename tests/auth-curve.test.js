@@ -544,17 +544,24 @@ describe('the ribbon obeys the project CSS contracts', () => {
     const stroke = Number(css.match(/\.auth-curve__line \{[^}]*stroke-width: ([\d.]+)/m)?.[1])
     const text = Number(css.match(/\.auth-curve__trail \{[^}]*font-size: ([\d.]+)/m)?.[1])
     expect(stroke).toBeGreaterThan(text)
-    // And still a band rather than a hairline. The stroke was 8 units and the
-    // text 3.6 when the ribbon was at its fattest; both were thinned together
-    // to 5 and 2.2, which keeps the ratio — the thing the glyphs actually
-    // depend on — while letting more of the page show through. The floors
-    // here are "clearly still a band", not the old values.
-    expect(stroke).toBeGreaterThanOrEqual(4)
-    expect(text).toBeGreaterThanOrEqual(2)
+    // And still a band rather than a hairline. The stroke went 8 -> 5 -> 3.2 and
+    // the trail 3.6 -> 2.2 -> 1.4, keeping the ratio — the thing the glyphs
+    // actually depend on — while letting more of the page show through. The
+    // floors are the floor and not the old values: below about 2.5 the band
+    // stops reading as a ribbon and starts reading as a stripe with letters
+    // painted on it, so 2.5 is where this stops being thinner and starts being
+    // wrong.
+    expect(stroke).toBeGreaterThanOrEqual(2.5)
+    expect(text).toBeGreaterThanOrEqual(1)
     // The ratio is the contract, and it is asserted as a ratio so thinning
     // one without the other cannot pass.
     expect(text / stroke).toBeGreaterThan(0.3)
     expect(text / stroke).toBeLessThan(0.6)
+    // The halo is the line's bloom, not an absolute width: 1.8x. Without this,
+    // thinning the line alone turns the glow into a smear.
+    const halo = Number(css.match(/\.auth-curve__halo \{[^}]*stroke-width: ([\d.]+)/m)?.[1])
+    expect(halo / stroke).toBeGreaterThan(1.5)
+    expect(halo / stroke).toBeLessThan(2.2)
   })
 
   it('keeps the glyphs legible on the blue', () => {

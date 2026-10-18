@@ -10,20 +10,20 @@
 .adm-gov-toolbar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--adm-space-4);
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: var(--adm-space-5)
 }
 .adm-gov-search {
   flex: 1 1 280px;
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--adm-space-3);
   background: var(--adm-raised);
   border: 1px solid var(--adm-border);
   border-radius: var(--adm-radius);
-  padding: 7px 12px;
+  padding: var(--adm-space-2) var(--adm-space-3);
   transition: border-color .12s;
 }
 .adm-gov-search:focus-within {
@@ -31,7 +31,7 @@
 }
 .adm-gov-search__prompt {
   font-family: var(--adm-mono);
-  font-size: 11px;
+  font-size: var(--adm-text-small);
   color: var(--adm-brand-bright);
   flex-shrink: 0;
 }
@@ -43,7 +43,7 @@
   outline: none;
   color: var(--adm-text);
   font-family: var(--adm-mono);
-  font-size: 11px;
+  font-size: var(--adm-text-small);
   letter-spacing: .01em;
 }
 .adm-gov-search__input::placeholder {
@@ -51,7 +51,7 @@
 }
 .adm-gov-search__hint {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   color: var(--adm-muted-dim);
   letter-spacing: .06em;
   flex-shrink: 0;
@@ -61,17 +61,17 @@
 .adm-gov-toolbar__group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--adm-space-2);
   flex-wrap: wrap;
 }
 .adm-pill {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
-  letter-spacing: .09em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
-  padding: 5px 10px;
-  border-radius: var(--adm-radius);
+  padding: var(--adm-space-1) var(--adm-space-3);
+  border-radius: var(--adm-radius-pill);
   border: 1px solid var(--adm-border);
   background: var(--adm-surface);
   color: var(--adm-muted);
@@ -100,36 +100,37 @@
   border: 1px dashed var(--adm-border);
   background: repeating-linear-gradient(
     135deg,
-    rgba(113, 113, 122, .045),
-    rgba(113, 113, 122, .045) 6px,
+    var(--adm-border-soft),
+    var(--adm-border-soft) 6px,
     transparent 6px,
     transparent 12px
   );
   border-radius: var(--adm-radius);
-  padding: 12px 14px;
+  padding: var(--adm-space-3) var(--adm-space-4);
   color: var(--adm-muted);
 }
 .adm-gov-unavailable__label {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
-  letter-spacing: .12em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--adm-muted-dim);
-  margin-bottom: 5px;
+  margin-bottom: var(--adm-space-1)
 }
 .adm-gov-unavailable__body {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   line-height: 1.6;
   letter-spacing: .01em;
   color: var(--adm-muted);
 }
 .adm-gov-unavailable__reason {
-  margin-top: 6px;
+  margin-top: var(--adm-space-2);
   color: var(--adm-muted-dim);
-  font-size: 9px;
-  letter-spacing: .04em;
+  font-family: var(--adm-mono);
+  font-size: var(--adm-text-micro);
+  letter-spacing: var(--track-caps-tight);
   text-transform: uppercase;
 }
 
@@ -145,21 +146,21 @@
 .adm-gov-caps__row {
   display: flex;
   align-items: baseline;
-  gap: 12px;
-  padding: 8px 14px;
+  gap: var(--adm-space-4);
+  padding: var(--adm-space-2) var(--adm-space-3);
   border-bottom: 1px solid var(--adm-border-soft);
 }
 .adm-gov-caps__row:last-child { border-bottom: none; }
 .adm-gov-caps__key {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   color: var(--adm-text-dim);
   width: 190px;
   flex-shrink: 0;
 }
 .adm-gov-caps__value {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   color: var(--adm-muted);
   line-height: 1.5;
 }
@@ -170,16 +171,16 @@
 .adm-gov-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: var(--adm-space-3)
 }
 .adm-entity {
   background: var(--adm-surface);
   border: 1px solid var(--adm-border);
   border-radius: var(--adm-radius);
-  padding: 12px 14px;
+  padding: var(--adm-space-3) var(--adm-space-4);
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: var(--adm-space-3);
   transition: border-color .12s;
 }
 .adm-entity:hover { border-color: var(--adm-muted-dim); }.adm-entity__glyph {
@@ -194,11 +195,11 @@
   align-items: center;
   justify-content: center;
   font-family: var(--adm-mono);
-  font-size: 11px;
+  font-size: var(--adm-text-small);
   font-weight: 600;
   text-transform: uppercase;
 }.adm-entity__name {
-  font-size: 12px;
+  font-size: var(--adm-text-body);
   font-weight: 600;
   color: var(--adm-text);
   line-height: 1.3;
@@ -207,10 +208,10 @@
   white-space: nowrap;
 }.adm-entity__id {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   color: var(--adm-muted-dim);
   letter-spacing: .04em;
-  margin-top: 3px;
+  margin-top: var(--adm-space-1);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -218,16 +219,16 @@
 .adm-entity__head {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--adm-space-4)
 }
 /* The muted line under the display name: role, then whatever identity field
    actually exists for that role. Never a fabricated handle. */
 .adm-entity__sub {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   color: var(--adm-muted-dim);
   letter-spacing: .04em;
-  margin-top: 4px;
+  margin-top: var(--adm-space-1);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -236,24 +237,24 @@
    Deliberately not a badge: a badge implies a state the backend never set. */
 .adm-gov-unknown {
   font-family: var(--adm-mono);
-  font-size: 9px;
-  letter-spacing: .06em;
+  font-size: var(--adm-text-micro);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--adm-muted-dim);
   border: 1px dashed var(--adm-border);
   border-radius: var(--adm-radius-sm);
-  padding: 2px 7px;
+  padding: var(--adm-space-1) var(--adm-space-2);
 }
 
 /* ---------- buttons ----------------------------------------------- */
 .adm-gov-btn {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
-  letter-spacing: .09em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
-  padding: 6px 11px;
-  border-radius: var(--adm-radius);
+  padding: var(--adm-space-1) var(--adm-space-3);
+  border-radius: var(--adm-radius-sm);
   border: 1px solid var(--adm-border);
   background: var(--adm-surface);
   color: var(--adm-muted);
@@ -275,28 +276,32 @@
 .adm-gov-btn--primary {
   background: var(--adm-brand);
   border-color: var(--adm-brand);
-  color: #fff;
+  color: var(--adm-on-brand);
 }
 .adm-gov-btn--primary:hover:not(:disabled) {
   background: var(--adm-brand-bright);
   border-color: var(--adm-brand-bright);
-  color: #fff;
+  color: var(--adm-on-brand);
 }
+/* "Stop serving" and "Confirm: block serving" live here. While this wore the
+   brand hue, the brand also meant "this is the thing the console is", so a
+   destructive action looked like the recommended one. Destructive wears the
+   error family; brand means brand. */
 .adm-gov-btn--danger {
-  border-color: var(--adm-brand-dim);
-  color: var(--adm-brand-bright);
-  background: var(--adm-brand-bg);
+  border-color: var(--adm-status-error-dim);
+  color: var(--adm-status-error);
+  background: var(--adm-status-error-bg);
 }
 .adm-gov-btn--danger:hover:not(:disabled) {
-  border-color: var(--adm-brand-bright);
-  color: var(--adm-brand-bright);
+  border-color: var(--adm-status-error);
+  color: var(--adm-status-error);
 }
 
 /* ---------- moderation: queue list + detail ------------------------ */
 .adm-mod-layout {
   display: grid;
   grid-template-columns: 290px 1fr;
-  gap: 10px;
+  gap: var(--adm-space-4);
   align-items: start;
 }.adm-gov-kv {
   display: grid;
@@ -306,25 +311,25 @@
   border: 1px solid var(--adm-border-soft);
   border-radius: var(--adm-radius-sm);
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: var(--adm-space-5)
 }
 .adm-gov-kv__cell {
   background: var(--adm-raised);
-  padding: 8px 11px;
+  padding: var(--adm-space-2) var(--adm-space-3);
   min-width: 0;
 }
 .adm-gov-kv__label {
   font-family: var(--adm-mono);
-  font-size: 8px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
-  letter-spacing: .1em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   color: var(--adm-muted-dim);
-  margin-bottom: 3px;
+  margin-bottom: var(--adm-space-1);
 }
 .adm-gov-kv__value {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   color: var(--adm-text-dim);
   line-height: 1.5;
   word-break: break-word;
@@ -335,24 +340,24 @@
 .adm-blockers {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 16px;
+  gap: var(--adm-space-2);
+  margin-bottom: var(--adm-space-5)
 }
 .adm-blocker {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
   letter-spacing: .07em;
-  padding: 4px 9px;
-  border-radius: var(--adm-radius);
-  border: 1px solid rgba(251, 113, 133, .25);
+  padding: var(--adm-space-1) var(--adm-space-3);
+  border-radius: var(--adm-radius-pill);
+  border: 1px solid var(--adm-status-error-dim);
   background: var(--adm-status-error-bg);
   color: var(--adm-status-error);
   line-height: 1.4;
 }
 .adm-blocker__msg {
   font-family: var(--adm-sans);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   color: var(--adm-muted);
   text-transform: none;
   letter-spacing: 0;
@@ -362,18 +367,18 @@
 .adm-mod__blockers {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--adm-space-1);
   list-style: none;
   margin: 0;
   padding: 0;
 }
 .adm-mod__clear {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   color: var(--adm-status-ok);
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--adm-space-2)
 }
 
 /* ---------- moderation: review card (grid layout) ----------------- */
@@ -387,26 +392,26 @@
   background: var(--adm-surface);
   border: 1px solid var(--adm-border);
   border-radius: var(--adm-radius);
-  padding: 12px 14px;
+  padding: var(--adm-space-3) var(--adm-space-4);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--adm-space-4)
 }
 .adm-mod__head {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--adm-space-4);
   flex-wrap: wrap;
 }
 .adm-mod__id {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   color: var(--adm-muted-dim);
   letter-spacing: .05em;
   flex-shrink: 0;
 }
 .adm-mod__name {
-  font-size: 13px;
+  font-size: var(--adm-text-read);
   font-weight: 600;
   color: var(--adm-text);
   line-height: 1.3;
@@ -417,15 +422,15 @@
 .adm-mod__badges {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--adm-space-1);
   flex-wrap: wrap;
   flex-shrink: 0;
 }
 .adm-mod__section-label {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
-  letter-spacing: .12em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--adm-muted-dim);
 }
@@ -434,7 +439,7 @@
 /* Free-text operator note echoed from the governance log. */
 .adm-mod__reason {
   font-family: var(--adm-sans);
-  font-size: 11px;
+  font-size: var(--adm-text-small);
   line-height: 1.55;
   color: var(--adm-text-dim);
   margin: 3px 0 5px;
@@ -443,22 +448,22 @@
 .adm-mod__legend {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--adm-space-2);
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: var(--adm-space-5)
 }
 .adm-mod__legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--adm-space-2);
   font-family: var(--adm-mono);
-  font-size: 9px;
-  letter-spacing: .06em;
+  font-size: var(--adm-text-micro);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--adm-muted);
   border: 1px solid var(--adm-border-soft);
-  border-radius: var(--adm-radius-sm);
-  padding: 3px 8px;
+  border-radius: var(--adm-radius-pill);
+  padding: var(--adm-space-1) var(--adm-space-2);
 }
 .adm-mod__legend-item .adm-pill__count { margin-left: 0; }
 
@@ -468,10 +473,10 @@
   border: 1px solid var(--adm-border);
   border-radius: var(--adm-radius);
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   line-height: 1.7;
   color: var(--adm-text-dim);
-  padding: 12px 14px;
+  padding: var(--adm-space-3) var(--adm-space-4);
   white-space: pre-wrap;
   word-break: break-word;
   overflow-x: auto;
@@ -484,16 +489,16 @@
 .adm-signal {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
+  gap: var(--adm-space-4);
+  padding: var(--adm-space-2) var(--adm-space-3);
   border-bottom: 1px solid var(--adm-border-soft);
 }
 .adm-signal:last-child { border-bottom: none; }
 .adm-signal__label {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   font-weight: 600;
-  letter-spacing: .07em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--adm-text-dim);
   width: 200px;
@@ -503,7 +508,7 @@
   flex: 1;
   min-width: 0;
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   color: var(--adm-muted);
   line-height: 1.5;
 }/* The signal grid wraps the chip rows in their own bordered card so the
@@ -516,9 +521,9 @@
 }
 .adm-signal__value {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   font-weight: 600;
-  letter-spacing: .06em;
+  letter-spacing: var(--track-caps-tight);
   text-transform: uppercase;
   color: var(--adm-text);
   white-space: nowrap;
@@ -527,7 +532,7 @@
 }
 .adm-signal__ms {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   color: var(--adm-muted-dim);
   font-weight: 400;
   letter-spacing: .02em;
@@ -535,7 +540,7 @@
 }
 .adm-signal__source {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   color: var(--adm-muted-dim);
   letter-spacing: .04em;
   overflow: hidden;
@@ -545,7 +550,7 @@
 /* Verdict colouring by signal kind, not by a red/green guess. */
 .adm-signal--fail .adm-signal__value { color: var(--adm-status-error); }
 .adm-signal--unknown .adm-signal__value { color: var(--adm-muted-dim); }
-.adm-event-type { font-size: 11px; color: var(--adm-text); }
+.adm-event-type { font-size: var(--adm-text-small); color: var(--adm-text); }
 
 /* ---------- append-only stream (governance + telemetry) ----------- */
 .adm-gov-stream {
@@ -562,53 +567,53 @@
 .adm-ops-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 24px;
+  gap: var(--adm-space-3);
+  margin-bottom: var(--adm-space-7)
 }
 .adm-ops-card {
   background: var(--adm-surface);
   border: 1px solid var(--adm-border);
   border-radius: var(--adm-radius);
-  padding: 12px 14px;
+  padding: var(--adm-space-3) var(--adm-space-4);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--adm-space-1);
   min-width: 0;
 }
 .adm-ops-card--unavailable {
   border-style: dashed;
   background: repeating-linear-gradient(
     135deg,
-    rgba(113, 113, 122, .04),
-    rgba(113, 113, 122, .04) 6px,
+    var(--adm-border-soft),
+    var(--adm-border-soft) 6px,
     transparent 6px,
     transparent 12px
   );
 }
 .adm-ops-card__label {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 500;
-  letter-spacing: .1em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   color: var(--adm-muted);
 }
 .adm-ops-card__value {
   font-family: var(--adm-mono);
-  font-size: 24px;
+  font-size: var(--adm-text-figure);
   font-weight: 700;
   color: var(--adm-text);
   line-height: 1;
   letter-spacing: -.02em;
 }
 .adm-ops-card--unavailable .adm-ops-card__value {
-  font-size: 13px;
+  font-size: var(--adm-text-read);
   color: var(--adm-muted-dim);
   font-weight: 600;
   letter-spacing: .06em;
 }.adm-ops-card__unit {
   font-family: var(--adm-mono);
-  font-size: 11px;
+  font-size: var(--adm-text-small);
   font-weight: 500;
   color: var(--adm-muted);
   letter-spacing: 0;
@@ -618,24 +623,24 @@
    screen names the query that produced it. */
 .adm-ops-card__detail {
   font-family: var(--adm-sans);
-  font-size: 11px;
+  font-size: var(--adm-text-small);
   line-height: 1.5;
   color: var(--adm-muted);
-  margin-top: 3px;
+  margin-top: var(--adm-space-1);
 }
 .adm-ops-card__source {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   color: var(--adm-muted-dim);
   letter-spacing: .05em;
   margin-top: auto;
-  padding-top: 7px;
+  padding-top: var(--adm-space-2);
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: var(--adm-space-2)
 }
 .adm-ops-card__value--none {
-  font-size: 13px;
+  font-size: var(--adm-text-read);
   color: var(--adm-muted-dim);
   font-weight: 600;
   letter-spacing: .06em;
@@ -650,12 +655,12 @@
 .adm-gate {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: var(--adm-space-4);
+  padding: var(--adm-space-3) var(--adm-space-4);
   border: 1px solid var(--adm-border);
   border-radius: var(--adm-radius);
   background: var(--adm-surface);
-  margin-bottom: 16px;
+  margin-bottom: var(--adm-space-5);
   flex-wrap: wrap;
 }.adm-gate__reason:focus { border-color: var(--adm-muted-dim); }
 .adm-gate__reason::placeholder { color: var(--adm-muted-dim); }/* ---------- serving-gate control (per-advertiser card footer) ------ */
@@ -665,28 +670,28 @@
   border: 1px solid var(--adm-border);
   border-radius: var(--adm-radius-sm);
   background: var(--adm-raised);
-  padding: 10px 12px;
+  padding: var(--adm-space-2) var(--adm-space-3);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--adm-space-3)
 }
 .adm-gate__head {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--adm-space-3);
   flex-wrap: wrap;
 }
 .adm-gate__label {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
-  letter-spacing: .12em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--adm-muted);
 }
 .adm-gate__warning {
   font-family: var(--adm-sans);
-  font-size: 11px;
+  font-size: var(--adm-text-small);
   line-height: 1.5;
   color: var(--adm-text-dim);
 }
@@ -697,8 +702,8 @@
   border-radius: var(--adm-radius-sm);
   color: var(--adm-text);
   font-family: var(--adm-mono);
-  font-size: 10px;
-  padding: 7px 10px;
+  font-size: var(--adm-text-label);
+  padding: var(--adm-space-2) var(--adm-space-2);
   outline: none;
   resize: vertical;
   min-height: 54px;
@@ -708,12 +713,12 @@
 .adm-gate__buttons {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--adm-space-3);
   flex-wrap: wrap;
 }
 .adm-gate__message {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   line-height: 1.6;
   letter-spacing: .02em;
 }
@@ -725,9 +730,9 @@
 .adm-gate__confirm {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--adm-space-3);
   flex-wrap: wrap;
-  padding-top: 8px;
+  padding-top: var(--adm-space-2);
   border-top: 1px solid var(--adm-border-soft);
 }
 
@@ -737,21 +742,25 @@
    error states were rendering as unstyled text. */
 .adm-page-title {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
-  letter-spacing: .14em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   color: var(--adm-muted-dim);
-  margin-bottom: 6px;
+  margin-bottom: var(--adm-space-2);
 }
+/* The sibling of .adm-op-header__title, and it is the heading a reader
+   actually lands on when a page has no operations header. Two systems for
+   one job meant the same page read as two products depending on which
+   component happened to own the title. */
 .adm-page-heading {
   font-family: var(--adm-sans);
-  font-size: 17px;
+  font-size: var(--adm-text-title);
   font-weight: 600;
-  letter-spacing: -.01em;
+  letter-spacing: var(--track-head);
   color: var(--adm-text);
-  margin: 0 0 16px;
-  line-height: 1.25;
+  margin: 0 0 var(--adm-space-6);
+  line-height: 1.1;
 }
 
 /* ---------- responsive -------------------------------------------- */

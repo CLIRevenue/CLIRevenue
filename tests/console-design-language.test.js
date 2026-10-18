@@ -61,10 +61,14 @@ const index = () => read('src', 'index.css')
 const code = (source) =>
   source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
 
-/** The body of the `.clr-surface` token block, braces balanced. */
+/** The body of the console token block, braces balanced.
+    The selector is `.clr-surface,\n.adm-root {` — the admin console was added
+    to it so it inherits the same palette — so this matches the LAST selector
+    before the brace rather than requiring the block to start `.clr-surface {`,
+    which would silently stop finding it the day anyone reformatted that list. */
 const surfaceBlock = () => {
   const body = code(chrome())
-  const start = body.indexOf('.clr-surface {')
+  const start = body.search(/\.clr-surface[\s\S]{0,80}?\{/)
   expect(start).toBeGreaterThan(-1)
   let depth = 0
   for (let i = body.indexOf('{', start); i < body.length; i += 1) {
@@ -74,7 +78,7 @@ const surfaceBlock = () => {
       if (depth === 0) return body.slice(start, i + 1)
     }
   }
-  throw new Error('.clr-surface block is not closed')
+  throw new Error('the console token block is not closed')
 }
 
 const token = (name) => {

@@ -125,7 +125,7 @@
   stroke: url(#auth-curve-grad);
   /*
    * User units, not pixels. The `slice` scale is about sixteen on a desktop, so
-   * this is a band roughly 55px thick.
+   * this is a band roughly 50px thick.
    *
    * It was 8 — about 134px, a slab — then 5. The trail still has to sit
    * *inside* the ribbon rather than beside it, which is the only reason the
@@ -139,7 +139,7 @@
    * stripe with letters painted on it, and the letters stop being words. That
    * is the floor, not an accident.
    */
-  stroke-width: 5;
+  stroke-width: 3.2;
   /*
    * `round` on the join, not the default `miter`. These paths are meant to read
    * as one continuous gesture and they are not: `T 48 38` continues from
@@ -161,7 +161,7 @@
   stroke: var(--auth-curve-ink);
   /* Identical to the line it reveals: a different width would let the words
      appear at the edge of the ribbon instead of inside it. */
-  stroke-width: 5;
+  stroke-width: 3.2;
   stroke-linecap: round;
   stroke-linejoin: round;
   transition:
@@ -179,13 +179,14 @@
   font-family: var(--mono);
   /* Under half the stroke width: the glyphs are inscribed in the ribbon, not
      sitting on top of it. The 44% ratio is the contract, so this number moves
-     with `stroke-width` and never independently. */
-  font-size: 2.2px;
+     with `stroke-width` and never independently — the line went 8, then 5,
+     then 3.2, and this went 3.6, 2.2, 1.4. */
+  font-size: 1.4px;
   font-weight: 700;
   letter-spacing: 0.1px;
   fill: var(--auth-curve-ink);
   stroke: var(--auth-curve-edge);
-  stroke-width: 0.18px;
+  stroke-width: 0.12px;
   paint-order: stroke fill;
 }
 

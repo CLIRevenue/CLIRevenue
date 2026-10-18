@@ -26,7 +26,7 @@
 .setup__phase {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--c-space-3);
   margin: 28px 0 0;
   color: var(--signal);
 }
@@ -37,9 +37,9 @@
 
 .setup__phase-label {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--c-text-label);
   font-weight: 500;
-  letter-spacing: var(--track-label);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -60,7 +60,7 @@
    Everything else is a command or a fallback and stays ink. */
 .setup__how {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--c-text-body);
   color: var(--ink-2);
   white-space: nowrap;
 }
@@ -79,5 +79,9 @@
 
 /* Utility for error text */
 .setup__text-error {
-  color: var(--signal-text);
+  /* It was --signal-text, which is #f2f2f4: the only rule this file had
+     for error text, painting a failure in body ink. --accent-error
+     stays on :root deliberately, so it is correct here without a
+     bridge re-export. */
+  color: var(--accent-error);
 }

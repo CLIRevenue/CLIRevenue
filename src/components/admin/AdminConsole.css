@@ -5,27 +5,49 @@
 
 /* ---------- design tokens (mapped to main design system) ----------- */
 .adm-root {
-  /* Structural tokens → main design system */
-  --adm-bg:          var(--bg);
-  --adm-bg-grid:     var(--hair);
-  --adm-surface:     var(--surface);
-  --adm-raised:      var(--elevated);
-  --adm-border:      var(--border);
-  --adm-border-soft: var(--hair);
-  --adm-text:        var(--text);
-  --adm-text-dim:    var(--text-muted);
-  --adm-muted:       var(--muted);
-  --adm-muted-dim:   var(--ink-4);
+  /* Structural tokens → the landing palette.
+     These used to read var(--bg) / var(--surface) / var(--border) / var(--text),
+     which are index.css :root values. The admin console is rendered bare at
+     App.jsx — no PageChrome, no .clr-surface — so it was the one surface on
+     the site painting itself from :root while everything else wore the
+     landing. Same shapes, different product. chrome.css now lists .adm-root
+     beside .clr-surface so the --ld-* tokens resolve here too, and these
+     point at them. */
+  --adm-bg:          var(--ld-bg);
+  --adm-bg-grid:     var(--ld-line);
+  --adm-surface:     var(--ld-surface);
+  --adm-raised:      var(--ld-bg-tint);
+  --adm-border:      var(--ld-line-strong);
+  --adm-border-soft: var(--ld-line);
+  --adm-text:        var(--ld-ink);
+  --adm-text-dim:    var(--ld-ink-2);
+  /* Was --ld-ink-3. Measured against the real cascade, that one token put
+     29 of the console's 70 text elements under WCAG AA: every sidebar
+     section, table header, status pill, telemetry label, note, empty-state
+     line and .adm-muted table cell (spend, impressions, dates). --ld-ink-3
+     is 4.31:1 on the canvas and 3.86:1 on a panel; --ld-ink-4 is 5.09:1 and
+     4.57:1. One line here fixes every one of them. */
+  --adm-muted:       var(--ld-ink-4);
+  /* Was var(--ink-4), which nothing in the project defines — it fell through
+     to :root and came back as a grey that could not be read. */
+  --adm-muted-dim:   var(--ld-ink-4);
 
-  /* Admin brand token (distinct from status) */
-  --adm-brand:       #dc2626;
-  --adm-brand-bright:#ef4444;
-  --adm-brand-dim:   #7f1d1d;
-  --adm-brand-bg:    rgba(220, 38, 38, 0.07);
+  /* Admin brand token (distinct from status).
+     It was #dc2626 — red, and the loudest colour on the page. On a site
+     whose accent is a periwinkle blue, a red wordmark reads as an alert, not
+     as a brand, which is why the console looked like a different product
+     before a single pixel of it was laid out. */
+  --adm-brand:       var(--ld-accent);
+  --adm-brand-bright:var(--ld-accent);
+  --adm-brand-dim:   var(--ld-accent-soft);
+  --adm-brand-bg:    var(--ld-accent-soft);
 
-  /* Status tokens → semantic mappings */
+  /* Status tokens → semantic mappings. These deliberately stay on :root:
+     red for error and green for ok are not branding, they are meaning, and
+     the landing has no red to borrow. */
   --adm-status-error:  var(--accent-error);
-  --adm-status-error-bg:  rgba(251, 113, 133, 0.07);
+  --adm-status-error-bg:  var(--accent-error-wash);
+  --adm-status-error-dim: rgba(251, 113, 133, .25);
   --adm-status-ok:     var(--ok);
   --adm-status-ok-bg:     rgba(74, 222, 128, 0.07);
   --adm-status-amber:  var(--amber);
@@ -35,18 +57,65 @@
   --adm-mono:        var(--mono);
   --adm-sans:        var(--sans);
 
-  /* Admin-specific layout tokens (preserved) */
-  --adm-sidebar-w:   208px;
+  /* Admin-specific layout tokens.
+     The density is the point of this console: 44px topbar, 13px base. What
+     changes is the rhythm they sit in, not how many rows fit on a screen.
+     The sidebar gained 16px because the active-item marker and the nav's own
+     padding were eating the label column; at 208px the longest label
+     ("Moderation") touched the marker. */
+  --adm-sidebar-w:   224px;
   --adm-topbar-h:    44px;
   --adm-radius:      var(--radius-md);
   --adm-radius-sm:   var(--radius-sm);
   --adm-radius-lg:   var(--radius-lg);
-  --adm-max-w:       1200px;
+  /* A pill is not a rounded rectangle. Status pills, badges and the role
+     badge all sit under 20px tall; at the card radius (12px) they came out
+     as lopsided lozenges with straight middles. A pill radius is its own
+     step, borrowed from index.css rather than invented here. */
+  --adm-radius-pill: var(--radius-pill);
+  --adm-max-w:       var(--measure);
+
+  /* Spacing and type are ALIASES of the shared console scale in
+     chrome.css, not a second private copy. This console runs one rung
+     tighter than the marketing pages -- it picks its density by choosing a
+     rung, not by carrying a scale of its own that will drift from theirs.
+     The names stay, because this file reads better with --adm- in it and
+     every call site is already written that way. */
+  --adm-space-1: var(--c-space-1);
+  --adm-space-2: var(--c-space-2);
+  --adm-space-3: var(--c-space-3);
+  --adm-space-4: var(--c-space-4);
+  --adm-space-5: var(--c-space-5);
+  --adm-space-6: var(--c-space-6);
+  --adm-space-7: var(--c-space-7);
+  --adm-space-8: var(--c-space-8);
+
+  --adm-text-micro: var(--c-text-micro);   /* topbar meta, table count, empty-state label */
+  --adm-text-label: var(--c-text-label);   /* section titles, table heads, card labels */
+  --adm-text-small: var(--c-text-small);   /* mono inline, chips, event meta */
+  --adm-text-body:  var(--c-text-body);    /* table cells, notes, rows */
+  --adm-text-read:  var(--c-text-read);    /* the base, and any prose a person reads twice */
+  --adm-text-title: var(--c-text-title);   /* the page title, once per screen */
+  --adm-text-figure: var(--c-text-figure); /* telemetry values */
+  /* Every --adm-track rule is a mono uppercase label: a topbar wordmark, a
+     section heading, a table header, a pill, a badge, a field name. Before
+     this pointed at --track-label (0.09em) the admin console tracked its
+     caps at a fifth less than the two consoles beside it, which is most of
+     why it did not read as the same product. */
+  --adm-track:      var(--track-caps);
+  /* Text that sits ON the brand fill and on the error fill. Both answers are
+     palette facts rather than console facts, so the bridge owns them: white on
+     the mid-lightness periwinkle measures 3.06:1 and fails AA, which is what
+     this token used to be, and white on the light error pink measures 2.69:1,
+     which is what the delete button shipped before. One name each so every
+     filled button in the console agrees and nobody re-derives it per button. */
+  --adm-on-brand:   var(--ld-on-accent);
+  --adm-on-error:   var(--ld-on-error);
 
   color: var(--adm-text);
   background: var(--adm-bg);
   font-family: var(--adm-sans);
-  font-size: 13px;
+  font-size: var(--adm-text-read);
   line-height: 1.5;
   min-height: 100vh;
   display: flex;
@@ -79,7 +148,7 @@
   display: flex;
   align-items: center;
   padding: 0 20px;
-  gap: 12px;
+  gap: var(--adm-space-3);
   flex-shrink: 0;
   position: sticky;
   top: 0;
@@ -87,15 +156,15 @@
 }
 .adm-topbar__brand {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   font-weight: 600;
-  letter-spacing: .16em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   color: var(--adm-brand);
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--adm-space-2);
 }
 .adm-topbar__brand::before {
   content: '';
@@ -114,18 +183,18 @@
 }
 .adm-topbar__title {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-label);
   font-weight: 500;
-  letter-spacing: .1em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   color: var(--adm-text-dim);
   white-space: nowrap;
 }
 .adm-topbar__meta {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 500;
-  letter-spacing: .1em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   color: var(--adm-muted-dim);
   white-space: nowrap;
@@ -134,28 +203,28 @@
 .adm-topbar__identity {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--adm-space-3);
 }
 .adm-topbar__email {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-small);
   color: var(--adm-muted);
-  max-width: 190px;
+  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .adm-topbar__badge {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
-  letter-spacing: .1em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   background: var(--adm-brand-bg);
   color: var(--adm-brand-bright);
   border: 1px solid var(--adm-brand-dim);
-  border-radius: var(--adm-radius);
-  padding: 2px 7px;
+  border-radius: var(--adm-radius-pill);
+  padding: var(--adm-space-1) var(--adm-space-2);
   line-height: 1;
 }
 .adm-topbar__logout {
@@ -163,12 +232,12 @@
   border: 1px solid var(--adm-border);
   color: var(--adm-muted);
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 500;
-  letter-spacing: .08em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: var(--adm-radius);
+  padding: var(--adm-space-1) var(--adm-space-3);
+  border-radius: var(--adm-radius-sm);
   cursor: pointer;
   transition: border-color .15s, color .15s, background .15s;
   line-height: 1;
@@ -202,34 +271,36 @@
   overflow-x: hidden;
 }
 .adm-sidebar__section {
-  padding: 18px 0 6px 0;
+  padding: var(--adm-space-5) 0 var(--adm-space-2);
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 500;
-  letter-spacing: .16em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   color: var(--adm-muted-dim);
-  padding-left: 16px;
+  padding-left: var(--adm-space-4);
 }
-.adm-sidebar__section + .adm-nav { margin-top: 2px; }
+.adm-sidebar__section + .adm-nav { margin-top: var(--adm-space-1); }
 .adm-nav {
   list-style: none;
   margin: 0;
-  padding: 0 8px;
+  padding: 0 var(--adm-space-2);
 }
-.adm-nav__item { margin-bottom: 1px; }
+.adm-nav__item { margin-bottom: var(--adm-space-1); }
 .adm-nav__btn {
   display: flex;
   align-items: center;
   width: 100%;
-  gap: 9px;
-  padding: 6px 9px;
-  border-radius: var(--adm-radius);
+  gap: var(--adm-space-3);
+  padding: var(--adm-space-2) var(--adm-space-3);
+  border-radius: var(--adm-radius-sm);
   border: 1px solid transparent;
   background: transparent;
-  color: var(--adm-muted);
+  /* The most-read label on the console is the primary navigation, and it
+     was on the caption rung. A tab you click to move around is not a caption. */
+  color: var(--adm-text-dim);
   font-family: var(--adm-sans);
-  font-size: 11px;
+  font-size: var(--adm-text-body);
   font-weight: 500;
   cursor: pointer;
   text-align: left;
@@ -250,16 +321,16 @@
 .adm-nav__btn--active::before {
   content: '';
   position: absolute;
-  left: -8px;
-  top: 5px;
-  bottom: 5px;
+  left: calc(var(--adm-space-2) * -1);
+  top: 6px;
+  bottom: 6px;
   width: 2px;
   background: var(--adm-brand);
   border-radius: 0 1px 1px 0;
 }
 .adm-nav__icon {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   opacity: .6;
   flex-shrink: 0;
   transition: opacity .12s;
@@ -272,7 +343,7 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 24px 28px;
+  padding: var(--adm-space-7) var(--adm-space-6);
   scroll-behavior: smooth;
 }
 .adm-main__inner {
@@ -285,61 +356,64 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding-bottom: 14px;
+  gap: var(--adm-space-4);
+  margin-bottom: var(--adm-space-7);
+  padding-bottom: var(--adm-space-4);
   border-bottom: 1px solid var(--adm-border-soft);
 }
 .adm-op-header__left {}
 .adm-op-header__breadcrumb {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 500;
-  letter-spacing: .14em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   color: var(--adm-muted);
-  margin-bottom: 4px;
+  margin-bottom: var(--adm-space-2);
 }
+/* The one big thing on the screen. Sans at the landing's display weight and
+   tracking, not mono at 700: a page title is a page title on every surface,
+   and the only mono on this screen should be the data. */
 .adm-op-header__title {
   font-family: var(--adm-sans);
-  font-size: 20px;
-  font-weight: 700;
+  font-size: var(--adm-text-title);
+  font-weight: 600;
   color: var(--adm-text);
-  letter-spacing: -.01em;
-  line-height: 1.2;
+  letter-spacing: var(--track-head);
+  line-height: 1.1;
 }
 .adm-op-header__sub {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-small);
   color: var(--adm-muted);
-  margin-top: 4px;
+  margin-top: var(--adm-space-2);
   letter-spacing: .04em;
 }
 .adm-op-header__right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--adm-space-3);
   flex-shrink: 0;
 }
 .adm-status-pill {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--adm-space-2);
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
-  letter-spacing: .1em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   color: var(--adm-status-ok);
   background: var(--adm-status-ok-bg);
   border: 1px solid rgba(74, 222, 128, .15);
-  border-radius: var(--adm-radius);
-  padding: 4px 9px;
+  border-radius: var(--adm-radius-pill);
+  padding: var(--adm-space-1) var(--adm-space-3);
   line-height: 1;
 }
 .adm-status-pill__dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--adm-status-ok);
   animation: adm-pulse 2s ease-in-out infinite;
@@ -348,9 +422,13 @@
    It used to be two copies of an inline style object, which is why a fourth
    status surface in this console could not be added without a third copy. */
 .adm-status-pill--muted {
-  color: var(--adm-muted);
-  background: rgba(113, 113, 122, .06);
-  border-color: rgba(113, 113, 122, .15);
+  /* A grey label on a grey wash cannot reach 4.5:1 at 9px: the wash
+     composites to rgb(31,31,34) and --adm-muted reads 4.21:1 on it. A
+     status WORD is a caption that sits on its own surface, so it takes the
+     one-rung-brighter token. Measured: --adm-text-dim is 6.6:1 here. */
+  color: var(--adm-text-dim);
+  background: var(--hair);
+  border-color: var(--hair-strong);
 }
 .adm-status-pill--muted .adm-status-pill__dot {
   background: var(--adm-muted);
@@ -375,33 +453,33 @@
 .adm-note {
   color: var(--adm-muted);
   font-family: var(--adm-mono);
-  font-size: 11px;
+  font-size: var(--adm-text-body);
   letter-spacing: .01em;
-  margin-top: 14px;
+  margin-top: var(--adm-space-3);
 }
-.adm-note--lead { margin-top: 0; margin-bottom: 16px; }
+.adm-note--lead { margin-top: 0; margin-bottom: var(--adm-space-4); }
 
 /* ---------- telemetry grid ---------------------------------------- */
 .adm-telemetry {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 24px;
+  gap: var(--adm-space-3);
+  margin-bottom: var(--adm-space-6);
 }
 .adm-telemetry__secondary {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
-  margin-bottom: 28px;
+  gap: var(--adm-space-2);
+  margin-bottom: var(--adm-space-7);
 }
 .adm-tele-card {
   background: var(--adm-surface);
   border: 1px solid var(--adm-border);
   border-radius: var(--adm-radius);
-  padding: 12px 14px;
+  padding: var(--adm-space-4) var(--adm-space-4);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--adm-space-1);
   transition: border-color .12s;
 }
 .adm-tele-card:hover {
@@ -409,15 +487,15 @@
 }
 .adm-tele-card__label {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-label);
   font-weight: 500;
-  letter-spacing: .1em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   color: var(--adm-muted);
 }
 .adm-tele-card__value {
   font-family: var(--adm-mono);
-  font-size: 24px;
+  font-size: var(--adm-text-figure);
   font-weight: 700;
   color: var(--adm-text);
   line-height: 1;
@@ -425,14 +503,14 @@
 }
 .adm-tele-card__context {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   color: var(--adm-muted-dim);
-  letter-spacing: .06em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
-  margin-top: 2px;
+  margin-top: var(--adm-space-1);
 }
 .adm-tele-card--primary {
-  border-color: var(--adm-border);
+  border-color: var(--adm-brand-dim);
   background: var(--adm-raised);
 }
 .adm-tele-card--primary .adm-tele-card__value {
@@ -446,27 +524,27 @@
   border: 1px solid var(--adm-border);
   border-radius: var(--adm-radius);
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: var(--adm-space-6);
 }
 .adm-table-header {
   display: flex;
   align-items: center;
-  padding: 9px 14px;
+  padding: var(--adm-space-3) var(--adm-space-4);
   border-bottom: 1px solid var(--adm-border);
-  gap: 10px;
+  gap: var(--adm-space-3);
   background: var(--adm-raised);
 }
 .adm-table-title {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-label);
   font-weight: 600;
-  letter-spacing: .1em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
-  color: var(--adm-muted);
+  color: var(--adm-text-dim);
 }
 .adm-table-count {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   color: var(--adm-muted-dim);
   margin-left: auto;
   letter-spacing: .06em;
@@ -478,18 +556,18 @@
 .adm-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
-  min-width: 640px;
+  font-size: var(--adm-text-body);
+  min-width: 680px;
 }
 .adm-table th {
   text-align: left;
-  padding: 8px 14px;
+  padding: var(--adm-space-3) var(--adm-space-4);
   background: var(--adm-raised);
   border-bottom: 1px solid var(--adm-border);
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
-  letter-spacing: .1em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   color: var(--adm-muted);
   white-space: nowrap;
@@ -497,7 +575,7 @@
   top: 0;
 }
 .adm-table td {
-  padding: 9px 14px;
+  padding: var(--adm-space-3) var(--adm-space-4);
   border-bottom: 1px solid var(--adm-border-soft);
   color: var(--adm-text);
   vertical-align: middle;
@@ -508,7 +586,7 @@
   transition: background .08s;
 }
 .adm-table tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.012);
+  background: var(--adm-raised);
 }
 .adm-table tbody tr:last-child:hover td {
   background: none;
@@ -516,7 +594,7 @@
 
 .adm-mono {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-small);
   letter-spacing: .01em;
 }
 .adm-muted {
@@ -531,12 +609,12 @@
   display: inline-flex;
   align-items: center;
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
-  letter-spacing: .08em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
-  padding: 2px 7px;
-  border-radius: var(--adm-radius);
+  padding: var(--adm-space-1) var(--adm-space-2);
+  border-radius: var(--adm-radius-pill);
   border: 1px solid transparent;
   white-space: nowrap;
   line-height: 1.4;
@@ -544,42 +622,42 @@
 .adm-badge--active    { background: var(--adm-status-ok-bg); color: var(--adm-status-ok); border-color: rgba(74, 222, 128, .18); }
 .adm-badge--draft     { background: var(--adm-status-amber-bg); color: var(--adm-status-amber); border-color: rgba(96, 165, 250, .18); }
 .adm-badge--paused    { background: var(--adm-status-amber-bg); color: var(--adm-status-amber); border-color: rgba(96, 165, 250, .18); }
-.adm-badge--archived  { background: rgba(113, 113, 122, .06); color: var(--adm-muted); border-color: rgba(113, 113, 122, .18); }
-.adm-badge--completed { background: rgba(113, 113, 122, .06); color: var(--adm-muted); border-color: rgba(113, 113, 122, .18); }
+.adm-badge--archived  { background: var(--hair); color: var(--adm-muted); border-color: var(--hair-strong); }
+.adm-badge--completed { background: var(--hair); color: var(--adm-muted); border-color: var(--hair-strong); }
 .adm-badge--suspended { background: var(--adm-status-error-bg); color: var(--adm-status-error); border-color: rgba(251, 113, 133, .18); }
 .adm-badge--enabled   { background: var(--adm-status-ok-bg); color: var(--adm-status-ok); border-color: rgba(74, 222, 128, .18); }
-.adm-badge--disabled  { background: rgba(113, 113, 122, .06); color: var(--adm-muted); border-color: rgba(113, 113, 122, .18); }
+.adm-badge--disabled  { background: var(--hair); color: var(--adm-muted); border-color: var(--hair-strong); }
 
 /* ---------- system status strip ----------------------------------- */
 .adm-system-strip {
   display: flex;
-  gap: 6px;
+  gap: var(--adm-space-2);
   flex-wrap: wrap;
 }
 .adm-system-chip {
   background: var(--adm-surface);
   border: 1px solid var(--adm-border);
   border-radius: var(--adm-radius);
-  padding: 9px 12px;
+  padding: var(--adm-space-3) var(--adm-space-4);
   display: flex;
   align-items: center;
-  gap: 9px;
-  min-width: 160px;
+  gap: var(--adm-space-3);
+  min-width: 180px;
   flex: 1;
 }
 .adm-system-chip__label {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
-  letter-spacing: .1em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   color: var(--adm-muted);
-  width: 110px;
+  width: 120px;
   flex-shrink: 0;
 }
 .adm-system-chip__value {
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-small);
   color: var(--adm-text-dim);
   line-height: 1.3;
   letter-spacing: .02em;
@@ -589,13 +667,13 @@
 .adm-health {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--adm-space-2);
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-small);
 }
 .adm-health__dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
   transition: background .2s;
@@ -611,22 +689,22 @@
 .adm-event-row {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 8px 14px;
+  gap: var(--adm-space-3);
+  padding: var(--adm-space-3) var(--adm-space-4);
   border-bottom: 1px solid var(--adm-border-soft);
-  font-size: 11px;
+  font-size: var(--adm-text-body);
   transition: background .08s;
 }
 .adm-event-row:last-child { border-bottom: none; }
-.adm-event-row:hover { background: rgba(255,255,255,.012); }
+.adm-event-row:hover { background: var(--adm-raised); }
 .adm-event-kind {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   font-weight: 600;
-  letter-spacing: .08em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: var(--adm-radius);
+  padding: var(--adm-space-1) var(--adm-space-2);
+  border-radius: var(--adm-radius-pill);
   border: 1px solid var(--adm-border);
   color: var(--adm-muted);
   white-space: nowrap;
@@ -639,27 +717,27 @@
 }
 .adm-event-meta {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   color: var(--adm-muted);
-  margin-top: 2px;
+  margin-top: var(--adm-space-1);
   letter-spacing: .02em;
 }
 
 /* ---------- empty state ------------------------------------------- */
 .adm-empty {
   text-align: center;
-  padding: 40px 24px;
+  padding: var(--adm-space-8) var(--adm-space-6);
   color: var(--adm-muted);
-  font-size: 12px;
+  font-size: var(--adm-text-read);
 }
 .adm-empty__label {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-label);
   font-weight: 500;
-  letter-spacing: .12em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
   color: var(--adm-muted-dim);
-  margin-bottom: 6px;
+  margin-bottom: var(--adm-space-2);
 }
 
 /* ---------- loading / error --------------------------------------- */
@@ -667,28 +745,31 @@
   background: var(--adm-status-error-bg);
   border: 1px solid rgba(251, 113, 133, .25);
   border-radius: var(--adm-radius);
-  padding: 10px 14px;
+  padding: var(--adm-space-3) var(--adm-space-4);
   color: var(--adm-status-error);
   font-family: var(--adm-mono);
-  font-size: 10px;
-  margin-bottom: 14px;
+  font-size: var(--adm-text-small);
+  margin-bottom: var(--adm-space-3);
   letter-spacing: .02em;
 }
 .adm-loading {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 40px 24px;
+  gap: var(--adm-space-3);
+  padding: var(--adm-space-8) var(--adm-space-6);
   color: var(--adm-muted);
   font-family: var(--adm-mono);
-  font-size: 10px;
+  font-size: var(--adm-text-small);
   letter-spacing: .04em;
 }
 .adm-spinner {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border: 1.5px solid var(--adm-border);
-  border-top-color: var(--adm-status-error);
+  /* Was the error red: a loading spinner in the alert colour on a page
+     whose brand is periwinkle. It read as a failure that had not resolved
+     yet. Motion is neutral; it wears the brand. */
+  border-top-color: var(--adm-brand);
   border-radius: 50%;
   animation: adm-spin .7s linear infinite;
   flex-shrink: 0;
@@ -697,33 +778,33 @@
 
 /* ---------- section ----------------------------------------------- */
 .adm-section {
-  margin-bottom: 24px;
+  margin-bottom: var(--adm-space-7);
 }
 .adm-section__header {
   display: flex;
   align-items: baseline;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
+  gap: var(--adm-space-3);
+  margin-bottom: var(--adm-space-4);
+  padding-bottom: var(--adm-space-2);
   border-bottom: 1px solid var(--adm-border-soft);
 }
 .adm-section__title {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-label);
   font-weight: 600;
-  letter-spacing: .12em;
+  letter-spacing: var(--adm-track);
   text-transform: uppercase;
-  color: var(--adm-muted);
+  color: var(--adm-text-dim);
 }
 .adm-section__subtitle {
   font-family: var(--adm-mono);
-  font-size: 9px;
+  font-size: var(--adm-text-micro);
   color: var(--adm-muted-dim);
-  letter-spacing: .06em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
 }
 .adm-truncate {
-  max-width: 220px;
+  max-width: 240px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -744,16 +825,19 @@
   background: transparent;
   border: 1px solid var(--adm-border);
   color: var(--adm-muted);
-  padding: 5px 8px;
-  border-radius: var(--adm-radius);
+  padding: var(--adm-space-2) var(--adm-space-2);
+  border-radius: var(--adm-radius-sm);
   cursor: pointer;
   align-items: center;
   justify-content: center;
   line-height: 1;
 }
+/* A neutral control. It used to borrow the legacy --adm-red on hover, left
+   over from when red was the wordmark; hovering the menu button looked like
+   an error state. */
 .adm-mobile-toggle:hover {
-  border-color: var(--adm-red);
-  color: var(--adm-red-bright);
+  border-color: var(--adm-brand);
+  color: var(--adm-brand-bright);
 }
 
 /* ---------- mobile overlay ---------------------------------------- */
@@ -771,15 +855,15 @@
 /* ---------- responsive -------------------------------------------- */
 @media (max-width: 1280px) {
   .adm-main {
-    padding: 22px 24px;
+    padding: var(--adm-space-6) var(--adm-space-6);
   }
   .adm-telemetry {
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+    gap: var(--adm-space-2);
   }
   .adm-telemetry__secondary {
     grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
+    gap: var(--adm-space-2);
   }
   .adm-tele-card__value {
     font-size: 22px;
@@ -812,15 +896,15 @@
     display: flex;
   }
   .adm-main {
-    padding: 20px;
+    padding: var(--adm-space-5);
   }
   .adm-telemetry {
     grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
+    gap: var(--adm-space-2);
   }
   .adm-telemetry__secondary {
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+    gap: var(--adm-space-2);
   }
   .adm-tele-card__value {
     font-size: 20px;
@@ -829,18 +913,18 @@
     font-size: 24px;
   }
   .adm-table-scroll {
-    margin: 0 -20px;
-    padding: 0 20px;
+    margin: 0 calc(var(--adm-space-5) * -1);
+    padding: 0 var(--adm-space-5);
   }
 }
 
 @media (max-width: 390px) {
   .adm-topbar {
     padding: 0 12px;
-    gap: 8px;
+    gap: var(--adm-space-2);
   }
   .adm-topbar__brand {
-    font-size: 9px;
+    font-size: var(--adm-text-micro);
   }
   .adm-topbar__email {
     display: none;
@@ -849,15 +933,15 @@
     display: none;
   }
   .adm-main {
-    padding: 14px;
+    padding: var(--adm-space-4);
   }
   .adm-telemetry {
     grid-template-columns: 1fr;
-    gap: 6px;
+    gap: var(--adm-space-2);
   }
   .adm-telemetry__secondary {
     grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
+    gap: var(--adm-space-2);
   }
   .adm-tele-card__value {
     font-size: 20px;
@@ -866,11 +950,11 @@
     font-size: 22px;
   }
   .adm-op-header__title {
-    font-size: 17px;
+    font-size: var(--c-text-panel);
   }
   .adm-table-scroll {
-    margin: 0 -14px;
-    padding: 0 14px;
+    margin: 0 calc(var(--adm-space-4) * -1);
+    padding: 0 var(--adm-space-4);
   }
 }
 

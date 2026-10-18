@@ -2,96 +2,124 @@
 /* Shell top padding clears the fixed site header. */
 .adv-shell {
   position: relative;
-  padding: 104px var(--gutter) 96px;
+  padding: calc(var(--c-space-11) + var(--c-space-2)) var(--gutter) var(--c-space-11);
   background: var(--bg);
   color: var(--text);
 }
 .adv-shell__inner { width: 100%; max-width: 1360px; margin: 0 auto; }
-/* Sticky command bar: tabs stay reachable while long pages scroll. */
+/* Sticky command bar: tabs stay reachable while long pages scroll.
+   Two things were promised here and neither was true. `top: 12px` put
+   the rail 61px UNDER the sticky site header, which is 73px tall, so
+   on any scrolled view the tabs slid behind it; and `flex-wrap: wrap`
+   meant that between 641px and about 1000px the eight tabs folded onto
+   two or three lines inside a sticky glass bar, which then covered the
+   content it exists to sit above. One row always, or a horizontal
+   scroller below the width at which it stops fitting — the same answer
+   the two site headers got. `z-index: 30` leaves the header at 40, so
+   the header still wins the overlap rather than the rail sliding over
+   it; the rail is meant to be revealed as you scroll, not to cover the
+   navigation that got you here. */
 .adv-nav {
-  display: flex; flex-wrap: wrap; gap: 8px;
-  position: sticky; top: 12px; z-index: 20;
-  margin: 0 0 36px; padding: 8px;
+  display: flex; flex-wrap: nowrap; gap: var(--c-space-2);
+  position: sticky; top: 76px; z-index: 30;
+  margin: 0 0 var(--c-space-8); padding: var(--c-space-2);
+  overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
   background: var(--glass-bg-strong); border: 1px solid var(--glass-edge);
   border-radius: var(--radius-md);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.08);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.08);
   box-shadow: 0 12px 30px -18px rgba(0, 0, 0, 0.7);
 }
+.adv-nav::-webkit-scrollbar { display: none; }
 .adv-nav__btn {
-  appearance: none; cursor: pointer;
-  font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--ink-3); background: transparent; border: 1px solid transparent;
-  padding: 9px 16px;
+  appearance: none; cursor: pointer; flex: 0 0 auto;
+  font-family: var(--mono); font-size: var(--c-text-small); letter-spacing: var(--track-caps); text-transform: uppercase;
+  color: var(--ink-2); background: transparent; border: 1px solid transparent;
+  padding: var(--c-space-2) var(--c-space-4);
   transition: color var(--dur-fast) var(--ease-ui), border-color var(--dur-fast) var(--ease-ui), background var(--dur-fast) var(--ease-ui);
 }
-/* Active tab reads as the inverted red plate the rest of the
-   product uses for the primary control. */
+/* The active tab is this surface's only accent, and it used to be the
+   product's WARNING colour: an inverted --amber plate with a --paper
+   label, measured at 2.65:1 — a hard WCAG AA failure at 11px, and the
+   reason the dashboard had no accent anywhere at all (--signal appeared
+   exactly once on the whole surface, on a loading dot). The brand
+   periwinkle carries the active state instead, and the label on it is
+   --ld-on-accent (#09090c, about 6.4:1) rather than the paper cream,
+   which would have been 2.6:1 on the accent too. Inactive tabs move to
+   --ink-2 because a navigation label is not a caption. */
 .adv-nav__btn[data-active="true"] {
-   color: var(--paper); border-color: var(--amber); background: var(--amber); font-weight: 600;
-  box-shadow: 0 0 0 1px var(--amber-glow);
+  color: var(--ld-on-accent); border-color: var(--signal); background: var(--signal); font-weight: 600;
+  box-shadow: 0 0 0 1px var(--accent-soft);
 }
-.adv-nav__btn:hover { color: var(--ink); border-color: var(--hair); }
-.adv-nav__btn[data-active="true"]:hover { color: var(--paper); border-color: var(--amber); background: var(--amber); }
-.adv-page { display: flex; flex-direction: column; gap: 28px; }
+.adv-nav__btn:hover { color: var(--ink); border-color: var(--hair-strong); }
+.adv-nav__btn[data-active="true"]:hover { color: var(--ld-on-accent); border-color: var(--signal); background: var(--signal); }
+.adv-page { display: flex; flex-direction: column; gap: var(--c-space-7); }
 /* Stats adapt to their count instead of reserving empty columns. */
-.adv-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; background: var(--hair); border: 1px solid var(--hair); border-radius: var(--radius-md); }
-.adv-stats .stat { padding: 18px 20px; }
+.adv-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--c-space-1); background: var(--hair); border: 1px solid var(--hair); border-radius: var(--radius-md); }
+.adv-stats .stat { padding: var(--c-space-5) var(--c-space-5); }
 @media (max-width: 640px) { .adv-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.adv-grid { display: grid; gap: 20px; }
+.adv-grid { display: grid; gap: var(--c-space-5); }
 .adv-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .adv-grid--split { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: start; }
 @media (max-width: 1080px) { .adv-grid--2, .adv-grid--split { grid-template-columns: 1fr; } }
-.adv-panel { padding: 24px; }
-.adv-panel__title { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 6px; }
-.adv-panel__sub { color: var(--ink-3); font-size: 13px; line-height: 1.55; margin: 0 0 20px; max-width: 62ch; }
-.adv-panel__row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.adv-count { color: var(--ink-3); font-size: 12px; }
+.adv-panel { padding: var(--c-space-6); }
+.adv-panel__title { font-size: var(--c-text-panel); font-weight: 600; letter-spacing: -0.01em; margin: 0 0 var(--c-space-2); }
+/* Prose was one rung too dark on this page. --ink-3 is the ramp's
+   caption step: measured on a panel it is 3.86:1, under the 4.5:1
+   floor for body copy, and it is the same grey the front page
+   reserves for field labels and small print. A paragraph set in
+   the caption colour reads as an aside nobody was meant to read.
+   Prose is --ink-2 (7.87:1); the genuine captions -- the nav label,
+   the count, the loading line -- stay on --ink-3. This is the only
+   place the note is written down; the rules below simply follow it. */
+.adv-panel__sub { color: var(--ink-2); font-size: var(--c-text-read); line-height: 1.55; margin: 0 0 20px; max-width: 62ch; }
+.adv-panel__row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--c-space-3); margin-bottom: var(--c-space-3); }
+.adv-count { color: var(--ink-4); font-size: var(--c-text-body); }
 .adv-select { max-width: 200px; }
-.adv-chart { display: flex; flex-direction: column; gap: 10px; }
-.adv-chart__row { display: grid; grid-template-columns: 180px 1fr 110px; gap: 12px; align-items: center; }
-.adv-chart__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--ink-2); }
-.adv-chart__track { height: 8px; background: rgba(255, 255, 255,0.08); border: 1px solid var(--hair); }
+.adv-chart { display: flex; flex-direction: column; gap: var(--c-space-3); }
+.adv-chart__row { display: grid; grid-template-columns: 180px 1fr 110px; gap: var(--c-space-3); align-items: center; }
+.adv-chart__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--c-text-read); color: var(--ink-2); }
+.adv-chart__track { height: 8px; background: var(--hair); border: 1px solid var(--hair); }
 .adv-chart__fill { display: block; height: 100%; background: var(--paper); }
-.adv-chart__value { text-align: right; font-size: 12px; color: var(--ink-2); }
+.adv-chart__value { text-align: right; font-size: var(--c-text-body); color: var(--ink-2); }
 @media (max-width: 640px) { .adv-chart__row { grid-template-columns: 120px 1fr 90px; } }
 .adv-tablewrap { overflow-x: auto; border: 1px solid var(--hair); border-radius: var(--radius-md); }
-.adv-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.adv-table th, .adv-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--hair); vertical-align: top; }
-.adv-table th { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-4); }
+.adv-table { width: 100%; border-collapse: collapse; font-size: var(--c-text-read); }
+.adv-table th, .adv-table td { text-align: left; padding: var(--c-space-3) var(--c-space-3); border-bottom: 1px solid var(--hair); vertical-align: top; }
+.adv-table th { font-family: var(--mono); font-size: var(--c-text-label); letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--ink-4); }
 .adv-cell__name { font-weight: 600; }
-.adv-cell__sub { color: var(--ink-3); font-size: 12px; margin-top: 2px; }
+.adv-cell__sub { color: var(--ink-2); font-size: var(--c-text-body); margin-top: var(--c-space-1); }
 .adv-pill {
-  display: inline-block; padding: 3px 8px;
+  display: inline-block; padding: var(--c-space-1) var(--c-space-2);
   border: 1px solid var(--hair-strong); color: var(--ink-2);
-  font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  font-family: var(--mono); font-size: var(--c-text-label); letter-spacing: var(--track-caps); text-transform: uppercase;
   border-radius: var(--radius-pill);
 }
 .adv-activity { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.adv-activity__row { padding: 12px 0; border-top: 1px solid var(--hair); display: flex; flex-direction: column; gap: 4px; }
+.adv-activity__row { padding: var(--c-space-3) 0; border-top: 1px solid var(--hair); display: flex; flex-direction: column; gap: var(--c-space-1); }
 .adv-activity__row:first-child { border-top: 0; padding-top: 0; }
-.adv-activity__label { font-weight: 600; font-size: 13px; }
-.adv-activity__detail { color: var(--ink-3); font-size: 12px; }
-.adv-filters { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.adv-activity__label { font-weight: 600; font-size: var(--c-text-read); }
+.adv-activity__detail { color: var(--ink-2); font-size: var(--c-text-body); }
+.adv-filters { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: var(--c-space-3); margin-bottom: var(--c-space-4); }
 @media (max-width: 640px) { .adv-filters { grid-template-columns: 1fr; } }
-.adv-stack { display: flex; flex-direction: column; gap: 20px; }
-.adv-form { margin-top: 8px; }
-.adv-field-error { color: var(--signal-text); font-size: 12px; margin-top: 6px; display: block; }
-.adv-notice { border: 1px solid var(--hair-strong); background: rgba(255, 255, 255,0.05); padding: 12px 14px; font-size: 13px; display: flex; gap: 12px; align-items: center; justify-content: space-between; border-radius: var(--radius-md); }
-.adv-notice--error { border-color: rgba(255, 31, 45,0.55); }
+.adv-stack { display: flex; flex-direction: column; gap: var(--c-space-5); }
+.adv-form { margin-top: var(--c-space-2); }
+.adv-field-error { color: var(--accent-error); font-size: var(--c-text-body); margin-top: var(--c-space-2); display: block; }
+.adv-notice { border: 1px solid var(--hair-strong); background: var(--hair); padding: var(--c-space-3) var(--c-space-4); font-size: var(--c-text-read); display: flex; gap: var(--c-space-3); align-items: center; justify-content: space-between; border-radius: var(--radius-md); }
+.adv-notice--error { border-color: var(--accent-error); }
 .adv-notice__btn { flex: none; }
 .adv-note { display: flex; }
-.adv-note--warn { border: 1px solid rgba(255, 31, 45,0.5); padding: 10px 12px; font-size: 12px; color: var(--ink-2); margin-bottom: 12px; border-radius: var(--radius-md); }
-.adv-empty { padding: 24px; text-align: left; }
-.adv-empty__title { margin: 0 0 8px; font-size: 17px; }
-.adv-empty__body { margin: 0 0 16px; color: var(--ink-3); font-size: 13px; line-height: 1.6; }
-.adv-loading { display: flex; align-items: center; gap: 10px; color: var(--ink-3); }
+.adv-note--warn { border: 1px solid var(--warm); padding: var(--c-space-3) var(--c-space-3); font-size: var(--c-text-body); color: var(--ink-2); margin-bottom: var(--c-space-3); border-radius: var(--radius-md); }
+.adv-empty { padding: var(--c-space-6); text-align: left; }
+.adv-empty__title { margin: 0 0 8px; font-size: var(--c-text-prose); }
+.adv-empty__body { margin: 0 0 16px; color: var(--ink-2); font-size: var(--c-text-read); line-height: 1.6; }
+.adv-loading { display: flex; align-items: center; gap: var(--c-space-3); color: var(--ink-3); }
 .adv-loading__dot { width: 8px; height: 8px; background: var(--signal); animation: clir-blink 1.6s step-end infinite; }
-.adv-detail { display: grid; gap: 10px; margin: 0 0 16px; }
-.adv-detail div { display: grid; grid-template-columns: 190px 1fr; gap: 12px; font-size: 13px; }
-.adv-detail dt { color: var(--ink-4); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.adv-detail { display: grid; gap: var(--c-space-3); margin: 0 0 16px; }
+.adv-detail div { display: grid; grid-template-columns: 190px 1fr; gap: var(--c-space-3); font-size: var(--c-text-read); }
+.adv-detail dt { color: var(--ink-4); font-family: var(--mono); font-size: var(--c-text-small); letter-spacing: var(--track-caps); text-transform: uppercase; }
 .adv-detail dd { margin: 0; color: var(--ink-2); }
-.adv-detail__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.adv-detail__actions { display: flex; flex-wrap: wrap; gap: var(--c-space-2); margin-bottom: var(--c-space-4); }
 .adv-id { word-break: break-all; }
 
 button.btn--ghost:hover .sitehead__icon {
@@ -100,25 +128,25 @@ button.btn--ghost:hover .sitehead__icon {
 
 @media (max-width: 640px) {
   .sitehead {
-    padding: 8px var(--gutter);
-    gap: 12px;
+    padding: var(--c-space-2) var(--gutter);
+    gap: var(--c-space-3);
   }
 
   .sitehead__brand {
-    font-size: 14px;
+    font-size: var(--c-text-lead);
   }
 
   .sitehead__mark {
-    font-size: 11px;
+    font-size: var(--c-text-small);
   }
 
   .sitehead__nav {
-    gap: 6px;
+    gap: var(--c-space-2);
   }
 
   .sitehead__nav .btn--sm {
-    padding: 7px 10px;
-    font-size: 12px;
+    padding: var(--c-space-2) var(--c-space-3);
+    font-size: var(--c-text-body);
   }
 
   .sitehead__user-name {
@@ -146,16 +174,16 @@ button.btn--ghost:hover .sitehead__icon {
   .field-row .field label {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--c-space-1);
   }
 
   .field__label {
-    font-size: 9px;
+    font-size: var(--c-text-micro);
   }
 
   .adv-form .field__input,
   .adv-form .field__input--area {
-    font-size: 13px;
+    font-size: var(--c-text-read);
   }
 
   .adv-detail div {
@@ -163,7 +191,7 @@ button.btn--ghost:hover .sitehead__icon {
   }
 
   .adv-detail dt {
-    margin-bottom: 2px;
+    margin-bottom: var(--c-space-1);
   }
 
   .adv-detail dd {
@@ -183,35 +211,40 @@ button.btn--ghost:hover .sitehead__icon {
 /* account page — editable profile sections + danger zone */
 .account-fields {
   display: grid;
-  gap: 14px;
-  margin-top: 16px;
+  gap: var(--c-space-4);
+  margin-top: var(--c-space-4);
 }
 
 .account-savebar {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--c-space-4);
   flex-wrap: wrap;
 }
 
 .account-saved-at {
   font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.16em;
+  font-size: var(--c-text-label);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ok);
 }
 
+/* Destructive, so it wears the error hue. It used to wear the BRAND hue —
+   an amber hairline and body-ink label — which made "Delete account",
+   "Close account" and "Remove creative" read as ordinary controls, and it
+   referenced --signal-soft, which the bridge never re-exported, so the
+   hover fell through to the legacy blue at :root. */
 .btn--danger {
   background: transparent;
-  border-color: var(--hair-amber);
-  color: var(--signal-text);
+  border-color: var(--accent-error);
+  color: var(--accent-error);
 }
 
 .btn--danger:hover:not(:disabled) {
-  background: var(--signal-soft);
-  border-color: var(--signal);
-  color: var(--signal-text);
+  background: var(--accent-error-wash);
+  border-color: var(--accent-error);
+  color: var(--accent-error);
 }
 
 .btn--danger:disabled {
@@ -235,8 +268,8 @@ button.btn--ghost:hover .sitehead__icon {
 .dangertz-modal {
   width: min(520px, 100%);
   display: grid;
-  gap: 16px;
-  padding: clamp(20px, 3vw, 30px);
+  gap: var(--c-space-4);
+  padding: clamp(var(--c-space-5), 3vw, var(--c-space-7));
   background: var(--panel-2);
   border: 1px solid var(--hair-amber);
   border-radius: var(--radius-lg);
@@ -246,16 +279,16 @@ button.btn--ghost:hover .sitehead__icon {
 .dangertz-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: var(--c-space-3);
   flex-wrap: wrap;
 }
-.adv-check { display: flex; gap: 10px; align-items: center; padding: 8px 0; font-size: 13px; color: var(--ink-2); }
-.form__consent { display: grid; gap: 4px; margin-top: 4px; }
+.adv-check { display: flex; gap: var(--c-space-3); align-items: center; padding: var(--c-space-2) 0; font-size: var(--c-text-read); color: var(--ink-2); }
+.form__consent { display: grid; gap: var(--c-space-1); margin-top: var(--c-space-1); }
 .adv-shell__inner--narrow { max-width: 640px; }
-.adv-password { display: flex; gap: 8px; }
+.adv-password { display: flex; gap: var(--c-space-2); }
 .adv-password .field__input { flex: 1; }
 .adv-password__btn { flex: none; }
-.adv-radio-row { display: flex; gap: 18px; }
+.adv-radio-row { display: flex; gap: var(--c-space-5); }
 .adv-link { appearance: none; background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline; cursor: pointer; font: inherit; }
 
 /* Stacked-card tables below 760: no sideways scrolling for
@@ -264,35 +297,36 @@ button.btn--ghost:hover .sitehead__icon {
   .adv-tablewrap { overflow-x: visible; border: 0; }
   .adv-table, .adv-table tbody, .adv-table tr, .adv-table td { display: block; width: 100%; }
   .adv-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .adv-table tr { border: 1px solid var(--hair); margin-bottom: 12px; padding: 6px 0; }
+  .adv-table tr { border: 1px solid var(--hair); margin-bottom: var(--c-space-3); padding: var(--c-space-2) 0; }
   .adv-table td {
     border-bottom: 0;
-    display: grid; grid-template-columns: 96px 1fr; gap: 10px; align-items: baseline;
-    padding: 7px 12px;
+    display: grid; grid-template-columns: 96px 1fr; gap: var(--c-space-3); align-items: baseline;
+    padding: var(--c-space-2) var(--c-space-3);
   }
   .adv-table td::before {
     content: attr(data-label);
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    font-family: var(--mono); font-size: var(--c-text-label); letter-spacing: var(--track-caps); text-transform: uppercase;
     color: var(--ink-4);
   }
   .adv-table td[data-label=" "] { display: block; }
   .adv-table td[data-label=" "]::before { content: none; }
 }
 
-/* Sticky tab bar stays one row: scrollable, never a multi-row wrap. */
+/* The tab rail is one row and a scroller at EVERY width now (see the
+   base rule), so nothing is left for this breakpoint to undo — only
+   the button sizing, which has to get out of the way on a phone. */
 @media (max-width: 640px) {
-  .adv-nav { flex-wrap: nowrap; overflow-x: auto; margin-bottom: 24px; scrollbar-width: thin; }
-  .adv-nav__btn { white-space: nowrap; padding: 9px 12px; transition: color var(--dur-fast) var(--ease-ui), border-color var(--dur-fast) var(--ease-ui), background var(--dur-fast) var(--ease-ui); }
+  .adv-nav__btn { white-space: nowrap; padding: var(--c-space-2) var(--c-space-3); }
 }
 
 /* signup confirmation / existing-account screens */
 .confirm__email {
   margin: 0 0 18px;
-  padding: 12px 14px;
+  padding: var(--c-space-3) var(--c-space-4);
   background: var(--clr-panel);
   border: 1px solid var(--clr-border);
   border-radius: var(--radius-md);
-  font-size: 14px;
+  font-size: var(--c-text-lead);
   color: var(--clr-text);
   word-break: break-all;
 }
@@ -300,5 +334,5 @@ button.btn--ghost:hover .sitehead__icon {
 .confirm__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--c-space-3);
 }

@@ -23,8 +23,14 @@
   position: relative;
   z-index: 1;
   display: block;
-  background: var(--void);
-  padding: 0 var(--gutter) clamp(64px, 10vh, 120px);
+  /* The landing's canvas, not --void. This wrapper is the PARENT of
+     .clr-surface, so --void resolved here came from index.css :root
+     (#0B0D12, the pre-redesign cool blue-black) and the whole page sat on a
+     plate the rest of the product does not use. chrome.css now lists this
+     selector in the token bridge precisely so that --ld-bg means the same
+     colour here as it does everywhere else. */
+  background: var(--ld-bg);
+  padding: 0 var(--gutter) clamp(64px, 10vh, var(--c-space-12));
 }
 
 .sdk-page__inner {
@@ -47,14 +53,14 @@
 .sdk-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
-  gap: clamp(28px, 4.5vw, 72px);
+  gap: clamp(var(--c-space-7), 4.5vw, var(--c-space-10));
   align-items: center;
-  padding: clamp(36px, 6vh, 76px) 0 clamp(40px, 6vh, 72px);
+  padding: clamp(36px, 6vh, 76px) 0 clamp(var(--c-space-8), 6vh, var(--c-space-10));
 }
 
 .sdk-hero__lede {
   display: grid;
-  gap: 20px;
+  gap: var(--c-space-5);
   min-width: 0;
   justify-items: start;
 }
@@ -62,7 +68,7 @@
 .sdk-hero__title {
   margin: 0;
   max-width: 20ch;
-  font-size: clamp(32px, 3.5vw, 54px);
+  font-size: var(--c-text-hero-fluid);
   font-weight: 700;
   line-height: 1.04;
   letter-spacing: var(--track-head);
@@ -77,20 +83,28 @@
   color: var(--signal-text);
 }
 
+/* Prose was one rung too dark on this page. --ink-3 is the ramp's
+   caption step: measured on a panel it is 3.86:1, under the 4.5:1
+   floor for body copy, and it is the same grey the front page
+   reserves for field labels and small print. A paragraph set in
+   the caption colour reads as an aside nobody was meant to read.
+   Prose is --ink-2 (7.87:1); the genuine captions -- rail labels,
+   counts, status pills -- stay on --ink-3. This is the only place the
+   note is written down; the rules below simply follow it. */
 .sdk-hero__body {
   margin: 0;
   max-width: 48ch;
-  font-size: clamp(14.5px, 1.3vw, 16px);
+  font-size: var(--c-text-intro);
   line-height: 1.65;
-  color: var(--ink-3);
+  color: var(--ink-2);
   text-wrap: pretty;
 }
 
 .sdk-hero__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 6px;
+  gap: var(--c-space-3);
+  margin-top: var(--c-space-2);
 }
 
 /* ---------- code plate ----------
@@ -99,22 +113,21 @@
 
 .sdk-code,
 
-
 .sdk-code__bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 7px 12px 7px 14px;
+  gap: var(--c-space-3);
+  padding: var(--c-space-2) 12px var(--c-space-2) var(--c-space-3);
   border-bottom: 1px solid var(--hair);
   background: rgba(255, 255, 255, 0.02);
 }
 
 .sdk-code__tag {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: var(--c-text-micro);
   font-weight: 500;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-4);
 }
@@ -133,12 +146,12 @@
 
 .sdk-code__pre {
   margin: 0;
-  padding: 15px 16px;
+  padding: var(--c-space-4) var(--c-space-4);
   min-width: 0;
   max-width: 100%;
   overflow-x: auto;
   font-family: var(--mono);
-  font-size: 12.5px;
+  font-size: var(--c-text-body);
   line-height: 1.72;
   color: var(--ink-2);
 }
@@ -152,7 +165,6 @@
 /* The hero plate keeps the film terminal's hard offset: the device the
    product already uses to say "artifact, not panel". */
 
-
 /* Copy control. The compound selectors outrank the shared .btn--ghost /
    .btn--sm classes the button also carries, so the success state really
    does invert rather than losing to the later sheet. The hero plate's
@@ -160,15 +172,12 @@
    one sizing rule, not a second one. */
 .sdk-code .sdk-copy,
 
-
 .sdk-code .sdk-copy--done,
 .sdk-code .sdk-copy--done:hover:not(:disabled),
-
 
 /* The plate bar is a three-child flex row now: tag at the start, then
    the package meta and the copy control packed against the trailing
    edge (the meta takes the slack, the bar's gap separates the two). */
-
 
 /* ---------- inline technical reference ---------- */
 
@@ -182,16 +191,15 @@
   white-space: nowrap;
 }
 
-
 /* ---------- body: rail + main column ---------- */
 
 .sdk-body {
   display: grid;
   grid-template-columns: 188px minmax(0, 1fr);
-  gap: clamp(28px, 4vw, 64px);
+  gap: clamp(var(--c-space-7), 4vw, 64px);
   align-items: start;
-  margin-top: clamp(20px, 3vh, 40px);
-  padding-top: clamp(28px, 4vh, 52px);
+  margin-top: clamp(var(--c-space-5), 3vh, var(--c-space-8));
+  padding-top: clamp(var(--c-space-7), 4vh, 52px);
   border-top: 1px solid var(--hair);
 }
 
@@ -199,33 +207,33 @@
   position: sticky;
   top: 76px;
   display: grid;
-  gap: 10px;
+  gap: var(--c-space-2);
 }
 
 .sdk-rail__label {
-  padding-left: 12px;
+  padding-left: var(--c-space-3);
   font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.2em;
+  font-size: var(--c-text-micro);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-4);
 }
 
 .sdk-rail__list {
   display: grid;
-  gap: 2px;
+  gap: var(--c-space-1);
 }
 
 .sdk-rail__link {
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr);
   align-items: baseline;
-  gap: 8px;
-  padding: 6px 0 6px 12px;
+  gap: var(--c-space-2);
+  padding: var(--c-space-2) 0 var(--c-space-2) 12px;
   border-left: 1px solid var(--hair);
   font-family: var(--mono);
-  font-size: 10.5px;
-  letter-spacing: 0.12em;
+  font-size: var(--c-text-label);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-3);
   text-decoration: none;
@@ -239,18 +247,38 @@
 }
 
 .sdk-rail__n {
-  font-size: 9.5px;
+  font-size: var(--c-text-micro);
   color: var(--ink-4);
 }
 
 .sdk-main {
   display: grid;
-  gap: clamp(34px, 5vh, 64px);
+  gap: 0;
   min-width: 0;
+}
+
+/* Every band on this page carries its own air, and a hairline says where
+   one ends and the next begins. The air used to come from a bare
+   `section{padding:84px 0}` in landing.css -- a rule written for the front
+   page that was padding every <section> in the product, which is how 7799px
+   of this page ended up as one unbroken black with 168px of identical air
+   between every pair of bands and nothing to read them by. With that rule
+   scoped to the front page the rhythm has to live here, and 72px on the
+   shared scale is the honest reading of what 84px was reaching for.
+   Margin and padding are the SAME step on purpose: the hairline then sits
+   exactly halfway between two bands instead of hugging one of them. */
+.sdk-block,
+.sdk-row {
+  margin-top: var(--c-space-10);
+  padding-top: var(--c-space-10);
 }
 
 .sdk-block {
   min-width: 0;
+}
+
+.sdk-block:not(:first-of-type) {
+  border-top: 1px solid var(--hair);
 }
 
 /* Two rows, two different splits. The pairs are deliberately unequal:
@@ -259,7 +287,7 @@
 .sdk-row {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  gap: clamp(24px, 3vw, 40px);
+  gap: clamp(var(--c-space-6), 3vw, var(--c-space-8));
   align-items: start;
 }
 
@@ -271,13 +299,13 @@
 
 .sdk-head {
   display: grid;
-  gap: 8px;
-  margin-bottom: 18px;
+  gap: var(--c-space-2);
+  margin-bottom: var(--c-space-5);
 }
 
 .sdk-head__title {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--c-text-panel);
   font-weight: 600;
   line-height: 1.22;
   letter-spacing: var(--track-tight);
@@ -286,7 +314,7 @@
 
 .sdk-head--lg .sdk-head__title {
   max-width: 40ch;
-  font-size: clamp(23px, 2.3vw, 30px);
+  font-size: var(--c-text-section-fluid);
   letter-spacing: var(--track-head);
   text-wrap: balance;
 }
@@ -294,9 +322,9 @@
 .sdk-head__sub {
   margin: 0;
   max-width: 56ch;
-  font-size: 13px;
+  font-size: var(--c-text-read);
   line-height: 1.6;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 /* ---------- panel ----------
@@ -305,7 +333,7 @@
 
 .sdk-panel {
   position: relative;
-  padding: 24px;
+  padding: var(--c-space-6);
   border: 1px solid var(--hair);
   border-radius: var(--radius-md);
   background: var(--panel);
@@ -315,19 +343,19 @@
 
 .sdk-p {
   max-width: 68ch;
-  font-size: 15.5px;
+  font-size: var(--c-text-mid);
   line-height: 1.62;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .sdk-p + .sdk-p {
-  margin-top: 14px;
+  margin-top: var(--c-space-3);
 }
 
 .sdk-note {
   max-width: 74ch;
-  margin-top: 18px;
-  font-size: 12.5px;
+  margin-top: var(--c-space-5);
+  font-size: var(--c-text-body);
   line-height: 1.62;
   color: var(--ink-4);
 }
@@ -335,8 +363,8 @@
 .sdk-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 16px;
+  gap: var(--c-space-2);
+  margin-top: var(--c-space-4);
 }
 
 /* ---------- specimen table ----------
@@ -345,37 +373,37 @@
    "Placement key" could only ever overflow it. */
 
 .sdk-spec {
-  margin-top: 20px;
+  margin-top: var(--c-space-5);
   border-top: 1px solid var(--hair);
 }
 
 .sdk-spec__row {
   display: grid;
   grid-template-columns: minmax(0, 152px) minmax(0, 1fr);
-  gap: 14px;
-  padding: 12px 0;
+  gap: var(--c-space-3);
+  padding: var(--c-space-3) 0;
   border-bottom: 1px solid var(--hair);
 }
 
 .sdk-spec__key {
-  padding-top: 2px;
+  padding-top: var(--c-space-1);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--c-text-label);
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-4);
 }
 
 .sdk-spec__value {
-  font-size: 13.5px;
+  font-size: var(--c-text-read);
   line-height: 1.6;
   color: var(--ink-2);
 }
 
 .sdk-spec--card {
   margin-top: 0;
-  padding: 2px 18px;
+  padding: var(--c-space-1) var(--c-space-5);
   border: 1px solid var(--hair);
 }
 
@@ -388,8 +416,8 @@
 .sdk-version {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: var(--c-space-3);
+  margin-bottom: var(--c-space-3);
 }
 
 .sdk-version__mark {
@@ -404,8 +432,8 @@
 
 .sdk-version__label {
   font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.2em;
+  font-size: var(--c-text-micro);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-4);
 }
@@ -413,7 +441,7 @@
 /* The one number the page shows is the flag. */
 .sdk-version__value {
   font-family: var(--mono);
-  font-size: 15px;
+  font-size: var(--c-text-mid);
   font-weight: 600;
   color: var(--signal-text);
 }
@@ -423,14 +451,13 @@
 .sdk-split {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-  gap: clamp(22px, 3vw, 40px);
+  gap: clamp(var(--c-space-6), 3vw, var(--c-space-8));
   align-items: start;
 }
 
 .sdk-split__main {
   min-width: 0;
 }
-
 
 /* ---------- quickstart: numbered step rail ---------- */
 
@@ -441,8 +468,8 @@
 .sdk-qs__step {
   display: grid;
   grid-template-columns: 64px minmax(0, 1fr);
-  gap: 20px;
-  padding: 22px 0;
+  gap: var(--c-space-5);
+  padding: var(--c-space-6) 0;
   border-top: 1px solid var(--hair);
 }
 
@@ -451,9 +478,9 @@
 }
 
 .sdk-qs__n {
-  padding-top: 2px;
+  padding-top: var(--c-space-1);
   font-family: var(--mono);
-  font-size: 20px;
+  font-size: var(--c-text-panel);
   font-weight: 600;
   line-height: 1;
   color: var(--ink-4);
@@ -461,12 +488,12 @@
 
 .sdk-qs__body {
   display: grid;
-  gap: 12px;
+  gap: var(--c-space-3);
   min-width: 0;
 }
 
 .sdk-qs__title {
-  font-size: 15px;
+  font-size: var(--c-text-mid);
   font-weight: 600;
   letter-spacing: var(--track-tight);
   color: var(--ink);
@@ -481,8 +508,8 @@
 .sdk-flow__row {
   display: grid;
   grid-template-columns: 116px minmax(0, 1fr);
-  gap: 20px;
-  padding: 20px 0;
+  gap: var(--c-space-5);
+  padding: var(--c-space-5) 0;
   border-top: 1px solid var(--hair);
 }
 
@@ -491,24 +518,24 @@
 }
 
 .sdk-flow__n {
-  padding-top: 3px;
+  padding-top: var(--c-space-1);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--c-text-label);
   font-weight: 600;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--signal-text);
 }
 
 .sdk-flow__body {
   display: grid;
-  gap: 12px;
+  gap: var(--c-space-3);
   min-width: 0;
 }
 
 .sdk-flow__text {
   max-width: 72ch;
-  font-size: 13.5px;
+  font-size: var(--c-text-read);
   line-height: 1.62;
   color: var(--ink-2);
 }
@@ -520,13 +547,13 @@
 
 .sdk-geometry {
   display: grid;
-  gap: clamp(20px, 3vw, 30px);
-  margin-top: 20px;
+  gap: clamp(var(--c-space-5), 3vw, 30px);
+  margin-top: var(--c-space-5);
 }
 
 .sdk-anchors {
   display: grid;
-  gap: 10px;
+  gap: var(--c-space-2);
   justify-items: start;
 }
 
@@ -556,8 +583,8 @@
 
 .sdk-anchors__name {
   font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.12em;
+  font-size: var(--c-text-micro);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-3);
 }
@@ -568,8 +595,8 @@
 
 .sdk-anchors__legend {
   font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.12em;
+  font-size: var(--c-text-micro);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-4);
 }
@@ -586,17 +613,17 @@
 }
 
 .sdk-states__cell {
-  padding: 18px 20px 20px;
+  padding: var(--c-space-5) var(--c-space-5) var(--c-space-5);
   background: var(--panel);
 }
 
 .sdk-states__id {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--c-space-2);
   font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.16em;
+  font-size: var(--c-text-micro);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-4);
 }
@@ -621,18 +648,18 @@
 
 .sdk-states__label {
   display: block;
-  margin-top: 10px;
-  font-size: 14.5px;
+  margin-top: var(--c-space-2);
+  font-size: var(--c-text-lead);
   font-weight: 600;
   letter-spacing: var(--track-tight);
   color: var(--ink);
 }
 
 .sdk-states__body {
-  margin-top: 6px;
-  font-size: 12.5px;
+  margin-top: var(--c-space-2);
+  font-size: var(--c-text-body);
   line-height: 1.6;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 /* ---------- FAQ: hairline dividers, two columns ---------- */
@@ -640,7 +667,7 @@
 .sdk-faq {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: clamp(24px, 4vw, 56px);
+  column-gap: clamp(var(--c-space-6), 4vw, var(--c-space-9));
   align-items: start;
 }
 
@@ -659,14 +686,14 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: var(--c-space-3);
   list-style: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--c-text-lead);
   font-weight: 600;
   letter-spacing: var(--track-tight);
   color: var(--ink);
-  padding: 13px 0;
+  padding: var(--c-space-3) 0;
 }
 
 .sdk-faq__q::-webkit-details-marker {
@@ -675,7 +702,7 @@
 
 .sdk-faq__sign {
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: var(--c-text-read);
   line-height: 1;
   color: var(--ink-4);
 }
@@ -695,9 +722,9 @@
 .sdk-faq__a {
   margin: 0 0 13px;
   max-width: 74ch;
-  font-size: 13px;
+  font-size: var(--c-text-read);
   line-height: 1.62;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 /* ---------- responsive ----------
@@ -753,14 +780,13 @@
   .sdk-qs__step,
   .sdk-flow__row {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: var(--c-space-2);
   }
 
   .sdk-spec__row {
     grid-template-columns: 1fr;
-    gap: 5px;
+    gap: var(--c-space-1);
   }
-
 
   .sdk-page [id] {
     scroll-margin-top: 72px;
@@ -769,7 +795,7 @@
 
 @media (max-width: 640px) {
   .sdk-top {
-    padding: 9px var(--gutter);
+    padding: var(--c-space-2) var(--gutter);
   }
 
   .sdk-top__link {
@@ -777,7 +803,7 @@
   }
 
   .sdk-panel {
-    padding: 20px;
+    padding: var(--c-space-5);
   }
 
   .sdk-states {
@@ -788,8 +814,8 @@
      lines inside the plate at phone widths instead of relying on a
      horizontal scroll for every one of them. */
   .sdk-code__pre {
-    font-size: 11.5px;
-    padding: 13px 14px;
+    font-size: var(--c-text-small);
+    padding: var(--c-space-3) var(--c-space-3);
   }
 }
 
@@ -804,7 +830,7 @@
 .sdk-qs__note {
   margin: 0 0 10px;
   color: var(--ink-2);
-  font-size: 14px;
+  font-size: var(--c-text-lead);
   line-height: 1.6;
   max-width: 60ch;
 }

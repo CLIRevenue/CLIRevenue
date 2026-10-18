@@ -26,8 +26,14 @@
   position: relative;
   z-index: 1;
   display: block;
-  background: var(--void);
-  padding: 0 var(--gutter) clamp(64px, 10vh, 120px);
+  /* The landing's canvas, not --void. This wrapper is the PARENT of
+     .clr-surface, so --void resolved here came from index.css :root
+     (#0B0D12, the pre-redesign cool blue-black) and the whole page sat on a
+     plate the rest of the product does not use. chrome.css now lists this
+     selector in the token bridge precisely so that --ld-bg means the same
+     colour here as it does everywhere else. */
+  background: var(--ld-bg);
+  padding: 0 var(--gutter) clamp(64px, 10vh, var(--c-space-12));
 }
 
 .advx-page__inner {
@@ -49,14 +55,14 @@
 .advx-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
-  gap: clamp(28px, 4.5vw, 72px);
+  gap: clamp(var(--c-space-7), 4.5vw, var(--c-space-10));
   align-items: center;
-  padding: clamp(36px, 6vh, 76px) 0 clamp(40px, 6vh, 72px);
+  padding: clamp(36px, 6vh, 76px) 0 clamp(var(--c-space-8), 6vh, var(--c-space-10));
 }
 
 .advx-hero__lede {
   display: grid;
-  gap: 20px;
+  gap: var(--c-space-5);
   min-width: 0;
   justify-items: start;
 }
@@ -64,7 +70,7 @@
 .advx-hero__title {
   margin: 0;
   max-width: 22ch;
-  font-size: clamp(32px, 3.5vw, 54px);
+  font-size: var(--c-text-hero-fluid);
   font-weight: 700;
   line-height: 1.04;
   letter-spacing: var(--track-head);
@@ -79,20 +85,28 @@
   color: var(--signal-text);
 }
 
+/* Prose was one rung too dark on this page. --ink-3 is the ramp's
+   caption step: measured on a panel it is 3.86:1, under the 4.5:1
+   floor for body copy, and it is the same grey the front page
+   reserves for field labels and small print. A paragraph set in
+   the caption colour reads as an aside nobody was meant to read.
+   Prose is --ink-2 (7.87:1); the genuine captions -- rail labels,
+   counts, status pills -- stay on --ink-3. This is the only place the
+   note is written down; the rules below simply follow it. */
 .advx-hero__body {
   margin: 0;
   max-width: 52ch;
-  font-size: clamp(14.5px, 1.3vw, 16px);
+  font-size: var(--c-text-intro);
   line-height: 1.65;
-  color: var(--ink-3);
+  color: var(--ink-2);
   text-wrap: pretty;
 }
 
 .advx-hero__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 6px;
+  gap: var(--c-space-3);
+  margin-top: var(--c-space-2);
 }
 
 /* ---------- code plate ----------
@@ -115,17 +129,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 7px 12px 7px 14px;
+  gap: var(--c-space-3);
+  padding: var(--c-space-2) 12px var(--c-space-2) var(--c-space-3);
   border-bottom: 1px solid var(--hair);
   background: rgba(255, 255, 255, 0.02);
 }
 
 .advx-code__tag {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: var(--c-text-micro);
   font-weight: 500;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-4);
 }
@@ -135,17 +149,17 @@
 .advx-plate__meta {
   margin-left: auto;
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: var(--c-text-micro);
   letter-spacing: 0.1em;
   color: var(--ink-4);
 }
 
 .advx-code__pre {
   margin: 0;
-  padding: 15px 16px;
+  padding: var(--c-space-4) var(--c-space-4);
   overflow-x: auto;
   font-family: var(--mono);
-  font-size: 12.5px;
+  font-size: var(--c-text-body);
   line-height: 1.72;
   color: var(--ink-2);
 }
@@ -167,37 +181,51 @@
    success state really does invert rather than losing to the later
    sheet — the same rule the developer page's copy control reads. */
 .advx-code .advx-copy {
-  padding: 4px 10px;
+  padding: var(--c-space-1) var(--c-space-2);
   font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-size: var(--c-text-label);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
 }
 /* ---------- body ---------- */
 
 .advx-main {
   display: grid;
-  gap: clamp(34px, 5vh, 64px);
-  margin-top: clamp(20px, 3vh, 40px);
-  padding-top: clamp(28px, 4vh, 52px);
+  gap: 0;
+  margin-top: clamp(var(--c-space-5), 3vh, var(--c-space-8));
+  padding-top: clamp(var(--c-space-7), 4vh, 52px);
   border-top: 1px solid var(--hair);
+}
+
+/* The same band rhythm as the developer page, for the same reason: the
+   air between bands used to arrive from landing.css's bare
+   `section{padding:84px 0}`, which was never this page's rule to begin
+   with. See DeveloperLanding.css .sdk-block for the reasoning. */
+.advx-block,
+.advx-row {
+  margin-top: var(--c-space-10);
+  padding-top: var(--c-space-10);
 }
 
 .advx-block {
   min-width: 0;
 }
 
+.advx-block:not(:first-of-type) {
+  border-top: 1px solid var(--hair);
+}
+
 /* ---------- section heads ---------- */
 
 .advx-head {
   display: grid;
-  gap: 8px;
-  margin-bottom: 18px;
+  gap: var(--c-space-2);
+  margin-bottom: var(--c-space-5);
 }
 
 .advx-head__title {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--c-text-panel);
   font-weight: 600;
   line-height: 1.22;
   letter-spacing: var(--track-tight);
@@ -206,7 +234,7 @@
 
 .advx-head--lg .advx-head__title {
   max-width: 46ch;
-  font-size: clamp(23px, 2.3vw, 30px);
+  font-size: var(--c-text-section-fluid);
   letter-spacing: var(--track-head);
   text-wrap: balance;
 }
@@ -214,9 +242,9 @@
 .advx-head__sub {
   margin: 0;
   max-width: 62ch;
-  font-size: 13px;
+  font-size: var(--c-text-read);
   line-height: 1.6;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 /* ---------- panel ----------
@@ -225,7 +253,7 @@
 
 .advx-panel {
   position: relative;
-  padding: 24px;
+  padding: var(--c-space-6);
   border: 1px solid var(--hair);
   background: var(--panel);
   border-radius: var(--radius-md);
@@ -233,7 +261,7 @@
 
 .advx-panel__title {
   margin: 0 0 14px;
-  font-size: 16px;
+  font-size: var(--c-text-prose);
   font-weight: 600;
   letter-spacing: var(--track-tight);
   color: var(--ink);
@@ -244,15 +272,15 @@
 .advx-p {
   max-width: 68ch;
   margin: 0 0 12px;
-  font-size: 14.5px;
+  font-size: var(--c-text-lead);
   line-height: 1.62;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .advx-note {
   max-width: 74ch;
   margin: 18px 0 0;
-  font-size: 12.5px;
+  font-size: var(--c-text-body);
   line-height: 1.62;
   color: var(--ink-4);
 }
@@ -288,16 +316,16 @@
 
 .advx-ladder__cell {
   display: grid;
-  gap: 8px;
+  gap: var(--c-space-2);
   align-content: start;
   min-width: 0;
-  padding: 18px 18px 20px;
+  padding: var(--c-space-5) var(--c-space-5) var(--c-space-5);
   background: var(--panel);
 }
 
 .advx-ladder__n {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--c-text-body);
   font-weight: 600;
   letter-spacing: 0.18em;
   color: var(--signal-text);
@@ -305,7 +333,7 @@
 
 .advx-ladder__title {
   margin: 0;
-  font-size: 14.5px;
+  font-size: var(--c-text-lead);
   font-weight: 600;
   letter-spacing: var(--track-tight);
   color: var(--ink);
@@ -313,9 +341,9 @@
 
 .advx-ladder__body {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--c-text-body);
   line-height: 1.6;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 /* ---------- campaign workflow: status strip + transition ledger ----------
    The five states as one instrument line (the live one carries the
@@ -327,9 +355,9 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 22px;
+  gap: var(--c-space-2) var(--c-space-6);
   margin: 0 0 16px;
-  padding: 12px 16px;
+  padding: var(--c-space-3) var(--c-space-4);
   border: 1px solid var(--hair);
   background: var(--panel);
   border-radius: var(--radius-md);
@@ -338,11 +366,11 @@
 .advx-statusline__item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--c-space-2);
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: var(--c-text-label);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-3);
 }
@@ -370,7 +398,7 @@
   display: inline-block;
   margin: 0 10px 4px 0;
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: var(--c-text-small);
   letter-spacing: 0.04em;
   color: var(--ink-2);
 }
@@ -395,33 +423,33 @@
 
 .advx-audiences__cell {
   display: grid;
-  gap: 6px;
+  gap: var(--c-space-2);
   align-content: start;
   min-width: 0;
-  padding: 16px 16px 18px;
+  padding: var(--c-space-4) var(--c-space-4) var(--c-space-5);
   background: var(--panel);
 }
 
 .advx-audiences__id {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--c-text-label);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--track-caps-tight);
   text-transform: uppercase;
   color: var(--signal-text);
 }
 
 .advx-audiences__label {
-  font-size: 14.5px;
+  font-size: var(--c-text-lead);
   font-weight: 600;
   letter-spacing: var(--track-tight);
   color: var(--ink);
 }
 
 .advx-audiences__note {
-  font-size: 12px;
+  font-size: var(--c-text-body);
   line-height: 1.55;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 /* ---------- split rows ----------
@@ -432,7 +460,7 @@
 .advx-split {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(22px, 3vw, 40px);
+  gap: clamp(var(--c-space-6), 3vw, var(--c-space-8));
   align-items: start;
 }
 
@@ -450,23 +478,23 @@
 .advx-spec__row {
   display: grid;
   grid-template-columns: minmax(0, 150px) minmax(0, 1fr);
-  gap: 14px;
-  padding: 12px 0;
+  gap: var(--c-space-3);
+  padding: var(--c-space-3) 0;
   border-bottom: 1px solid var(--hair);
 }
 
 .advx-spec__key {
-  padding-top: 2px;
+  padding-top: var(--c-space-1);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--c-text-label);
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink-4);
 }
 
 .advx-spec__value {
-  font-size: 13.5px;
+  font-size: var(--c-text-read);
   line-height: 1.6;
   color: var(--ink-2);
 }
@@ -479,13 +507,13 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 12px;
+  gap: var(--c-space-3);
 }
 
 .advx-checks li {
   position: relative;
-  padding-left: 18px;
-  font-size: 13.5px;
+  padding-left: var(--c-space-5);
+  font-size: var(--c-text-read);
   line-height: 1.6;
   color: var(--ink-2);
 }
@@ -518,14 +546,14 @@
 .advx-metric {
   display: grid;
   grid-template-columns: minmax(0, 165px) minmax(0, 235px) minmax(0, 1fr);
-  gap: 8px 24px;
+  gap: var(--c-space-2) var(--c-space-6);
   align-items: baseline;
-  padding: 16px 0;
+  padding: var(--c-space-4) 0;
   border-bottom: 1px solid var(--hair);
 }
 
 .advx-metric__name {
-  font-size: 14.5px;
+  font-size: var(--c-text-lead);
   font-weight: 600;
   letter-spacing: var(--track-tight);
   color: var(--ink);
@@ -534,17 +562,17 @@
 /* The formula is the flag on the row — red names the computation. */
 .advx-metric__formula {
   font-family: var(--mono);
-  font-size: 11.5px;
-  letter-spacing: 0.06em;
+  font-size: var(--c-text-small);
+  letter-spacing: var(--track-caps-tight);
   text-transform: uppercase;
   color: var(--signal-text);
 }
 
 .advx-metric__body {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--c-text-read);
   line-height: 1.6;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 /* ---------- FAQ: hairline disclosures, two columns ---------- */
@@ -552,7 +580,7 @@
 .advx-faq {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: clamp(24px, 4vw, 56px);
+  column-gap: clamp(var(--c-space-6), 4vw, var(--c-space-9));
   align-items: start;
 }
 
@@ -570,14 +598,14 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: var(--c-space-3);
   list-style: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--c-text-lead);
   font-weight: 600;
   letter-spacing: var(--track-tight);
   color: var(--ink);
-  padding: 13px 0;
+  padding: var(--c-space-3) 0;
 }
 
 .advx-faq__q::-webkit-details-marker {
@@ -586,7 +614,7 @@
 
 .advx-faq__sign {
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: var(--c-text-read);
   line-height: 1;
   color: var(--ink-4);
 }
@@ -606,9 +634,9 @@
 .advx-faq__a {
   margin: 0 0 13px;
   max-width: 74ch;
-  font-size: 13px;
+  font-size: var(--c-text-read);
   line-height: 1.62;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 /* ---------- final CTA ----------
@@ -618,9 +646,9 @@
 .advx-cta {
   position: relative;
   display: grid;
-  gap: 16px;
+  gap: var(--c-space-4);
   justify-items: start;
-  padding: clamp(28px, 4vw, 44px);
+  padding: clamp(var(--c-space-7), 4vw, 44px);
   border: 1px solid var(--hair);
   border-left: var(--border-w-2) solid var(--signal);
   background: var(--panel);
@@ -629,7 +657,7 @@
 
 .advx-cta__title {
   margin: 0;
-  font-size: clamp(26px, 2.6vw, 38px);
+  font-size: var(--c-text-sub-fluid);
   font-weight: 700;
   line-height: 1.08;
   letter-spacing: var(--track-head);
@@ -639,20 +667,20 @@
 .advx-cta__body {
   margin: 0;
   max-width: 58ch;
-  font-size: 14.5px;
+  font-size: var(--c-text-lead);
   line-height: 1.65;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .advx-cta__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--c-space-3);
 }
 
 .advx-cta__aside {
   margin: 4px 0 0;
-  font-size: 12.5px;
+  font-size: var(--c-text-body);
   line-height: 1.6;
   color: var(--ink-4);
 }
@@ -705,12 +733,12 @@
 
   .advx-spec__row {
     grid-template-columns: 1fr;
-    gap: 5px;
+    gap: var(--c-space-1);
   }
 
   .advx-metric {
     grid-template-columns: 1fr;
-    gap: 6px;
+    gap: var(--c-space-2);
   }
 
   .advx-plate {
@@ -724,7 +752,7 @@
 
 @media (max-width: 640px) {
   .advx-top {
-    padding: 9px var(--gutter);
+    padding: var(--c-space-2) var(--gutter);
   }
 
   /* The jumps are the first thing to go: the sections are a single
@@ -734,7 +762,7 @@
   }
 
   .advx-panel {
-    padding: 20px;
+    padding: var(--c-space-5);
   }
 
   .advx-ladder,
@@ -746,12 +774,12 @@
      most lines inside the plate at phone widths instead of relying
      on a horizontal scroll for every one of them. */
   .advx-code__pre {
-    font-size: 11.5px;
-    padding: 13px 14px;
+    font-size: var(--c-text-small);
+    padding: var(--c-space-3) var(--c-space-3);
   }
 
   .advx-cta {
-    padding: 22px 18px;
+    padding: var(--c-space-6) var(--c-space-5);
   }
 
   .advx-cta__actions {
