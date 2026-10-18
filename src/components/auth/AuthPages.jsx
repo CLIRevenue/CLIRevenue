@@ -129,7 +129,7 @@ export function AuthShell({ eyebrow, title, body, children, footer, backHref = '
   // anyone who wants to leave. Sharing one row costs nothing and says both
   // things at once.
   return (
-    <PageChrome>
+    <PageChrome flat>
       <section className="adv-shell adv-shell--auth" aria-label={title}>
         <AuthCurve mode={mode} />
         <div className="adv-shell__inner adv-shell__inner--narrow">

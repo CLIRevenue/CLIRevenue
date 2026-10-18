@@ -33,8 +33,12 @@ const LINKS = [
  * `active` is the route this page IS, used only for aria-current — it
  * never hides a link, because a nav that hides pages is a nav you
  * cannot navigate with.
+ *
+ * `flat` drops the header's frosted backdrop for a plain opaque one, for the
+ * pages with no long content scrolling beneath it. See `.clrhead--flat` for
+ * the measurement; this is the switch, that rule is the reasoning.
  */
-export default function PageChrome({ active, subnav, children, footer }) {
+export default function PageChrome({ active, subnav, children, footer, flat }) {
   /* Visibility is NOT decided here. authNavState() is the one place that maps
      auth to navigation, so this header shows exactly what the dashboards show
      and cannot drift from them: no auth control while the session resolves,
@@ -64,7 +68,7 @@ export default function PageChrome({ active, subnav, children, footer }) {
 
   return (
     <div className="clr-surface">
-      <header className="clrhead" ref={ref}>
+      <header className={flat ? 'clrhead clrhead--flat' : 'clrhead'} ref={ref}>
         <div className="clrhead-in">
           <a href="/" className="brand-text" onClick={spa} aria-label="CLIRevenue — home">
             <span className="brand-cli">CLI</span>

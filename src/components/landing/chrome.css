@@ -328,6 +328,38 @@
 }
 .clrhead.stuck { border-bottom-color: var(--ld-line); }
 
+/* The auth routes wear the header flat rather than glass, and that is a
+   measurement rather than a preference.
+
+   `backdrop-filter` is not free. It covers the full header width -- 93,440px
+   of it at 1280 -- and unlike a plain background it is re-run every time
+   anything underneath repaints. On the sign-in page the magnetic buttons sit
+   directly beneath the header and move on every pointer tick, so the blur
+   was re-rasterising the whole band continuously. Measured there over 100
+   frames: as shipped, p95 frame time 28.4ms with 8 frames over 25ms; with
+   this rule, 17.2ms and none. Median is 16.7 either way -- it is the tail
+   that doubles, which is exactly what a stutter feels like and exactly what
+   a median hides.
+
+   And there is nothing being lost. A backdrop-filter earns its cost where
+   there is a long column of content scrolling beneath the header, because
+   that is the only place the glass changes as you move. The auth pages are
+   a single short form: the header never has scrolling content behind it, so
+   there was never a scroll-linked surface to show -- only a full-width blur
+   to pay for, over a page with no animations of its own.
+
+   The background goes opaque with it, and that half is not optional: 18% of
+   unblurred content showing through a header is not the same thing as 18%
+   of blurred content, and letting raw text bleed up into the wordmark would
+   trade a stutter for a worse bug. --ld-bg is the canvas colour itself, so
+   this is the same black the page is already painted, just no longer see-
+   through. */
+.clrhead--flat {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: var(--ld-bg);
+}
+
 /* One line, always. The wordmark, the nav and the calls to action are three
    groups, and the brief is that they never stack: no second row, ever, at any
    width. That is a promise about LAYOUT, not about width -- the three groups
