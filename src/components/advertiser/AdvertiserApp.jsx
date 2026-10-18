@@ -104,7 +104,7 @@ export default function AdvertiserApp() {
        restyled every button and panel on the page as a side effect of a
        layout change. The header it belonged to is gone; the wrapper is
        not the header. */
-    <div className="clr-surface adv-console" data-collapsed={collapsed} ref={shellRef}>
+    <div className="clr-surface adv-console" data-collapsed={collapsed ? 'true' : undefined} ref={shellRef}>
       <AdvertiserSidebar
         shellRef={shellRef}
         collapsed={collapsed}
@@ -117,6 +117,12 @@ export default function AdvertiserApp() {
       />
 
       <main className="adv-main" aria-label="Advertiser dashboard">
+        <header className="adv-topbar">
+          <span className="adv-topbar__mark">
+            <span className="adv-topbar__cli">CLI</span>
+            <span className="adv-topbar__rev">Revenue</span>
+          </span>
+        </header>
         <div className="adv-main__inner">
           {auth.role === null ? (
             <div className="adv-notice" role="status">

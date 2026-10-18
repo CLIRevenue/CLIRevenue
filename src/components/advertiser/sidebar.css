@@ -37,7 +37,7 @@
    keeps every pixel of its internal layout and only loses its labels.
    Announced with aria-expanded on the control that does it, and the
    grid column is a real transition because this one is a click. */
-.adv-console[data-collapsed] {
+.adv-console[data-collapsed="true"] {
   grid-template-columns: var(--adv-side-w-collapsed) minmax(0, 1fr);
 }
 
@@ -87,14 +87,23 @@
    without unmounting — the labels fade and slide so the icons can take
    the space, and `visibility` rather than `display` keeps them out of the
    tab order and off the accessibility tree without a second render. */
-.adv-console[data-collapsed] .adv-nav__label,
-.adv-console[data-collapsed] .adv-side__where { opacity: 0; visibility: hidden; transform: translateX(-6px); }
-.adv-console[data-collapsed] .adv-nav__btn,
-.adv-console[data-collapsed] .adv-side__settings { justify-content: center; padding-inline: 0; }
+.adv-console[data-collapsed="true"] .adv-nav__label,
+.adv-console[data-collapsed="true"] .adv-side__where { opacity: 0; visibility: hidden; transform: translateX(-6px); 
+  /* Out of layout entirely, not merely invisible. `visibility: hidden` and
+     even `width: 0` leave the label on the flex line, where `gap` still
+     reserves the space between it and the glyph -- which is why the glyph
+     sat a half-gap off centre no matter what the padding did. `display:
+     none` removes the item, and an item that is not there cannot push
+     anything. The bar width still animates, so the change reads as the
+     words being taken away rather than as the rail blinking. */
+  display: none;
+}
+.adv-console[data-collapsed="true"] .adv-nav__btn,
+.adv-console[data-collapsed="true"] .adv-side__settings { justify-content: center; padding-inline: 0; }
 /* The collapse control moves to the foot when the rail is icons-only,
    because at 72px the top-right corner is the corner the first nav icon
    wants. */
-.adv-console[data-collapsed] .adv-side__collapse {
+.adv-console[data-collapsed="true"] .adv-side__collapse {
   top: auto;
   bottom: 14px;
   right: 50%;
@@ -259,7 +268,7 @@
 /* Hidden entirely when collapsed: there is nothing to resize when the
    column is at its narrowest and no grip position that would mean
    anything. */
-.adv-console[data-collapsed] .adv-side__grip { display: none; }
+.adv-console[data-collapsed="true"] .adv-side__grip { display: none; }
 .adv-side__grip:hover,
 .adv-console[data-resizing] .adv-side__grip { background: color-mix(in srgb, var(--signal) 22%, transparent); }
 .adv-side__grip:hover svg,
@@ -402,7 +411,7 @@
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   }
   .adv-side__grip { display: none; }
-  .adv-console[data-collapsed] .adv-side__collapse { bottom: auto; top: 18px; right: 10px; transform: none; }
+  .adv-console[data-collapsed="true"] .adv-side__collapse { bottom: auto; top: 18px; right: 10px; transform: none; }
 }
 
 /* A rail that animates is a rail that lags the finger. Nothing in this
@@ -419,4 +428,47 @@
   .adv-settings__close { animation: none; transition: none; }
   .adv-side .adv-nav__btn:hover,
   .adv-side__settings:hover { transform: none; }
+}
+
+/* ---------------------------------------------------------------------
+   The wordmark's home.
+
+   It was on the rail in the first cut of this dashboard, which is the one
+   place it should not have been: the rail is the thing that collapses. A
+   brand that disappears the moment you begin working is not doing the job
+   a brand does. The brief says the bar carries the watermark and nothing
+   else, and that is exactly what this is -- no nav, no actions, no
+   account.
+   --------------------------------------------------------------------- */
+.adv-topbar {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 var(--gutter);
+  background: var(--panel);
+  border-bottom: 1px solid var(--hair);
+}
+.adv-topbar__mark {
+  font-size: var(--c-text-body);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  user-select: none;
+}
+/* The sweep is the one flourish here. A gradient clipped to the glyphs has
+   no edge, so animating background-position reads as the word itself
+   changing temperature rather than as a light passing over a label. */
+.adv-topbar__rev {
+  background-image: linear-gradient(100deg, var(--ink-4), var(--ink) 45%, var(--signal) 70%, var(--ink));
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transition: background-position 420ms var(--ease-ui);
+}
+.adv-topbar:hover .adv-topbar__rev { background-position: 100% 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .adv-topbar__rev { transition: none; }
+  .adv-topbar:hover .adv-topbar__rev { background-position: 0 0; }
 }

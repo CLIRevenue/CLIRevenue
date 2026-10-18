@@ -699,11 +699,11 @@
 
    Every host must own a stacking context (position:relative; z-index:0) or
    the z-index:-1 pseudo escapes to the page root. */
-:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart) {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart) {
   position: relative;
   z-index: 0;
 }
-:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart)::before {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart)::before {
   content: "";
   position: absolute;
   /* Inset, not outset, and the reason is arithmetic rather than taste.
@@ -745,8 +745,8 @@
      hover pair below, where there is something to look at. */
   pointer-events: none;
 }
-:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):hover::before,
-:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):focus-visible::before {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):hover::before,
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):focus-visible::before {
   opacity: 1;
   animation: clr-glow 20s linear infinite;
 }
@@ -760,8 +760,8 @@
    now lives there — left on the base rule it would be cancelling a
    declaration that is no longer there, which reads as a rule that does
    nothing and quietly becomes one that does the wrong thing. */
-:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):hover::before,
-:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):focus-visible::before {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):hover::before,
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):focus-visible::before {
   animation: none;
 }
 
@@ -769,7 +769,7 @@
    Deliberately NOT transitioned: a press should land on the frame it is
    clicked, not ease into place. Declaring a `transition` here would replace
    the colour transitions the button rules already set. */
-:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart) {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart) {
   transform-origin: 50% 100%;
 }
 /* The repo's own `.btn:active:not(:disabled){transform:translate(0)}`
@@ -788,7 +788,7 @@
    `.clr-surface.clr-surface`, which matches nothing at all. Specificity
    is raised by chaining a real ancestor (.a .b) or by !important, never
    by repeating a selector against itself. */
-:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):active {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):active {
   transform: translateY(1px) scale(.978);
 }
 
@@ -861,7 +861,7 @@
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
-                   .placement-slot__cta, .switcher__btn):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart){
+                   .placement-slot__cta, .switcher__btn):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart){
     position:relative;
     z-index:0;
   }
@@ -884,7 +884,7 @@
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
-                   .placement-slot__cta, .switcher__btn):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart)::before{
+                   .placement-slot__cta, .switcher__btn):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart)::before{
     inset:0;
     z-index:-1;padding:2px;border-radius:inherit;
     background:linear-gradient(45deg,#ff0000,#ff7300,#fffb00,#48ff00,
@@ -904,12 +904,12 @@
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
-                   .placement-slot__cta, .switcher__btn):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):hover::before,
+                   .placement-slot__cta, .switcher__btn):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):hover::before,
   :is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn,
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
-                   .placement-slot__cta, .switcher__btn):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):focus-visible::before{
+                   .placement-slot__cta, .switcher__btn):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):focus-visible::before{
     opacity:1;
     animation:clr-glow 20s linear infinite;
   }
@@ -921,12 +921,12 @@
                      .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                      .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                      .clrhead-cta a, .adv-password__btn,
-                     .placement-slot__cta, .switcher__btn):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):hover::before,
+                     .placement-slot__cta, .switcher__btn):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):hover::before,
     :is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn,
                      .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                      .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                      .clrhead-cta a, .adv-password__btn,
-                     .placement-slot__cta, .switcher__btn):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):focus-visible::before{
+                     .placement-slot__cta, .switcher__btn):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):focus-visible::before{
       animation:none;
     }
   }
@@ -1023,7 +1023,7 @@
    :not() guards) = (0,6,0) against App.css's (0,3,0). The
    :not(:focus-visible) guard is load-bearing: line 279's focus ring must
    survive, so this rule must not fire while the button is focused. */
-:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn, .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn, .sdk-btn, .adv-nav__btn, .adm-topbar__logout, .clrhead-cta a, .adv-password__btn, .placement-slot__cta, .switcher__btn, .magnetic):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):hover:not(:disabled):not(:focus-visible) {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn, .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn, .sdk-btn, .adv-nav__btn, .adm-topbar__logout, .clrhead-cta a, .adv-password__btn, .placement-slot__cta, .switcher__btn, .magnetic):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):hover:not(:disabled):not(:focus-visible) {
   transform: none;
   box-shadow: none;
 }
@@ -1042,7 +1042,7 @@
    That is why a filled primary went white-on-white on hover: App.css
    paints `background: var(--signal-text)` — near-white here — and
    `color: #ffffff`. Both colours move together or neither does. */
-.clr-surface :is(.btn--primary, .lbtn--primary):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):hover:not(:disabled) {
+.clr-surface :is(.btn--primary, .lbtn--primary):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):hover:not(:disabled) {
   background: var(--ld-bg);
   border-color: var(--ld-line-strong);
   color: var(--ld-ink);
@@ -1053,7 +1053,7 @@
    bundle order, which is why the header's "Sign up" was washing amber.
    Listing `.btn`/`.lbtn` here and excluding the filled variants costs
    nothing and closes the gap. */
-.clr-surface :is(.btn--ghost, .lbtn--ghost, .is-ghost, .btn, .lbtn):not(.btn--primary):not(.lbtn--primary):not(.adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):hover:not(:disabled) {
+.clr-surface :is(.btn--ghost, .lbtn--ghost, .is-ghost, .btn, .lbtn):not(.btn--primary):not(.lbtn--primary):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .note-btn, .heart):hover:not(:disabled) {
   background: var(--ld-bg-tint);
   border-color: var(--ld-ink-2);
   color: var(--ld-ink);

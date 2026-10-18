@@ -96,6 +96,30 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
       tone: totals.conversions > 0 ? 'plain' : 'zero',
     },
   ]), [totals, campaigns.length])
+  /* One box per metric, each a small chart of that metric across the same
+     campaigns. Derived from rows already loaded -- no second query, and
+     nothing invented. With no campaigns every bar is zero, which is the
+     true picture rather than a blank panel pretending there is nothing to
+     say. The old single chart could only ever answer "who spent the most",
+     which is one question out of the four the brief asks for. */
+  const metricBoxes = useMemo(() => {
+    const top = campaigns.slice(0, 6);
+    const count = (n) => n.toLocaleString('en-US');
+    const defs = [
+      { key: 'impressions', label: 'Impressions', pick: (c) => c.impressions || 0, total: totals.impressions, fmt: count },
+      { key: 'clicks', label: 'Clicks', pick: (c) => c.clicks || 0, total: totals.clicks, fmt: count },
+      { key: 'conversions', label: 'Conversions', pick: (c) => c.conversions || 0, total: totals.conversions, fmt: count },
+      { key: 'spend', label: 'Spend', pick: (c) => c.spendCents || 0, total: totals.spend, fmt: formatCents },
+    ];
+    return defs.map((d) => ({
+      key: d.key,
+      label: d.label,
+      fmt: d.fmt,
+      total: d.total,
+      rows: top.map((c) => ({ id: c.id, name: c.name, value: d.pick(c), display: d.fmt(d.pick(c)) })),
+    }));
+  }, [campaigns, totals])
+  
 
   return (
     <div className="adv-page">
@@ -106,6 +130,25 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
         body="Live spend, impressions, and CTR from your campaigns."
       />
       <AdvError message={error} onRetry={onRetry} />
+
+      {/* The boxes are deliberately NOT inside the empty state. A dashboard
+          whose numbers vanish until you have data cannot tell you that you
+          have none -- it goes blank, and blank reads as broken rather than
+          as zero. Six zeros is the correct answer when nothing is spent. */}
+      <AdvStats items={statItems} />
+      <div className="adv-metrics">
+        {metricBoxes.map((m) => (
+          <section className="panel adv-panel adv-metric" key={m.key} aria-label={`${m.label} by campaign`}>
+            <h4 className="adv-panel__title">{m.label}</h4>
+            <p className="adv-metric__total mono">{m.fmt(m.total)}</p>
+            {m.rows.length === 0 ? (
+              <p className="adv-metric__none">No campaign has recorded any yet.</p>
+            ) : (
+              <AdvBarChart rows={m.rows} valueLabel={m.label} />
+            )}
+          </section>
+        ))}
+      </div>
       {loading ? (
         <AdvLoading />
       ) : campaigns.length === 0 ? (
@@ -118,7 +161,6 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
         />
       ) : (
         <>
-          <AdvStats items={statItems} />
           <div className="adv-grid adv-grid--2">
             <section className="panel adv-panel" aria-label="Campaign performance">
               <h4 className="adv-panel__title">Campaign performance</h4>
