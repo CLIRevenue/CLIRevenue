@@ -47,6 +47,7 @@
   --brand: rgba(124, 58, 237, 1);
   --brand-bright: rgba(139, 81, 255, 1);
   --accent-blue: rgba(37, 99, 235, 1);
+  --paper: rgba(37, 99, 235, 1);
   --accent-violet: rgba(124, 58, 237, 1);
   --accent-purple: rgba(147, 51, 234, 1);
   --accent-green: rgba(21, 128, 61, 1);
@@ -114,7 +115,8 @@
      anything. The bar width still animates, so the change reads as the
      words being taken away rather than as the rail blinking. */
   display: none;
-}.adv-console[data-narrow="true"] .adv-nav__btn { justify-content: center; padding-inline: 0; }
+}.adv-console[data-narrow="true"] .adv-nav__btn,
+.adv-console[data-narrow="true"] .adv-side__row { justify-content: center; padding-inline: 0; }
 
 /* ── the nav ───────────────────────────────────────────────────────── */
 
@@ -212,7 +214,12 @@
 
 /* ── the foot: settings, and where you are ─────────────────────────── */
 
-.adv-side__foot { margin-top: auto; padding-top: 14px; }
+.adv-side__foot {
+  display: grid;
+  gap: 2px;
+  margin-top: auto;
+  padding-top: 14px;
+}
 
 .adv-side__where {
   margin: 12px 11px 2px;
@@ -249,10 +256,7 @@
   transform: scale(.8);
   transition: opacity var(--dur-fast) var(--ease-ui), transform var(--dur-fast) var(--ease-ui);
 }
-/* Hidden entirely when collapsed: there is nothing to resize when the
-   column is at its narrowest and no grip position that would mean
-   anything. */
-.adv-console[data-narrow="true"] .adv-side__grip { display: none; }
+
 .adv-side__grip:hover,
 .adv-console[data-resizing] .adv-side__grip { background: color-mix(in srgb, var(--signal) 22%, transparent); }
 .adv-side__grip:hover svg,
@@ -342,47 +346,12 @@
 .adv-settings__body .adv-grid--split { grid-template-columns: minmax(0, 1fr); }
 .adv-settings__body .adv-detail div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .adv-settings__body .adv-detail dd { overflow-wrap: anywhere; }
-.adv-settings__foot {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 14px 20px;
-  border-top: 1px solid var(--hair);
-  background: var(--panel);
-}
-/* The logout control is the one destructive thing in here, so it is
-   styled as one rather than inheriting the neutral button and sitting
-   quietly next to Save. It is a bare <LogoutButton />, which brings its
-   own default class of adv-nav__btn -- a class meant for the rail, and
-   it is nowhere near the rail. Scoping the override to the footer is
-   what keeps that from leaking back out. */
-.adv-settings__foot .adv-nav__btn {
-  appearance: none;
-  cursor: pointer;
-  /* Destructive, so it gets no glow. The global ring is a rainbow, and a
-     rainbow around the one control that ends your session is the exact
-     opposite of what the control is saying. The pseudo is killed in
-     chrome.css by excluding this footer from the ring's host list —
-     that rule is specific enough that a local override cannot win, and
-     losing to it would have left the glow in place. */
-  box-shadow: none;
-  padding: 9px 16px;
-  font-family: var(--mono);
-  font-size: var(--c-text-small);
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
-  color: var(--accent-error);
-  background: transparent;
-  border: 1px solid var(--accent-error);
-  border-radius: var(--radius-sm);
-  transition: color var(--dur-fast) var(--ease-ui), background var(--dur-fast) var(--ease-ui);
-}
-.adv-settings__foot .adv-nav__btn:hover { color: var(--bg); background: var(--accent-error); transform: none; }
 
-@keyframes adv-settings-in { from { opacity: 0; } to { opacity: 1; } 
+@keyframes adv-settings-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes adv-settings-rise {
   from { opacity: 0; transform: translateY(10px) scale(.985); }
   to { opacity: 1; transform: none; }
+}
 
 
 /* ── narrow ────────────────────────────────────────────────────────── */
@@ -396,6 +365,7 @@
   }
   .adv-side__grip { display: none; }
 .adv-side .adv-nav__btn:hover { transform: none; }
+}
 
 
 /* ---------------------------------------------------------------------
@@ -423,55 +393,125 @@
   color: var(--ink-2);
   user-select: none;
 }
-/* The sweep is the one flourish here. A gradient clipped to the glyphs has
-   no edge, so animating background-position reads as the word itself
-   changing temperature rather than as a light passing over a label. */
-.adv-topbar__rev {
-  background-image: linear-gradient(100deg, var(--ink-4), var(--ink) 45%, var(--signal) 70%, var(--ink));
-  background-size: 220% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  transition: background-position 420ms var(--ease-ui);
-}
-.adv-topbar:hover .adv-topbar__rev { background-position: 100% 0; }
+/* The mark is two words, not one gradient across both halves of a wordmark.
 
-@media (prefers-reduced-motion: reduce) {
-  .adv-topbar__rev { transition: none; }
-  .adv-topbar:hover .adv-topbar__rev { background-position: 0 0; }
+   The gradient was the reason it read as unfinished: a single sweep has to
+   land somewhere, and where it lands across two words is never both of
+   them. Split it -- the letters take the console's own ink, so the mark
+   belongs to whichever theme is on, and only "Revenue" carries a colour.
+   Crimson is the same value the rest of the product calls an error, used
+   here because it is the one red in the palette that holds its weight on
+   both white paper and near-black. */
+.adv-topbar__cli { color: var(--text); font-weight: 700; letter-spacing: 0.04em; }
+.adv-topbar__rev { color: var(--accent-error); }
 
+/* ── the foot's rows: theme, account, and the way out ───
 
-
-/* The account trigger lives in the top bar, not in the rail. The rail
-   is for navigation and nothing else: a settings button down there put
-   a form that is not a destination among the destinations, and it was
-   the one control in the rail that opened something rather than going
-   somewhere. Account and logout both still live behind it. */
-.adv-topbar__account {
-  margin-left: auto;
-  padding: 7px 14px;
-  cursor: pointer;
+   These are the rail's only non-navigation controls, and they are styled
+   from .adv-nav__btn's vocabulary rather than a new one -- same padding,
+   same tracking, same hover. A second button shape at the bottom of the
+   same column is a second thing to learn, and the two shapes drifting
+   apart over time is how a rail ends up looking assembled rather than
+   designed. */
+.adv-side__row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 11px;
   font-family: var(--mono);
   font-size: var(--c-text-small);
   letter-spacing: var(--track-caps);
   text-transform: uppercase;
+  text-align: left;
   color: var(--ink-3);
   background: transparent;
-  border: 1px solid var(--hair);
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
+  cursor: pointer;
   transition: color var(--dur-fast) var(--ease-ui),
               background var(--dur-fast) var(--ease-ui),
-              border-color var(--dur-fast) var(--ease-ui),
-              letter-spacing var(--dur-fast) var(--ease-ui);
+              border-color var(--dur-fast) var(--ease-ui);
 }
-.adv-topbar__account:hover {
+.adv-side__row:hover {
   color: var(--text);
   background: var(--hair);
   border-color: var(--hair-strong);
-  letter-spacing: .1em;
 }
-.adv-topbar__account:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.adv-side__row:hover .adv-nav__label { letter-spacing: 0.1em; }
+.adv-side__row:hover .adv-nav__glyph { transform: scale(1.12); }
+.adv-side__row:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+/* Logout arrives as a node from the app, because the rail is not allowed to
+   own the session. It is a .adv-nav__btn inside someone else's row, so the
+   row must not fight it for the box: strip the row's own button shape and
+   let the child keep the one it was given. */
+.adv-side__row--host { display: block; padding: 0; border: 0; }
+.adv-side__row--host > .adv-nav__btn {
+  justify-content: flex-start;
+  padding: 9px 11px;
+  text-align: left;
+}
+
+/* ── dark ───
+
+   Every token is restated rather than swapped for .light-theme's inverse,
+   because ui-polish enforces parity between the first :root and
+   .light-theme in both directions: adding a token to either block breaks
+   the marketing pages to fix the console. Point of use is the only place
+   the console can have a palette of its own. */
+.adv-console[data-theme="dark"] {
+  --bg: rgba(15, 14, 19, 1);
+  --panel: rgba(29, 27, 35, 0.86);
+  --surface: rgba(29, 27, 35, 0.86);
+  --paper: rgba(96, 165, 250, 1);
+  --text: rgba(241, 239, 246, 1);
+  --ink: rgba(241, 239, 246, 1);
+  --ink-2: rgba(228, 225, 238, 1);
+  --ink-3: rgba(164, 158, 180, 1);
+  --ink-4: rgba(130, 124, 148, 1);
+  --hair: rgba(241, 239, 246, 0.10);
+  --hair-strong: rgba(241, 239, 246, 0.18);
+  --signal: rgba(122, 162, 255, 1);
+  --brand: rgba(167, 139, 250, 1);
+  --brand-bright: rgba(192, 132, 252, 1);
+  --accent-blue: rgba(96, 165, 250, 1);
+  --accent-violet: rgba(167, 139, 250, 1);
+  --accent-purple: rgba(192, 132, 252, 1);
+  --accent-green: rgba(74, 222, 128, 1);
+  --accent-error: rgba(244, 102, 130, 1);
+  --success: rgba(74, 222, 128, 1);
+}
+
+/* The tooth is two combs of fibre plus a bloom, and both are drawn in ink
+   colour. On paper that is near-black at a couple of percent; at night the
+   fibres have to be light instead, or the texture stops being texture and
+   becomes a stain. */
+.adv-console[data-theme="dark"] {
+  background-image:
+    repeating-linear-gradient(90deg, rgba(241, 239, 246, 0.022) 0 1px, rgba(255, 255, 255, 0) 1px 3px),
+    repeating-linear-gradient(0deg, rgba(241, 239, 246, 0.018) 0 1px, rgba(255, 255, 255, 0) 1px 4px),
+    radial-gradient(120% 90% at 50% 0%, rgba(120, 110, 160, 0.14), rgba(255, 255, 255, 0) 70%);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .adv-topbar__account { transition: none; }
-  .adv-topbar__account:hover { letter-spacing: var(--track-caps); }
+  .adv-side__row,
+  .adv-side__row .adv-nav__glyph,
+  .adv-side__row .adv-nav__label { transition: none; }
+  .adv-side__row:hover .adv-nav__glyph { transform: none; }
+  .adv-side__row:hover .adv-nav__label { letter-spacing: var(--track-caps); }
 }
+
+/* The zero the empty bars are sitting on. The track is already a hairline
+   box, so the baseline has to be a shade stronger than it or it disappears
+   into the very surface it is meant to describe. */
+.adv-console .adv-chart__track { position: relative; }
+.adv-console .adv-chart__zero {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: var(--hair-strong);
+}
+.adv-console .adv-chart__name[title="\u2014"] { color: var(--ink-4); }

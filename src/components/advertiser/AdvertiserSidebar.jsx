@@ -22,7 +22,16 @@ const GLYPH = {
   billing: <Icon d="M3 7.5A2.5 2.5 0 0 1 5.5 5h13A2.5 2.5 0 0 1 21 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5v-9Zm2 1v2h14v-2H5Zm0 4v2.5h9V12.5H5Z" />,
   settings: <Icon d="M12 8.6A3.4 3.4 0 1 0 12 15.4 3.4 3.4 0 0 0 12 8.6Zm8.3 3.4c0 .5 0 1-.1 1.4l2 1.6-2 3.4-2.4-1a8 8 0 0 1-2.4 1.4l-.4 2.6h-4l-.4-2.6a8 8 0 0 1-2.4-1.4l-2.4 1-2-3.4 2-1.6a8.7 8.7 0 0 1 0-2.8l-2-1.6 2-3.4 2.4 1a8 8 0 0 1 2.4-1.4L11 2.6h4l.4 2.6a8 8 0 0 1 2.4 1.4l2.4-1 2 3.4-2 1.6c.1.4.1.9.1 1.4Z" />,
   grip: <Icon d="M10 8.5h1.5v1.5H10V8.5Zm0 3.5h1.5v1.5H10V12Zm0 3.5h1.5V17H10v-1.5Zm4-7h1.5v1.5H14V8.5Zm0 3.5h1.5v1.5H14V12Zm0 3.5h1.5V17H14v-1.5Z" />,
-  close: <Icon d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4 6.4 5Z" />,
+  close: <Icon d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4 6.4 5Z" />,  /* The two halves of the theme control. Sun for what the toggle will
+     give you, moon for what you are leaving, which is the only pairing
+     that is unambiguous without a tooltip. */
+  sun: (
+    <Icon d="M12 5V2M12 22v-3M5 12H2M22 12h-3M6.3 6.3 4.2 4.2M19.8 19.8l-2.1-2.1M6.3 17.7l-2.1 2.1M19.8 4.2l-2.1 2.1M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
+  ),
+  moon: (
+    <Icon d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" />
+  ),
+
 }
 
 /* Widths. 72 is the floor because that is what the rail measures once
@@ -86,7 +95,18 @@ function readStoredWidth() {
  * one number the DOM already knows how to read. Nothing here re-renders
  * while you drag; the property is written straight to the node.
  */
-export default function AdvertiserSidebar({ items, active, onNavigate, activeLabel, shellRef }) {
+export default function AdvertiserSidebar({
+  items,
+  active,
+  onNavigate,
+  onOpenSettings,
+  logoutSlot,
+  theme,
+  onToggleTheme,
+  activeLabel,
+  shellRef,
+}) {
+  const dark = theme === 'dark'
   const rootRef = useRef(null)
   const startRef = useRef(null)
 
@@ -124,25 +144,41 @@ export default function AdvertiserSidebar({ items, active, onNavigate, activeLab
         x: event.clientX,
         w: (rootRef.current ?? el).getBoundingClientRect().width,
       }
-      el.dataset.dragging = 'true'
+      el.dataset.resizing = 'true'
       window.addEventListener('pointermove', onMove)
       window.addEventListener('pointerup', onUp)
       window.addEventListener('pointercancel', onUp)
     }
 
+    // A pointermove can fire more often than a frame, and each write here
+    // invalidates the grid track. Coalescing to one write per frame is the
+    // difference between the rail tracking the cursor and the rail chasing
+    // it through a backlog of events that have already been superseded.
+    let frame = 0
+    let pending = null
+
+    function flush() {
+      frame = 0
+      if (pending === null) return
+      applyWidth(el, clamp(pending))
+      pending = null
+    }
+
     function onMove(event) {
       const from = startRef.current
       if (!from) return
-      applyWidth(el, clamp(from.w + (event.clientX - from.x)))
+      pending = from.w + (event.clientX - from.x)
+      if (!frame) frame = window.requestAnimationFrame(flush)
     }
 
     function onUp(event) {
       startRef.current = null
-      delete el.dataset.dragging
+      delete el.dataset.resizing
       const grip = el.querySelector('.adv-side__grip')
       grip?.releasePointerCapture?.(event.pointerId)
       try {
-        window.localStorage.setItem(W_KEY, String(Math.round(el.getBoundingClientRect().width)))
+        const w = (rootRef.current ?? el).getBoundingClientRect().width
+        window.localStorage.setItem(W_KEY, String(Math.round(w)))
       } catch {
         /* See readStoredWidth. */
       }
@@ -191,6 +227,38 @@ export default function AdvertiserSidebar({ items, active, onNavigate, activeLab
         <p className="adv-side__where" aria-live="polite">
           {activeLabel}
         </p>
+
+        {/* Theme. This console is a working surface you stare at for an
+            hour, and white paper at that length is not neutral, it is
+            bright. Whether you read it light or dark is a reading
+            preference, so it belongs with the other controls and not
+            filed inside the account form behind a button that opens
+            something else. */}
+        <button
+          type="button"
+          className="adv-side__row"
+          onClick={onToggleTheme}
+          aria-pressed={dark}
+        >
+          <span className="adv-nav__glyph">{dark ? GLYPH.sun : GLYPH.moon}</span>
+          <span className="adv-nav__label">{dark ? 'Light' : 'Dark'}</span>
+        </button>
+
+        {/* Account, and logout. Both are passed in as nodes rather than
+            drawn here, so the button that ends the session is composed by
+            the component that owns the session and the rail only lays it
+            out. A rail that could sign you out on its own would be one
+            more place to get that wrong. */}
+        <button
+          type="button"
+          className="adv-side__row"
+          onClick={onOpenSettings}
+          aria-haspopup="dialog"
+        >
+          <span className="adv-nav__glyph">{GLYPH.settings}</span>
+          <span className="adv-nav__label">Account</span>
+        </button>
+        <div className="adv-side__row adv-side__row--host">{logoutSlot}</div>
       </div>
 
       {/* The resize handle. A 6px column is deliberately below the 10px

@@ -76,12 +76,19 @@ function SettingsPanel({ onClose }) {
           <AdvertiserAccount />
         </div>
 
-        <div className="adv-settings__foot">
-          <LogoutButton />
-        </div>
       </div>
     </div>
   )
+}
+
+const THEME_KEY = 'clirevenue.advtheme'
+
+function readTheme() {
+  try {
+    return window.localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light'
+  } catch {
+    return 'light'
+  }
 }
 
 // Route is already guarded by RequireRole(['advertiser']) in App.jsx.
@@ -93,6 +100,7 @@ export default function AdvertiserApp() {
   const route = useAppRoute()
   const tab = tabForPath(route)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [theme, setTheme] = useState(readTheme)
   /* The frame, not the rail: it owns the grid column the rail's width
      actually controls. */
   const shellRef = useRef(null)
@@ -103,7 +111,11 @@ export default function AdvertiserApp() {
        restyled every button and panel on the page as a side effect of a
        layout change. The header it belonged to is gone; the wrapper is
        not the header. */
-    <div className="clr-surface adv-console" ref={shellRef}>
+    <div
+      className="clr-surface adv-console"
+      ref={shellRef}
+      data-theme={theme === 'dark' ? 'dark' : undefined}
+    >
       <AdvertiserSidebar
         shellRef={shellRef}
         items={NAV}
@@ -111,6 +123,20 @@ export default function AdvertiserApp() {
         activeLabel={TABS.find((t) => t.id === tab)?.label || 'Overview'}
         onNavigate={(item) => navigateApp(item.path)}
         onOpenSettings={() => setSettingsOpen(true)}
+        logoutSlot={<LogoutButton />}
+        theme={theme}
+        onToggleTheme={() =>
+          setTheme((current) => {
+            const next = current === 'dark' ? 'light' : 'dark'
+            try {
+              window.localStorage.setItem(THEME_KEY, next)
+            } catch {
+              /* A console with the storage turned off still gets a theme,
+                 it just gets the default one back on reload. */
+            }
+            return next
+          })
+        }
       />
 
       <main className="adv-main" aria-label="Advertiser dashboard">
@@ -119,14 +145,6 @@ export default function AdvertiserApp() {
             <span className="adv-topbar__cli">CLI</span>
             <span className="adv-topbar__rev">Revenue</span>
           </span>
-          <button
-            type="button"
-            className="adv-topbar__account"
-            onClick={() => setSettingsOpen(true)}
-            aria-haspopup="dialog"
-          >
-            Account
-          </button>
         </header>
         <div className="adv-main__inner">
           {auth.role === null ? (

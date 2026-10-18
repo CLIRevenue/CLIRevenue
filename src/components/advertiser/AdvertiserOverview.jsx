@@ -141,11 +141,9 @@ export default function AdvertiserOverview({ campaigns, loading, error, onRetry,
           <section className="panel adv-panel adv-metric" key={m.key} aria-label={`${m.label} by campaign`}>
             <h4 className="adv-panel__title">{m.label}</h4>
             <p className="adv-metric__total mono">{m.fmt(m.total)}</p>
-            {m.rows.length === 0 ? (
-              <p className="adv-metric__none">No campaign has recorded any yet.</p>
-            ) : (
-              <AdvBarChart rows={m.rows} valueLabel={m.label} />
-            )}
+            {/* Always the chart, never a sentence: an empty plot still shows
+                where the bars will grow from. */}
+            <AdvBarChart rows={m.rows} valueLabel={m.label} />
           </section>
         ))}
       </div>
