@@ -18,28 +18,61 @@
    fixed, so it is exactly as tall as the frame and can never outgrow it
    however long the page becomes. */
 .adv-console {
-  /* Declared here, at point of use, rather than in :root — a token in
+  /* Two variables, at point of use, rather than in :root - a token in
      :root acquires a .light-theme parity obligation that ui-polish
-     enforces, and these two are specific to this layout. */
+     enforces, and both are specific to this layout. The rail has one
+     width now: it is dragged, not toggled, so there is no second
+     number for a collapsed state to hold. */
   --adv-side-w: 252px;
-  --adv-side-w-collapsed: 72px;
   --adv-side-gap: 14px;
+
+  /* The console is white paper, so every token it would otherwise
+     inherit from :root is restated here in a value that reads on
+     white. Not done by switching on .light-theme: that block has to
+     carry every token the first :root carries, in both directions, so
+     holding one surface light means borrowing its values by hand -
+     editing those blocks would break the contract the marketing pages
+     depend on. */
+  --bg: rgba(250, 249, 246, 1);
+  --panel: rgba(255, 255, 255, 0.84);
+  --surface: rgba(255, 255, 255, 0.84);
+  --text: rgba(23, 25, 35, 1);
+  --ink: rgba(23, 25, 35, 1);
+  --ink-2: rgba(23, 25, 35, 1);
+  --ink-3: rgba(82, 72, 102, 1);
+  --ink-4: rgba(115, 110, 130, 1);
+  --hair: rgba(23, 25, 35, 0.10);
+  --hair-strong: rgba(23, 25, 35, 0.18);
+  --signal: rgba(37, 99, 235, 1);
+  --brand: rgba(124, 58, 237, 1);
+  --brand-bright: rgba(139, 81, 255, 1);
+  --accent-blue: rgba(37, 99, 235, 1);
+  --accent-violet: rgba(124, 58, 237, 1);
+  --accent-purple: rgba(147, 51, 234, 1);
+  --accent-green: rgba(21, 128, 61, 1);
+  --accent-error: rgba(190, 18, 60, 1);
+  --success: rgba(21, 128, 61, 1);
 
   display: grid;
   grid-template-columns: var(--adv-side-w) minmax(0, 1fr);
   min-height: 100dvh;
-  background: var(--bg);
   color: var(--text);
   transition: grid-template-columns var(--dur-fast) var(--ease-ui);
+
+  /* Canvas tooth: two crossed hairline combs at well under 2% so they
+     read as paper rather than as a pattern, and a bloom along the top
+     so the sheet has somewhere for the eye to start. Fixed attachment,
+     because the paper belongs to the window while the rail scrolls
+     under it - a tooth that scrolled with the content would slide
+     against its own grain. */
+  background-color: var(--bg);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(23, 25, 35, 0.016) 0 1px, rgba(255, 255, 255, 0) 1px 3px),
+    repeating-linear-gradient(0deg, rgba(23, 25, 35, 0.013) 0 1px, rgba(255, 255, 255, 0) 1px 4px),
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 70%);
+  background-attachment: fixed;
 }
 
-/* Collapsed is the same column with a different number, so the rail
-   keeps every pixel of its internal layout and only loses its labels.
-   Announced with aria-expanded on the control that does it, and the
-   grid column is a real transition because this one is a click. */
-.adv-console[data-collapsed="true"] {
-  grid-template-columns: var(--adv-side-w-collapsed) minmax(0, 1fr);
-}
 
 /* The width is dragged, and a transition on the column would make the
    rail chase the cursor a frame behind it. Only the collapse — which is
@@ -60,35 +93,19 @@
      rounding it would open a gap onto the page background that reads as
      a mistake rather than a choice. */
   border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  /* A sheet laid on the paper rather than a panel cut out of it: the
+     tooth keeps running underneath the rail, and six pixels of it is
+     enough to soften the grain without making the rail a second layer
+     of glass. */
+  backdrop-filter: blur(6px);
   overflow: visible;
 }
 
-.adv-side__collapse {
-  position: absolute;
-  top: 18px;
-  right: 10px;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  cursor: pointer;
-  color: var(--ink-3);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  transition: color var(--dur-fast) var(--ease-ui), background var(--dur-fast) var(--ease-ui),
-    border-color var(--dur-fast) var(--ease-ui);
-}
-.adv-side__collapse:hover { color: var(--text); background: var(--hair); border-color: var(--hair); }
-.adv-side__collapse svg { width: 16px; height: 16px; fill: currentColor; }
-
-/* Collapsed: the column narrows, and everything that is text goes away
-   without unmounting — the labels fade and slide so the icons can take
-   the space, and `visibility` rather than `display` keeps them out of the
-   tab order and off the accessibility tree without a second render. */
-.adv-console[data-collapsed="true"] .adv-nav__label,
-.adv-console[data-collapsed="true"] .adv-side__where { opacity: 0; visibility: hidden; transform: translateX(-6px); 
+/* Narrow: below 168px there is no room for the words, so they go
+   without unmounting - the icons take the space and the rail keeps
+   exactly the width it was dragged to. */
+.adv-console[data-narrow="true"] .adv-nav__label,
+.adv-console[data-narrow="true"] .adv-side__where { opacity: 0; visibility: hidden; transform: translateX(-6px); 
   /* Out of layout entirely, not merely invisible. `visibility: hidden` and
      even `width: 0` leave the label on the flex line, where `gap` still
      reserves the space between it and the glyph -- which is why the glyph
@@ -97,18 +114,7 @@
      anything. The bar width still animates, so the change reads as the
      words being taken away rather than as the rail blinking. */
   display: none;
-}
-.adv-console[data-collapsed="true"] .adv-nav__btn,
-.adv-console[data-collapsed="true"] .adv-side__settings { justify-content: center; padding-inline: 0; }
-/* The collapse control moves to the foot when the rail is icons-only,
-   because at 72px the top-right corner is the corner the first nav icon
-   wants. */
-.adv-console[data-collapsed="true"] .adv-side__collapse {
-  top: auto;
-  bottom: 14px;
-  right: 50%;
-  transform: translateX(50%);
-}
+}.adv-console[data-narrow="true"] .adv-nav__btn { justify-content: center; padding-inline: 0; }
 
 /* ── the nav ───────────────────────────────────────────────────────── */
 
@@ -208,28 +214,6 @@
 
 .adv-side__foot { margin-top: auto; padding-top: 14px; }
 
-.adv-side__settings {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  width: 100%;
-  padding: 9px 11px;
-  cursor: pointer;
-  font-family: var(--mono);
-  font-size: var(--c-text-small);
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
-  color: var(--ink-3);
-  background: transparent;
-  border: 1px solid var(--hair);
-  border-radius: var(--radius-sm);
-  transition: color var(--dur-fast) var(--ease-ui), background var(--dur-fast) var(--ease-ui),
-    border-color var(--dur-fast) var(--ease-ui), transform var(--dur-fast) var(--ease-ui);
-}
-.adv-side__settings:hover { color: var(--text); background: var(--hair); border-color: var(--hair-strong); transform: translateX(2px); }
-.adv-side__settings:hover .adv-nav__label { letter-spacing: .1em; }
-.adv-side__settings:hover .adv-nav__glyph { transform: scale(1.12) rotate(24deg); }
-
 .adv-side__where {
   margin: 12px 11px 2px;
   font-family: var(--mono);
@@ -268,7 +252,7 @@
 /* Hidden entirely when collapsed: there is nothing to resize when the
    column is at its narrowest and no grip position that would mean
    anything. */
-.adv-console[data-collapsed="true"] .adv-side__grip { display: none; }
+.adv-console[data-narrow="true"] .adv-side__grip { display: none; }
 .adv-side__grip:hover,
 .adv-console[data-resizing] .adv-side__grip { background: color-mix(in srgb, var(--signal) 22%, transparent); }
 .adv-side__grip:hover svg,
@@ -395,11 +379,11 @@
 }
 .adv-settings__foot .adv-nav__btn:hover { color: var(--bg); background: var(--accent-error); transform: none; }
 
-@keyframes adv-settings-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes adv-settings-in { from { opacity: 0; } to { opacity: 1; } 
 @keyframes adv-settings-rise {
   from { opacity: 0; transform: translateY(10px) scale(.985); }
   to { opacity: 1; transform: none; }
-}
+
 
 /* ── narrow ────────────────────────────────────────────────────────── */
 
@@ -411,24 +395,8 @@
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   }
   .adv-side__grip { display: none; }
-  .adv-console[data-collapsed="true"] .adv-side__collapse { bottom: auto; top: 18px; right: 10px; transform: none; }
-}
+.adv-side .adv-nav__btn:hover { transform: none; }
 
-/* A rail that animates is a rail that lags the finger. Nothing in this
-   file moves more than a pixel or two, so the whole surface honours the
-   preference in one place rather than rule by rule. */
-@media (prefers-reduced-motion: reduce) {
-  .adv-console,
-  .adv-nav__label,
-  .adv-nav__glyph,
-  .adv-side .adv-nav__btn,
-  .adv-side__settings,
-  .adv-settings,
-  .adv-settings__scrim,
-  .adv-settings__close { animation: none; transition: none; }
-  .adv-side .adv-nav__btn:hover,
-  .adv-side__settings:hover { transform: none; }
-}
 
 /* ---------------------------------------------------------------------
    The wordmark's home.
@@ -471,4 +439,39 @@
 @media (prefers-reduced-motion: reduce) {
   .adv-topbar__rev { transition: none; }
   .adv-topbar:hover .adv-topbar__rev { background-position: 0 0; }
+
+
+
+/* The account trigger lives in the top bar, not in the rail. The rail
+   is for navigation and nothing else: a settings button down there put
+   a form that is not a destination among the destinations, and it was
+   the one control in the rail that opened something rather than going
+   somewhere. Account and logout both still live behind it. */
+.adv-topbar__account {
+  margin-left: auto;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: var(--c-text-small);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-ui),
+              background var(--dur-fast) var(--ease-ui),
+              border-color var(--dur-fast) var(--ease-ui),
+              letter-spacing var(--dur-fast) var(--ease-ui);
+}
+.adv-topbar__account:hover {
+  color: var(--text);
+  background: var(--hair);
+  border-color: var(--hair-strong);
+  letter-spacing: .1em;
+}
+.adv-topbar__account:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .adv-topbar__account { transition: none; }
+  .adv-topbar__account:hover { letter-spacing: var(--track-caps); }
 }

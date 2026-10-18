@@ -93,7 +93,6 @@ export default function AdvertiserApp() {
   const route = useAppRoute()
   const tab = tabForPath(route)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [collapsed, setCollapsed] = useState(false)
   /* The frame, not the rail: it owns the grid column the rail's width
      actually controls. */
   const shellRef = useRef(null)
@@ -104,11 +103,9 @@ export default function AdvertiserApp() {
        restyled every button and panel on the page as a side effect of a
        layout change. The header it belonged to is gone; the wrapper is
        not the header. */
-    <div className="clr-surface adv-console" data-collapsed={collapsed ? 'true' : undefined} ref={shellRef}>
+    <div className="clr-surface adv-console" ref={shellRef}>
       <AdvertiserSidebar
         shellRef={shellRef}
-        collapsed={collapsed}
-        onToggleCollapse={() => setCollapsed((v) => !v)}
         items={NAV}
         active={tab}
         activeLabel={TABS.find((t) => t.id === tab)?.label || 'Overview'}
@@ -122,6 +119,14 @@ export default function AdvertiserApp() {
             <span className="adv-topbar__cli">CLI</span>
             <span className="adv-topbar__rev">Revenue</span>
           </span>
+          <button
+            type="button"
+            className="adv-topbar__account"
+            onClick={() => setSettingsOpen(true)}
+            aria-haspopup="dialog"
+          >
+            Account
+          </button>
         </header>
         <div className="adv-main__inner">
           {auth.role === null ? (
