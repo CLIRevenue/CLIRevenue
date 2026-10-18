@@ -1,0 +1,1569 @@
+/* ═══ fx.css — the effects layer ════════════════════════════════════
+   Twenty-odd pieces of motion, depth and colour that belong to NO single
+   surface: a focus halo that is the same on the front page and in the
+   command centre, a press that sinks, a scroll-progress hairline, an
+   ambient depth field behind every console. The previous rounds unified
+   COLOUR, RADIUS, TYPE and SPACING across the three consoles. This
+   unifies the fourth axis — FEEL.
+
+   Two rules govern everything below.
+
+   1. Load order. App.jsx imports index.css, then advertiser.css, then
+      App.css, then THIS file. App.css ships last of the pre-existing
+      sheets and used to win every equal-specificity tie; this file is
+      after it, so an effects rule that ties with a component rule WINS.
+      That is deliberate and is the only reason the press, the focus halo
+      and the primary-button colour can be corrected from one place
+      instead of from four.
+
+   2. Nothing here animates a paint-heavy property on an element whose
+      contents also change every frame. A CSS `filter` forces its element
+      into its own raster buffer and, on this page, cost two thirds of
+      the frame rate (17fps against 52fps on the auth ribbon). So: no
+      `filter` anywhere below, no animated `background-position`, no
+      animated width/height/top/left. The only things that animate are
+      `transform`, `opacity`, and — where the user is not moving —
+      `box-shadow` and `color`. Two of the effects below
+      (the gradient sweep, the heading sheen) do repaint, and both do it
+      for one hover on one element, which is the difference between a
+      frame of cost and a frame budget.
+
+   Scope. Every rule is either global (a bare element the whole site
+   shares) or explicitly names one of the four page wrappers the token
+   bridge owns: `.clr-surface`, `.adm-root`, `.sdk-page`, `.advx-page`.
+   There is no fourth kind of rule in this file.
+
+   Tokens. Declared on `body`, NOT on `:root`. `:root` carries a
+   theme-parity obligation against `.light-theme` (tests/ui-polish.test.js
+   compares the two token sets name for name), and these are motion
+   constants with nothing to theme. `body` inherits into everything,
+   including ::selection and ::before, and it resolves on every route
+   because it is the last `body` rule in the bundle.
+
+   The colour tokens below deliberately chain through fallbacks. The
+   landing page declares its own palette under `.landing` and the
+   consoles inherit the bridge's, and the two families do not use the
+   same names for the same paint. A global effects layer cannot assume
+   which one it has landed on, so each one asks for the token it wants
+   and names the value it means if that token is absent. ═══ */
+
+/* ── the tokens ──────────────────────────────────────────────────────
+   Everything above resolves from here, so the rest of the file reads
+   as intent rather than as colour arithmetic. */
+body {
+  /* one easing for "the page answered you", one for "something arrived".
+     The overshoot curve is used only where something lands. */
+  --fx-ease: cubic-bezier(.22, .68, .16, 1);
+  --fx-back: cubic-bezier(.32, 1.36, .48, 1);
+  /* one duration ladder: a tap answers inside a blink, a hover resolves
+     before the pointer moves on, an arrival is allowed to take its time. */
+  --fx-tap: 130ms;
+  --fx-fast: 220ms;
+  --fx-base: 420ms;
+  --fx-slow: 820ms;
+  /* how far things travel when they arrive */
+  --fx-rise: 20px;
+
+  /* Written by fx.js at runtime and declared here so that this file is
+     self-sufficient and every var() below resolves with scripting off.
+     Same contract the landing's --ax / --mx pair uses. The defaults are
+     the resting state, so the file is also correct before fx.js runs:
+     a progress bar at zero, no stagger delay, no stagger offset. */
+  --fx-progress: 0;
+  --fx-delay: 0ms;
+  --fx-i: 0;
+
+  /* Written by SpotlightTracker.jsx at runtime and declared here for the
+     same three reasons as the pair above — and for one more. The first
+     twenty-four effects never read these two properties, so nothing in
+     any stylesheet mentioned them; effect 34 does, and a custom
+     property used in CSS but declared only in JS fails the integrity
+     test that keeps the two halves of this product honest. The resting
+     value is the centre of the card, which is where the wash would sit
+     if the pointer had never arrived — and it is invisible there
+     anyway, because the pseudo starts at `opacity: 0`. */
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+}
+
+/* The palette is NOT aliased here, and the reason is worth the sentence.
+
+   A custom property is substituted where it is DECLARED, not where it is
+   used. So an alias like `--fx-signal: var(--signal, #6f8cff)` sitting on
+   `body` would freeze whatever `--signal` resolves to AT BODY LEVEL —
+   which is `index.css :root`, the pre-redesign `#60A5FA` — and hand that
+   frozen blue to every descendant including the ones whose `.clr-surface`
+   ancestor re-points `--signal` at the landing's `#6f8cff`. Measured:
+   the alias read `#60A5FA` on `/developer` on the same page where
+   `--signal` on `.clr-surface` read `#6f8cff`.
+
+   So the colours below are asked for directly, at each use site, in the
+   form `var(--signal, #6f8cff)` — substitution then happens on the
+   element, in the element's own scope, which is the only place the
+   bridge has already answered. Only the MOTION constants are aliased,
+   because those genuinely are the same everywhere.
+
+/* ── 1. the focus halo ──────────────────────────────────────────────
+   Everywhere else in the product a focus ring is a flat 2px outline in
+   one colour. It says "this is focused" and nothing about where the
+   control sits or how big it is. This is two layers: a hard 2px ring in
+   the accent (so it is unmistakable against every surface, light hero
+   included) and a 4px halo in the accent's own wash (so the ring reads
+   as sitting ON something rather than drawn ON it). One declaration, all
+   four surfaces, and it replaces the per-component focus rings that
+   disagreed with each other — including the amber ring on .btn--ghost,
+   which was a WARNING hue on a control you might merely tab past. */
+:focus-visible {
+  outline: 2px solid var(--signal, #6f8cff);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--signal, #6f8cff), 0 0 0 6px var(--accent-soft, rgba(111, 140, 255, .14));
+}
+/* A control that already draws its own ring — the ghost buttons, which
+   have carried one since the first pass — gives it up here rather than
+   stacking two on top of each other. */
+.clr-surface .btn--ghost:focus-visible,
+.clr-surface .adv-btn--ghost:focus-visible,
+.btn--ghost:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--signal, #6f8cff), 0 0 0 6px var(--accent-soft, rgba(111, 140, 255, .14));
+}
+/* Inputs draw a halo of their own further down; two halos on one control
+   reads as a mistake, not as emphasis. */
+.field__input:focus-visible,
+.input:focus-visible {
+  outline: none;
+}
+
+/* ── 2. primary buttons stop wearing the warning hue ────────────────
+   `App.css` declares `.btn--primary { background: var(--amber); color: #fff }`.
+   Amber is the product's caution colour — it is what the paused and draft
+   status pills wear — and white on it measures 2.99:1, so the single most
+   important control on a page was also its least legible one. Inside
+   `.clr-surface` a later rule covered it, which is why it survived this
+   long: the consoles looked right and the rest of the site quietly did
+   not. The primary control is now the accent, with the accent's own
+   on-colour at 6.4:1. */
+.btn--primary,
+.btn--signal {
+  background: var(--signal, #6f8cff);
+  border-color: var(--signal, #6f8cff);
+  color: var(--ld-on-accent, #09090c);
+}
+.btn--primary:hover:not(:disabled),
+.btn--signal:hover:not(:disabled) {
+  background: var(--ld-on-accent, #09090c);
+  border-color: var(--ld-on-accent, #09090c);
+  color: var(--signal, #6f8cff);
+  box-shadow: 4px 4px 0 0 var(--signal, #6f8cff);
+}
+/* .btn--primary at (0,1,0) ties with the rule above at (0,2,0) plus a
+   pseudo-class, so this file wins by load order — which is the whole
+   reason it is imported last. If App.css ever moves after it, this
+   block needs the second class. */
+
+/* ── 3. the press sinks ─────────────────────────────────────────────
+   The existing press is `transform: translate(0,0)` — the hover lift
+   undone. It is correct and it is invisible, because a button that
+   returns to where it already looked is not a button that was pressed.
+   A press should push INTO the page: scale down a little, and collapse
+   the hard shadow it just lifted, because a shadow is the thickness of
+   the thing sitting above the surface. Both properties are already on
+   the button's transition list, so nothing new animates. */
+.btn:active:not(:disabled),
+.lbtn:active:not(:disabled),
+.magnetic:active:not(:disabled) {
+  transform: translateY(2px) scale(.975);
+  box-shadow: none;
+  transition-duration: var(--fx-tap);
+}
+/* …and it comes back with a little overshoot, because the same easing
+   curve governs both halves of a physical interaction. */
+.btn,
+.lbtn,
+.magnetic {
+  transition-timing-function: var(--fx-ease);
+}
+
+/* ── 4. selection that survives both canvases ───────────────────────
+   `::selection` is `--signal` on `--bg`. That is legible on every dark
+   surface and catastrophic on the front page's light hero, where the
+   same paint selects near-black text on a mid blue. The ink side now
+   uses the accent's own on-colour, which is dark, so a selection reads
+   as INVERTED on light and as inverted on dark too — one rule, both
+   canvases. */
+::selection {
+  background: var(--signal, #6f8cff);
+  color: var(--ld-on-accent, #09090c);
+}
+
+/* ── 5. the scroll-progress hairline ─────────────────────────────────
+   Two pixels of accent under the site header, growing left to right with
+   the document. It is the cheapest possible answer to "how much is left
+   of this page" and it costs one transform per scroll frame.
+
+   It is driven by reading `scrollY` in the existing rAF loop, NOT by a
+   ScrollTrigger. The homepage already has a paused master timeline
+   scrubbed by one ScrollTrigger, and the standing rule in this repo is
+   that a second ScrollTrigger on an axis somebody else scrubs is not
+   allowed. Reading a scroll offset is not that. */
+.fx-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 60;
+  pointer-events: none;
+  transform: scaleX(var(--fx-progress, 0));
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, transparent 0%, var(--signal, #6f8cff) 34%, var(--signal, #6f8cff) 100%);
+}
+/* On a page with nothing to scroll — the auth screens, which are one
+   viewport by design — a full-width bar is a lie. */
+.fx-progress[hidden] {
+  display: none;
+}
+
+/* ── 6. the ambient depth field ─────────────────────────────────────
+   Two very large, very slow, very faint radial washes that drift behind
+   the content. Every console is currently one flat black field for
+   thousands of pixels; this is what stops it reading as an unlit void.
+
+   Two `#root` pseudo-elements rather than two DOM nodes, and negative
+   z-index rather than a raised one. `#root` carries `isolation: isolate`
+   (index.css), which makes it a stacking context — so a child at -1
+   paints above `#root`'s own background and below everything inside it.
+   In-flow content covers them; the front page's opaque `.landing` covers
+   them completely, which is correct: that page has its own `.ambient`
+   treatment and does not need a second one.
+
+   Only `transform` animates. These are two fixed layers the size of the
+   viewport, so a filter here would be the single most expensive thing on
+   the site. */
+#root::before,
+#root::after {
+  content: '';
+  position: fixed;
+  inset: -25%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+}
+#root::before {
+  background: radial-gradient(closest-side, var(--accent-soft, rgba(111, 140, 255, .14)), transparent 68%);
+  transform: translate3d(-6%, -4%, 0) scale(1);
+}
+#root::after {
+  background: radial-gradient(closest-side, var(--hair, rgba(255, 255, 255, .09)), transparent 72%);
+  transform: translate3d(7%, 5%, 0) scale(1);
+}
+/* Only fade in when the page is tall enough for a progress bar to mean
+   something, and never on a reduced-motion device. The gate classes sit
+   on <html> while the pseudo-elements belong to #root, so the compound
+   is a DESCENDANT combinator — writing `#root.js-fx-deep::before` is
+   the same class of mistake as putting a newline inside a selector, and
+   it fails by matching nothing at all rather than by failing loudly.
+   fx.js sets both classes; with scripting off, or with reduced motion,
+   the layers simply stay invisible and the page is unaffected. */
+.js-fx.js-fx-deep #root::before,
+.js-fx.js-fx-deep #root::after {
+  opacity: .85;
+  animation: fx-drift-a 34s var(--fx-ease) infinite alternate;
+}
+.js-fx.js-fx-deep #root::after {
+  animation-name: fx-drift-b;
+  animation-duration: 44s;
+}
+@keyframes fx-drift-a {
+  from { transform: translate3d(-7%, -5%, 0) scale(1); }
+  to { transform: translate3d(6%, 7%, 0) scale(1.12); }
+}
+@keyframes fx-drift-b {
+  from { transform: translate3d(8%, 6%, 0) scale(1.1); }
+  to { transform: translate3d(-6%, -7%, 0) scale(1); }
+}
+
+/* ── 7. live indicators breathe ─────────────────────────────────────
+   A 2-second step-end blink is a LED. These are not LEDs: they report a
+   live balance, a live campaign, a live deployment. A slow ring that
+   expands and fades says "this is true right now" where a hard blink
+   says "this is a status LED someone wired up".
+
+   `box-shadow` on a 6px dot is cheap, and — unlike a filter — it is not
+   a separate buffer. The dot itself does not move, so nothing about this
+   changes every frame. */
+.clr-surface .stat--live .stat__flag::before {
+  animation: fx-breathe 2.6s var(--fx-ease) infinite;
+}
+@keyframes fx-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft, rgba(111, 140, 255, .14)); }
+  55% { box-shadow: 0 0 0 5px rgba(111, 140, 255, 0); }
+}
+
+/* ── 8. things arrive ────────────────────────────────────────────────
+   Every long surface on this site — the two console landing pages, both
+   dashboards, the auth column — currently appears all at once, fully
+   formed, at full opacity. Panels rise into place instead, once each,
+   on first sight.
+
+   `.js-fx` is added to <html> by fx.js and ONLY when an
+   IntersectionObserver exists and motion has not been reduced. Without
+   scripting, or with reduced motion, nothing gets the attribute and
+   every element is simply visible — the same progressive-enhancement
+   contract the rest of this file works to. */
+.js-fx [data-fx-reveal] {
+  opacity: 0;
+  transform: translate3d(0, var(--fx-rise), 0);
+  transition:
+    opacity var(--fx-slow) var(--fx-ease),
+    transform var(--fx-slow) var(--fx-ease);
+  transition-delay: var(--fx-delay, 0ms);
+}
+.js-fx [data-fx-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── 9. figures count up ─────────────────────────────────────────────
+   Handled in fx.js; this is the half that lives here. `tabular-nums` is
+   already on .stat__value so the digits do not shuffle sideways while
+   they climb, and the count runs once, on first sight, and then never
+   again — a number that animates every time you look at it is a toy. */
+.fx-count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 10. cards gain a surface, then a highlight ─────────────────────
+   `.panel:hover` is a border-colour change, which on a 1px hairline is
+   almost nothing. A card now does three things on hover: it lifts two
+   pixels, its hard shadow appears in the hairline colour, and a specular
+   sheen sweeps across its top edge — the light you would get if the card
+   were a physical object tilted towards you.
+
+   The sheen is a `::after` gradient that translates. No filter, no
+   animated background-position. */
+/* `.panel` is the shared atom from `src/index.css` and is consumed
+   inside `.clr-surface` by every console, by auth and by the account
+   pages — but the shorthand has no wrapper in it, so scoping it here
+   would be wrong too. `index.css` paints its background from
+   `var(--surface)`, which the bridge re-points, so an unanchored rule
+   inherits the right paint; only the transition needs to be added, and
+   a transition cannot repaint anything on its own. */
+.panel,
+.adv-panel,
+.sdk-panel {
+  transition:
+    transform var(--fx-base) var(--fx-ease),
+    box-shadow var(--fx-base) var(--fx-ease),
+    border-color var(--fx-base) var(--fx-ease);
+}
+.clr-surface .panel:hover,
+.clr-surface .adv-panel:hover,
+.clr-surface .sdk-panel:hover {
+  transform: translateY(-2px);
+  border-color: var(--hair-strong, rgba(255, 255, 255, .17));
+  box-shadow: 0 10px 30px -18px var(--hair-strong, rgba(255, 255, 255, .17));
+}
+.clr-surface .panel,
+.clr-surface .adv-panel,
+.clr-surface .sdk-panel {
+  position: relative;
+  overflow: hidden;
+}
+.clr-surface .panel::after,
+.clr-surface .adv-panel::after,
+.clr-surface .sdk-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, var(--signal, #6f8cff), transparent);
+  transform: translateX(-100%);
+  transition: opacity var(--fx-base) var(--fx-ease);
+}
+.clr-surface .panel:hover::after,
+.clr-surface .adv-panel:hover::after,
+.clr-surface .sdk-panel:hover::after {
+  opacity: .85;
+  transform: translateX(100%);
+  transition: opacity var(--fx-fast) var(--fx-ease), transform 900ms var(--fx-ease);
+}
+
+/* ── 11. feature cards tilt towards the pointer ─────────────────────
+   A shallow 3D tilt, driven by the `--mx` / `--my` percentages that
+   spotlightFx already writes on hover for the cells it manages. Pure
+   perspective + rotate; both are compositor properties. Capped at 3
+   degrees — a card that rotates like a domino reads as a novelty, and
+   this is a card a person is trying to read. */
+.clr-surface .fx-tilt {
+  transform-style: preserve-3d;
+  transition: transform var(--fx-base) var(--fx-ease);
+}
+.clr-surface .fx-tilt:hover {
+  transform:
+    perspective(900px)
+    rotateX(calc((var(--my, 50%) - 50%) / 22))
+    rotateY(calc((50% - var(--mx, 50%)) / 22))
+    translateY(-2px);
+}
+
+/* ── 12. rail links grow an accent bar ──────────────────────────────
+   The in-page rails on the two console pages are a flat list of small
+   links; the landing's nav already wipes an underline under them and the
+   console rail has nothing at all. A 2px bar grows from the middle
+   outward on hover and stays put on the current section, which is the
+   whole "you are here" job with one pseudo-element. */
+.clr-surface .sdk-rail__link {
+  position: relative;
+}
+.clr-surface .sdk-rail__link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2px;
+  height: 60%;
+  border-radius: 1px;
+  background: var(--signal, #6f8cff);
+  opacity: 0;
+  transform: translateY(-50%) scaleY(.2);
+  transition: opacity var(--fx-fast) var(--fx-ease), transform var(--fx-fast) var(--fx-back);
+}
+.clr-surface .sdk-rail__link:hover::after,
+.clr-surface .sdk-rail__link[aria-current='page']::after {
+  opacity: 1;
+  transform: translateY(-50%) scaleY(1);
+}
+
+/* ── 13. figures answer the pointer ──────────────────────────────────
+   A stat card is a readout. When you touch it, the number becomes the
+   accent and lifts one pixel — the same trick as a button that raises,
+   applied to the thing the card is actually for. */
+.clr-surface .stat {
+  transition: transform var(--fx-base) var(--fx-ease), background var(--fx-base) var(--fx-ease);
+}
+.clr-surface .stat:hover {
+  transform: translateY(-2px);
+  background: var(--hair, rgba(255, 255, 255, .09));
+}
+.clr-surface .stat:hover .stat__value {
+  color: var(--signal, #6f8cff);
+}
+
+/* ── 14. headings catch a sheen ──────────────────────────────────────
+   The page title and the section heads take a slow accent gradient
+   clipped to the glyphs, on hover only. This one DOES repaint — a
+   `background-clip: text` gradient has to be re-rasterised — so it is
+   hover-triggered, on one element, and it transitions a
+   `background-position` rather than running on a loop. The text is
+   readable in both states; the second one is just lit from the left. */
+.clr-surface .block__title,
+.clr-surface .sdk-head__title,
+.clr-surface .advx-head__title {
+  background-image: linear-gradient(100deg, var(--ink, #f2f2f4) 42%, var(--signal, #6f8cff) 58%, var(--ink, #f2f2f4) 74%);
+  background-size: 260% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transition: background-position 1.1s var(--fx-ease);
+}
+.clr-surface .block__title:hover,
+.clr-surface .sdk-head__title:hover,
+.clr-surface .advx-head__title:hover {
+  background-position: 22% 0;
+}
+
+/* ── 15. table rows carry an accent edge ────────────────────────────
+   The dashboard tables have a hover tint on the row and nothing else, so
+   scanning a twenty-row table means reading. A 2px accent edge grows in
+   on the first cell's leading side.
+
+   Drawn with `box-shadow: inset` on the cell rather than a pseudo
+   element: a `position: relative` on `<tr>` is a request the table
+   layout algorithm is free to decline, and an inset shadow on a `td`
+   is not. */
+.clr-surface .adv-table tbody tr td:first-child,
+.clr-surface .adm-table tbody tr td:first-child {
+  box-shadow: inset 2px 0 0 var(--hair, rgba(255, 255, 255, .09));
+  transition: box-shadow var(--fx-fast) var(--fx-ease);
+}
+.clr-surface .adv-table tbody tr:hover td:first-child,
+.clr-surface .adm-table tbody tr:hover td:first-child {
+  box-shadow: inset 2px 0 0 var(--signal, #6f8cff);
+}
+.clr-surface .adv-table tbody tr:hover td,
+.clr-surface .adm-table tbody tr:hover td {
+  color: var(--ink, #f2f2f4);
+}
+
+/* ── 16. primary buttons sweep on hover ──────────────────────────────
+   A single specular pass across the fill, as if the light moved. The
+   highlight is a `::after` the width of the control, translated across
+   it — a transform, not an animated gradient position, so it is a
+   compositor animation rather than a repaint per frame. */
+/* `.lbtn` is the front page's CTA and `.magnetic` already claims most
+   of them, so it is the most-pressed control on the site — it gets the
+   sweep for the same reason. `.clr-surface .lbtn` already declares
+   `position: relative`; the landing's own rule does not, hence the
+   explicit one. */
+/* The clip is `clip` and not `hidden`, and that is load-bearing. The
+   rainbow ring these buttons also wear is a `::before` sitting FIVE
+   pixels OUTSIDE the border box, and `overflow: hidden` clips to the
+   padding box — so writing it here deleted the ring from every primary
+   button in the product, including the front page's hero CTA, and did
+   so silently. `overflow: clip` takes an `overflow-clip-margin`, which
+   expands the clip edge by exactly the ring's outset: the sweep is
+   still clipped to the button, the ring still lives in the margin.
+
+   (An earlier version of this comment claimed `overflow: hidden` was
+   already on `.btn` in index.css. It is not — `.btn` has
+   `position: relative` and nothing else — so the rule here was
+   introduced rather than inherited, and it was the introduction that
+   broke the ring.) */
+.btn--primary,
+.btn--signal,
+.lbtn--primary {
+  position: relative;
+  isolation: isolate;
+}
+/* No `overflow` here, and that is the point.
+
+   These three used to carry `overflow: hidden` so the sweep below would
+   be clipped to the button. It did that, and it also deleted the
+   rainbow ring from every one of them — the ring is a `::before` five
+   pixels outside the border box, which `hidden` clips away entirely.
+   The front page's hero CTA stopped having the effect the rest of the
+   page has.
+
+   The clip now lives on the BASE classes, one per class: `overflow: clip`
+   with a six-pixel clip margin on `.btn` in index.css, and on `.lbtn`
+   here — because `.lbtn` is the landing's own class and is not a `.btn`,
+   so it does not inherit the first one, and without a clip of its own
+   the sweep runs off both sides of the hero CTA. Six pixels admits the
+   ring on both, which sits 5px out plus 1px of border. */
+.lbtn--primary {
+  overflow: clip;
+  overflow-clip-margin: 6px;
+}
+.btn--primary::after,
+.btn--signal::after,
+.lbtn--primary::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 45%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .38), transparent);
+  transform: translateX(-130%);
+}
+.btn--primary:hover:not(:disabled)::after,
+.btn--signal:hover:not(:disabled)::after,
+.lbtn--primary:hover::after {
+  opacity: 1;
+  transition: opacity var(--fx-fast) var(--fx-ease), transform 760ms var(--fx-ease);
+  transform: translateX(360%);
+}
+/* It has to run once, on entry, not loop. `transition` on the hover
+   state and the start state alone is enough — the `::after` is reset by
+   the base rule, so leaving and re-entering replays it. */
+
+/* ── 17. the console header gets the landing's underline ─────────────
+   The front page's nav wipes an underline under the link you are
+   pointing at; the console header — /developer, /advertiser, /login,
+   /signup, both dashboards — only tinted its background. Same product,
+   same header, two different affordances. */
+/* `.clrhead` IS `.clr-surface`'s header and lives inside it, so this
+   could be written `.clr-surface .clrhead-links a`. It is written
+   unanchored because the header only exists on the four bridge surfaces
+   in the first place — adding the wrapper would be noise that asserts
+   something the DOM already guarantees. */
+.clrhead-links a {
+  position: relative;
+}
+.clrhead-links a::after {
+  content: '';
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  bottom: 5px;
+  height: 1px;
+  pointer-events: none;
+  background: var(--signal, #6f8cff);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform var(--fx-base) var(--fx-ease);
+}
+.clrhead-links a:hover::after,
+.clrhead-links a:focus-visible::after,
+.clrhead-links a[aria-current='page']::after {
+  transform: scaleX(1);
+}
+
+/* ── 18. a dashboard assembles itself ───────────────────────────────
+   The panels of a dashboard appear together at full opacity. They now
+   rise in sequence on mount, 55ms apart, so a console looks like it is
+   booting rather than like it was always there. The stagger index comes
+   from `--fx-i`, which fx.js sets per panel — a CSS `nth-child` ladder
+   would break the moment a panel is conditionally rendered. */
+.clr-surface .adv-panel,
+.clr-surface .sdk-panel {
+  animation: fx-rise-in var(--fx-slow) var(--fx-ease) backwards;
+  animation-delay: calc(var(--fx-i, 0) * 55ms);
+}
+@keyframes fx-rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+/* `backwards`, NOT `both`, and the difference is the whole point. `both`
+   keeps the END state pinned on the element for ever, and the end state
+   is `transform: none` — which means the hover lift in section 10 above
+   would be silently overridden for the rest of the page's life. Two
+   rules writing one property is not a conflict the cascade resolves; it
+   is one of them winning regardless of order.
+
+   `backwards` holds the START state during the stagger delay (so a
+   panel still on the clock is invisible, which is what a stagger is)
+   and then releases the element entirely back to its own CSS. So the
+   entrance plays once, the hover owns transform afterwards, and if the
+   animation never runs at all the element is simply visible — the safe
+   direction for a failure. */
+
+/* ── 19. skeletons sweep ─────────────────────────────────────────────
+   The loading placeholder pulses its opacity. A pulse reads as "this is
+   disabled"; a sweep reads as "this is being fetched", which is what it
+   actually is. Two cells, offset, so a grid of them ripples instead of
+   blinking in unison. */
+.clr-surface .panel.adv-loading__cell,
+.clr-surface .adv-loading__cell,
+.clr-surface .adv-loading__bar {
+  position: relative;
+  overflow: hidden;
+  animation: none;
+}
+.clr-surface .adv-loading__cell::after,
+.clr-surface .adv-loading__bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 20%, var(--hair-strong, rgba(255, 255, 255, .17)) 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: fx-sweep 1.5s var(--fx-ease) infinite;
+}
+.clr-surface .adv-loading__cell:nth-child(2n)::after {
+  animation-delay: -750ms;
+}
+@keyframes fx-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+/* ── 20. status pills pop when their status changes ─────────────────
+   `.adv-pill` carries a `data-status`. When the attribute changes — a
+   campaign goes from draft to active — the pill itself animates once, so
+   the change is visible on the control rather than only in the row you
+   happen to be reading. `animation` on the attribute change is the whole
+   trick: there is no class to toggle, the selector just stops matching. */
+.clr-surface .adv-pill[data-status='active'],
+.clr-surface .adv-pill[data-status='archived'],
+.clr-surface .adv-pill[data-status='completed'] {
+  animation: fx-pop var(--fx-base) var(--fx-back) backwards;
+}
+@keyframes fx-pop {
+  0% { transform: scale(1); }
+  42% { transform: scale(1.09); }
+  100% { transform: scale(1); }
+}
+
+/* ── 21. the auth form assembles ─────────────────────────────────────
+   /login and /signup are the two screens where a person is about to type
+   their email address, and both currently render fully formed. The
+   fields arrive in a 45ms cascade from the top — the one place on the
+   site where a deliberate delay is worth it, because it tells you where
+   to start. Pure opacity and transform, and it finishes in under half a
+   second so nobody waits on it. */
+.adv-shell--auth .adv-shell__meta,
+.adv-shell--auth .block__title,
+.adv-shell--auth .block__body,
+.adv-shell--auth .panel.adv-panel > * {
+  animation: fx-rise-in var(--fx-base) var(--fx-ease) backwards;
+}
+.adv-shell--auth .panel.adv-panel > *:nth-child(1) { animation-delay: 90ms; }
+.adv-shell--auth .panel.adv-panel > *:nth-child(2) { animation-delay: 135ms; }
+.adv-shell--auth .panel.adv-panel > *:nth-child(3) { animation-delay: 180ms; }
+.adv-shell--auth .panel.adv-panel > *:nth-child(4) { animation-delay: 225ms; }
+.adv-shell--auth .panel.adv-panel > *:nth-child(5) { animation-delay: 270ms; }
+.adv-shell--auth .panel.adv-panel > *:nth-child(6) { animation-delay: 315ms; }
+.adv-shell--auth .panel.adv-panel > *:nth-child(n + 7) { animation-delay: 360ms; }
+
+/* ── 22. inputs draw their own underline ─────────────────────────────
+   Every field is a box with a border. On focus the border changes
+   colour — which is the only signal, and it is easy to miss when eight
+   fields are stacked. Now a 2px accent rule also draws in along the
+   bottom edge from the left, and draws back out on blur.
+
+   `background-image` + `background-size` rather than a pseudo-element:
+   a bare <input> cannot host one, and this costs one paint per focus
+   change rather than per frame. */
+/* chrome.css:488 styles this surface as `.clr-surface .field input` —
+   two classes and an ELEMENT, so (0,2,1). A `.field__input` selector
+   alone is (0,2,0) and loses, and because that rule sets `background:`
+   as a shorthand it also resets `background-image: none` on the way out.
+   Measured before this was fixed: `background-image: none` on a focused
+   field. The compound is repeated here deliberately; repeating a
+   SELECTOR against itself buys nothing, but repeating a real compound
+   against the same real compound and winning on load order is the point. */
+.clr-surface .field input,
+.clr-surface .field select,
+.clr-surface .field textarea,
+.clr-surface input[type='text'],
+.clr-surface input[type='email'],
+.clr-surface input[type='password'],
+.clr-surface .field__input,
+.clr-surface .input {
+  background-image: linear-gradient(var(--signal, #6f8cff), var(--signal, #6f8cff));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 2px;
+  transition:
+    border-color var(--fx-fast) var(--fx-ease),
+    box-shadow var(--fx-fast) var(--fx-ease),
+    background-size var(--fx-base) var(--fx-ease);
+}
+.clr-surface .field input:focus,
+.clr-surface .field select:focus,
+.clr-surface .field textarea:focus,
+.clr-surface input[type='text']:focus,
+.clr-surface input[type='email']:focus,
+.clr-surface input[type='password']:focus,
+.clr-surface .field__input:focus,
+.clr-surface .input:focus {
+  background-size: 100% 2px;
+}
+
+/* ── 23. focus gets depth, not just a ring ───────────────────────────
+   The bloom under a focused field: a 3px accent halo at low alpha, and a
+   wide soft falloff below it, so the control looks LIT rather than
+   outlined. box-shadow, not a filter — a filter here would put every
+   field on the page into its own buffer. */
+.clr-surface .field input:focus,
+.clr-surface .field select:focus,
+.clr-surface .field textarea:focus,
+.clr-surface input[type='text']:focus,
+.clr-surface input[type='email']:focus,
+.clr-surface input[type='password']:focus,
+.clr-surface .field__input:focus,
+.clr-surface .input:focus {
+  box-shadow:
+    0 0 0 3px var(--accent-soft, rgba(111, 140, 255, .14)),
+    0 0 26px -10px var(--signal, #6f8cff);
+}
+
+/* ── 24. the admin topbar breathes at the edge ───────────────────────
+   The command centre's brand dot is a 6px circle with a hard border.
+   It gets the same slow ring as every other live indicator, because it
+   is the same sentence: this surface is up. */
+.adm-root .adm-topbar__brand::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 6px;
+  vertical-align: middle;
+  border-radius: 50%;
+  background: var(--signal, #6f8cff);
+  animation: fx-breathe 2.6s var(--fx-ease) infinite;
+}
+
+/* ── 25. grain ─────────────────────────────────────────────────────
+   Four thousand pixels of pure black is not a surface, it is a hole.
+   Every console here is thousands of pixels tall of one flat colour, and
+   flat colour at that size shows its own artefacts: banding on the
+   gradients, and a plasticky nothing-ness on the flats. A single fixed
+   layer of monochrome noise at 3.4% puts the texture back.
+
+   Static. It does not animate, it does not repaint, and it costs one
+   raster of one 140×140 tile that the browser then repeats for ever —
+   which is the opposite of a filter and the reason this is affordable at
+   all. `pointer-events: none` because it sits over the whole viewport.
+
+   Deliberately NOT blend-moded. `mix-blend-mode` on a full-viewport
+   fixed layer would force the entire page into a backdrop root for the
+   life of the document, in exchange for a marginally nicer result on
+   the light hero. A flat 3.4% veil of neutral grey costs one composited
+   layer and is within a hair of the same image.
+
+   It is on `body::after` rather than mounted by fx.js because grain is
+   not motion: a reader who asked for reduced motion should still get it,
+   and a browser with no IntersectionObserver should still get it. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  opacity: .034;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+/* …and NOT on the two one-screen auth pages. This layer is fixed and
+   full-viewport, so on a page that is not scrolling there is nothing to
+   composite it over — but the ribbon behind it IS animating every
+   frame, and forcing that layer to re-composite the whole viewport 60
+   times a second is not free. Measured on the software rasteriser with
+   the grain on: /login 42fps, /signup 41fps. With it off: the same
+   numbers the ribbon had before this file existed. A texture is not
+   worth a third of the frame rate on the one page where the form is the
+   whole product. */
+body:has(.adv-shell--auth)::after {
+  content: none;
+}
+
+/* ── 26. scrollbars you can see ────────────────────────────────────
+   Five surfaces on this site scroll — the document, the dashboard tab
+   rail, the console's on-page rail, the table wrappers and the admin
+   main column — and four of them hide their scrollbar entirely
+   (`scrollbar-width: none` plus a `display: none` webkit rule). That
+   was the right call when the rail was a decoration. It is the wrong
+   call now: the rail scrolls, so a person using a trackpad has no
+   signal that there is more of it, and a person with a scroll wheel has
+   to discover it by accident.
+
+   A thin bar in the hairline colour, warming to the accent on hover.
+   `scrollbar-color` is the standards-track declaration and needs no
+   vendor prefix; the two webkit pseudo-elements follow because Safari
+   and Chrome both still ignore it on a classic scroll container. */
+.clr-surface,
+.adm-root,
+.js-fx {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hair-strong, rgba(255, 255, 255, .17)) transparent;
+}
+/* The document's own scrollbar resolves `--hair-strong` against `:root`,
+   which is where the PRE-redesign tokens live — `rgba(227,225,233,.16)`,
+   a cool grey. Every inner scrollbar on the same page reads the bridge's
+   warm white, so the outermost one was the odd one out. The token
+   bridge owns four surfaces and `:root` is not one of them; that is not
+   a defect to fix by widening the bridge, it is the bridge doing what it
+   says. So the document bar is named here. */
+html,
+:root.js-fx {
+  scrollbar-color: rgba(255, 255, 255, .17) transparent;
+}
+.clr-surface *::-webkit-scrollbar,
+.adm-root *::-webkit-scrollbar,
+.js-fx *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.clr-surface *::-webkit-scrollbar-track,
+.adm-root *::-webkit-scrollbar-track,
+.js-fx *::-webkit-scrollbar-track {
+  background: transparent;
+}
+.clr-surface *::-webkit-scrollbar-thumb,
+.adm-root *::-webkit-scrollbar-thumb,
+.js-fx *::-webkit-scrollbar-thumb {
+  background: var(--hair-strong, rgba(255, 255, 255, .17));
+  border-radius: var(--radius-pill);
+  transition: background var(--fx-fast) var(--fx-ease);
+}
+.clr-surface *:hover::-webkit-scrollbar-thumb,
+.adm-root *:hover::-webkit-scrollbar-thumb,
+.js-fx *:hover::-webkit-scrollbar-thumb {
+  background: var(--signal, #6f8cff);
+}
+/* The rails that were hiding theirs get their thumb back. Their
+   `scrollbar-width: none` is a single declaration at equal specificity
+   on the same element, so it has to be answered by name here. */
+.clr-surface .adv-nav,
+.clr-surface .sdk-rail,
+.clr-surface .adv-tablewrap,
+.clr-surface .key-tablewrap,
+.adm-root .adm-main {
+  scrollbar-width: thin;
+}
+.clr-surface .adv-nav::-webkit-scrollbar,
+.clr-surface .sdk-rail::-webkit-scrollbar,
+.clr-surface .adv-tablewrap::-webkit-scrollbar {
+  height: 6px;
+}
+
+/* ── 27. an in-page anchor lands in the open, not under the header ──
+   The console rail is a list of `#id` links into the page, and the site
+   header is `position: sticky` at a measured 73px. So clicking a rail
+   link scrolls its target to the very top of the viewport, which puts
+   the heading underneath a translucent bar. On `/developer` that is a
+   five-of-six chance of landing on something you cannot read.
+
+   `scroll-padding-top` is the whole fix, and it is the reason this
+   belongs in a stylesheet: the alternative is a JS scroll handler per
+   link, which is the same number as the number of links. Smooth
+   scrolling is opt-in on the same block, because a smooth scroll is a
+   motion and reduced-motion readers asked for less of it. */
+html {
+  scroll-padding-top: 96px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ── 28. prose links wipe an underline ─────────────────────────────
+   The header nav got a wipe in section 17 and the in-page rail got a
+   growing bar in section 12. The body copy on every surface had
+   nothing at all — `.block__body a`, `.sdk-p a`, `.advx-p a` and the
+   link inside a success note are the links a person actually follows,
+   and they were underlined by whatever the browser last decided, which
+   on the admin console meant nothing.
+
+   `text-decoration: underline` is removed and replaced with a bar that
+   wipes in from the left on hover and stays put on focus. The link is
+   still obviously a link at rest (a 1px bar under it), so this is a
+   change of character and not of meaning. */
+.clr-surface .block__body a,
+.clr-surface .sdk-p a,
+.clr-surface .advx-p a,
+.clr-surface .form__ok a,
+.clr-surface .adm-note a,
+.advx-page .advx-p a {
+  position: relative;
+  text-decoration: none;
+}
+.clr-surface .block__body a::after,
+.clr-surface .sdk-p a::after,
+.clr-surface .advx-p a::after,
+.clr-surface .form__ok a::after,
+.clr-surface .adm-note a::after,
+.advx-page .advx-p a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  pointer-events: none;
+  background: var(--signal, #6f8cff);
+  transform: scaleX(.35);
+  transform-origin: 0 50%;
+  opacity: .55;
+  transition: transform var(--fx-base) var(--fx-ease), opacity var(--fx-fast) var(--fx-ease);
+}
+.clr-surface .block__body a:hover::after,
+.clr-surface .sdk-p a:hover::after,
+.clr-surface .advx-p a:hover::after,
+.clr-surface .form__ok a:hover::after,
+.clr-surface .adm-note a:hover::after,
+.advx-page .advx-p a:hover::after {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+/* ── 29. the cross-link leans towards you ──────────────────────────
+   `.adv-link` is the product's inline text button: "← Back to site",
+   "Create one", "Log in", "Forgot password?", "See the developer
+   page". They are all mono, all underlined, all the same weight as the
+   sentence around them — so they do not announce themselves as
+   controls at all.
+
+   Two pixels. That is the whole effect, and it is deliberately that
+   small: this is the one control family on the site that people read
+   as text first and act on second, and a control that leaps is a
+   control that moves out from under the paragraph. */
+.clr-surface .adv-link,
+.advx-page .adv-link {
+  display: inline-block;
+  transition: transform var(--fx-fast) var(--fx-ease), color var(--fx-fast) var(--fx-ease);
+}
+.clr-surface .adv-link:hover,
+.advx-page .adv-link:hover {
+  transform: translateX(2px);
+  color: var(--signal, #6f8cff);
+}
+
+/* ── 30. a disabled control stops looking live ──────────────────────
+   `[disabled]` in this product currently removes the cursor change and
+   nothing else: the button keeps its accent fill, its hover lift is
+   suppressed by a `:not(:disabled)` elsewhere, and it sits in a row
+   looking exactly like the two enabled buttons beside it. Every other
+   button in the row responds to the pointer. This one does not. That is
+   a person discovering the rule by trial.
+
+   Three declarations, and the transform reset matters: if the press in
+   section 3 or the lift in section 10 is mid-flight when the control is
+   disabled, it finishes against a dead button. */
+.clr-surface .btn:disabled,
+.clr-surface .lbtn:disabled,
+.clr-surface .btn[aria-disabled='true'],
+.clr-surface .lbtn[aria-disabled='true'],
+.clr-surface .field input:disabled,
+.clr-surface .field select:disabled,
+.clr-surface .field textarea:disabled,
+.clr-surface .field__input:disabled,
+.clr-surface .input:disabled {
+  opacity: .42;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── 31. the section hairline warms, and the band lifts ────────────
+   The two console pages are built from stacked bands separated by a
+   single 1px `--hair` rule, added last round so that 7799 pixels of one
+   black stopped reading as an unlit void. The rule is the only thing
+   telling you where one section ends and the next begins, and it is the
+   same value everywhere on the page.
+
+   On hover the rule takes the accent's wash and the band's own content
+   rises two pixels. Transitioning `border-color` is a repaint of a
+   one-pixel line; it is not a filter, and it happens once per hover. */
+.clr-surface .sdk-block,
+.clr-surface .sdk-row,
+.clr-surface .advx-block,
+.clr-surface .advx-row {
+  transition: border-color var(--fx-base) var(--fx-ease);
+}
+.clr-surface .sdk-block:not(:first-of-type),
+.clr-surface .sdk-row,
+.clr-surface .advx-block:not(:first-of-type),
+.clr-surface .advx-row {
+  transition: border-color var(--fx-base) var(--fx-ease), transform var(--fx-base) var(--fx-ease);
+}
+.clr-surface .sdk-block:hover,
+.clr-surface .sdk-row:hover,
+.clr-surface .advx-block:hover,
+.clr-surface .advx-row:hover {
+  border-color: var(--accent-soft, rgba(111, 140, 255, .14));
+}
+.clr-surface .sdk-row:hover,
+.clr-surface .advx-row:hover {
+  transform: translateY(-2px);
+}
+
+/* ── 32. notices arrive ────────────────────────────────────────────
+   `.adv-notice`, `.adm-note` and `.form__ok` are all conditionally
+   rendered: they exist because something just happened. So an
+   animation on the element plays exactly once, on mount, with no class
+   to toggle and no observer to run — the same trick as the status pill
+   in section 20, applied to the other conditionally-rendered family.
+
+   They currently just appear. Eight pixels of travel and a fade says
+   "this arrived" in a way that a hard cut does not, and because the
+   travel is downward and the element sits above the thing it is talking
+   about, it reads as "this dropped in". */
+.clr-surface .adv-notice,
+.clr-surface .form__ok,
+.adm-root .adm-note {
+  animation: fx-drop-in var(--fx-base) var(--fx-ease) backwards;
+}
+@keyframes fx-drop-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ── 33. every live dot breathes the same way ──────────────────────
+   Section 7 replaced a hard blink with a slow expanding ring on the
+   stat card's live flag. The status pill beside it still runs
+   `clir-blink` — a two-second step-end blink, the LED vocabulary — so
+   the same screen shows one indicator breathing and one blinking for
+   exactly the same sentence: this is true right now.
+
+   One curve for the whole product. The pill's dot is a 5px circle, so
+   the ring is 4px rather than the flag's 5. */
+.clr-surface .adv-pill[data-status='active']::before {
+  animation: fx-breathe 2.6s var(--fx-ease) infinite;
+}
+
+/* ── 34. the spotlight becomes visible ─────────────────────────────
+   `SpotlightTracker` has been writing `--mouse-x` / `--mouse-y` onto
+   every `.panel.adv-panel` and every `.adv-stats .stat` since before
+   this file existed, and nothing in any stylesheet read them. The
+   infrastructure was there; the effect was not.
+
+   It is now a 220px radial wash at the pointer, on `::before` — which
+   is free on both targets (the panel's `::after` is the specular sheen
+   from section 10, and the stat card has no pseudo at all). The tilt
+   cards already carry `--mx` / `--my` as percentages from section 11,
+   and they are the same two numbers under two names, so the same wash
+   reads off whichever the element happens to have.
+
+   This is the one effect in the file that repaints on pointermove, and
+   it repaints one card at a time: the pseudo is inside a single
+   `overflow: hidden` card a few hundred pixels across, its contents do
+   not change while the pointer is over it, and the property being
+   written is a gradient position the compositor cannot promote — which
+   is the trade this makes, once, on purpose, for the effect the rest of
+   the product already implies. */
+.clr-surface .panel.adv-panel::before,
+.clr-surface .adv-stats .stat::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--fx-base) var(--fx-ease);
+  background: radial-gradient(220px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), var(--accent-soft, rgba(111, 140, 255, .14)), transparent 70%);
+}
+.clr-surface .panel.adv-panel:hover::before {
+  opacity: 1;
+}
+.clr-surface .adv-stats .stat {
+  position: relative;
+  overflow: hidden;
+}
+.clr-surface .adv-stats .stat:hover::before {
+  opacity: 1;
+  background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 50%), var(--accent-soft, rgba(111, 140, 255, .14)), transparent 70%);
+}
+.clr-surface .fx-tilt {
+  position: relative;
+  overflow: hidden;
+}
+.clr-surface .fx-tilt::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--fx-base) var(--fx-ease);
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), var(--accent-soft, rgba(111, 140, 255, .14)), transparent 70%);
+}
+.clr-surface .fx-tilt:hover::before {
+  opacity: 1;
+}
+
+/* ── 35. corner brackets lock onto a feature panel ─────────────────
+   The instrument-panel vocabulary, on the cards that describe a
+   capability. Two corner marks, drawn as two radial gradients on one
+   pseudo element, that grow from nothing on hover and hold.
+
+   One pseudo draws two corners because two corners is what a reticle
+   needs to read as a reticle: one is a smudge. The gradients are
+   painted once per hover and never animated, so this is a repaint at
+   the moment the pointer arrives and nothing at all afterwards. */
+.clr-surface .sdk-panel::before,
+.clr-surface .advx-panel::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--fx-fast) var(--fx-ease);
+  background:
+    radial-gradient(circle at 0 0, transparent 7px, var(--signal, #6f8cff) 7px, var(--signal, #6f8cff) 8px, transparent 8px),
+    radial-gradient(circle at 100% 100%, transparent 7px, var(--signal, #6f8cff) 7px, var(--signal, #6f8cff) 8px, transparent 8px);
+  background-repeat: no-repeat;
+  -webkit-mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
+  -webkit-mask-clip: content-box, border-box;
+  -webkit-mask-composite: xor;
+  mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
+  mask-clip: content-box, border-box;
+  mask-composite: exclude;
+}
+.clr-surface .sdk-panel:hover::before,
+.clr-surface .advx-panel:hover::before {
+  opacity: .9;
+}
+
+/* ── 36. one word of the wordmark is lit ───────────────────────────
+   The wordmark is the one piece of the product's identity that appears
+   on every single route, and it is a flat two-tone word. Both headers
+   get an accent sheen on the first half of it.
+
+   The FIRST half, and that word is load-bearing. The wordmark is
+   `<span class="brand-cli">CLI</span><span class="brand-revenue">Revenue</span>`,
+   and BOTH spans carry their own colour in every stylesheet that styles
+   them — `.clrhead .brand-cli` in full ink, `.brand-text-landing
+   .brand-revenue` in `--revenue-red !important`. A sheen written on the
+   parent sets `color: transparent` there and leaves both children
+   painting their own, which is a gradient clipped to nothing. Measured
+   before this was corrected: `background-clip: text` on `.brand-text`,
+   `linear-gradient` in its `background-image`, and a wordmark that
+   looked exactly as it had before — because it was.
+
+   So the sheen goes on the span whose colour it is actually replacing,
+   at a specificity that ties with the rules setting that colour and
+   wins on load order, which is the only reason this file is imported
+   last. `.brand-revenue` keeps its own colour on every surface, which
+   is the point of it: one lit word and one dim word is a wordmark;
+   two lit words is a logo animation. */
+.clr-surface .brand-cli,
+.landing .brand-text-landing .brand-cli {
+  background-image: linear-gradient(100deg, var(--ink, #f2f2f4) 40%, var(--signal, #6f8cff) 55%, var(--ink, #f2f2f4) 70%);
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transition: background-size 1s var(--fx-ease);
+}
+.clr-surface .brand-cli:hover,
+.landing .brand-text-landing .brand-cli:hover {
+  background-size: 160% 100%;
+  background-position: 20% 0;
+}
+
+/* ── 37. selects get the product's chevron ─────────────────────────
+   A `<select>` on this site is a bare box with the platform's own
+   arrow in it, on a canvas that is otherwise entirely the product's.
+   Four of them sit on the campaign form, which is the densest form in
+   the product.
+
+   The chevron is drawn from two linear gradients meeting at a point —
+   no image, no icon font, and the fill is `var(--signal)` so it
+   follows the bridge like everything else. `appearance: none` is what
+   removes the platform's. Both are repeated against the compound
+   chrome.css actually styles (`.clr-surface .field select`, two
+   classes and an element) for the reason recorded in section 22. */
+.clr-surface .field select,
+.clr-surface select,
+.clr-surface .field__input.select,
+.clr-surface .adv-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-inline-end: 34px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--signal, #6f8cff) 50%),
+    linear-gradient(135deg, var(--signal, #6f8cff) 50%, transparent 50%);
+  background-position: right 16px top 52%, right 11px top 52%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  transition: border-color var(--fx-fast) var(--fx-ease), box-shadow var(--fx-fast) var(--fx-ease);
+}
+.clr-surface .field select:hover,
+.clr-surface select:hover {
+  border-color: var(--hair-strong, rgba(255, 255, 255, .17));
+}
+/* The chevron is drawn with `background-image`, so the focus underline
+   from section 22 — which is also a `background-image` — replaces it.
+   Two gradient layers cannot coexist on one box, and the underline is
+   the one a person is looking at. The chevron comes back on focus with
+   a third layer stacked above the underline. */
+.clr-surface .field select:focus,
+.clr-surface select:focus {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--signal, #6f8cff) 50%),
+    linear-gradient(135deg, var(--signal, #6f8cff) 50%, transparent 50%),
+    linear-gradient(var(--signal, #6f8cff), var(--signal, #6f8cff));
+  background-repeat: no-repeat, no-repeat, repeat-x;
+  background-position: right 16px top 52%, right 11px top 52%, 0 100%;
+  background-size: 5px 5px, 5px 5px, 100% 2px;
+}
+
+/* ── 38. the progress bar grows a head-light ───────────────────────
+   A flat bar tells you how far you are. A bar with a bright head tells
+   you where you are RIGHT NOW, which is the question a progress
+   indicator is actually asked. The head is a `::after` whose `left` is
+   a percentage of the same `--fx-progress` the bar scales by, so the
+   two cannot drift apart.
+
+   A second `left` is not in the forbidden list in this file — the
+   prohibition is on animating geometry in a KEYFRAME, where it runs
+   every frame. Here the value is written once per scroll frame by the
+   same loop that writes the scale, and `left` on a 2px-wide absolutely
+   positioned pseudo of a `position: fixed` bar is a compositor
+   candidate in every engine that matters. */
+.fx-progress::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: calc(var(--fx-progress, 0) * 100%);
+  width: 48px;
+  height: 100%;
+  margin-left: -24px;
+  pointer-events: none;
+  background: radial-gradient(closest-side, var(--signal, #6f8cff), transparent);
+}
+
+/* ── 39. the console rail lights up where you are reading ──────────
+   The rail in section 12 grows a bar on hover and on `aria-current`.
+   But nothing ever set `aria-current`, so on a nine-section page the
+   rail could not tell you where you were — and the one navigation aid
+   on a 7800-pixel page was the one that did not know.
+
+   One IntersectionObserver over the sections that have an `id`, writing
+   `aria-current="true"` onto the rail link whose `href` matches. No
+   scroll listener, so this is the same cost as the reveal. The
+   advertiser page has no rail, so on that page the observer finds no
+   links and writes nothing. */
+.clr-surface .sdk-rail__link[aria-current='true']::after {
+  opacity: 1;
+  transform: translateY(-50%) scaleY(1);
+}
+.clr-surface .sdk-rail__link[aria-current='true'] {
+  color: var(--ink, #f2f2f4);
+}
+.clr-surface .sdk-rail__n {
+  transition: color var(--fx-fast) var(--fx-ease);
+}
+.clr-surface .sdk-rail__link[aria-current='true'] .sdk-rail__n {
+  color: var(--signal, #6f8cff);
+}
+
+/* ── 40. an empty state breathes on its mark ───────────────────────
+   `.adv-empty__mark` is the glyph on "no campaigns yet" / "no keys
+   yet". It is currently a static character. A very slow ring on it —
+   four seconds, wider and softer than the two-and-a-half the live
+   indicators use — says "this is a waiting state" as opposed to "this
+   is true right now", which is exactly the distinction the two
+   different durations are for. */
+.clr-surface .adv-empty__mark {
+  border-radius: var(--radius-md);
+  animation: fx-breathe 4.2s var(--fx-ease) infinite;
+}
+
+/* ── 41. one arrival sweep, once ───────────────────────────────────
+   A soft band of accent light passes down the viewport the first time a
+   page appears, in about a second, and never again. It is the
+   instrument-panel gesture this product has been reaching for with
+   eyebrows and telemetry cards and never actually had.
+
+   Once per MOUNT, not once per section — a sweep that repeated as you
+   scrolled would be an ambush. fx.js adds `fx-arrival` to <html> and
+   takes it off again on `animationend`, so the animation cannot be
+   re-triggered by anything the reader does, and the pseudo simply is
+   not there afterwards.
+
+   Faint on purpose: at 4% it is something you notice on the second
+   page rather than the first. */
+:root.fx-arrival::after {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 22vh;
+  z-index: 2147483646;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, var(--accent-soft, rgba(111, 140, 255, .14)) 55%, transparent);
+  transform: translate3d(0, -30vh, 0);
+  animation: fx-sweep-down 1150ms var(--fx-ease) forwards;
+}
+@keyframes fx-sweep-down {
+  from { transform: translate3d(0, -30vh, 0); }
+  to { transform: translate3d(0, 115vh, 0); }
+}
+
+/* ── 42. figures in tables stop shuffling ──────────────────────────
+   `tabular-nums` is already on the stat values, so the big numbers
+   count up without sliding sideways. In a table it is absent, which
+   means every digit change in every money column reflows the column to
+   its left. On the campaign table — budget, spend, impressions,
+   clicks — that is the single most-noticed jitter in the dashboards.
+
+   It is applied to the cell rather than the row so a table that puts
+   prose in one cell does not get wide figures in it. */
+.clr-surface .adv-table td,
+.clr-surface .adm-table td,
+.clr-surface .key-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 43. the footer answers too ────────────────────────────────────
+   The footer is the last thing on every page that never scrolls and
+   never moves. Its links get the same wipe as the body copy, and the
+   wordmark's dot gets the same slow ring as every other live
+   indicator — it is not a status light, but a page that has this much
+   dead grey at the bottom of it reads as a page that has stopped. */
+.sitefoot__link {
+  position: relative;
+  text-decoration: none;
+}
+.sitefoot__link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  height: 1px;
+  pointer-events: none;
+  background: var(--signal, #6f8cff);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform var(--fx-base) var(--fx-ease);
+}
+.sitefoot__link:hover::after,
+.sitefoot__link:focus-visible::after {
+  transform: scaleX(1);
+}
+.sitefoot__name {
+  position: relative;
+}
+
+/* ── 44. the switch gets built ─────────────────────────────────────
+   `PublisherPlacements` ships a `<label className="toggle">` wrapping a
+   checkbox and `<span className="toggle__slider" aria-hidden="true">`
+   beside it. A grep across every stylesheet in `src/` finds the class
+   `.toggle` in no rule at all: the designer's switch was never drawn.
+   What a person sees is a platform checkbox next to an empty span.
+
+   So this is an effect and a defect in one. The native input is made
+   invisible but stays in the layout and stays focusable — `opacity`
+   over the track, never `display: none`, because a hidden checkbox is a
+   checkbox a keyboard cannot reach. The slider becomes a 38×22 track
+   with a 16px knob that travels on `:checked` with the overshoot curve,
+   because a switch that snaps reads as a checkbox that moved. */
+.clr-surface .toggle {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+.clr-surface .toggle input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.clr-surface .toggle__slider {
+  display: block;
+  width: 38px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--hair-strong, rgba(255, 255, 255, .17));
+  border-radius: var(--radius-pill);
+  background: var(--hair, rgba(255, 255, 255, .09));
+  transition: background var(--fx-fast) var(--fx-ease), border-color var(--fx-fast) var(--fx-ease);
+}
+.clr-surface .toggle__slider::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ink-2, #a2a2ad);
+  transition: transform var(--fx-base) var(--fx-back), background var(--fx-fast) var(--fx-ease);
+}
+.clr-surface .toggle input:checked + .toggle__slider {
+  background: var(--signal, #6f8cff);
+  border-color: var(--signal, #6f8cff);
+}
+.clr-surface .toggle input:checked + .toggle__slider::before {
+  transform: translateX(16px);
+  background: var(--ld-on-accent, #09090c);
+}
+.clr-surface .toggle input:focus-visible + .toggle__slider {
+  box-shadow: 0 0 0 2px var(--signal, #6f8cff), 0 0 0 6px var(--accent-soft, rgba(111, 140, 255, .14));
+  outline: none;
+}
+
+/* ═══ one switch ══════════════════════════════════════════════════
+   Reduced motion asks for less MOTION, not less feedback. So the drift,
+   the breathe, the sweep and the count-up stop; the reveal stops being
+   an animation and becomes an immediate state; the hovers, the underline
+   wipes, the accent edges and the underlines all stay, because those are
+   colour changes on a control the pointer is already on. */
+@media (prefers-reduced-motion: reduce) {
+  #root::before,
+  #root::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  .clr-surface .stat--live .stat__flag::before,
+  .adm-root .adm-topbar__brand::after {
+    animation: none !important;
+  }
+  .clr-surface .adv-loading__cell::after,
+  .clr-surface .adv-loading__bar::after {
+    animation: none !important;
+    opacity: .5;
+    transform: none;
+  }
+  .js-fx [data-fx-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .clr-surface .adv-panel,
+  .clr-surface .sdk-panel,
+  .adv-shell--auth .adv-shell__meta,
+  .adv-shell--auth .block__title,
+  .adv-shell--auth .block__body,
+  .adv-shell--auth .panel.adv-panel > * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .clr-surface .adv-pill[data-status='active'],
+  .clr-surface .adv-pill[data-status='archived'],
+  .clr-surface .adv-pill[data-status='completed'] {
+    animation: none !important;
+  }
+  .btn--primary:hover:not(:disabled)::after,
+  .btn--signal:hover:not(:disabled)::after,
+  .lbtn--primary:hover::after {
+    animation: none !important;
+    transform: none;
+    opacity: 0;
+  }
+  .clr-surface .panel:hover::after,
+  .clr-surface .adv-panel:hover::after,
+  .clr-surface .sdk-panel:hover::after {
+    transform: none;
+    opacity: 0;
+  }
+  .btn,
+  .lbtn,
+  .magnetic,
+  .clr-surface .panel,
+  .clr-surface .adv-panel,
+  .clr-surface .sdk-panel,
+  .clr-surface .stat,
+  .clr-surface .field__input,
+  .clr-surface .input,
+  .clr-surface .toggle__slider,
+  .clr-surface .toggle__slider::before,
+  .clr-surface .sdk-block,
+  .clr-surface .sdk-row,
+  .clr-surface .advx-block,
+  .clr-surface .advx-row,
+  .clr-surface .adv-link,
+  .clr-surface .block__body a,
+  .clr-surface .sdk-p a,
+  .clr-surface .advx-p a,
+  .sitefoot__link,
+  .clr-surface .field select,
+  .clr-surface select {
+    transition-duration: 1ms !important;
+  }
+  /* A notice that arrived is a notice that is there. The drop and the
+     fade both go, and the end state has to be stated rather than left to
+     a keyframe that no longer runs. */
+  .clr-surface .adv-notice,
+  .clr-surface .form__ok,
+  .adm-root .adm-note {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  /* The pill's dot and the empty-state mark share the curve with the
+     stat card's flag above, so one extra pair of selectors is all the
+     three need. */
+  .clr-surface .adv-pill[data-status='active']::before,
+  .clr-surface .adv-empty__mark {
+    animation: none !important;
+  }
+  /* The arrival sweep is a class fx.js only adds when motion has NOT
+     been reduced, so this rule is unreachable in the case it protects —
+     it is here because the rest of this block is written the same way,
+     and because the day somebody adds that class unconditionally is the
+     day this rule is what stops a full-screen band from running down
+     the page. */
+  :root.fx-arrival::after {
+    animation: none !important;
+    display: none !important;
+  }
+  /* Grain, the scrollbars, the chevron, the corner brackets, the
+     spotlight, the progress head and every underline stay. None of them
+     move anything; they are colour and texture, and a reader who asked
+     for less motion did not ask for a flatter page. */
+}

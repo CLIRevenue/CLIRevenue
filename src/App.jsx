@@ -18,9 +18,15 @@ import useAppRoute, { navigateApp } from './hooks/useAppRoute.js'
 import { setRouteMetadata } from './seo/routeMeta.js'
 import './components/advertiser/advertiser.css'
 import './App.css'
+/* LAST stylesheet in the bundle, on purpose. fx.css is the effects
+   layer, and an effects rule that ties on specificity with a component
+   rule has to win — otherwise the press, the focus halo and the primary
+   button colour would each need fixing in the component instead. */
+import './fx.css'
 
 /* one delegated pointer listener for every spotlight card on the page. */
 import SpotlightTracker from './components/cine/SpotlightTracker.jsx'
+import FxLayer from './components/FxLayer.jsx'
 
 /* The transition veil. React remounts this the instant the path changes
    (because the key changes), which is what replays the CSS sweep -- so the
@@ -206,12 +212,15 @@ function Routes() {
 function App() {
   return (
     <AuthProvider>
-      {/* Two global render layers, both decorative and both above the router:
-          the WebGL canvas that scrolls with the page, and the one delegated
-          pointer listener that drives every spotlight card. Neither knows
-          which route is mounted, so neither has to be re-created per route. */}
+      {/* Three global render layers, all decorative and all above the router:
+          the WebGL canvas that scrolls with the page, the one delegated
+          pointer listener that drives every spotlight card, and the effects
+          layer — scroll progress, arrival reveals, the count-up on figures,
+          the ambient depth field. None of them knows which route is mounted,
+          so none of them has to be re-created per route. */}
       <SpotlightTracker />
       <RouteVeil />
+      <FxLayer />
       <Routes />
     </AuthProvider>
   )

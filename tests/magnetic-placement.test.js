@@ -165,15 +165,22 @@ describe('the lift is only surrendered where the drift takes over', () => {
   it('still outranks the repo hover lift and still spares the focus ring', () => {
     const sel = neutraliser()
     expect(sel).toMatch(/:hover:not\(:disabled\):not\(:focus-visible\)/)
-    /* Specificity is .clr-surface (class) + :is(...magnetic) (class) +
-       :not(.a, .b, .c, .d) (ONE class, however many arguments) + :hover
-       (class) + :not(:disabled) (attribute) + :not(:focus-visible) (pseudo)
+    /* Specificity is the scoping root (one class, whichever way the root is
+       spelled) + :is(...magnetic) (class) + :not(.a, .b, .c, .d, .e)
+       (ONE class, however many arguments) + :hover (class) +
+       :not(:disabled) (attribute) + :not(:focus-visible) (pseudo)
        = (0,6,0) against App.css's (0,3,0). Count the three `:not(` groups,
        not the arguments of the multi-selector :not(): dropping one of them
        ties the score and App.css wins on bundle order, which is what put a
        filled primary button white-on-white on hover once already. */
-    expect(sel.trim().startsWith('.clr-surface :is(')).toBe(true)
     expect(sel.split(':not(').length - 1).toBe(3)
+    /* The root was widened from `.clr-surface` to `:is(.clr-surface,
+       .adm-root, .landing)` when the rainbow ring's two surviving copies
+       were given the landing's classes. That is one class either way, so
+       the score above is unchanged — but assert the SPELLING, because a
+       later edit that widens the root to a descendant selector would add a
+       class and silently outrank App.css somewhere nobody was looking. */
+    expect(sel.trim()).toMatch(/^:is\(\.clr-surface, \.adm-root, \.landing\) :is\(/)
   })
 
   it('does not also blank the shadow, which is a separate decision', () => {

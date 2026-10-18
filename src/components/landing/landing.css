@@ -647,30 +647,21 @@
 
      The filter runs before the mask, so the blur bleeds a little way in
      from the hole. That bleed IS the glow, not a leak. */
-  .qs-step::before,
-  .lbtn::before,
-  .cmd-copy::before{
-    content:"";
-    position:absolute;
-    top:-3px;
-    left:-3px;
-    width:calc(100% + 6px);
-    height:calc(100% + 6px);
-    z-index:-1;
-    padding:3px;
-    border-radius:inherit;
-    background:linear-gradient(45deg,#ff0000,#ff7300,#fffb00,#48ff00,#00ffd5,#002bff,#7a00ff,#ff00c8,#ff0000);
-    background-size:400%;
-    -webkit-mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000);
-    -webkit-mask-clip:content-box,border-box;
-    -webkit-mask-composite:xor;
-            mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000);
-            mask-clip:content-box,border-box;
-            mask-composite:exclude;
-    filter:blur(1.5px);
-    opacity:0;
-    transition:opacity .3s ease-in-out;
-  }
+  /* The ring's declarations used to live here, in a fourth copy of it.
+
+     They are gone, and the reason is not tidy: this exact block, served
+     and intact, parses perfectly when injected into the page on its own
+     and never appears in `document.styleSheets` when it is loaded from
+     here. The radius, hover and reduced-motion rules a few lines below
+     it all parse, and they always did — so a stylesheet in this file was
+     being read with a hole in it and nothing said so. Three copies of
+     one ring is three places for that to happen.
+
+     So there are two now, both in chrome.css, both scoped
+     `:is(.clr-surface, .adm-root, .landing)` and both carrying `.qs-step`
+     and `.cmd-copy` in their class list. The rules below still apply:
+     the radius per host, the hover reveal, and the reduced-motion guard.
+     What they no longer need to supply is the band itself. */
   /* The cycle runs on the HOVER pair, not on the base rule. A background
      animation repaints the whole gradient every frame, and at opacity 0
      none of it is visible -- so the base rule was animating a pseudo that

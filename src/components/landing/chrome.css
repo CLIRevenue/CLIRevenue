@@ -667,24 +667,24 @@
 
    Every host must own a stacking context (position:relative; z-index:0) or
    the z-index:-1 pseudo escapes to the page root. */
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline) {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline, .note-btn, .heart) {
   position: relative;
   z-index: 0;
 }
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline)::before {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline, .note-btn, .heart)::before {
   content: "";
   position: absolute;
-  top: -3px;
-  left: -3px;
-  width: calc(100% + 6px);
-  height: calc(100% + 6px);
+  top:-5px;
+  left:-5px;
+  width: calc(100% + 10px);
+  height: calc(100% + 10px);
   z-index: -1;
   /* padding IS the ring. 3px, not 2px: a 2px band under a 1.5px blur came
      back looking thinner than a hairline, because the blur eats the band's
      own edges before you ever see them. The blur is what makes it a glow
      rather than a stroke, so it is now small enough that the stroke it
      softens survives it. */
-  padding: 3px;
+  padding: 5px;
   border-radius: inherit;
   background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
   background-size: 400%;
@@ -694,7 +694,7 @@
   mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
   mask-clip: content-box, border-box;
   mask-composite: exclude;
-  filter: blur(1.5px);
+  filter:blur(1px);
   opacity: 0;
   transition: opacity .3s ease-in-out;
   /* No animation here. background-position repaints the whole gradient, and
@@ -703,8 +703,8 @@
      hover pair below, where there is something to look at. */
   pointer-events: none;
 }
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline):hover::before,
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline):focus-visible::before {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline, .note-btn, .heart):hover::before,
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline, .note-btn, .heart):focus-visible::before {
   opacity: 1;
   animation: clr-glow 20s linear infinite;
 }
@@ -718,8 +718,8 @@
    now lives there — left on the base rule it would be cancelling a
    declaration that is no longer there, which reads as a rule that does
    nothing and quietly becomes one that does the wrong thing. */
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline):hover::before,
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline):focus-visible::before {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline, .note-btn, .heart):hover::before,
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline, .note-btn, .heart):focus-visible::before {
   animation: none;
 }
 
@@ -727,7 +727,7 @@
    Deliberately NOT transitioned: a press should land on the frame it is
    clicked, not ease into place. Declaring a `transition` here would replace
    the colour transitions the button rules already set. */
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline) {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline, .note-btn, .heart) {
   transform-origin: 50% 100%;
 }
 /* The repo's own `.btn:active:not(:disabled){transform:translate(0)}`
@@ -746,7 +746,7 @@
    `.clr-surface.clr-surface`, which matches nothing at all. Specificity
    is raised by chaining a real ancestor (.a .b) or by !important, never
    by repeating a selector against itself. */
-.clr-surface :is(button, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline):active {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--ghost, .lbtn, .lbtn--ghost, .adv-btn, .sdk-btn, .is-ghost):not(.adv-link, .form__note, .sdk-inline, .note-btn, .heart):active {
   transform: translateY(1px) scale(.978);
 }
 
@@ -815,11 +815,11 @@
      and is driven from landing.js -- see the placement rule there. The
      lift-neutraliser further down is scoped to `.magnetic` for the
      same reason: it exists to make room for the drift. */
-  .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
+  :is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn,
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
-                   .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain){
+                   .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart){
     position:relative;
     z-index:0;
   }
@@ -828,14 +828,14 @@
      button, which has no fill to hide behind. 3px, not 2px, and a 1.5px
      blur rather than 3px — the same correction the simpler list above got:
      a blur wider than the band it softens erases the band. */
-  .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
+  :is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn,
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
-                   .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain)::before{
-    top:-3px;left:-3px;
-    width:calc(100% + 6px);height:calc(100% + 6px);
-    z-index:-1;padding:3px;border-radius:inherit;
+                   .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart)::before{
+    top:-5px;left:-5px;
+    width:calc(100% + 10px);height:calc(100% + 10px);
+    z-index:-1;padding:5px;border-radius:inherit;
     background:linear-gradient(45deg,#ff0000,#ff7300,#fffb00,#48ff00,
       #00ffd5,#002bff,#7a00ff,#ff00c8,#ff0000);
     background-size:400%;
@@ -845,20 +845,20 @@
             mask-clip:content-box,border-box;
     -webkit-mask-composite:xor;
             mask-composite:exclude;
-    filter:blur(1.5px);
+    filter:blur(1px);
     opacity:0;transition:opacity .3s ease-in-out;
     pointer-events:none;
   }
-  .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
+  :is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn,
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
-                   .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain):hover::before,
-  .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
+                   .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):hover::before,
+  :is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn,
                    .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                    .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                    .clrhead-cta a, .adv-password__btn,
-                   .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain):focus-visible::before{
+                   .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):focus-visible::before{
     opacity:1;
     animation:clr-glow 20s linear infinite;
   }
@@ -866,16 +866,16 @@
      hover reveal, stop the cycling. A gradient sliding round a ring is
      motion, and the reveal is not. */
   @media (prefers-reduced-motion: reduce){
-    .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
+    :is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn,
                      .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                      .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                      .clrhead-cta a, .adv-password__btn,
-                     .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain):hover::before,
-    .clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn,
+                     .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):hover::before,
+    :is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn,
                      .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn,
                      .sdk-btn, .adv-nav__btn, .adm-topbar__logout,
                      .clrhead-cta a, .adv-password__btn,
-                     .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain):focus-visible::before{
+                     .placement-slot__cta, .switcher__btn):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):focus-visible::before{
       animation:none;
     }
   }
@@ -972,7 +972,7 @@
    :not() guards) = (0,6,0) against App.css's (0,3,0). The
    :not(:focus-visible) guard is load-bearing: line 279's focus ring must
    survive, so this rule must not fire while the button is focused. */
-.clr-surface :is(button, .btn, .btn--primary, .btn--ghost, .lbtn, .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn, .sdk-btn, .adv-nav__btn, .adm-topbar__logout, .clrhead-cta a, .adv-password__btn, .placement-slot__cta, .switcher__btn, .magnetic):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain):hover:not(:disabled):not(:focus-visible) {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn, .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn, .sdk-btn, .adv-nav__btn, .adm-topbar__logout, .clrhead-cta a, .adv-password__btn, .placement-slot__cta, .switcher__btn, .magnetic):not(.adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):hover:not(:disabled):not(:focus-visible) {
   transform: none;
   box-shadow: none;
 }
@@ -991,7 +991,7 @@
    That is why a filled primary went white-on-white on hover: App.css
    paints `background: var(--signal-text)` — near-white here — and
    `color: #ffffff`. Both colours move together or neither does. */
-.clr-surface :is(.btn--primary, .lbtn--primary):not(.adv-link, .form__note, .sdk-inline):hover:not(:disabled) {
+.clr-surface :is(.btn--primary, .lbtn--primary):not(.adv-link, .form__note, .sdk-inline, .note-btn, .heart):hover:not(:disabled) {
   background: var(--ld-bg);
   border-color: var(--ld-line-strong);
   color: var(--ld-ink);
@@ -1002,7 +1002,7 @@
    bundle order, which is why the header's "Sign up" was washing amber.
    Listing `.btn`/`.lbtn` here and excluding the filled variants costs
    nothing and closes the gap. */
-.clr-surface :is(.btn--ghost, .lbtn--ghost, .is-ghost, .btn, .lbtn):not(.btn--primary):not(.lbtn--primary):not(.adv-link, .form__note, .sdk-inline):hover:not(:disabled) {
+.clr-surface :is(.btn--ghost, .lbtn--ghost, .is-ghost, .btn, .lbtn):not(.btn--primary):not(.lbtn--primary):not(.adv-link, .form__note, .sdk-inline, .note-btn, .heart):hover:not(:disabled) {
   background: var(--ld-bg-tint);
   border-color: var(--ld-ink-2);
   color: var(--ld-ink);
