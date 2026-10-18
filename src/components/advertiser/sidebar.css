@@ -1,0 +1,432 @@
+/* CLIRevenue advertiser console — the rail, and everything it does.
+   ─────────────────────────────────────────────────────────────────────
+   Split out of advertiser.css on purpose. dashboard.css is under a type-
+   scale contract (tests/console-type-scale.test.js) and advertiser.css is
+   shared with the marketing landing and the auth pages; this file owns
+   one component and can be read top to bottom.
+
+   Every rule that touches .adv-nav or .adv-nav__btn is scoped under
+   .adv-side, because those two names already exist in advertiser.css at
+   a lower specificity and describe a horizontal sticky pill rail — the
+   opposite shape. Specificity, not load order, is what settles it here;
+   two files that disagree about a class name should not depend on which
+   one Vite happens to reach first. */
+
+/* The two-column frame. `100dvh` rather than `100vh` so a mobile browser
+   collapsing its URL bar does not leave the content a viewport short and
+   a second scrollbar under the first. The rail is a grid child, not
+   fixed, so it is exactly as tall as the frame and can never outgrow it
+   however long the page becomes. */
+.adv-console {
+  /* Declared here, at point of use, rather than in :root — a token in
+     :root acquires a .light-theme parity obligation that ui-polish
+     enforces, and these two are specific to this layout. */
+  --adv-side-w: 252px;
+  --adv-side-w-collapsed: 72px;
+  --adv-side-gap: 14px;
+
+  display: grid;
+  grid-template-columns: var(--adv-side-w) minmax(0, 1fr);
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  transition: grid-template-columns var(--dur-fast) var(--ease-ui);
+}
+
+/* Collapsed is the same column with a different number, so the rail
+   keeps every pixel of its internal layout and only loses its labels.
+   Announced with aria-expanded on the control that does it, and the
+   grid column is a real transition because this one is a click. */
+.adv-console[data-collapsed] {
+  grid-template-columns: var(--adv-side-w-collapsed) minmax(0, 1fr);
+}
+
+/* The width is dragged, and a transition on the column would make the
+   rail chase the cursor a frame behind it. Only the collapse — which is
+   a click, not a drag — is animated. */
+.adv-console[data-resizing] { transition: none; }
+
+/* ── the rail ──────────────────────────────────────────────────────── */
+
+.adv-side {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 18px 12px 14px;
+  background: var(--panel);
+  border-right: 1px solid var(--hair);
+  /* Only the inner corners. The outer edge is flush to the screen and
+     rounding it would open a gap onto the page background that reads as
+     a mistake rather than a choice. */
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  overflow: visible;
+}
+
+.adv-side__brand {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  padding: 2px 10px 0;
+  min-height: 34px;
+  text-decoration: none;
+  color: var(--ink);
+  /* The text effect on the wordmark: a periwinkle-to-cream gradient
+     clipped to the glyphs. On hover a wider highlight sweeps across it
+     and the whole mark lifts a pixel. It is the one place on this
+     surface with a gradient, which is why it reads as the brand rather
+     than as another heading. */
+  background: linear-gradient(96deg, var(--signal), var(--text) 62%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  transition: background-position .55s var(--ease-ui), transform .18s var(--ease-ui);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.adv-side__brand-cli { font-size: 17px; font-weight: 600; letter-spacing: -.02em; }
+.adv-side__brand-revenue { font-size: 17px; font-weight: 400; }
+.adv-side__brand:hover { background-position: 100% 50%; transform: translateY(-1px); }
+
+.adv-side__collapse {
+  position: absolute;
+  top: 18px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-ui), background var(--dur-fast) var(--ease-ui),
+    border-color var(--dur-fast) var(--ease-ui);
+}
+.adv-side__collapse:hover { color: var(--text); background: var(--hair); border-color: var(--hair); }
+.adv-side__collapse svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* Collapsed: the column narrows, and everything that is text goes away
+   without unmounting — the labels fade and slide so the icons can take
+   the space, and `visibility` rather than `display` keeps them out of the
+   tab order and off the accessibility tree without a second render. */
+.adv-console[data-collapsed] .adv-side__brand-revenue,
+.adv-console[data-collapsed] .adv-nav__label,
+.adv-console[data-collapsed] .adv-side__where { opacity: 0; visibility: hidden; transform: translateX(-6px); }
+.adv-console[data-collapsed] .adv-side__brand { padding-right: 0; }
+.adv-console[data-collapsed] .adv-nav__btn { justify-content: center; padding-inline: 0; }
+/* The collapse control moves to the foot when the rail is icons-only,
+   because at 72px the top-right corner is the corner the first nav icon
+   wants. */
+.adv-console[data-collapsed] .adv-side__collapse {
+  top: auto;
+  bottom: 14px;
+  right: 50%;
+  transform: translateX(50%);
+}
+
+/* ── the nav ───────────────────────────────────────────────────────── */
+
+/* Overrides advertiser.css's .adv-nav wholesale: that one is a
+   horizontal, sticky, glass, scrolling pill rail meant to survive a
+   73px header. There is no header here and the rail is vertical. */
+.adv-side .adv-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 18px 0 0;
+  padding: 0;
+  overflow: visible;
+  position: static;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  scrollbar-width: none;
+}
+
+.adv-side .adv-nav__btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 11px;
+  font-family: var(--mono);
+  font-size: var(--c-text-small);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: color var(--dur-fast) var(--ease-ui), background var(--dur-fast) var(--ease-ui),
+    border-color var(--dur-fast) var(--ease-ui), transform var(--dur-fast) var(--ease-ui);
+}
+
+.adv-nav__glyph {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  transition: transform var(--dur-fast) var(--ease-ui), opacity var(--dur-fast) var(--ease-ui);
+}
+.adv-nav__glyph svg { width: 18px; height: 18px; fill: currentColor; }
+
+/* The second text effect, and the one that does the most work: opening
+   the tracking on hover by a third of a pixel and closing it again. It
+   reads as the label paying attention, and because tracking is set in em
+   it stays proportional to whatever size the label is rendered at. */
+.adv-nav__label {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  letter-spacing: .06em;
+  transition: opacity .18s var(--ease-ui), transform .18s var(--ease-ui), letter-spacing var(--dur-fast) var(--ease-ui);
+}
+
+.adv-side .adv-nav__btn:hover { color: var(--text); background: var(--hair); border-color: var(--hair); transform: translateX(2px); }
+.adv-side .adv-nav__btn:hover .adv-nav__label { letter-spacing: .1em; }
+.adv-side .adv-nav__btn:hover .adv-nav__glyph { transform: scale(1.12) rotate(-3deg); }
+
+/* Active: the periwinkle plate that survived the amber-to-signal change,
+   plus a leading rule that slides in from the top edge rather than
+   appearing, so arriving at a page moves something. */
+.adv-side .adv-nav__btn[data-active="true"] {
+  color: var(--ld-on-accent);
+  background: var(--signal);
+  border-color: var(--signal);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--accent-soft), 0 6px 18px -10px var(--signal);
+}
+.adv-side .adv-nav__btn[data-active="true"] .adv-nav__glyph { transform: none; }
+.adv-side .adv-nav__btn[data-active="true"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  border-radius: var(--radius-pill);
+  background: var(--text);
+  transform: translateY(-50%);
+  transition: height .22s var(--ease-ui);
+}
+.adv-side .adv-nav__btn[data-active="true"]:hover { transform: none; }
+
+/* ── the foot: settings, and where you are ─────────────────────────── */
+
+.adv-side__foot { margin-top: auto; padding-top: 14px; }
+
+.adv-side__settings {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 11px;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: var(--c-text-small);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-ui), background var(--dur-fast) var(--ease-ui),
+    border-color var(--dur-fast) var(--ease-ui), transform var(--dur-fast) var(--ease-ui);
+}
+.adv-side__settings:hover { color: var(--text); background: var(--hair); border-color: var(--hair-strong); transform: translateX(2px); }
+.adv-side__settings:hover .adv-nav__label { letter-spacing: .1em; }
+.adv-side__settings:hover .adv-nav__glyph { transform: scale(1.12) rotate(24deg); }
+
+.adv-side__where {
+  margin: 12px 11px 2px;
+  font-family: var(--mono);
+  font-size: var(--c-text-label);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-4);
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity .18s var(--ease-ui), transform .18s var(--ease-ui);
+}
+
+/* ── the grip ──────────────────────────────────────────────────────── */
+
+.adv-side__grip {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  touch-action: none;
+  transition: background var(--dur-fast) var(--ease-ui);
+}
+.adv-side__grip svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--ink-4);
+  opacity: 0;
+  transform: scale(.8);
+  transition: opacity var(--dur-fast) var(--ease-ui), transform var(--dur-fast) var(--ease-ui);
+}
+/* Hidden entirely when collapsed: there is nothing to resize when the
+   column is at its narrowest and no grip position that would mean
+   anything. */
+.adv-console[data-collapsed] .adv-side__grip { display: none; }
+.adv-side__grip:hover,
+.adv-console[data-resizing] .adv-side__grip { background: color-mix(in srgb, var(--signal) 22%, transparent); }
+.adv-side__grip:hover svg,
+.adv-console[data-resizing] .adv-side__grip svg { opacity: 1; transform: none; }
+
+/* While dragging, the cursor is col-resize for the whole document — the
+   pointer can be 400px from the rail and the gesture has not ended. */
+.adv-console[data-resizing],
+.adv-console[data-resizing] * { cursor: col-resize !important; user-select: none; }
+
+/* ── the content column ────────────────────────────────────────────── */
+
+.adv-main {
+  min-width: 0;
+  padding: 26px var(--gutter) 64px;
+  /* The only scroller in the layout. The rail is a grid child and never
+     scrolls, so the pages keep a fixed frame while the content moves. */
+  overflow-x: hidden;
+}
+.adv-main__inner { width: 100%; max-width: 1180px; margin: 0 auto; }
+
+/* ── the settings overlay ──────────────────────────────────────────── */
+
+.adv-settings__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, .58);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: adv-settings-in .18s var(--ease-ui);
+}
+
+.adv-settings {
+  width: min(680px, 100%);
+  max-height: min(86dvh, 760px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 40px 90px -40px rgba(0, 0, 0, .9);
+  animation: adv-settings-rise .22s var(--ease-ui);
+}
+
+.adv-settings__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--hair);
+}
+.adv-settings__title { margin: 0; font-size: var(--c-text-prose); font-weight: 600; letter-spacing: -.01em; }
+.adv-settings__sub { margin: 4px 0 0; font-size: var(--c-text-body); color: var(--ink-3); line-height: 1.5; }
+.adv-settings__close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-ui), background var(--dur-fast) var(--ease-ui), transform var(--dur-fast) var(--ease-ui);
+}
+.adv-settings__close:hover { color: var(--text); background: var(--hair); transform: rotate(90deg); }
+.adv-settings__close-mark { width: 14px; height: 14px; fill: currentColor; }
+
+.adv-settings__body { padding: 18px 20px; overflow-y: auto; scrollbar-width: thin; }
+.adv-settings__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--hair);
+  background: var(--panel);
+}
+/* The logout control is the one destructive thing in here, so it is
+   styled as one rather than inheriting the neutral button and sitting
+   quietly next to Save. It is a bare <LogoutButton />, which brings its
+   own default class of adv-nav__btn -- a class meant for the rail, and
+   it is nowhere near the rail. Scoping the override to the footer is
+   what keeps that from leaking back out. */
+.adv-settings__foot .adv-nav__btn {
+  appearance: none;
+  cursor: pointer;
+  padding: 9px 16px;
+  font-family: var(--mono);
+  font-size: var(--c-text-small);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--accent-error);
+  background: transparent;
+  border: 1px solid var(--accent-error);
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-ui), background var(--dur-fast) var(--ease-ui);
+}
+.adv-settings__foot .adv-nav__btn:hover { color: var(--bg); background: var(--accent-error); transform: none; }
+
+@keyframes adv-settings-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes adv-settings-rise {
+  from { opacity: 0; transform: translateY(10px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ── narrow ────────────────────────────────────────────────────────── */
+
+@media (max-width: 860px) {
+  .adv-console { grid-template-columns: minmax(0, 1fr); }
+  .adv-side {
+    border-right: 0;
+    border-bottom: 1px solid var(--hair);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+  .adv-side__grip { display: none; }
+  .adv-console[data-collapsed] .adv-side__collapse { bottom: auto; top: 18px; right: 10px; transform: none; }
+}
+
+/* A rail that animates is a rail that lags the finger. Nothing in this
+   file moves more than a pixel or two, so the whole surface honours the
+   preference in one place rather than rule by rule. */
+@media (prefers-reduced-motion: reduce) {
+  .adv-console,
+  .adv-side__brand,
+  .adv-nav__label,
+  .adv-nav__glyph,
+  .adv-side .adv-nav__btn,
+  .adv-side__settings,
+  .adv-settings,
+  .adv-settings__scrim,
+  .adv-settings__close { animation: none; transition: none; }
+  .adv-side .adv-nav__btn:hover,
+  .adv-side__settings:hover { transform: none; }
+}
