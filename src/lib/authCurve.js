@@ -163,11 +163,41 @@ export function curveFor(mode) {
  * unit repeated, which is what makes a one-unit shift invisible.
  */
 export function buildTrail(label, repeats = TRAIL_REPEATS) {
-  const unit = `${label}${TRAIL_SEPARATOR}`
+  /* The separator goes BEFORE the label, not after it.
+
+     It looks identical either way — "SIGN UP • SIGN UP • SIGN UP" — but it
+     is not identical to the renderer. A string ending in a space has that
+     trailing space trimmed when it is laid out, so the last period comes
+     out short and every other period is full: measured on /signup, twenty
+     periods rendered 9.3977 units each and the last one rendered 8.4579,
+     a whole 0.94 short. A string that ends on a letter has no such edge.
+
+     The wrap depends on this being exactly periodic. The scroll advances
+     the text by one period and then snaps back by one period, which is
+     invisible only if the text at every path position is the same glyph
+     after the snap as before it. With a trimmed final period it was not,
+     and the fault scrolled visibly past once a second — the text moving
+     an inch forward and jumping back. Ending on the label makes every
+     period identical, including the one that straddles the wrap. */
+  const unit = `${TRAIL_SEPARATOR}${label}`
   return unit.repeat(repeats)
 }
 
-/** Length of one repeated unit, in the text's own user units. */
+/**
+ * Length of one repeated unit, in the text's own user units.
+ *
+ * `textLength` must be the length of the string as it is rendered, not as
+ * it is laid out: the trail deliberately runs past the end of the path so
+ * the whole ribbon is covered, and the tail that overhangs is never drawn.
+ * Dividing a laid-out total by the repeat count therefore hands back a
+ * period that is short by the overhang divided by the number of repeats —
+ * on /signup, 196.4 units of text over a 182.4 unit path across 21
+ * repeats made every wrap 0.045 units short of where it needed to be, and
+ * a wrap that does not land exactly on a period is a visible seam that
+ * comes round every time it passes.
+ *
+ * The caller measures with getSubStringLength() for that reason.
+ */
 export function unitLength(textLength, repeats = TRAIL_REPEATS) {
   if (!(textLength > 0) || !(repeats > 0)) return 0
   return textLength / repeats

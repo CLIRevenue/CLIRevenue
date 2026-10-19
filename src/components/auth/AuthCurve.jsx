@@ -203,7 +203,20 @@ export default function AuthCurve({ mode = 'login' }) {
     // the unit against the original TRAIL_REPEATS while the string holds
     // `needed` of them makes the wrap short by a factor of needed/16, and a
     // wrap that does not land on a unit boundary is a visible jump.
-    const wrap = wrapPercent(pathLength, trailNode.getComputedTextLength(), repeatsRef.current)
+    /* Measure one period, not the whole string.
+
+       The trail deliberately overhangs the path so the ribbon is covered
+       edge to edge, and that overhang is never drawn. Dividing the laid
+       out total by the repeat count hands back a period short by the
+       overhang, and a wrap that does not land exactly on a period is a
+       seam you can see come round. getSubStringLength is the honest
+       measure: it reports what the renderer actually advanced. */
+    const repeats = repeatsRef.current
+    const chars = Math.round(trailPath.textContent.length / repeats)
+    const measured = trailPath.getSubStringLength
+      ? trailPath.getSubStringLength(0, chars)
+      : trailNode.getComputedTextLength() / repeats
+    const wrap = wrapPercent(pathLength, measured, repeats)
     // A hidden or not-yet-laid-out element measures zero. Stop rather than
     // divide by it — an unmeasured trail would run at an arbitrary speed.
     if (!(step > 0) || !(wrap > 0)) return undefined

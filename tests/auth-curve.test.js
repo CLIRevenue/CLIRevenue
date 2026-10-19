@@ -206,8 +206,14 @@ describe('the two curves are the ones the design asked for', () => {
 describe('the trail is periodic, which is what makes the loop seamless', () => {
   it('is the label plus a separator, repeated whole times', () => {
     expect(TRAIL_SEPARATOR).toBe(' • ')
-    expect(buildTrail('SIGN IN')).toBe(`SIGN IN${TRAIL_SEPARATOR}`.repeat(TRAIL_REPEATS))
-    expect(buildTrail('SIGN UP')).toContain(`SIGN UP${TRAIL_SEPARATOR}`)
+    // Separator first, label last: it reads identically, and it ends on a
+    // letter rather than on the space a trailing separator would leave,
+    // which the renderer trims. A string whose final period is short is
+    // not periodic, and a non-periodic trail shows its seam once a cycle.
+    expect(buildTrail('SIGN IN')).toBe(`${TRAIL_SEPARATOR}SIGN IN`.repeat(TRAIL_REPEATS))
+    expect(buildTrail('SIGN UP')).toContain(`${TRAIL_SEPARATOR}SIGN UP`)
+    expect(buildTrail('SIGN IN').endsWith('SIGN IN')).toBe(true)
+    expect(buildTrail('SIGN UP').endsWith('SIGN UP')).toBe(true)
     // "SIGN IN • " is ten characters, not the eight "LOGIN • " was. A
     // hardcoded multiplier from the old label would have quietly truncated a
     // word without failing anything, which is why it is derived instead.
