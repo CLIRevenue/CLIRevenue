@@ -96,19 +96,37 @@ export async function setup(options: SetupOptions = {}): Promise<SetupOutcome> {
 
   const project = detectProject(cwd);
 
-  if (!isSupported(project.type)) {
-    throw new SetupError(
-      'Unsupported project.',
-      project.reason ??
-        `CLIRevenue setup supports Vite (React, Vue, Svelte or plain JavaScript) and static HTML pages. Run it from your app's root (${project.root}).`,
+  /* An unfamiliar project is not a reason to stop.
+
+     This used to throw "Unsupported project" for anything that was not
+     Vite or a static HTML page, which is precisely the wrong response to
+     somebody who is installing a CLI for the first time: it told them
+     their project was not supported without saying what was supported,
+     where to run it, or what to do next. Every one of those is a question
+     the person asking it came here with.
+
+     So an unknown project keeps going. The SDK installs, the key is
+     verified, placements are provisioned, and the integration is
+     generated. What changes is only what we tell them at the end: that we
+     could not recognise their stack, that setup did not change their
+     dependencies beyond the SDK, and that the one thing left is pointing
+     a surface at the placement we just made.
+
+     Nothing here needs a browser. A browser is where an ad renders, and
+     that is their application's business, not the installer's. */
+  const recognised = isSupported(project.type);
+  write(`${success(describeProject(project))}\n`);
+  if (!recognised) {
+    write(
+      `${warn(
+        `I could not recognise this project${project.reason ? `: ${project.reason}` : ''}. Carrying on anyway — nothing below depends on knowing what your stack is.`,
+      )}\n`,
     );
   }
-
-  write(`${success(describeProject(project))}\n`);
   if (!project.supportsRendering) {
     write(
       `${warn(
-        'No browser page was found, so there is nowhere to mount the ad yet. The SDK renders into the DOM.',
+        'No page was found here, so setup will not have anywhere to mount the ad for you. That is fine and is the last step, not a blocker.',
       )}\n`,
     );
   }

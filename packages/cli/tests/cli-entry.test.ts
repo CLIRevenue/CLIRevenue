@@ -121,22 +121,24 @@ describe('failure reporting', () => {
     if (unsupportedProject) rmSync(unsupportedProject, { recursive: true, force: true });
   });
 
-  it('exits non-zero with a readable message when the project is unsupported', () => {
+  it('carries on and explains itself when the project is unrecognised', () => {
     const result = spawnSync(process.execPath, [distEntry, 'setup'], {
       cwd: unsupportedProject,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain('Unsupported project.');
-    /* The message has to survive: stdout/stderr are pipes here, which is
-       how npx runs a bin, so anything written with a raw process.exit()
-       was lost exactly when it mattered most. */
-    /* The hint must say what was actually looked for. A package.json with no
-       page in it is classified as a Node project rather than guessed at, so
-       the explanation is about the missing page — not the old Vite-only text. */
-    expect(result.stderr).toMatch(/No HTML entry point|no package\.json|package\.json or index\.html/);
+    /* An unrecognised project is no longer a reason to stop. Setup used to
+       exit 1 with "Unsupported project." here, which is the wrong answer
+       to somebody installing a CLI for the first time: it named their
+       project as the problem without saying what was supported, where to
+       run it, or what to do next. It now carries on and installs. */
+    expect(result.status).not.toBe(1);
+    expect(result.stdout).toContain('could not recognise this project');
+    /* It must also say what it looked for. A package.json with no page in
+       it is classified as a Node project rather than guessed at, so the
+       explanation is about the missing page — not the old Vite-only text. */
+    expect(result.stdout).toMatch(/No HTML entry point|no package\.json|package\.json or index\.html/);
   });
 
   it('never lets a rejected setup escape as an unhandled rejection', () => {
@@ -152,7 +154,7 @@ describe('failure reporting', () => {
     expect(combined).not.toContain('unhandled rejection');
     /* A stack trace is kept behind an explicit flag, not dumped by default. */
     expect(combined).not.toMatch(/\n\s+at\s/);
-    expect(combined).toContain('CLIREVENUE_DEBUG=1');
+    expect(combined).toContain('could not recognise this project');
   });
 
   it('resolves with the project directory it inspected, not the CLI package', () => {
@@ -201,7 +203,10 @@ describe('package metadata', () => {
     expect(pkg.name).toBe('clirevenue');
     expect(pkg.version).toBe(manifestVersion);
     expect(pkg.type).toBe('module');
-    expect(pkg.bin.clirevenue).toBe('./dist/index.js');
+    /* npm rejects a leading './' in a bin target, and its auto-correction
+       is to REMOVE the bin — publishing a package with no executable at all.
+       The publish log showed that warning until this was fixed. */
+    expect(pkg.bin.clirevenue).toBe('dist/index.js');
     expect(pkg.engines.node).toBe('>=18');
     expect(pkg.publishConfig?.access).toBe('public');
     expect(pkg.files).toContain('dist');

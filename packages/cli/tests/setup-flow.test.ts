@@ -224,13 +224,21 @@ describe('setup: Ctrl+I instructions match reality', () => {
 });
 
 describe('setup: unsupported and unsupported-runtime handling', () => {
-  it('refuses an unsupported project and names the project directory', async () => {
+  it('installs into a project it does not recognise, and says so', async () => {
     const root = scratch();
     writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'a-library', version: '1.0.0' }));
+    /* A key, so setup does not stop at the interactive prompt it used to
+       never reach. That prompt is the only thing in this flow that waits
+       for a human, and this test is about what happens before it. */
+    writeFileSync(join(root, '.env.local'), `VITE_CLIREVENUE_PUBLISHABLE_KEY=${KEY}\n`);
     const out = recorder();
 
-    await expect(setup(options(root, out.write))).rejects.toThrow(SetupError);
-    await expect(setup(options(root, out.write))).rejects.toThrow(/Unsupported project/);
+    /* An unrecognised project used to reject with "Unsupported project".
+       It does not any more: a project setup does not recognise is still a
+       project the SDK installs into, and refusing it answered none of the
+       questions the person running it came with. */
+    await setup(options(root, out.write));
+    expect(out.text()).toContain('could not recognise this project');
   });
 
   it('never installs a framework the project did not already have', async () => {
