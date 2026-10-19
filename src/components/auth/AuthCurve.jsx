@@ -76,6 +76,10 @@ export default function AuthCurve({ mode = 'login' }) {
   const maskPathRef = useRef(null)
   const trailRef = useRef(null)
   const trailPathRef = useRef(null)
+  /* How many units the trail actually has. Lengthening the trail without
+     telling the wrap leaves the two disagreeing, and a wrap that is out by
+     a fraction of a unit is a jump you can see. */
+  const repeatsRef = useRef(TRAIL_REPEATS)
   const trail = useMemo(() => buildTrail(curve.label), [curve.label])
 
   /**
@@ -152,6 +156,7 @@ export default function AuthCurve({ mode = 'login' }) {
     if (needed <= TRAIL_REPEATS) return
 
     trailPath.textContent = buildTrail(curve.label, needed)
+    repeatsRef.current = needed
   }, [mode, curve.label])
 
   useEffect(() => {
@@ -167,7 +172,11 @@ export default function AuthCurve({ mode = 'login' }) {
     // distance is the same glyph every time round.
     const base = leadInPercent(path)
     const step = stepPercentPerSecond(pathLength)
-    const wrap = wrapPercent(pathLength, trailNode.getComputedTextLength())
+    // The repeat count has to come from what is on the path now. Measuring
+    // the unit against the original TRAIL_REPEATS while the string holds
+    // `needed` of them makes the wrap short by a factor of needed/16, and a
+    // wrap that does not land on a unit boundary is a visible jump.
+    const wrap = wrapPercent(pathLength, trailNode.getComputedTextLength(), repeatsRef.current)
     // A hidden or not-yet-laid-out element measures zero. Stop rather than
     // divide by it — an unmeasured trail would run at an arbitrary speed.
     if (!(step > 0) || !(wrap > 0)) return undefined

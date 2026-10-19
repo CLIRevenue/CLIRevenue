@@ -287,10 +287,13 @@ export async function createAdvertiserCampaign(input) {
     headline: String(input.headline).trim(),
     description: String(input.description || ''),
     cta: String(input.cta || 'Learn more'),
+    // Canonical names only. The Edge Function reads `body.audience_id ??
+    // body.audience` and `body.budget_cents ?? body.budgetCents`, so the
+    // camelCase spellings were never needed to be understood -- they were
+    // hedging against a server whose allowed-field set might not list them,
+    // and the server's own gate is what refuses a create with UNKNOWN_FIELDS.
     audience_id: input.audienceId,
-    audience: input.audienceId,
     budget_cents: budgetCents,
-    budgetCents,
     landing_url: landing.ok ? landing.value : null,
     cpm_cents: cpm.ok ? cpm.value : null,
     starts_at: toIsoOrNull(input.startsAt),

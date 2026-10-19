@@ -52,7 +52,21 @@ export function campaignErrorCode(err) {
 
 export function campaignErrorMessage(err, fallback = 'Campaign could not be saved.') {
   const code = campaignErrorCode(err)
-  if (code && MESSAGES[code]) return MESSAGES[code]
+  if (code && MESSAGES[code]) {
+    // UNKNOWN_FIELDS is the one code whose server message is worth passing
+    // through. The Edge Function builds it from its own allow-list --
+    // "Unsupported fields: audience, budgetCents." -- so the content is field
+    // names we sent, not a Postgres or PostgREST string, and the guard below
+    // keeps that rule intact for anything else. Without it the reader is told
+    // "Some fields cannot be updated." and learns nothing they can act on,
+    // which is the whole difference between a bug report and a fix.
+    const detail = err?.payload?.error?.message || err?.payload?.message
+    if (code === 'UNKNOWN_FIELDS' && typeof detail === 'string' && detail.trim()
+      && !/postgres|pgrst|permission denied|column/i.test(detail)) {
+      return detail.trim()
+    }
+    return MESSAGES[code]
+  }
   const raw = err?.message
   if (raw && !/postgres|pgrst|permission denied|column/i.test(raw)) {
     if (MESSAGES[raw]) return MESSAGES[raw]
