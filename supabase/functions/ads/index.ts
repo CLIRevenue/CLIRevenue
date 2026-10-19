@@ -17,7 +17,13 @@ type Candidate = {
   headline: string;
   description: string | null;
   cta: string | null;
-  audience_id: string;
+  /* Nullable in the table, and it must say so here: the SDK types Ad.audience
+     as a non-optional string, so a type that lied about this column would
+     let a null reach a client that believes it cannot happen. In practice
+     it does not arrive null — the query below filters on the identity's
+     own audience — so this is corrected at the boundary rather than papered
+     over with a non-null assertion. */
+  audience_id: string | null;
   landing_url: string | null;
   status: string;
   starts_at: string | null;
@@ -259,7 +265,7 @@ async function handleDeliver(req: Request, admin: SupabaseClient): Promise<Respo
         headline: campaign.headline,
         description: campaign.description,
         cta: campaign.cta,
-        audience: campaign.audience_id,
+        audience: campaign.audience_id ?? identity.allowedAudienceId ?? "",
         landingUrl: campaign.landing_url,
       },
       impressionToken: token,

@@ -119,7 +119,25 @@ export async function handleImpression(req: Request): Promise<Response> {
   const resolved = await resolveServe(admin, body, dev.developer!.id);
   if ("error" in resolved) return resolved.error;
 
-  const required = requireStrings(body, ["cli_integration", "session_id", "idempotency_key"]);
+  /* Both spellings, always.
+     resolveServe above has always read `body.request_id ?? body.requestId`,
+     because the SDK speaks camelCase and everything else in this schema
+     is snake_case. The three fields below were left snake_case only, and
+     the SDK sends cliIntegration / sessionId / idempotencyKey — so
+     requireStrings saw nothing and every impression the SDK reported was
+     refused with INVALID_EVENT. It failed as a missing field rather than
+     as a mismatch, which is why it read like a client bug rather than a
+     contract one, and no impression or revenue was landing for anyone
+     using the SDK.
+
+     Normalised here rather than in each caller, so the interaction path
+     below cannot drift back to one spelling. */
+  const normalised = {
+    cli_integration: body.cli_integration ?? body.cliIntegration,
+    session_id: body.session_id ?? body.sessionId,
+    idempotency_key: body.idempotency_key ?? body.idempotencyKey,
+  };
+  const required = requireStrings(normalised, ["cli_integration", "session_id", "idempotency_key"]);
   if (!required) {
     return apiError(
       "INVALID_EVENT",
@@ -166,7 +184,13 @@ export async function handleInteraction(
   const resolved = await resolveServe(admin, body, dev.developer!.id);
   if ("error" in resolved) return resolved.error;
 
-  const [idem] = requireStrings(body, ["idempotency_key"]) ?? [];
+  // Same both-spellings rule as the impression path above, for the same
+  // reason: the SDK sends `idempotencyKey`, and a click was being refused
+  // for a field that was present under the other name.
+  const [idem] = requireStrings(
+    { idempotency_key: body.idempotency_key ?? body.idempotencyKey },
+    ["idempotency_key"],
+  ) ?? [];
   if (!idem) {
     return apiError("INVALID_EVENT", "idempotency_key is required.", 400);
   }
