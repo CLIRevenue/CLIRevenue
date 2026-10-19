@@ -76,6 +76,12 @@ export const ACTIVATION_BLOCKER_MESSAGES = {
   SCHEDULE_ENDED: 'This campaign has already ended. Extend the end date to deliver again.',
   INVALID_LANDING_URL: 'Set a valid http(s) landing URL before activating.',
   BUDGET_EXCEEDED: 'This campaign has spent its full budget.',
+  /* Named rather than left to the fallback. Ads are text and the server
+     has no reason to ask for a creative any more, so seeing this code
+     means the deployed campaigns function predates that change — a deploy
+     to run, not a field to fill in. */
+  CREATIVE_MISSING:
+    'Blocked: CREATIVE_MISSING. The server still wants a creative, which this product no longer has. Your campaigns function is out of date: run `supabase functions deploy campaigns`.',
 }
 
 export function activationBlockerMessage(code) {

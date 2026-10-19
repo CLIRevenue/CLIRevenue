@@ -1358,17 +1358,24 @@
   background: var(--amber-wash);
 }
 
+/* White with body ink. This was an inverted --amber plate, which made
+   every primary action on every page read as a warning: "Activate",
+   "Send to support", "Save draft". Amber is a status colour in this
+   product -- it is what a failure looks like -- and spending it on the
+   default button meant the one thing you were being asked to do looked
+   like the one thing that had gone wrong. The border is what separates a
+   white button from white paper; the fill alone would vanish. */
 .btn--primary {
-  background: var(--amber);
-  border-color: var(--amber);
-  color: #ffffff;
+  background: #ffffff;
+  border-color: var(--hair-strong);
+  color: #12141a;
   font-weight: 600;
 }
 
 .btn--primary:hover:not(:disabled) {
-  background: var(--signal-text);
-  border-color: var(--signal-text);
-  color: #ffffff;
+  background: #f4f4f2;
+  border-color: var(--hair-strong);
+  color: #12141a;
 }
 
 .btn:disabled {
@@ -3049,14 +3056,19 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, .18);
 }
 
-.btn--primary:hover:not(:disabled),
+/* No offset shadow on the primary. The lift is gone from .btn too; what
+   remains here would have been the last one. `transition` below keeps a
+   press legible without anything moving under the pointer. */
 .switcher__btn[aria-pressed='true'] {
   box-shadow: 4px 4px 0 0 var(--signal);
 }
 
+/* The one motion a button keeps: a press. It is also the only affordance
+   left on hover, which is the point — the control no longer moves out
+   from under the pointer, and the click still feels like a click. */
 .btn:active:not(:disabled),
 .placement-slot__cta:active {
-  transform: translate(0, 0);
+  transform: translate(1px, 1px);
   box-shadow: none;
 }
 
