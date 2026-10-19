@@ -439,6 +439,60 @@ function mountArrival() {
    The order is the order of the cleanup: observers first so nothing
    fires during removal, then the progress element, then the class that
    the stylesheet keys off. */
+/* A :hover that outlives the element it was on.
+
+   The browser recomputes hover when the pointer moves. Scrolling is not
+   one of the things that makes it recompute, so a card or a button can
+   slide out from under a stationary cursor and keep the hover it was
+   given — on this page that reads as the rainbow ring still glowing on a
+   button nobody is pointing at. Lenis makes it worse rather than better:
+   it moves content by transform rather than by moving the box, so the
+   compositor has even less reason to notice the target has gone.
+
+   The cheapest thing that does make the browser re-run hit-testing is a
+   mousemove at the position the pointer is already at. It is dispatched
+   from a passive, capture-phase scroll listener so it sees Lenis and
+   every nested scroller, and it is gated on "something interactive was
+   last under the pointer", which means ordinary scrolling over text or
+   empty paper costs one boolean and nothing else. */
+const HOVER_REFRESH_TARGETS =
+  'button, a, .qs-step, .cmd-copy, .lbtn, .btn, [role="button"], input, select, textarea';
+
+export function mountHoverRefresh() {
+  let x = -1;
+  let y = -1;
+  let frame = 0;
+  let armed = false;
+
+  const track = (event) => {
+    x = event.clientX;
+    y = event.clientY;
+    armed = Boolean(event.target && event.target.closest && event.target.closest(HOVER_REFRESH_TARGETS));
+  };
+
+  const nudge = () => {
+    frame = 0;
+    if (!armed || x < 0 || y < 0) return;
+    doc.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: x, clientY: y, bubbles: true }),
+    );
+  };
+
+  const onScroll = () => {
+    if (frame) return;
+    frame = window.requestAnimationFrame(nudge);
+  };
+
+  window.addEventListener('pointermove', track, { passive: true });
+  window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+
+  return () => {
+    if (frame) window.cancelAnimationFrame(frame);
+    window.removeEventListener('pointermove', track);
+    window.removeEventListener('scroll', onScroll, true);
+  };
+}
+
 export function mountFx() {
   const ce = doc.documentElement;
   const offs = [];
@@ -459,6 +513,9 @@ export function mountFx() {
   if (!reduced) offs.push(mountTilt());
   if (!reduced) offs.push(mountSpy());
   if (!reduced) offs.push(mountArrival());
+  /* Not gated on reduced motion: it changes no animation, it only stops a
+     stale hover from outliving the thing it was on. */
+  offs.push(mountHoverRefresh());
 
   return () => {
     while (offs.length) {

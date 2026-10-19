@@ -31,6 +31,7 @@ const {
   formatBytes,
   maxCreativeBytes,
   parseCpmCents,
+  MAX_CPM_MILLI_CENTS,
   parseLandingUrl,
   validateCreativeFile,
 } = await import("../src/lib/campaignRules.js");
@@ -123,7 +124,18 @@ describe("campaign field rules", () => {
       expect(result.ok).toBe(false);
       expect(result.code).toBe("INVALID_CPM");
     }
-    expect(parseCpmCents("10001").ok).toBe(false);
+    expect(parseCpmCents(String(MAX_CPM_MILLI_CENTS + 1)).ok).toBe(false);
+  });
+
+  /* The cap used to be 10,000 "cents", which read as milli-cents made it a
+     ten dollar ceiling - so any campaign quoted above $10 was refused while
+     the form's own $0.01 default passed, and creation looked healthy until
+     somebody typed a real number. These pin the unit rather than a literal,
+     so the ceiling and the test cannot drift apart again. */
+  it("accepts an ordinary CPM, because cpm_cents is milli-cents", () => {
+    for (const dollars of [1, 10, 25, 100]) {
+      expect(parseCpmCents(String(dollars * 1000)).ok).toBe(true);
+    }
   });
 
   it("tells the advertiser why a campaign cannot go live", () => {

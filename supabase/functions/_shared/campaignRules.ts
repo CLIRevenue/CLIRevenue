@@ -17,8 +17,17 @@ export const TRANSITIONS: Record<CampaignStatus, CampaignStatus[]> = {
 };
 
 export const MAX_BUDGET_CENTS = 10_000_000;
-export const DEFAULT_CPM_CENTS = 10;
-export const MAX_CPM_CENTS = 10_000;
+
+/* CPM is milli-cents, and the database is what proves it: apply_impression()
+   assigns cpm_cents straight into spend_milli_cents, so the two are the same
+   unit by construction. These two names said "cents" and the cap below was
+   written as if it meant dollars-times-100 -- 10_000 milli-cents is a ten
+   dollar CPM, not a hundred dollar one. A campaign quoted at anything above
+   $10 was rejected as INVALID_CPM, while the form's own default of $0.01
+   sailed through, so the form looked healthy until anyone typed a real
+   number. The cap is now stated in the unit the value is actually in. */
+export const DEFAULT_CPM_MILLI_CENTS = 10;
+export const MAX_CPM_MILLI_CENTS = 10_000_000;
 
 const CREATE_ALLOWED = new Set([
   "name",
@@ -151,7 +160,7 @@ export function parseCpmCents(
       message: "CPM must be a positive integer (milli-cents per impression).",
     };
   }
-  if (raw > MAX_CPM_CENTS) {
+  if (raw > MAX_CPM_MILLI_CENTS) {
     return { ok: false, code: "INVALID_CPM", message: "CPM exceeds the maximum allowed." };
   }
   return { ok: true, value: raw };

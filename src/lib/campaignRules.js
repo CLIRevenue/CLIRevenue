@@ -12,7 +12,7 @@ export const MAX_BUDGET_CENTS = 10_000_000
 
 /* Mirror of `campaigns.cpm_cents`. The column stores MILLI-cents (10 = $0.01),
    so a CPM is an integer of thousandths of a cent, not dollars. */
-export const MAX_CPM_CENTS = 10_000
+export const MAX_CPM_MILLI_CENTS = 10_000_000
 
 /* The landing URL is the advertised destination only. It is never signed and
    never carries attribution — keep the client rule identical to the server's
@@ -99,7 +99,7 @@ export function parseLandingUrl(raw) {
 export function parseCpmCents(raw) {
   if (raw === undefined || raw === null || raw === '') return { ok: true, value: null }
   const value = typeof raw === 'string' ? Number(raw) : raw
-  if (!Number.isInteger(value) || value <= 0 || value > MAX_CPM_CENTS) {
+  if (!Number.isInteger(value) || value <= 0 || value > MAX_CPM_MILLI_CENTS) {
     return { ok: false, code: 'INVALID_CPM', message: 'CPM must be a whole number of milli-cents.' }
   }
   return { ok: true, value }

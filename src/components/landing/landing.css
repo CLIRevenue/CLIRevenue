@@ -1607,6 +1607,4 @@
     .trust .tcell:hover,.role:hover{box-shadow:none}
   }
 
-  /* ── the wordmark is the only mark (landing copy) ─────────── */
-  .landing .brand-cli{color:#fff}
-  .landing .brand-revenue{color:#ff1f2d}
+
