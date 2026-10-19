@@ -158,6 +158,11 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
     setNotice('')
     setDetailError('')
     setBlockers([])
+    /* Open the dialog as well as filling it. The form moved behind
+       formOpen when the campaign dialog landed, and this button kept
+       writing state into a component that renders nothing - so it looked
+       broken rather than looking forgotten. */
+    setFormOpen(true)
   }
 
   async function handleCreate(e) {
@@ -173,7 +178,17 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
       const created = await createAdvertiserCampaign(formToApiInput())
       onUpsert?.(created)
       selectCampaign(created.id)
-      setNotice(`Created ${created.name}. It starts as a draft — activate it when you are ready.`)
+      /* Say what it is still waiting on, not just that it is a draft. A draft
+         may legitimately be incomplete, but the landing URL is the one field that
+         decides whether "Activate" will be refused, and "activate it when you are
+         ready" is a promise the server is not going to keep. */
+      const waiting = advisoryBlockers(created)
+      setNotice(
+        waiting.length
+          ? `Created ${created.name} as a draft. It cannot go live yet: ${waiting.map(activationBlockerMessage).join(' ')}`
+          : `Created ${created.name}. It starts as a draft — activate it when you are ready.`,
+      )
+
       setForm(EMPTY_FORM)
       setFormOpen(false)
       await onChanged()

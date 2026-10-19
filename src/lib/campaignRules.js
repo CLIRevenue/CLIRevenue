@@ -79,7 +79,14 @@ export const ACTIVATION_BLOCKER_MESSAGES = {
 }
 
 export function activationBlockerMessage(code) {
-  return ACTIVATION_BLOCKER_MESSAGES[code] || 'This campaign is not ready to go live yet.'
+  /* An unrecognised code is named, never swallowed.
+
+     The fallback used to be the same sentence the whole failure shows, so a
+     stale blocker from an undeployed function was indistinguishable from a
+     real one - both rendered as "not ready to go live yet" and neither told
+     the advertiser what to change. Naming the code costs one line and turns
+     that silence into a diagnosis. */
+  return ACTIVATION_BLOCKER_MESSAGES[code] || `Blocked: ${code}. The server reported a reason this build has no copy for.`
 }
 
 /** Advisory only — mirrors the server rules so the UI can hint before a round trip. */
