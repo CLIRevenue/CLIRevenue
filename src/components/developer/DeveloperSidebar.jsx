@@ -1,25 +1,18 @@
-import { useEffect, useRef } from 'react'
 import '../advertiser/sidebar.css'
 
-/* The developer rail, built on the advertiser console's shell rather than a
-   parallel one.
+/* The developer rail, built on the console shell rather than a parallel one.
 
-   The two consoles are the same shape: a resizable column of pages, a top
-   bar carrying nothing but the mark, and a foot holding theme, account and
-   the way out. Rather than fork five hundred lines of paper-and-glass CSS
-   and let the two drift, this renders the same class names and therefore
-   the same stylesheet — `sidebar.css` is imported above, once, and the
-   advertiser rail picks up the identical rules.
+   The two consoles are the same product: a fixed column of pages, a header
+   carrying the mark and the controls that are not destinations, and a foot
+   with where you are, how your workspace is doing, and the way out. So this
+   renders the same class names and therefore the same stylesheet —
+   `sidebar.css` is imported above, once.
 
    The class names carry an `adv-` prefix that reads as "advertiser" and is
-   in fact "console". That is a debt, not a decision: renaming it means
+   in fact "console". That is debt, not a decision: renaming it means
    touching every rule in that file, and this change is worth more landed
-   than renamed. Do not add new `adv-` names here — `dev-` is the direction.
-
-   The drag logic below is duplicated from `AdvertiserSidebar.jsx` for the
-   same reason. Two copies of thirty lines beat one shared module and a
-   refactor of a working console; collapsing them is the next job, not
-   this one. */
+   than renamed. Do not add new `adv-` names here — `dev-` is the
+   direction. */
 
 function Icon({ d }) {
   return (
@@ -38,37 +31,9 @@ const GLYPH = {
   integrations: <Icon d="M10 4h4v3h3v4h-3v3h-4v-3H7V7h3V4Zm-5 9h4v4H5v-4Z" />,
   analytics: <Icon d="M5 20V10h3v10H5Zm5.5 0V4h3v16h-3ZM16 20v-7h3v7h-3Z" />,
   account: <Icon d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z" />,
+  support: <Icon d="M12 2a9 9 0 0 0-9 9v6a3 3 0 0 0 3 3h2v-8H5v-1a7 7 0 1 1 14 0v1h-3v8h2a3 3 0 0 0 3-3v-6a9 9 0 0 0-9-9Z" />,
   sun: <Icon d="M12 8.5A3.5 3.5 0 1 0 12 15.5 3.5 3.5 0 0 0 12 8.5Zm0-6.5 1.6 2.7h-3.2L12 2Zm0 20-1.6-2.7h3.2L12 22ZM2 12l2.7-1.6v3.2L2 12Zm20 0-2.7 1.6v-3.2L22 12ZM4.9 4.9 7.7 6v0L4.9 4.9Zm14.2 14.2L17 18v0l2.1 1.1ZM19.1 4.9 17 6v0l2.1-1.1ZM4.9 19.1 7 18v0l-2.1 1.1Z" />,
   moon: <Icon d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" />,
-  grip: <Icon d="M9 5h2v2H9V5Zm4 0h2v2h-2V5ZM9 11h2v2H9v-2Zm4 0h2v2h-2v-2Zm-4 6h2v2H9v-2Zm4 0h2v2h-2v-2Z" />,
-}
-
-const W_MIN = 72
-const W_MAX = 420
-const W_DEFAULT = 200
-const W_KEY = 'clirevenue.devside.w'
-const NARROW_AT = 168
-
-function clamp(n) {
-  return Math.min(W_MAX, Math.max(W_MIN, n))
-}
-
-/* Width and narrowness are one decision, so they are set in one function.
-   Setting one without the other is how a rail ends up with four-character
-   labels. */
-function applyWidth(el, next) {
-  el.style.setProperty('--adv-side-w', `${next}px`)
-  if (next <= NARROW_AT) el.dataset.narrow = 'true'
-  else delete el.dataset.narrow
-}
-
-function readStoredWidth() {
-  try {
-    const raw = Number(window.localStorage.getItem(W_KEY))
-    return raw && Number.isFinite(raw) ? clamp(raw) : W_DEFAULT
-  } catch {
-    return W_DEFAULT
-  }
 }
 
 export default function DeveloperSidebar({
@@ -76,73 +41,46 @@ export default function DeveloperSidebar({
   active,
   onNavigate,
   onOpenSettings,
+  onOpenSupport,
   logoutSlot,
   theme,
   onToggleTheme,
   activeLabel,
-  shellRef,
+  workspace,
 }) {
-  const rootRef = useRef(null)
-  const startRef = useRef(null)
   const dark = theme === 'dark'
 
-  useEffect(() => {
-    const el = shellRef.current
-    if (!el) return
-    applyWidth(el, readStoredWidth())
-  }, [shellRef])
-
-  useEffect(() => {
-    const el = shellRef.current
-    const grip = el && el.querySelector('.adv-side__grip')
-    if (!el || !grip) return undefined
-
-    const onDown = (event) => {
-      if (event.button !== 0) return
-      event.preventDefault()
-      grip.setPointerCapture?.(event.pointerId)
-
-      /* Measure the rail, not the frame. `shellRef` is the grid parent and
-         reads back as the whole window, so starting from it clamps the
-         first move straight to the maximum and the rail jumps open the
-         instant the grip is touched. */
-      startRef.current = {
-        x: event.clientX,
-        w: (rootRef.current ?? el).getBoundingClientRect().width,
-      }
-      el.dataset.resizing = 'true'
-
-      const onMove = (moveEvent) => {
-        const from = startRef.current
-        if (!from) return
-        applyWidth(el, clamp(from.w + (moveEvent.clientX - from.x)))
-      }
-      const onUp = (upEvent) => {
-        startRef.current = null
-        delete el.dataset.resizing
-        grip.releasePointerCapture?.(upEvent.pointerId)
-        const w = (rootRef.current ?? el).getBoundingClientRect().width
-        try {
-          window.localStorage.setItem(W_KEY, String(Math.round(w)))
-        } catch {
-          /* A console with storage off still resizes; it just forgets. */
-        }
-        window.removeEventListener('pointermove', onMove)
-        window.removeEventListener('pointerup', onUp)
-        window.removeEventListener('pointercancel', onUp)
-      }
-
-      window.addEventListener('pointermove', onMove)
-      window.addEventListener('pointerup', onUp)
-      window.addEventListener('pointercancel', onUp)
-    }
-
-    grip.addEventListener('pointerdown', onDown)
-    return () => grip.removeEventListener('pointerdown', onDown)
-  }, [shellRef])
-
   return (
-    <aside ref={rootRef} className="adv-side" aria-label="Developer navigation">
+    <aside className="adv-side" aria-label="Developer navigation">
+      <div className="adv-side__head">
+        <span className="adv-side__brand">
+          <span className="adv-side__brand-cli">CLI</span>
+          <span className="adv-side__brand-revenue">Revenue</span>
+        </span>
+        <span className="adv-side__head-tools">
+          <button
+            type="button"
+            className="adv-side__icon-btn"
+            onClick={onToggleTheme}
+            aria-pressed={dark}
+            aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
+            title={dark ? 'Light' : 'Dark'}
+          >
+            {dark ? GLYPH.sun : GLYPH.moon}
+          </button>
+          <button
+            type="button"
+            className="adv-side__icon-btn"
+            onClick={onOpenSettings}
+            aria-haspopup="dialog"
+            aria-label="Account settings"
+            title="Account"
+          >
+            {GLYPH.account}
+          </button>
+        </span>
+      </div>
+
       <nav className="adv-nav" aria-label="Developer pages">
         {items.map((item) => (
           <button
@@ -162,27 +100,29 @@ export default function DeveloperSidebar({
       <div className="adv-side__foot">
         <p className="adv-side__where" aria-live="polite">{activeLabel}</p>
 
-        <button type="button" className="adv-side__row" onClick={onToggleTheme} aria-pressed={dark}>
-          <span className="adv-nav__glyph">{dark ? GLYPH.sun : GLYPH.moon}</span>
-          <span className="adv-nav__label">{dark ? 'Light' : 'Dark'}</span>
-        </button>
+        {workspace ? (
+          <div className="adv-side__facts">
+            <div className="adv-side__fact">
+              <span className="adv-side__fact-k">Workspace</span>
+              <span className="adv-side__fact-v">{workspace.name}</span>
+            </div>
+            <div className="adv-side__fact">
+              <span className="adv-side__fact-k">Balance</span>
+              <span className="adv-side__fact-v">{workspace.balance}</span>
+            </div>
+            <div className="adv-side__fact">
+              <span className="adv-side__fact-k">Entries</span>
+              <span className="adv-side__fact-v">{workspace.entries}</span>
+            </div>
+          </div>
+        ) : null}
 
-        <button type="button" className="adv-side__row" onClick={onOpenSettings} aria-haspopup="dialog">
-          <span className="adv-nav__glyph">{GLYPH.account}</span>
-          <span className="adv-nav__label">Account</span>
+        <button type="button" className="adv-side__row" onClick={onOpenSupport} aria-haspopup="dialog">
+          <span className="adv-nav__glyph">{GLYPH.support}</span>
+          <span className="adv-nav__label">Contact support</span>
         </button>
 
         <div className="adv-side__row adv-side__row--host">{logoutSlot}</div>
-      </div>
-
-      <div
-        className="adv-side__grip"
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Resize sidebar"
-        tabIndex={-1}
-      >
-        {GLYPH.grip}
       </div>
     </aside>
   )

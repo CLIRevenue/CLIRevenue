@@ -9,6 +9,7 @@ import AdminPlacements from './AdminPlacements.jsx'
 import AdminEvents from './AdminEvents.jsx'
 import AdminSystem from './AdminSystem.jsx'
 import AdminContacts from './AdminContacts.jsx'
+import AdminQueries from './AdminQueries.jsx'
 import AdminAccount from './AdminAccount.jsx'
 import AdminOperations from './AdminOperations.jsx'
 import AdminAccounts from './AdminAccounts.jsx'
@@ -29,6 +30,7 @@ const PAGES = {
   health:     { label: 'Health & Audit', icon: AdminHealthIcon },
   accounts:   { label: 'Accounts',   icon: AdminAccountsIcon },
   contacts:   { label: 'Contacts',   icon: AdminContactsIcon },
+  queries:    { label: 'Advertiser queries', icon: AdminQueriesIcon },
 }
 
 // "Account" is the one admin entry that is not a platform read surface, so it
@@ -69,6 +71,7 @@ function AdminEventsIcon()     { return <IconSvg d="M22 12h-4l-3 9L9 3l-3 9H2" /
 function AdminSystemIcon()     { return <IconSvg d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /> }
 
 function AdminContactsIcon()   { return <IconSvg d="M4 4h16l-4 12H8z" /> }
+function AdminQueriesIcon()    { return <IconSvg d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> }
 function AdminModerationIcon() { return <IconSvg d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /> }
 function AdminHealthIcon()     { return <IconSvg d="M2 12h4l3-8 4 16 3-8h6" /> }
 function AdminOperationsIcon()  { return <IconSvg d="M3 3v18h18M7 15l4-5 3 3 5-7" /> }
@@ -123,6 +126,7 @@ export default function AdminConsole() {
     moderation: AdminModeration,
     operations: AdminOperations,
     contacts: AdminContacts,
+    queries: AdminQueries,
     account: AdminAccount,
   }
   const PageComponent = PAGE_COMPONENTS[page] || AdminOverview

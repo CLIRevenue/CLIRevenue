@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdvBarChart, AdvEmpty, AdvError, AdvLoading, AdvPageHead, AdvStats } from '../advertiser/AdvertiserUI.jsx'
 import { Panel } from '../console/ui.jsx'
 import { supabase } from '../../lib/api.js'
 import DeveloperAccount from './DeveloperAccount.jsx'
 import DeveloperSidebar from './DeveloperSidebar.jsx'
+import { useAuth } from '../auth/authState.js'
+import SupportDialog from '../advertiser/SupportDialog.jsx'
+import Notifications from '../advertiser/Notifications.jsx'
 import SdkSetup from './SdkSetup.jsx'
 import PublisherKeys from './PublisherKeys.jsx'
 import PublisherPlacements from './PublisherPlacements.jsx'
@@ -11,6 +14,23 @@ import { LogoutButton } from '../auth/LogoutButton.jsx'
 import './DeveloperConsole.css'
 
 const STORAGE_KEY = 'clirevenueDeveloperTab'
+
+/* Read off what this console already loaded. Nothing is invented here, and
+   with nothing loaded there is nothing worth saying, so there are no notes
+   rather than encouraging ones. */
+function developerInsights(balance, rewards) {
+  if (!balance || !rewards.length) return []
+  const out = []
+  const latest = rewards[0]
+  if (latest && Number(latest.amount_cents || 0) > 0) {
+    out.push({
+      id: 'latest',
+      title: 'Latest entry',
+      body: `${formatCents(latest.amount_cents)} on ${new Date(latest.created_at || Date.now()).toLocaleDateString('en-US')}.`,
+    })
+  }
+  return out
+}
 const THEME_KEY = 'clirevenue.devtheme'
 
 function readTheme() {
@@ -142,6 +162,7 @@ function rewardStatus(reward) {
 
 export default function DeveloperApp() {
   // Initialize tab from sessionStorage or default to 'dashboard'
+  const auth = useAuth()
   const [tab, setTab] = useState(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -162,7 +183,8 @@ export default function DeveloperApp() {
   const [rewards, setRewards] = useState([])
   const [theme, setTheme] = useState(readTheme)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const shellRef = useRef(null)
+  const [supportOpen, setSupportOpen] = useState(false)
+  const [supportSent, setSupportSent] = useState(0)
 
   // Persist tab state to sessionStorage whenever it changes
   useEffect(() => {
@@ -271,15 +293,19 @@ export default function DeveloperApp() {
     <div
       className="clr-surface adv-console"
       data-theme={theme === 'dark' ? 'dark' : undefined}
-      ref={shellRef}
     >
       <DeveloperSidebar
-        shellRef={shellRef}
         items={NAV}
         active={tab}
         activeLabel={TABS.find((t) => t.id === tab)?.label || 'Dashboard'}
         onNavigate={(item) => setTab(item.id)}
         onOpenSettings={() => setSettingsOpen(true)}
+        onOpenSupport={() => setSupportOpen(true)}
+        workspace={{
+          name: auth?.profile?.display_name || auth?.user?.email || '—',
+          balance: balance ? formatCents(balance) : '—',
+          entries: rewards.length,
+        }}
         logoutSlot={<LogoutButton />}
         theme={theme}
         onToggleTheme={() =>
@@ -301,6 +327,8 @@ export default function DeveloperApp() {
             <span className="adv-topbar__cli">CLI</span>
             <span className="adv-topbar__rev">Revenue</span>
           </span>
+          <span className="adv-topbar__spacer" />
+          <Notifications key={supportSent} insights={developerInsights(balance, rewards)} />
         </header>
 
         <div className="adv-main__inner">
@@ -496,6 +524,13 @@ export default function DeveloperApp() {
       </main>
 
       {settingsOpen ? <SettingsPanel onClose={() => setSettingsOpen(false)} /> : null}
+      {supportOpen ? (
+        <SupportDialog
+          onClose={() => setSupportOpen(false)}
+          onSent={() => { setSupportOpen(false); setSupportSent((n) => n + 1) }}
+          userEmail={auth?.user?.email || ''}
+        />
+      ) : null}
     </div>
   )
 }

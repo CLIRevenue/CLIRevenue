@@ -18,12 +18,12 @@
    fixed, so it is exactly as tall as the frame and can never outgrow it
    however long the page becomes. */
 .adv-console {
-  /* Two variables, at point of use, rather than in :root - a token in
-     :root acquires a .light-theme parity obligation that ui-polish
-     enforces, and both are specific to this layout. The rail has one
-     width now: it is dragged, not toggled, so there is no second
-     number for a collapsed state to hold. */
-  --adv-side-w: 200px;
+  /* The rail is fixed. It was draggable between 72px and 420px, which
+     spends a permanent slice of a laptop screen on an axis nobody asked
+     to move, and 240px is what this rail's longest label needs with room
+     to spare. One number, stated here, never written from script - there
+     is nothing to remember, so nothing is remembered. */
+  --adv-side-w: 240px;
 
   /* Stated here rather than relied on from index.css's reset, because
      `height: 100dvh` below only means "one screen" if this element's own
@@ -66,7 +66,7 @@
   grid-template-columns: var(--adv-side-w) minmax(0, 1fr);
   min-height: 100dvh;
   color: var(--text);
-  transition: grid-template-columns var(--dur-fast) var(--ease-ui);
+
 
   /* Canvas tooth: two crossed hairline combs at well under 2% so they
      read as paper rather than as a pattern, and a bloom along the top
@@ -86,8 +86,6 @@
 /* The width is dragged, and a transition on the column would make the
    rail chase the cursor a frame behind it. Only the collapse — which is
    a click, not a drag — is animated. */
-.adv-console[data-resizing] { transition: none; }
-
 /* ── the rail ──────────────────────────────────────────────────────── */
 
 .adv-side {
@@ -121,21 +119,101 @@
   overflow: visible;
 }
 
-/* Narrow: below 168px there is no room for the words, so they go
-   without unmounting - the icons take the space and the rail keeps
-   exactly the width it was dragged to. */
-.adv-console[data-narrow="true"] .adv-nav__label,
-.adv-console[data-narrow="true"] .adv-side__where { opacity: 0; visibility: hidden; transform: translateX(-6px); 
-  /* Out of layout entirely, not merely invisible. `visibility: hidden` and
-     even `width: 0` leave the label on the flex line, where `gap` still
-     reserves the space between it and the glyph -- which is why the glyph
-     sat a half-gap off centre no matter what the padding did. `display:
-     none` removes the item, and an item that is not there cannot push
-     anything. The bar width still animates, so the change reads as the
-     words being taken away rather than as the rail blinking. */
-  display: none;
-}.adv-console[data-narrow="true"] .adv-nav__btn,
-.adv-console[data-narrow="true"] .adv-side__row { justify-content: center; padding-inline: 0; }
+/* ── the head: whose account, and the two switches ─────────── */
+
+.adv-side__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 0 2px 12px;
+  border-bottom: 1px solid var(--hair);
+}
+
+/* Two words, not one gradient across both halves. A single sweep has to
+   land somewhere, and where it lands across two words is never both of
+   them - which is what made an earlier version read as unfinished. The
+   letters take the console's own ink so the mark belongs to whichever
+   theme is on, and only "Revenue" carries a colour. */
+.adv-side__brand {
+  font-size: var(--c-text-body);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  user-select: none;
+  color: var(--text);
+}
+.adv-side__brand-revenue { color: var(--accent-error); }
+
+.adv-side__head-tools { display: flex; align-items: center; gap: 2px; }
+
+/* Icon-only, and square. A theme control labelled "Dark" is a claim
+   about a state that does not exist until you press it; the icon pair
+   says what you will get (sun) and what you are leaving (moon), which
+   is the one pairing a person can read without a tooltip. The
+   `title` carries the word for anyone who does want one. */
+.adv-side__icon-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-ui),
+              background var(--dur-fast) var(--ease-ui),
+              border-color var(--dur-fast) var(--ease-ui);
+}
+.adv-side__icon-btn svg { width: 17px; height: 17px; fill: currentColor; }
+.adv-side__icon-btn:hover {
+  color: var(--text);
+  background: var(--hair);
+  border-color: var(--hair-strong);
+}
+.adv-side__icon-btn:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* ── what the rail knows about you ─────────────────────────── */
+
+.adv-side__facts {
+  display: grid;
+  gap: 3px;
+  margin: 0 0 10px;
+  padding: 10px 11px;
+  background: var(--hair);
+  border-radius: var(--radius-sm);
+}
+.adv-side__fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+}
+.adv-side__fact-k {
+  font-family: var(--mono);
+  font-size: var(--c-text-label);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+/* Truncate rather than wrap: a fact that wraps to two lines changes the
+   rail's height between pages, and a rail whose foot moves when you
+   navigate is a rail you have to look for. */
+.adv-side__fact-v {
+  font-size: var(--c-text-small);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
 
 /* ── the nav ───────────────────────────────────────────────────────── */
 
@@ -252,40 +330,6 @@
   transition: opacity .18s var(--ease-ui), transform .18s var(--ease-ui);
 }
 
-/* ── the grip ──────────────────────────────────────────────────────── */
-
-.adv-side__grip {
-  position: absolute;
-  top: 0;
-  right: -3px;
-  width: 6px;
-  height: 100%;
-  cursor: col-resize;
-  display: grid;
-  place-items: center;
-  background: transparent;
-  touch-action: none;
-  transition: background var(--dur-fast) var(--ease-ui);
-}
-.adv-side__grip svg {
-  width: 14px;
-  height: 14px;
-  fill: var(--ink-4);
-  opacity: 0;
-  transform: scale(.8);
-  transition: opacity var(--dur-fast) var(--ease-ui), transform var(--dur-fast) var(--ease-ui);
-}
-
-.adv-side__grip:hover,
-.adv-console[data-resizing] .adv-side__grip { background: color-mix(in srgb, var(--signal) 22%, transparent); }
-.adv-side__grip:hover svg,
-.adv-console[data-resizing] .adv-side__grip svg { opacity: 1; transform: none; }
-
-/* While dragging, the cursor is col-resize for the whole document — the
-   pointer can be 400px from the rail and the gesture has not ended. */
-.adv-console[data-resizing],
-.adv-console[data-resizing] * { cursor: col-resize !important; user-select: none; }
-
 /* ── the content column ────────────────────────────────────────────── */
 
 .adv-main {
@@ -387,7 +431,6 @@
     border-bottom: 1px solid var(--hair);
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   }
-  .adv-side__grip { display: none; }
 .adv-side .adv-nav__btn:hover { transform: none; }
 }
 
@@ -669,4 +712,197 @@
   margin: 16px -24px -20px;
   padding: 14px 24px 0;
   background: linear-gradient(to top, var(--panel) 60%, color-mix(in srgb, var(--panel) 0%, transparent));
+}
+
+/* ── header gap, support, and the bell ───────────────────────────────
+   The top bar carries the mark on the left and the controls that are not
+   destinations on the right. The spacer is what keeps them apart without
+   either one claiming an edge. */
+.adv-topbar__spacer { flex: 1; }
+
+/* Inputs. `.adv-field` already exists in advertiser.css for the label
+   half; this is the control half, so a form assembled from the two reads
+   as one thing rather than as a label from one system and a box from
+   another. */
+.adv-input {
+  width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: var(--c-text-small);
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--dur-fast) var(--ease-ui);
+}
+.adv-input:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 1px;
+  border-color: var(--signal);
+}
+.adv-textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
+.adv-field { display: grid; gap: 5px; }
+.adv-field__label {
+  font-family: var(--mono);
+  font-size: var(--c-text-label);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.adv-field__opt {
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink-4);
+}
+
+/* Support: a dialog is a dialog, so this borrows the account panel's
+   scrim and shell verbatim rather than becoming a second one. */
+.adv-support__form { display: grid; gap: 14px; }
+.adv-support__files { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+.adv-support__file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  font-size: var(--c-text-small);
+  color: var(--ink-2);
+  background: var(--hair);
+  border-radius: var(--radius-sm);
+}
+.adv-support__file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adv-support__file-size { color: var(--ink-4); font-size: var(--c-text-label); }
+.adv-support__file-x {
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 2px;
+}
+.adv-support__file-x:hover { color: var(--accent-error); }
+
+/* The bell. Icon and a count until you open it — a header that shows you
+   your own bad news before you asked is noise with a bell on it. */
+.adv-bell { position: relative; display: flex; }
+.adv-bell__btn svg { position: relative; }
+.adv-bell__dot { fill: var(--accent-error); }
+.adv-bell__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  width: min(380px, calc(100vw - 32px));
+  max-height: 70dvh;
+  overflow-y: auto;
+  padding: 12px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-md);
+  box-shadow: 0 18px 48px -12px rgba(0, 0, 0, .38);
+}
+.adv-bell__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 9px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--hair);
+}
+.adv-bell__title {
+  font-family: var(--mono);
+  font-size: var(--c-text-label);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.adv-bell__refresh {
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+.adv-bell__refresh:hover { color: var(--signal); }
+.adv-bell__group + .adv-bell__group { margin-top: 12px; }
+.adv-bell__group-title {
+  margin: 0 0 6px;
+  font-family: var(--mono);
+  font-size: var(--c-text-label);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+.adv-bell__item {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 9px;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-ui),
+              border-color var(--dur-fast) var(--ease-ui);
+}
+.adv-bell__item:not(.adv-bell__item--static):hover {
+  background: var(--hair);
+  border-color: var(--hair-strong);
+}
+.adv-bell__item[data-unread='true'] {
+  background: var(--hair);
+  border-color: color-mix(in srgb, var(--signal) 34%, transparent);
+}
+.adv-bell__item--static { cursor: default; }
+.adv-bell__item--static[data-tone='warn'] {
+  background: color-mix(in srgb, var(--accent-error) 9%, transparent);
+  border-color: color-mix(in srgb, var(--accent-error) 26%, transparent);
+}
+.adv-bell__item-title { font-size: var(--c-text-small); color: var(--text); }
+.adv-bell__item-sub { font-size: var(--c-text-label); color: var(--ink-3); }
+.adv-bell__empty, .adv-bell__foot-note {
+  margin: 6px 2px;
+  font-size: var(--c-text-label);
+  color: var(--ink-3);
+}
+.adv-bell__eyebrow {
+  margin: 0 0 6px;
+  font-family: var(--mono);
+  font-size: var(--c-text-label);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+.adv-bell__quote {
+  margin: 0 0 14px;
+  padding: 9px 11px;
+  font-size: var(--c-text-small);
+  color: var(--ink-2);
+  background: var(--hair);
+  border-radius: var(--radius-sm);
+  white-space: pre-wrap;
+}
+.adv-bell__resolution {
+  margin: 0;
+  padding: 11px 13px;
+  font-size: var(--c-text-small);
+  line-height: 1.55;
+  color: var(--text);
+  background: color-mix(in srgb, var(--signal) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--signal) 30%, transparent);
+  border-radius: var(--radius-sm);
+  white-space: pre-wrap;
 }

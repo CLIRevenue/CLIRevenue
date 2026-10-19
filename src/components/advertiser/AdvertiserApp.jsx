@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import useAdvertiserCampaigns from '../../hooks/useAdvertiserCampaigns.js'
 import useAppRoute, { navigateApp } from '../../hooks/useAppRoute.js'
 import { useAuth } from '../auth/authState.js'
 import { LogoutButton } from '../auth/LogoutButton.jsx'
 import AdvertiserSidebar from './AdvertiserSidebar.jsx'
+import SupportDialog from './SupportDialog.jsx'
+import Notifications from './Notifications.jsx'
 import AdvertiserOverview from './AdvertiserOverview.jsx'
 import AdvertiserCampaigns from './AdvertiserCampaigns.jsx'
 import AdvertiserAnalytics from './AdvertiserAnalytics.jsx'
@@ -94,16 +96,47 @@ function readTheme() {
 // Route is already guarded by RequireRole(['advertiser']) in App.jsx.
 // This keeps the existing dashboard UI intact and reads shared auth only
 // for the missing-role notice.
+/* Performance notes, read off the rows already loaded. Nothing is asked of
+   the server and nothing is guessed: with no campaigns there is nothing
+   worth saying, so there are no notes at all rather than encouraging ones. */
+function insights(campaigns) {
+  const live = campaigns.filter((c) => c.status === 'active')
+  if (!live.length) return []
+  const out = []
+  const spent = live.reduce((sum, c) => sum + Number(c.spendCents || 0), 0)
+  const budget = live.reduce((sum, c) => sum + Number(c.budgetCents || 0), 0)
+  if (budget > 0 && spent / budget >= 0.8) {
+    out.push({
+      id: 'budget',
+      tone: 'warn',
+      title: 'Budget nearly spent',
+      body: `${Math.round((spent / budget) * 100)}% of the budget on live campaigns is gone.`,
+    })
+  }
+  const clicks = live.reduce((s, c) => s + Number(c.clicksCount || 0), 0)
+  const impressions = live.reduce((s, c) => s + Number(c.impressionsCount || 0), 0)
+  if (impressions > 500) {
+    const ctr = (clicks / impressions) * 100
+    out.push({
+      id: 'ctr',
+      title: 'Click-through',
+      body: `${ctr.toFixed(2)}% across ${live.length} live campaign${live.length === 1 ? '' : 's'}.`,
+    })
+  }
+  return out
+}
+
 export default function AdvertiserApp() {
   const auth = useAuth()
   const campaignsState = useAdvertiserCampaigns()
   const route = useAppRoute()
   const tab = tabForPath(route)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [supportOpen, setSupportOpen] = useState(false)
+  const [supportSent, setSupportSent] = useState(0)
   const [theme, setTheme] = useState(readTheme)
   /* The frame, not the rail: it owns the grid column the rail's width
      actually controls. */
-  const shellRef = useRef(null)
 
   return (
     /* clr-surface stays. It is the wrapper the site's shared control
@@ -113,16 +146,20 @@ export default function AdvertiserApp() {
        not the header. */
     <div
       className="clr-surface adv-console"
-      ref={shellRef}
       data-theme={theme === 'dark' ? 'dark' : undefined}
     >
       <AdvertiserSidebar
-        shellRef={shellRef}
         items={NAV}
         active={tab}
         activeLabel={TABS.find((t) => t.id === tab)?.label || 'Overview'}
         onNavigate={(item) => navigateApp(item.path)}
         onOpenSettings={() => setSettingsOpen(true)}
+        onOpenSupport={() => setSupportOpen(true)}
+        workspace={{
+          name: auth?.profile?.company_name || auth?.advertiser?.company_name || '—',
+          campaigns: campaignsState.campaigns.length,
+          active: campaignsState.campaigns.filter((c) => c.status === 'active').length,
+        }}
         logoutSlot={<LogoutButton />}
         theme={theme}
         onToggleTheme={() =>
@@ -145,6 +182,11 @@ export default function AdvertiserApp() {
             <span className="adv-topbar__cli">CLI</span>
             <span className="adv-topbar__rev">Revenue</span>
           </span>
+          <span className="adv-topbar__spacer" />
+          <Notifications
+            key={supportSent}
+            insights={insights(campaignsState.campaigns)}
+          />
         </header>
         <div className="adv-main__inner">
           {auth.role === null ? (
@@ -194,6 +236,17 @@ export default function AdvertiserApp() {
       </main>
 
       {settingsOpen ? <SettingsPanel onClose={() => setSettingsOpen(false)} /> : null}
+      {supportOpen ? (
+        <SupportDialog
+          onClose={() => setSupportOpen(false)}
+          onSent={() => {
+            setSupportOpen(false)
+            setSupportSent((n) => n + 1)
+          }}
+          userEmail={auth?.user?.email || ''}
+          companyName={auth?.profile?.company_name || ''}
+        />
+      ) : null}
     </div>
   )
 }
