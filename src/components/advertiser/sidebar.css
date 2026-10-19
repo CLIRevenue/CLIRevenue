@@ -23,7 +23,15 @@
      enforces, and both are specific to this layout. The rail has one
      width now: it is dragged, not toggled, so there is no second
      number for a collapsed state to hold. */
-  --adv-side-w: 252px;
+  --adv-side-w: 200px;
+
+  /* Stated here rather than relied on from index.css's reset, because
+     `height: 100dvh` below only means "one screen" if this element's own
+     box is the one being measured. Relied on, the rail is its height plus
+     its padding, which is 32px more than a screen, which puts the last
+     row of controls just out of sight - which is the bug this was added
+     to fix. */
+  box-sizing: border-box;
   --adv-side-gap: 14px;
 
   /* The console is white paper, so every token it would otherwise
@@ -83,7 +91,18 @@
 /* ── the rail ──────────────────────────────────────────────────────── */
 
 .adv-side {
-  position: relative;
+  /* One viewport, pinned. The rail was a grid child that stretched to
+     the height of the page, which pushed the foot - theme, account, logout -
+     below the fold on every page longer than a screen. A control you have
+     to scroll to find is a control most people never find, and the theme
+     toggle was the clearest symptom of that: it was not broken, it was
+     three thousand pixels away. `align-self: start` is what stops the grid
+     stretching it back out. */
+  position: sticky;
+  top: 0;
+  align-self: start;
+  box-sizing: border-box;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -272,9 +291,14 @@
 .adv-main {
   min-width: 0;
   padding: 26px var(--gutter) 64px;
-  /* The only scroller in the layout. The rail is a grid child and never
-     scrolls, so the pages keep a fixed frame while the content moves. */
-  overflow-x: hidden;
+  /* `clip`, not `hidden`. `hidden` here would make this element a scroll
+     container - an overflow axis that is not visible forces the other one
+     out of visible, so the sticky topbar would resolve its position
+     against a scrollport that never moves, and the wordmark would ride
+     off the top with the content. `clip` contains the same horizontal
+     overflow without creating a scroller, so sticky reaches the viewport
+     and the mark stays put. */
+  overflow-x: clip;
 }
 .adv-main__inner { width: 100%; max-width: 1180px; margin: 0 auto; }
 
@@ -379,6 +403,9 @@
    account.
    --------------------------------------------------------------------- */
 .adv-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
   display: flex;
   align-items: center;
   min-height: 52px;
@@ -391,6 +418,7 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--ink-2);
+  white-space: nowrap;
   user-select: none;
 }
 /* The mark is two words, not one gradient across both halves of a wordmark.
@@ -451,6 +479,25 @@
   justify-content: flex-start;
   padding: 9px 11px;
   text-align: left;
+  /* Crimson, the same value the rest of the product calls an error. Every
+     other control in this column opens or navigates and leaves your work
+     alone; this one ends the session. Reading them the same colour is how
+     people lose a session they meant to keep. Hover deepens the wash
+     rather than brightening the text, so the label keeps its contrast
+     against it. */
+  color: var(--accent-error);
+  transition: color var(--dur-fast) var(--ease-ui),
+              background var(--dur-fast) var(--ease-ui),
+              border-color var(--dur-fast) var(--ease-ui);
+}
+.adv-side__row--host > .adv-nav__btn:hover {
+  color: var(--accent-error);
+  background: color-mix(in srgb, var(--accent-error) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent-error) 32%, transparent);
+}
+.adv-side__row--host > .adv-nav__btn:focus-visible {
+  outline: 2px solid var(--accent-error);
+  outline-offset: 2px;
 }
 
 /* ── dark ───

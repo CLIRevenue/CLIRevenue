@@ -43,7 +43,7 @@ const GLYPH = {
 const W_MIN = 72
 const W_MAX = 420
 const W_KEY = 'clirevenue.advside.w'
-const W_DEFAULT = 252
+const W_DEFAULT = 200
 
 /* Where the words go. Below this the labels cannot fit at their natural
    width without truncating: "Campaigns" in the mono caps face is about
