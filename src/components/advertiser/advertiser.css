@@ -285,6 +285,17 @@ button.btn--ghost:hover .sitehead__icon {
 .adv-check { display: flex; gap: var(--c-space-3); align-items: center; padding: var(--c-space-2) 0; font-size: var(--c-text-read); color: var(--ink-2); }
 .form__consent { display: grid; gap: var(--c-space-1); margin-top: var(--c-space-1); }
 .adv-shell__inner--narrow { max-width: 640px; }
+
+/* The confirmation callback: the narrow auth column, centred on one
+   screen. It was rendering as a top-anchored marketing page, because it
+   borrowed the auth markup and not the auth shell — and a dead-end
+   message floating in the top-left corner of a wide window is the worst
+   possible first impression of a link that has already failed once. */
+.adv-shell--callback {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+}
 .adv-password { display: flex; gap: var(--c-space-2); }
 .adv-password .field__input { flex: 1; }
 .adv-password__btn { flex: none; }
@@ -331,8 +342,22 @@ button.btn--ghost:hover .sitehead__icon {
   word-break: break-all;
 }
 
+/* Three ways out of a dead link, and one of them is the obvious one.
+
+   They were a wrapping row of equal-weight buttons, which put the
+   answer next to two alternatives and left the reader to work out which
+   was which. The primary now takes the full width on its own line and
+   the two secondaries sit under it as a pair — the shape says "do this,
+   or one of these", which is what the three actually are. */
 .confirm__actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--c-space-3);
+}
+.confirm__actions > .btn--primary {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.confirm__actions > .btn:not(.btn--primary) {
+  justify-self: start;
 }

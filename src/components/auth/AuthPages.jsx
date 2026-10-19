@@ -674,8 +674,12 @@ export function AuthCallbackPage() {
 
   if (failure) {
     const verdict = failure
+    /* `--callback`, not `--auth`. That name belongs to the sign-in and
+       sign-up form and the one-screen treatment is keyed to it. This page
+       reads the same and is laid out the same way, which is a different
+       thing and gets its own name. */
     return (
-      <section className="adv-shell" aria-label="Confirmation problem">
+      <section className="adv-shell adv-shell--callback" aria-label="Confirmation problem">
         <div className="adv-shell__inner adv-shell__inner--narrow">
           <p className="eyebrow eyebrow--plain">CLIRevenue · Email confirmation</p>
           <h2 className="block__title">
@@ -715,7 +719,7 @@ export function AuthCallbackPage() {
 
   if (loading || !isAuthenticated) {
     return (
-      <section className="adv-shell" aria-label="Confirming your email">
+      <section className="adv-shell adv-shell--callback" aria-label="Confirming your email">
         <div className="adv-shell__inner adv-shell__inner--narrow">
           <p className="eyebrow eyebrow--plain">CLIRevenue · Email confirmation</p>
           <h2 className="block__title">Confirming your email…</h2>
@@ -728,7 +732,7 @@ export function AuthCallbackPage() {
   }
 
   return (
-    <section className="adv-shell" aria-label="Email confirmed">
+<section className="adv-shell adv-shell--callback" aria-label="Email confirmed">
       <div className="adv-shell__inner adv-shell__inner--narrow">
         <p className="eyebrow eyebrow--plain">CLIRevenue · Email confirmed</p>
         <h2 className="block__title">Your account is ready.</h2>

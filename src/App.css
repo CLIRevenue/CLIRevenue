@@ -635,10 +635,13 @@
     background 0.22s var(--ease-ui), color 0.22s var(--ease-ui);
 }
 
+/* Neutral hover, same as every other control in the console. Amber here
+   was a leftover from the instrumentation palette and marked the one
+   button on the page as louder than the page itself. */
 .placement-slot__cta:hover {
   color: var(--ink);
-  border-color: var(--hair-amber);
-  background: var(--amber-wash);
+  border-color: var(--hair-strong);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .placement-slot__cta svg {
@@ -1041,10 +1044,10 @@
 /* The two ways into the product. They are not `.btn` instances: a
    button is a control, and this is a pair of destinations that each
    carry a line of explanation with them, so they read as two entries
-   in a list rather than as two things to press. The hover behaviour is
-   deliberately the same amber wash the buttons use, so the closing
-   frame does not introduce a second interaction language at the exact
-   moment the viewer is deciding whether to leave the page. */
+   in a list rather than as two things to press. The hover is the same
+   neutral fill every other control uses, so the closing frame does not
+   introduce a second interaction language at the exact moment the viewer
+   is deciding whether to leave the page. */
 .closing__actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1078,13 +1081,13 @@
 }
 
 .closing__action:hover {
-  background: var(--amber-wash);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .closing__action:focus-visible {
   outline: 2px solid var(--signal-text);
   outline-offset: -2px;
-  background: var(--amber-wash);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .closing__action-copy {
@@ -3031,11 +3034,19 @@
     color var(--dur-fast) var(--ease-ui);
 }
 
+/* Hover states a button, it does not pick it up.
+
+   This used to lift: `translate(-2px, -2px)` with a hard 4px offset
+   shadow, on every `.btn` in the product. The offset was the affordance
+   and it was a bad one — a hard-edged slab of shadow that appeared from
+   nowhere, on controls that do not otherwise move, and on a page whose
+   one job is to be readable. A control that shifts under the pointer also
+   moves out from under the pointer. The affordance that works is the one
+   that does not move: the border and the fill change, the box does not. */
 .btn:hover:not(:disabled),
 .placement-slot__cta:hover,
 .switcher__btn:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 4px 4px 0 0 var(--hair-strong);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .18);
 }
 
 .btn--primary:hover:not(:disabled),
