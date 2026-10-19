@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { AdvEmpty, AdvError, AdvLoading, AdvPageHead } from './AdvertiserUI.jsx'
 import { Panel } from '../console/ui.jsx'
 import {
@@ -7,23 +7,17 @@ import {
   archiveAdvertiserCampaign,
   createAdvertiserCampaign,
   ctrPct,
-  deleteCreative,
-  fetchCreatives,
   formatCents,
   setActiveCampaign,
   toBudgetDollars,
   updateAdvertiserCampaign,
-  uploadCreativeFile,
   validateCampaignInput,
 } from '../../lib/advertiserApi.js'
 import { campaignErrorCode, campaignErrorMessage } from '../../lib/campaignErrors.js'
 import {
-  acceptForMediaType,
   activationBlockerMessage,
   advisoryBlockers,
   allowedNextStatuses,
-  formatBytes,
-  maxCreativeBytes,
 } from '../../lib/campaignRules.js'
 
 // Stable ids help the form's aria-describedby/aria-invalid wiring so the
@@ -57,14 +51,13 @@ const EMPTY_FORM = {
   status: 'draft',
 }
 
-/** The eight steps an advertiser walks through, in order. */
+/** The six steps an advertiser walks through, in order. Ads are text:
+    there is nothing to upload and nothing to preview. */
 const STEPS = [
   'Campaign details',
   'Audience',
   'Budget',
   'Schedule',
-  'Creative upload',
-  'Creative preview',
   'Save draft',
   'Activate',
 ]
@@ -94,14 +87,6 @@ function toLocalInput(iso) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-function describeCreative(creative) {
-  if (!creative) return null
-  const bits = [creative.mimeType || creative.mediaType, formatBytes(creative.fileSizeBytes)]
-  if (creative.width && creative.height) bits.push(`${creative.width}×${creative.height}`)
-  if (creative.durationMs) bits.push(`${Math.round(creative.durationMs / 1000)}s`)
-  return bits.filter(Boolean).join(' · ')
-}
-
 export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry, onChanged, onUpsert }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
@@ -113,13 +98,6 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
   const [notice, setNotice] = useState('')
   const [detailError, setDetailError] = useState('')
   const [blockers, setBlockers] = useState([])
-  const [mediaType, setMediaType] = useState('image')
-  const [creative, setCreative] = useState(null)
-  const [creativeName, setCreativeName] = useState('')
-  const [creativeError, setCreativeError] = useState('')
-  const [creativeProgress, setCreativeProgress] = useState(0)
-  const [uploading, setUploading] = useState(false)
-  const fileRef = useRef(null)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -134,28 +112,6 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
   const selected = campaigns.find((c) => c.id === selectedId) || null
   const hints = useMemo(() => (selected ? advisoryBlockers(selected) : []), [selected])
 
-  // The creative URL is a short-lived capability minted per request, so it is
-  // fetched here instead of riding along on the campaign list response. Clearing
-  // the previous selection happens in selectCampaign, not in this effect body:
-  // resetting state synchronously here would cascade a render on every switch.
-  useEffect(() => {
-    if (!selectedId) return undefined
-    let cancelled = false
-    fetchCreatives({ campaignId: selectedId, includeUrl: true })
-      .then((rows) => {
-        if (cancelled) return
-        const first = rows[0] || null
-        setCreative(first)
-        setMediaType(first?.mediaType === 'video' ? 'video' : 'image')
-      })
-      .catch((err) => {
-        if (cancelled) return
-        setCreative(null)
-        setCreativeError(campaignErrorMessage(err, 'Creative could not be loaded.'))
-      })
-    return () => { cancelled = true }
-  }, [selectedId])
-
   const stepState = useMemo(() => {
     const name = form.name.trim()
     const headline = form.headline.trim()
@@ -164,18 +120,15 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
     const scheduleStart = form.startsAt ? Date.parse(form.startsAt) : null
     const scheduleEnd = form.endsAt ? Date.parse(form.endsAt) : null
     const saved = Boolean(selected)
-    const delivered = creative?.status === 'validated'
     return [
       { done: name.length > 0 && headline.length > 0 },
       { done: Boolean(form.audienceId) },
       { done: Number.isFinite(budgetCents) && budgetCents > 0 && (cpm === null || (Number.isFinite(cpm) && cpm > 0)) },
       { done: !(Number.isFinite(scheduleStart) && Number.isFinite(scheduleEnd) && scheduleStart >= scheduleEnd) },
-      { done: creative?.status === 'uploaded' || delivered },
-      { done: delivered },
       { done: saved },
       { done: selected?.status === 'active' },
     ]
-  }, [form, creative, selected])
+  }, [form, selected])
 
   const activeStep = useMemo(() => {
     const firstUnfinished = stepState.findIndex((s) => !s.done)
@@ -220,7 +173,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
       const created = await createAdvertiserCampaign(formToApiInput())
       onUpsert?.(created)
       selectCampaign(created.id)
-      setNotice(`Created ${created.name}. It starts as a draft — upload a creative, then activate it.`)
+      setNotice(`Created ${created.name}. It starts as a draft — activate it when you are ready.`)
       setForm(EMPTY_FORM)
       setFormOpen(false)
       await onChanged()
@@ -323,68 +276,12 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
     }
   }
 
-  async function loadCreative(campaignId) {
-    const rows = await fetchCreatives({ campaignId, includeUrl: true })
-    setCreative(rows[0] || null)
-    return rows[0] || null
-  }
-
-  async function handleCreativeFile(e) {
-    e.preventDefault()
-    const file = e.target.files && e.target.files[0]
-    if (!file || !selected) return
-    setUploading(true)
-    setCreativeError('')
-    setCreativeProgress(0)
-    setCreativeName(file.name)
-    try {
-      await uploadCreativeFile(selected.id, file, {
-        mediaType,
-        onProgress: (pct) => setCreativeProgress(pct),
-      })
-      const validated = await loadCreative(selected.id)
-      setNotice(`Uploaded ${file.name}. Creative status: ${validated?.status || 'unknown'}.`)
-      setDetailError('')
-      await onChanged()
-    } catch (err) {
-      setCreativeError(campaignErrorMessage(err, 'The creative could not be uploaded.'))
-      await loadCreative(selected.id).catch(() => {})
-    } finally {
-      setUploading(false)
-      if (fileRef.current) fileRef.current.value = ''
-    }
-  }
-
-  async function handleRemoveCreative() {
-    if (!selected) return
-    setUploading(true)
-    setCreativeError('')
-    try {
-      await deleteCreative(selected.id)
-      setCreative(null)
-      setCreativeName('')
-      setNotice('Creative removed from this campaign.')
-      await onChanged()
-    } catch (err) {
-      setCreativeError(campaignErrorMessage(err, 'The creative could not be removed.'))
-    } finally {
-      setUploading(false)
-      if (fileRef.current) fileRef.current.value = ''
-    }
-  }
-
   function selectCampaign(id) {
     setSelectedId(id)
     setNotice('')
     setDetailError('')
     setBlockers([])
-    setCreative(null)
-    setCreativeName('')
-    setCreativeError('')
-    setCreativeProgress(0)
   }
-
-  const creativeSummary = describeCreative(creative)
   const canActivate = Boolean(selected) && selected.status !== 'archived'
 
   /* The editor is a dialog, not a region of the page. The form was the
@@ -483,7 +380,6 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                         <div className="adv-cell__name">{c.name}</div>
                         <div className="adv-cell__sub">
                           {c.audienceLabel} · {formatCents(c.budgetCents)} budget
-                          {c.creative?.status === 'validated' ? ' · creative ready' : ' · no creative'}
                         </div>
                       </td>
                       <td data-label="Status"><span className="adv-pill" data-status={c.status}>{c.status}</span></td>
@@ -566,28 +462,6 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                 <div><dt>Impressions / clicks / conv.</dt><dd className="mono">{selected.impressions.toLocaleString('en-US')} / {selected.clicks.toLocaleString('en-US')} / {selected.conversions.toLocaleString('en-US')}</dd></div>
               </dl>
             ) : null}
-
-            {selected ? (
-              <div className="adv-detail" aria-label="Creative">
-                <div>
-                  <dt>Creative</dt>
-                  <dd>
-                    {creative
-                      ? `${creative.status} · ${creativeSummary}`
-                      : 'No creative uploaded yet — this campaign cannot be activated until one is.'}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Delivery URL</dt>
-                  <dd>
-                    {creative?.url
-                      ? 'Short-lived signed URL, minted per request.'
-                      : '—'}
-                  </dd>
-                </div>
-              </div>
-            ) : null}
-
           </Panel>
         </div>
       </div>
@@ -785,83 +659,6 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                 </label>
               </div>
 
-              {selected ? (
-                <div className="adv-form">
-                  <div className="adv-radio-row" role="radiogroup" aria-label="Creative type">
-                    {['image', 'video'].map((t) => (
-                      <label key={t} className="adv-check">
-                        <input
-                          type="radio"
-                          name="creative-media-type"
-                          value={t}
-                          checked={mediaType === t}
-                          onChange={() => setMediaType(t)}
-                        />
-                        <span>{t} · up to {formatBytes(maxCreativeBytes(t))}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <label className="field">
-                    <span className="field__label">
-                      {creative?.status === 'validated' ? 'Replace creative' : 'Upload creative'}
-                    </span>
-                    <input
-                      ref={fileRef}
-                      className="field__input"
-                      type="file"
-                      accept={acceptForMediaType(mediaType)}
-                      onChange={handleCreativeFile}
-                      disabled={uploading}
-                    />
-                  </label>
-                  {uploading ? (
-                    <div aria-live="polite">
-                      <div
-                        className="adv-loading__bar"
-                        style={{ width: `${creativeProgress}%` }}
-                        role="progressbar"
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-valuenow={creativeProgress}
-                        aria-label="Creative upload progress"
-                      />
-                      <p className="form__note">
-                        {creativeName} · uploading {creativeProgress}%
-                      </p>
-                    </div>
-                  ) : null}
-                  {creativeError ? <p className="form__error" role="alert">{creativeError}</p> : null}
-                  {creative?.status === 'validated' ? (
-                    <div>
-                      {creative.mediaType === 'video' ? (
-                        <video
-                          className="field__input"
-                          src={creative.url || ''}
-                          poster={creative.posterUrl || undefined}
-                          controls
-                          muted
-                          playsInline
-                          preload="metadata"
-                          style={{ width: '100%' }}
-                        />
-                      ) : (
-                        <img
-                          className="field__input"
-                          src={creative.url || ''}
-                          alt={`Creative for ${selected.name}`}
-                          style={{ width: '100%' }}
-                        />
-                      )}
-                      <p className="form__note">
-                        {creativeName || describeCreative(creative)} — the signed URL above expires shortly and is never stored.
-                      </p>
-                      <button type="button" className="btn btn--danger" onClick={handleRemoveCreative} disabled={uploading}>
-                        Remove creative
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
 
               {formErrors.form ? <p className="form__error" role="alert">{formErrors.form}</p> : null}
               {/* validateCampaignInput returns a map keyed by field, and the

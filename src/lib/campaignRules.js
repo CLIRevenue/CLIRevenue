@@ -26,51 +26,8 @@ export const CREATIVE_MEDIA_TYPES = ['image', 'video']
 /* SVG is deliberately absent: it is an executable document and would turn the
    ad slot into stored XSS. Server allowlist lives in
    `supabase/functions/_shared/filebase.ts`. */
-export const CREATIVE_MIME_TYPES = {
-  image: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'],
-  video: ['video/mp4', 'video/webm'],
-}
 
-export const MAX_CREATIVE_BYTES = {
-  image: 5 * 1024 * 1024,
-  video: 25 * 1024 * 1024,
-}
 
-export function maxCreativeBytes(mediaType) {
-  return MAX_CREATIVE_BYTES[mediaType] || MAX_CREATIVE_BYTES.image
-}
-
-export function acceptForMediaType(mediaType) {
-  return (CREATIVE_MIME_TYPES[mediaType] || []).join(',')
-}
-
-/** Best-effort client-side gate. The server re-validates on upload-intent. */
-export function validateCreativeFile(file, mediaType) {
-  if (!file) return { ok: false, code: 'INVALID_FILE', message: 'Choose a file to upload.' }
-  if (!CREATIVE_MEDIA_TYPES.includes(mediaType)) {
-    return { ok: false, code: 'INVALID_MEDIA_TYPE', message: 'Only image and video creatives are supported.' }
-  }
-  const mime = String(file.type || '').toLowerCase()
-  if (!CREATIVE_MIME_TYPES[mediaType].includes(mime)) {
-    return {
-      ok: false,
-      code: 'UNSUPPORTED_MIME_TYPE',
-      message: `${mediaType} creatives must be one of: ${CREATIVE_MIME_TYPES[mediaType].join(', ')}.`,
-    }
-  }
-  if (!Number.isFinite(file.size) || file.size <= 0) {
-    return { ok: false, code: 'INVALID_FILE_SIZE', message: 'The file is empty.' }
-  }
-  const limit = maxCreativeBytes(mediaType)
-  if (file.size > limit) {
-    return {
-      ok: false,
-      code: 'FILE_TOO_LARGE',
-      message: `Creative must be ${formatBytes(limit)} or smaller.`,
-    }
-  }
-  return { ok: true, mimeType: mime, fileSizeBytes: file.size, maxBytes: limit }
-}
 
 export function formatBytes(bytes) {
   const n = Number(bytes || 0)
@@ -119,7 +76,6 @@ export const ACTIVATION_BLOCKER_MESSAGES = {
   SCHEDULE_ENDED: 'This campaign has already ended. Extend the end date to deliver again.',
   INVALID_LANDING_URL: 'Set a valid http(s) landing URL before activating.',
   BUDGET_EXCEEDED: 'This campaign has spent its full budget.',
-  CREATIVE_MISSING: 'Upload and validate a creative before activating this campaign.',
 }
 
 export function activationBlockerMessage(code) {
@@ -140,7 +96,6 @@ export function advisoryBlockers(campaign = {}, { nowMs = Date.now() } = {}) {
   }
   if (starts !== null && !Number.isNaN(starts) && starts > nowMs) out.push('SCHEDULE_NOT_STARTED')
   if (ends !== null && !Number.isNaN(ends) && ends <= nowMs) out.push('SCHEDULE_ENDED')
-  if (!campaign.creative || campaign.creative.status !== 'validated') out.push('CREATIVE_MISSING')
   return out
 }
 

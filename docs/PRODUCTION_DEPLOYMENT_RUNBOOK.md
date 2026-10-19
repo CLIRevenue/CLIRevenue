@@ -82,7 +82,20 @@ supabase functions deploy campaigns
 ```
 
 **Front end and backend deploy on different clocks.** A green Cloudflare
-build says nothing about either the migrations or the functions. The console now says this
+build says nothing about either the migrations or the functions.
+
+Ads are text-only as of `20261016000000_text_only_campaigns.sql`. The
+`creatives` Edge Function and the Filebase client are gone from the repo;
+remove the deployed function so it is not still reachable:
+
+```bash
+supabase functions delete creatives      # Deno may prompt for confirmation
+```
+
+Everything that reads or writes a campaign has to be redeployed with it —
+`campaigns`, `ads`, `admin`, `campaign_select`. `campaign_creatives` the
+TABLE is not dropped and must not be: it is an identity slot that
+`tg_ad_serve_log_set_creative()` stamps onto every serve. The console now says this
 by name when the table is absent, rather than reporting a generic failure
 that retrying cannot fix.
 

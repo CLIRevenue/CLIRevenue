@@ -182,8 +182,6 @@ export const ACTIVATION_BLOCKER_MESSAGES: Record<string, string> = {
   SCHEDULE_ENDED: "This campaign's end date has passed.",
   INVALID_LANDING_URL: "Add a valid http(s) landing URL before activating.",
   BUDGET_EXCEEDED: "This campaign has already spent its full budget.",
-  CREATIVE_MISSING:
-    "Upload and validate a creative before activating this campaign.",
 };
 
 export function activationBlockerMessage(code: string): string {

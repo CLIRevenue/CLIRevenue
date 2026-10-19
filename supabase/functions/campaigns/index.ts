@@ -26,7 +26,6 @@ type CreativeRow = Record<string, unknown>;
 function formatCampaign(
   row: Record<string, unknown>,
   audienceMap: Record<string, string>,
-  creative: CreativeRow | null = null,
 ) {
   const audienceId = String(row.audience_id || "");
   const spendMilli = Number(row.spend_milli_cents || 0);
@@ -66,7 +65,6 @@ function formatCampaign(
        it is minted only by the creatives endpoint (and at delivery time)
        from a short-lived signature. This keeps listing cheap and means a
        campaign list response can never leak a durable object URL. */
-    creative: creative ? formatCreativeSummary(creative) : null,
     created_at: row.created_at,
     createdAt: row.created_at,
     updated_at: row.updated_at,
@@ -98,9 +96,6 @@ function formatCreativeSummary(row: CreativeRow) {
 const SELECT_COLS =
   "id, advertiser_id, name, headline, description, cta, audience_id, budget_cents, cpm_cents, landing_url, spend_milli_cents, impressions_count, clicks_count, conversions_count, status, starts_at, ends_at, created_at, updated_at";
 
-const CREATIVE_COLS =
-  "id, campaign_id, advertiser_id, status, media_type, mime_type, file_size_bytes, extension, width, height, duration_ms, poster_object_key, checksum, label, created_at, updated_at";
-
 async function audienceMap(admin: ReturnType<typeof adminClient>) {
   const { data } = await admin.from("audiences").select("id, label");
   return Object.fromEntries((data as AudienceRow[] | null || []).map((a) => [a.id, a.label]));
@@ -109,24 +104,6 @@ async function audienceMap(admin: ReturnType<typeof adminClient>) {
 /* One slot per campaign (000021 minted it with a UNIQUE campaign_id). Reads
    are scoped by advertiser_id so a cross-tenant id can never resolve, and the
    query shape mirrors the ownership rule the write paths use. */
-async function creativeByCampaign(
-  admin: ReturnType<typeof adminClient>,
-  campaignIds: string[],
-  advertiserId: string,
-) {
-  if (campaignIds.length === 0) return new Map<string, CreativeRow>();
-  const { data, error } = await admin
-    .from("campaign_creatives")
-    .select(CREATIVE_COLS)
-    .eq("advertiser_id", advertiserId)
-    .in("campaign_id", campaignIds);
-  if (error) return new Map<string, CreativeRow>();
-  const map = new Map<string, CreativeRow>();
-  for (const row of (data as unknown as CreativeRow[] | null || [])) {
-    map.set(String(row.campaign_id), row);
-  }
-  return map;
-}
 
 /* Activation gate. campaign_activation_blockers() is a SECURITY DEFINER RPC
    so the rules live next to the columns they read; the browser cannot call it
@@ -212,13 +189,9 @@ const handler = serveWithCors(async (req) => {
       if (error) return apiError("INTERNAL_ERROR", "Failed to fetch campaigns.", 500);
       const map = await audienceMap(admin);
       const rows = (data || []) as Record<string, unknown>[];
-      const creatives = await creativeByCampaign(
-        admin,
-        rows.map((r) => String(r.id)),
-        advertiserId,
-      );
+
       const campaigns = rows.map((row) =>
-        formatCampaign(row, map, creatives.get(String(row.id)) || null)
+        formatCampaign(row, map) || null)
       );
       return json({ campaigns });
     }
@@ -284,11 +257,7 @@ const handler = serveWithCors(async (req) => {
         .single();
       if (insertError) return apiError("INTERNAL_ERROR", "Campaign could not be created.", 500);
       const map = await audienceMap(admin);
-      const creatives = await creativeByCampaign(
-        admin,
-        [String((created as unknown as Record<string, unknown>).id)],
-        advertiserId,
-      );
+
       const createdRow = created as unknown as Record<string, unknown>;
       return json(
         {
@@ -313,15 +282,15 @@ const handler = serveWithCors(async (req) => {
 
       if (method === "GET" && rest.length === 1) {
         const map = await audienceMap(admin);
-        const creatives = await creativeByCampaign(admin, [campaignId], advertiserId);
-        return json({ campaign: formatCampaign(existing, map, creatives.get(campaignId) || null) });
+
+        return json({ campaign: formatCampaign(existing, map) });
       }
 
       if (method === "DELETE" && rest.length === 1) {
         const result = await archiveCampaign(admin, existing, advertiserId);
         if ("error" in result && result.error) return result.error;
         const map = await audienceMap(admin);
-        const creatives = await creativeByCampaign(admin, [campaignId], advertiserId);
+
         return json({
           campaign: formatCampaign(
             result.campaign!,
@@ -336,7 +305,7 @@ const handler = serveWithCors(async (req) => {
         const result = await archiveCampaign(admin, existing, advertiserId);
         if ("error" in result && result.error) return result.error;
         const map = await audienceMap(admin);
-        const creatives = await creativeByCampaign(admin, [campaignId], advertiserId);
+
         return json({
           campaign: formatCampaign(
             result.campaign!,
@@ -359,9 +328,9 @@ const handler = serveWithCors(async (req) => {
            request has no cross-tenant effect. Kept as a route so stale
            callers get a correct answer instead of a 404. */
         const map = await audienceMap(admin);
-        const creatives = await creativeByCampaign(admin, [campaignId], advertiserId);
+
         return json({
-          campaign: formatCampaign(existing, map, creatives.get(campaignId) || null),
+          campaign: formatCampaign(existing, map),
           selected: true,
           global: false,
         });
@@ -471,9 +440,9 @@ const handler = serveWithCors(async (req) => {
 
         if (Object.keys(filtered).length === 0) {
           const map = await audienceMap(admin);
-          const creatives = await creativeByCampaign(admin, [campaignId], advertiserId);
+
           return json({
-            campaign: formatCampaign(existing, map, creatives.get(campaignId) || null),
+            campaign: formatCampaign(existing, map),
           });
         }
 
@@ -486,9 +455,9 @@ const handler = serveWithCors(async (req) => {
           .single();
         if (updateError) return apiError("INTERNAL_ERROR", "Failed to update campaign.", 500);
         const map = await audienceMap(admin);
-        const creatives = await creativeByCampaign(admin, [campaignId], advertiserId);
+
         const updatedRow = updated as unknown as Record<string, unknown>;
-        return json({ campaign: formatCampaign(updatedRow, map, creatives.get(campaignId) || null) });
+        return json({ campaign: formatCampaign(updatedRow, map) });
       }
     }
 

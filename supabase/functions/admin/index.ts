@@ -703,7 +703,7 @@ function moderationState(
   if (blockers === null) return "unknown";
   if (campaignStatus === "active") return "live";
   if (campaignStatus === "archived") return "archived";
-  if (!blockers.includes("CREATIVE_MISSING")) return "ready_to_activate";
+  if (blockers.length === 0) return "ready_to_activate";
   switch (creativeStatus) {
     case null:
       return "creative_missing";

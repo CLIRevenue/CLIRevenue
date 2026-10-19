@@ -4,11 +4,6 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { adminClient } from "../_shared/auth.ts";
 import { apiError, corsFor, isUuid, json, optionsResponse, readJsonObjectBody, restPath } from "../_shared/http.ts";
 import { isEligible } from "../_shared/eligibility.ts";
-import {
-  CREATIVE_DELIVERY_URL_TTL_SECONDS,
-  filebaseConfig,
-  presignCreativeRead,
-} from "../_shared/filebase.ts";
 import { adTokenSecret, signServeToken, verifyServeToken } from "../_shared/adToken.ts";
 import { authenticatePublisher, rateLimitDelivery } from "../_shared/publisherAuth.ts";
 import { authorizeServe } from "../_shared/serveAuthz.ts";
@@ -208,48 +203,12 @@ async function handleDeliver(req: Request, admin: SupabaseClient): Promise<Respo
   const candidates = ((data ?? []) as unknown as Candidate[]).filter((c) => isEligible(c, now));
   if (candidates.length === 0) return noFill(req);
 
-  const creatives = await loadValidatedCreatives(
-    admin,
-    candidates.map((c) => c.id),
-  );
-  const storage = filebaseConfig();
-
-  /* One pass over the already-eligible list keeps the established priority
-     (oldest campaign first) while requiring a real, deliverable creative.
-     A candidate whose creative is missing — or whose signed URL cannot be
-     minted because storage is unconfigured — is skipped rather than served
-     broken, so a storage outage degrades to no-fill instead of a broken ad. */
-  let campaign: Candidate | undefined;
-  let creative: ServeCreative | undefined;
-  let creativeUrl: string | undefined;
-  let posterUrl: string | undefined;
-  for (const c of candidates) {
-    const asset = creatives.get(c.id);
-    if (!asset || !storage) continue;
-    const url = await presignCreativeRead(
-      storage,
-      asset.object_key,
-      CREATIVE_DELIVERY_URL_TTL_SECONDS,
-    );
-    if (!url) continue;
-    campaign = c;
-    creative = asset;
-    creativeUrl = url;
-    if (asset.poster_object_key) {
-      posterUrl = (await presignCreativeRead(
-        storage,
-        asset.poster_object_key,
-        CREATIVE_DELIVERY_URL_TTL_SECONDS,
-      )) ?? undefined;
-    }
-    break;
-  }
-  if (!campaign || !creative || !creativeUrl) {
-    if (storage === null) {
-      console.error("Filebase is not configured; no campaign can be delivered with a creative.");
-    }
-    return noFill(req);
-  }
+  /* Ads are text. There is no asset to look up, no bucket to sign and no
+     object that can be missing, so the first eligible campaign in the
+     already-filtered list is the one — the oldest-first priority is
+     unchanged, and there is now nothing that can degrade a serve into a
+     no-fill between eligibility and delivery. */
+  const campaign = candidates[0];
 
   const requestId = crypto.randomUUID();
   const expiresAt = now + SERVE_TTL_MS;
@@ -302,16 +261,6 @@ async function handleDeliver(req: Request, admin: SupabaseClient): Promise<Respo
         cta: campaign.cta,
         audience: campaign.audience_id,
         landingUrl: campaign.landing_url,
-        creative: {
-          id: creative.id,
-          type: creative.media_type,
-          mimeType: creative.mime_type,
-          url: creativeUrl,
-          width: creative.width,
-          height: creative.height,
-          durationMs: creative.duration_ms,
-          posterUrl: posterUrl ?? null,
-        },
       },
       impressionToken: token,
       expiresAt: new Date(expiresAt).toISOString(),
