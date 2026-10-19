@@ -56,6 +56,7 @@ import {
   buildTrail,
   curveFor,
   dashPair,
+  leadInPercent,
   stepPercentPerSecond,
   wrapPercent,
 } from '../../lib/authCurve.js'
@@ -130,6 +131,10 @@ export default function AuthCurve({ mode = 'login' }) {
     if (!path || !trailNode || !trailPath) return undefined
 
     const pathLength = path.getTotalLength()
+    // Anchor the cycle where the ribbon actually reaches the page, not at the
+    // path's off-page origin. The wrap is by whole units, so a glyph at this
+    // distance is the same glyph every time round.
+    const base = leadInPercent(path)
     const step = stepPercentPerSecond(pathLength)
     const wrap = wrapPercent(pathLength, trailNode.getComputedTextLength())
     // A hidden or not-yet-laid-out element measures zero. Stop rather than
@@ -146,11 +151,11 @@ export default function AuthCurve({ mode = 'login' }) {
       const delta = previous === null ? 0 : now - previous
       previous = now
       offset = advance(offset, delta, step, wrap)
-      trailPath.setAttribute('startOffset', `${offset.toFixed(3)}%`)
+      trailPath.setAttribute('startOffset', `${(base + offset).toFixed(3)}%`)
       frame = requestAnimationFrame(tick)
     }
 
-    trailPath.setAttribute('startOffset', '0%')
+    trailPath.setAttribute('startOffset', `${base.toFixed(3)}%`)
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
   }, [mode, reduced])

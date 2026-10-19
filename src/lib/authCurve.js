@@ -178,6 +178,35 @@ export function unitLength(textLength, repeats = TRAIL_REPEATS) {
  * `startOffset` percentages are of `pathLength`, so the speed has to be
  * converted through it — this is what keeps both curves moving at one speed.
  */
+/**
+ * Where the curve first reaches the page, as a percentage of its own length.
+ *
+ * Every curve is drawn with both ends pushed outside the viewbox, so the
+ * path's zero is not where the ribbon becomes visible: on login that is a
+ * run of several units of length before the first pixel the eye can see. A
+ * trail anchored at zero therefore spends the beginning of every loop
+ * off-page, and the ribbon reads as bare for a stretch before the first
+ * badge arrives — the same seam on every cycle.
+ *
+ * The trail's cycle has to be anchored here instead. Returns 0 for a curve
+ * that starts inside the box, so nothing changes for one that has no
+ * lead-in, and 0 for anything that cannot be measured, which leaves the
+ * old behaviour rather than a broken offset.
+ */
+export function leadInPercent(path, step = 0.5) {
+  if (!path || typeof path.getTotalLength !== 'function') return 0
+  const total = path.getTotalLength()
+  if (!(total > 0)) return 0
+  const { x, y, width, height } = VIEWBOX
+  for (let at = 0; at <= total; at += step) {
+    const point = path.getPointAtLength(at)
+    if (point.x >= x && point.x <= x + width && point.y >= y && point.y <= y + height) {
+      return (at / total) * 100
+    }
+  }
+  return 0
+}
+
 export function stepPercentPerSecond(pathLength, unitsPerSecond = TRAIL_SPEED) {
   if (!(pathLength > 0) || !(unitsPerSecond > 0)) return 0
   return (unitsPerSecond / pathLength) * 100
