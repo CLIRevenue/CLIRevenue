@@ -206,18 +206,30 @@ describe('the two curves are the ones the design asked for', () => {
 describe('the trail is periodic, which is what makes the loop seamless', () => {
   it('is the label plus a separator, repeated whole times', () => {
     expect(TRAIL_SEPARATOR).toBe(' • ')
-    // Separator first, label last: it reads identically, and it ends on a
-    // letter rather than on the space a trailing separator would leave,
-    // which the renderer trims. A string whose final period is short is
-    // not periodic, and a non-periodic trail shows its seam once a cycle.
-    expect(buildTrail('SIGN IN')).toBe(`${TRAIL_SEPARATOR}SIGN IN`.repeat(TRAIL_REPEATS))
+    // Separator BETWEEN labels, never at either end. It reads the same,
+    // but a text run that begins with a space has it collapsed and one
+    // that ends with a space has it trimmed, so both edge periods come
+    // out a fraction short of the ones between them — and a trail with
+    // two short periods is not periodic, which is what makes the wrap
+    // visible. One label more than the repeat count puts the short tail
+    // past the end of the path, where nothing is drawn anyway.
+    const trail = buildTrail('SIGN IN')
+    expect(trail).toBe(Array.from({ length: TRAIL_REPEATS + 1 }, () => 'SIGN IN').join(TRAIL_SEPARATOR))
     expect(buildTrail('SIGN UP')).toContain(`${TRAIL_SEPARATOR}SIGN UP`)
-    expect(buildTrail('SIGN IN').endsWith('SIGN IN')).toBe(true)
-    expect(buildTrail('SIGN UP').endsWith('SIGN UP')).toBe(true)
+    expect(/^SIGN/.test(buildTrail('SIGN IN'))).toBe(true)
+    expect(/IN$/.test(buildTrail('SIGN IN'))).toBe(true)
+    expect(/^SIGN/.test(buildTrail('SIGN UP'))).toBe(true)
+    expect(/UP$/.test(buildTrail('SIGN UP'))).toBe(true)
+    // No period may be shorter than another: that is the whole contract.
+    expect(trail.length).toBe(TRAIL_REPEATS * ('SIGN IN'.length + TRAIL_SEPARATOR.length) + 'SIGN IN'.length)
     // "SIGN IN • " is ten characters, not the eight "LOGIN • " was. A
     // hardcoded multiplier from the old label would have quietly truncated a
-    // word without failing anything, which is why it is derived instead.
-    expect(buildTrail('SIGN IN').length).toBe(TRAIL_REPEATS * 10)
+    // word without failing anything, which is why it is derived instead —
+    // and it is now one label longer than the repeat count, because the
+    // final label carries no trailing separator.
+    expect(buildTrail('SIGN IN').length).toBe(
+      TRAIL_REPEATS * ('SIGN IN'.length + TRAIL_SEPARATOR.length) + 'SIGN IN'.length,
+    )
   })
 
   it('one unit is the whole trail divided by the repeat count', () => {

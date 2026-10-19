@@ -163,24 +163,28 @@ export function curveFor(mode) {
  * unit repeated, which is what makes a one-unit shift invisible.
  */
 export function buildTrail(label, repeats = TRAIL_REPEATS) {
-  /* The separator goes BEFORE the label, not after it.
+  /* Separator BETWEEN labels, never at either end.
 
-     It looks identical either way — "SIGN UP • SIGN UP • SIGN UP" — but it
-     is not identical to the renderer. A string ending in a space has that
-     trailing space trimmed when it is laid out, so the last period comes
-     out short and every other period is full: measured on /signup, twenty
-     periods rendered 9.3977 units each and the last one rendered 8.4579,
-     a whole 0.94 short. A string that ends on a letter has no such edge.
+     It reads the same either way — "SIGN UP • SIGN UP • SIGN UP" — but
+     the edges are not the same to a renderer. A text run that begins with
+     a space has that space collapsed, and one that ends with a space has
+     it trimmed, so a string built as "SIGN UP • " repeated has a first
+     period and a last period that are each a fraction short of every
+     period between them. The wrap advances the text by one period and
+     snaps back by one period, which is invisible only if the glyph at
+     every point on the path is the same after the snap as before it. With
+     two bad edges in the string, it was not, and the fault scrolled
+     visibly past once a second: the text running an inch and jumping
+     back. Measured on /signup, twenty periods rendered 9.3977 units and
+     the last rendered 8.4579.
 
-     The wrap depends on this being exactly periodic. The scroll advances
-     the text by one period and then snaps back by one period, which is
-     invisible only if the text at every path position is the same glyph
-     after the snap as before it. With a trimmed final period it was not,
-     and the fault scrolled visibly past once a second — the text moving
-     an inch forward and jumping back. Ending on the label makes every
-     period identical, including the one that straddles the wrap. */
-  const unit = `${TRAIL_SEPARATOR}${label}`
-  return unit.repeat(repeats)
+     Joining labels with the separator gives an identical-looking string
+     that begins and ends on a letter, with every interior period
+     identical. One label more than the repeat count puts the short tail
+     — the final label, which has no separator after it — beyond the end of
+     the path, where the trail overhangs anyway and nothing is drawn.
+ */
+  return Array.from({ length: repeats + 1 }, () => label).join(TRAIL_SEPARATOR)
 }
 
 /**

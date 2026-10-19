@@ -203,20 +203,21 @@ export default function AuthCurve({ mode = 'login' }) {
     // the unit against the original TRAIL_REPEATS while the string holds
     // `needed` of them makes the wrap short by a factor of needed/16, and a
     // wrap that does not land on a unit boundary is a visible jump.
-    /* Measure one period, not the whole string.
+    /* The whole laid-out string, divided by the repeat count.
 
-       The trail deliberately overhangs the path so the ribbon is covered
-       edge to edge, and that overhang is never drawn. Dividing the laid
-       out total by the repeat count hands back a period short by the
-       overhang, and a wrap that does not land exactly on a period is a
-       seam you can see come round. getSubStringLength is the honest
-       measure: it reports what the renderer actually advanced. */
-    const repeats = repeatsRef.current
-    const chars = Math.round(trailPath.textContent.length / repeats)
-    const measured = trailPath.getSubStringLength
-      ? trailPath.getSubStringLength(0, chars)
-      : trailNode.getComputedTextLength() / repeats
-    const wrap = wrapPercent(pathLength, measured, repeats)
+       getSubStringLength looks like the more honest measure and is not:
+       startOffset is positive, so the first characters sit BEFORE the
+       start of the path and have no position on it. Asking for the length
+       of the first ten returns a degenerate number, the wrap collapses to
+       almost nothing, and the trail does not scroll at all — it vibrates
+       in place, advancing less than a period before snapping back. That
+       is a worse bug than the seam it was meant to remove, and it is why
+       this measures the string. */
+    const wrap = wrapPercent(
+      pathLength,
+      trailNode.getComputedTextLength(),
+      repeatsRef.current,
+    )
     // A hidden or not-yet-laid-out element measures zero. Stop rather than
     // divide by it — an unmeasured trail would run at an arbitrary speed.
     if (!(step > 0) || !(wrap > 0)) return undefined
