@@ -3,7 +3,7 @@
   "version": "1.2.0",
   "type": "module",
   "bin": {
-    "clirevenue": "./dist/index.js"
+    "clirevenue": "dist/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -41,6 +41,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/CLIRevenue/CLIRevenue.git"
+    "url": "git+https://github.com/CLIRevenue/CLIRevenue.git"
   }
 }
