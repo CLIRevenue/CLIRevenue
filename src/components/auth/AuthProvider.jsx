@@ -25,6 +25,9 @@ function userIdFromSession(session) {
   return session?.user?.id || null
 }
 
+const NO_ACCOUNT_MESSAGE =
+  'No advertiser or developer account exists for this email. If you deleted it, sign up again.'
+
 async function resolveProfile(userId) {
   if (!userId) return { profile: null, advertiser: null, developerAccount: null }
 
@@ -240,6 +243,41 @@ export function AuthProvider({ children }) {
   const signIn = useCallback(async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
+
+    /* Check the account exists before treating this as a login.
+
+       Supabase only knows about auth.users. What makes someone an
+       advertiser or a developer is a row in profiles, and that row
+       cascades away when the account is deleted — so a user whose
+       profile is gone can still satisfy signInWithPassword perfectly
+       happily. The mismatch used to surface much later, as "Developer
+       account not found." on a dashboard they had already been walked
+       into, which is the worst place to find out you are not a user.
+
+       Resolving here means the refusal happens at the door, on the form
+       they typed into. The session is ended rather than left dangling, so
+       a refresh cannot resurrect it either. Deliberately scoped to the
+       explicit credential path: signup parks a user with no profile until
+       the trigger creates one, and a passive boot must keep showing that
+       state rather than logging someone out from under a half-made
+       account. */
+    let resolved
+    try {
+      resolved = await resolveProfile(data.user?.id)
+    } catch {
+      resolved = null
+    }
+    if (!resolved?.profile?.role) {
+      try {
+        await supabase.auth.signOut()
+      } catch {
+        /* The local session is cleared regardless; a failure to reach the
+           server cannot leave a usable session behind. */
+      }
+      setState({ ...ANONYMOUS, error: NO_ACCOUNT_MESSAGE })
+      throw new Error(NO_ACCOUNT_MESSAGE)
+    }
+
     await refresh()
     return data
   }, [refresh])
