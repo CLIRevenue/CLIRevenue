@@ -35,6 +35,30 @@ function queryError(code, message) {
   return err
 }
 
+/**
+ * A missing table is the single most likely reason a support request
+ * silently vanishes, and it is the one reason a generic "try again" is
+ * actively harmful: retrying will never work, because the table is in a
+ * migration file that nobody has run. So it gets its own sentence and the
+ * command that fixes it.
+ *
+ * PostgREST reports a missing relation two ways depending on whether the
+ * schema cache has caught up — 42P01 from the database, PGRST205 from the
+ * cache — and both are matched.
+ */
+const MISSING_TABLE = /42P01|PGRST205|does not exist|not found in the schema cache/i
+
+export const MIGRATION_HINT =
+  'The support table has not been created yet. Run `supabase db push` (or apply ' +
+  'supabase/migrations/20261015000000_advertiser_queries.sql).'
+
+function friendly(err, fallback) {
+  if (MISSING_TABLE.test(err?.code || '') || MISSING_TABLE.test(err?.message || '')) {
+    return MIGRATION_HINT
+  }
+  return fallback
+}
+
 function normalize(row) {
   if (!row) return null
   return {
@@ -60,7 +84,7 @@ export async function fetchQueries({ limit = 25 } = {}) {
     .select(COLUMNS)
     .order('created_at', { ascending: false })
     .limit(limit)
-  if (error) throw queryError(error.code, 'Could not load your support requests.')
+  if (error) throw queryError(error.code, friendly(error, 'Could not load your support requests.'))
   return (data || []).map(normalize)
 }
 
@@ -71,7 +95,7 @@ export async function fetchAllQueries({ limit = 100 } = {}) {
     .select(COLUMNS)
     .order('created_at', { ascending: false })
     .limit(limit)
-  if (error) throw queryError(error.code, 'Could not load support requests.')
+  if (error) throw queryError(error.code, friendly(error, 'Could not load support requests.'))
   return (data || []).map(normalize)
 }
 
@@ -99,7 +123,7 @@ export async function createQuery(input) {
     })
     .select(COLUMNS)
     .single()
-  if (error) throw queryError(error.code, 'Could not send your request. Try again in a moment.')
+  if (error) throw queryError(error.code, friendly(error, 'Could not send your request. Try again in a moment.'))
   return normalize(data)
 }
 

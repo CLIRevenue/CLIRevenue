@@ -49,6 +49,22 @@ supabase migration up
 
 Migrations are not transactional across the whole run, so take a snapshot first.
 
+## 2a. Outstanding: `20261015000000_advertiser_queries.sql`
+
+Support queries in the advertiser console are written straight to
+`public.advertiser_queries`. **That table does not exist in any deployed
+database yet** — the migration is committed and has never been pushed, so
+the console's support form fails on insert and the admin's "Advertiser
+queries" tab has nothing to read. Nothing in the build applies migrations.
+
+```bash
+supabase db push          # or: supabase migration up
+```
+
+Run it before the next deploy of the front end. The console now says this
+by name when the table is absent, rather than reporting a generic failure
+that retrying cannot fix.
+
 ## 3. Deploy order
 
 1. `supabase db push` (or `supabase migration up`) through `000011`, with `000012` set aside.
