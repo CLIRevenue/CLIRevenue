@@ -127,6 +127,25 @@ export async function createQuery(input) {
   return normalize(data)
 }
 
+/**
+ * Whether the caller's own email is on the admin allowlist.
+ *
+ * This exists because every admin read in this console is filtered by
+ * public.jwt_is_admin(), and RLS filtering is silent: if the email is not
+ * on public.admin_emails the policy simply does not match and the query
+ * returns zero rows with no error. An admin looking at an empty
+ * "Advertiser queries" tab cannot tell that apart from genuinely having no
+ * queries, and will spend an hour looking for a bug in the wrong place.
+ *
+ * The function is GRANT EXECUTE'd to authenticated by 000017, so asking it
+ * directly is both possible and cheap.
+ */
+export async function checkAdminAccess() {
+  const { data, error } = await supabase.rpc('jwt_is_admin')
+  if (error) return { admin: false, reason: error.message }
+  return { admin: data === true, reason: '' }
+}
+
 /** Admin only. The RLS policy is the gate; the UI is not. */
 export async function replyToQuery(id, reply) {
   const text = String(reply || '').trim()

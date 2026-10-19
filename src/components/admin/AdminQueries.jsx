@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { fetchAllQueries, replyToQuery, closeQuery } from '../../lib/advertiserQueries.js'
+import { checkAdminAccess, fetchAllQueries, replyToQuery, closeQuery } from '../../lib/advertiserQueries.js'
 
 /**
  * Advertiser queries, and the reply box.
@@ -35,9 +35,11 @@ export default function AdminQueries() {
   const [openId, setOpenId] = useState(null)
   const [drafts, setDrafts] = useState({})
   const [saving, setSaving] = useState(false)
+  const [admin, setAdmin] = useState(null)
 
   const load = useCallback(async () => {
     try {
+      setAdmin(await checkAdminAccess())
       setRows(await fetchAllQueries())
       setError('')
     } catch (err) {
@@ -49,6 +51,7 @@ export default function AdminQueries() {
 
   useEffect(() => {
     let alive = true
+    checkAdminAccess().then((a) => { if (alive) setAdmin(a) })
     fetchAllQueries()
       .then((next) => { if (alive) { setRows(next); setError('') } })
       .catch((err) => { if (alive) setError(err.message) })
@@ -101,8 +104,20 @@ export default function AdminQueries() {
       </header>
 
       {error ? <p className="form__error" role="alert">{error}</p> : null}
+      {admin && !admin.admin && !loading ? (
+        <p className="form__error" role="alert">
+          This account is signed in but its email is not on the admin allowlist
+          (<span className="mono">public.admin_emails</span>), so row level security is
+          filtering every admin read on this page — returning no rows and no error.
+          An operator has to add it:{' '}
+          <span className="mono">INSERT INTO public.admin_emails (email) VALUES (lower(…));</span>
+          {admin.reason ? ` (${admin.reason})` : ''}
+        </p>
+      ) : null}
       {loading ? <p className="adm-empty">Loading…</p> : null}
-      {!loading && !shown.length ? <p className="adm-empty">No queries yet.</p> : null}
+      {!loading && !shown.length && !(admin && !admin.admin) ? (
+        <p className="adm-empty">No queries yet.</p>
+      ) : null}
 
       <ul className="adm-query-list">
         {shown.map((q) => (
