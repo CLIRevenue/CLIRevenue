@@ -1,5 +1,11 @@
 # CLIRevenue CLI
 
+# One line. This installs Node if the machine does not have it, then runs
+# setup. Nothing else is assumed — no Node, no npm, no framework, no idea
+# what your project is.
+curl -fsSL https://clirevenue.com/install.sh | sh
+
+
 Install the CLIRevenue SDK, verify your publisher key, and position your ads
 with a visual editor — from your terminal, in your own coding CLI.
 
