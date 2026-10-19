@@ -112,3 +112,50 @@ export function isWellFormedPublisherKey(key: unknown): key is string {
 export function isWellFormedAccountKey(key: unknown): key is string {
   return typeof key === 'string' && ACCOUNT_KEY_RE.test(key);
 }
+
+/**
+ * Say what is wrong with a pasted key, in terms of its shape alone.
+ *
+ * The validator used to answer "That does not look like a CLIRevenue
+ * publishable key." to every possible mistake, which meant a key pasted
+ * with half of it missing got the same sentence as a key from a different
+ * product. Both are one-character typos away from correct and neither
+ * told the person which one they had made. This reports the prefix they
+ * pasted and how long it was — never any part of the key itself, because
+ * a rejected key is still a credential and it may end up in a terminal
+ * scrollback, a shell history, or a bug report.
+ *
+ * Whitespace is collapsed first. `.trim()` handles a key with a trailing
+ * newline; it does nothing about one that wrapped across two lines when
+ * it was copied out of a rendered element, which is how half of these
+ * arrive.
+ *
+ * Only the current format is described. The pre-2026 `pk_test_` shape
+ * accepts any length, so it silently absorbs a truncated paste and makes
+ * a character count impossible to trust — naming it would teach the wrong
+ * lesson about the format that every new key actually uses.
+ */
+export function describeKeyProblem(raw: unknown): string {
+  const value = String(raw ?? '').replace(/\s+/g, '');
+
+  if (!value) return 'Paste the publishable key from your dashboard.';
+
+  if (value.startsWith(ACCOUNT_KEY_PREFIX)) {
+    return `That is a CLIRevenue staff key, which is never meant to reach a website. Take the publishable key from your dashboard instead.`;
+  }
+
+  const length = value.length;
+
+  if (value.startsWith(ADS_KEY_PREFIX)) {
+    const missing = ADS_KEY_LENGTH - length;
+    if (missing > 0) {
+      return `That starts ${ADS_KEY_PREFIX} and is ${length} characters. A publishable key is ${ADS_KEY_LENGTH}, so ${missing} ${missing === 1 ? 'was' : 'were'} left out — copy the whole thing.`;
+    }
+    if (missing < 0) {
+      return `That is ${length} characters. A publishable key is ${ADS_KEY_LENGTH}, so ${-missing} too many — it looks pasted twice.`;
+    }
+    return `That is the right length and prefix, but the characters after ${ADS_KEY_PREFIX} must be letters and digits only.`;
+  }
+
+  return `A publishable key starts ${ADS_KEY_PREFIX} and is ${ADS_KEY_LENGTH} characters. That one is ${length} characters.`;
+}

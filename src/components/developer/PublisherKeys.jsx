@@ -9,6 +9,10 @@ const MASK = '•'.repeat(16)
 
 export default function PublisherKeys() {
   const [tab, setTab] = useState('list') // 'list' or 'creating'
+  /* Has the one-time key actually been copied? Reset whenever a new one is
+     minted, because the previous confirmation is about a key that is now
+     gone. */
+  const [confirmedCopy, setConfirmedCopy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [keys, setKeys] = useState([])
@@ -74,6 +78,7 @@ export default function PublisherKeys() {
       const result = await createPublisherKey(newLabel)
       setCreatedKey(result)
       setTab('created')
+      setConfirmedCopy(false)
     } catch (err) {
       console.error('Failed to create publisher key:', err)
       // `publisher_keys_active_env_key` allows exactly one unrevoked key per
@@ -93,6 +98,35 @@ export default function PublisherKeys() {
       }
     } finally {
       setCreating(false)
+    }
+  }, [newLabel])
+
+  /* Re-issue in one click.
+     The server allows exactly one unrevoked key per (publisher_id,
+     key_env) — `publisher_keys_active_env_key` — so replacing a key was
+     three separate steps and a 409 in the middle if you got the order
+     wrong. The constraint is real; making the person reason about it is
+     not. Revoke then mint, in that order, which is the only order that
+     works. */
+  const handleReissueKey = useCallback(async (keyId, label) => {
+    setRevokingKeyId(keyId)
+    setError(null)
+    try {
+      await revokePublisherKey(keyId)
+      setKeys(prev => prev.filter(k => k.id !== keyId))
+      const result = await createPublisherKey(label || newLabel || 'publisher key')
+      setCreatedKey(result)
+      setTab('created')
+      setConfirmedCopy(false)
+    } catch (err) {
+      console.error('Failed to re-issue publisher key:', err)
+      if (err?.status === 409 && err?.payload?.code === 'KEY_EXISTS') {
+        setError('Another active key appeared while replacing this one. Revoke it, then try again.')
+      } else {
+        setError('Could not re-issue the publisher key. The old key may already be revoked.')
+      }
+    } finally {
+      setRevokingKeyId(null)
     }
   }, [newLabel])
 
@@ -270,7 +304,7 @@ export default function PublisherKeys() {
               </code>
               <span className="setup__keyactions">
                 {rawKey ? (
-                  <CopyButton text={rawKey} label="key" baseClass="setup__copy" />
+                  <CopyButton text={rawKey} label="key" baseClass="setup__copy" showCount onCopied={() => setConfirmedCopy(true)} />
                 ) : (
                   <span className="setup__text-error">
                     This response carried no key value. Revoke the key and create
@@ -287,13 +321,25 @@ export default function PublisherKeys() {
           </div>
 
           <div className="setup__actions">
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              onClick={handleDismissCreated}
-            >
-              I've copied the key
-            </button>
+            {/* Confirm before the plate can go away.
+
+                This key is never shown again. Dismissing on one click made
+                "I clicked past it" indistinguishable from "I copied it",
+                and the recovery is a revoke and a fresh key — so the
+                second step is worth having. */}
+            {confirmedCopy ? (
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={handleDismissCreated}
+              >
+                I've copied the key
+              </button>
+            ) : (
+              <p className="setup__note setup__note--warn">
+                Copy the key above first. This page will not show it again.
+              </p>
+            )}
           </div>
           {/* Dismissing re-runs the list, which can fail on its own. The key
               is already in the developer's hands at that point, so the plate
@@ -381,15 +427,30 @@ export default function PublisherKeys() {
                           )}
                         </td>
                         <td>
+                          {/* Replace is the button you want almost every
+                              time. Revoke alone leaves you with no key at
+                              all, and only one active key is allowed, so the
+                              next thing anyone does is create — which is a
+                              409 unless the revoke came first. */}
                           {key.revoked_at ? null : (
-                            <button
-                              type="button"
-                              className="btn btn--ghost btn--sm"
-                              onClick={() => handleRevokeKey(key.id)}
-                              disabled={revokingKeyId === key.id}
-                            >
-                              {revokingKeyId === key.id ? 'Revoking…' : 'Revoke'}
-                            </button>
+                            <span className="setup__keyactions">
+                              <button
+                                type="button"
+                                className="btn btn--ghost btn--sm"
+                                onClick={() => handleReissueKey(key.id, key.label)}
+                                disabled={revokingKeyId === key.id}
+                              >
+                                {revokingKeyId === key.id ? 'Replacing…' : 'Re-issue'}
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn--ghost btn--sm"
+                                onClick={() => handleRevokeKey(key.id)}
+                                disabled={revokingKeyId === key.id}
+                              >
+                                {revokingKeyId === key.id ? 'Revoking…' : 'Revoke'}
+                              </button>
+                            </span>
                           )}
                         </td>
                       </tr>

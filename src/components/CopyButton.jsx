@@ -23,7 +23,22 @@
 
 import { useCallback, useState } from 'react'
 
-export default function CopyButton({ text, label = 'code', baseClass = 'copy' }) {
+/**
+ * `showCount` appends how many characters were actually copied to the
+ * confirmation.
+ *
+ * A one-time secret is the one thing where "Copied" is not enough: half a
+ * key copies just as cleanly as a whole one, and the difference is only
+ * visible after the paste has been rejected somewhere else entirely. The
+ * count is the last moment the shortfall is still cheap to notice.
+ */
+export default function CopyButton({
+  text,
+  label = 'code',
+  baseClass = 'copy',
+  showCount = false,
+  onCopied,
+}) {
   const [copied, setCopied] = useState(false)
 
   const copy = useCallback(async () => {
@@ -49,18 +64,25 @@ export default function CopyButton({ text, label = 'code', baseClass = 'copy' })
       document.body.removeChild(ta)
     }
     setCopied(true)
+    onCopied?.()
     window.setTimeout(() => setCopied(false), 1600)
-  }, [text])
+  }, [text, onCopied])
 
   return (
     <button
       type="button"
       className={`btn btn--ghost btn--sm ${baseClass}${copied ? ` ${baseClass}--done` : ''}`}
       onClick={copy}
-      aria-label={copied ? 'Copied' : `Copy ${label} to clipboard`}
-      title={copied ? 'Copied' : `Copy ${label}`}
+      aria-label={
+        copied
+          ? showCount
+            ? `Copied ${text.length} characters`
+            : 'Copied'
+          : `Copy ${label} to clipboard`
+      }
+      title={copied ? (showCount ? `Copied ${text.length} characters` : 'Copied') : `Copy ${label}`}
     >
-      {copied ? 'Copied' : 'Copy'}
+      {copied ? (showCount ? `Copied ${text.length}` : 'Copied') : 'Copy'}
     </button>
   )
 }

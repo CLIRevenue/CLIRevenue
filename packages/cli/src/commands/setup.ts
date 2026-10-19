@@ -12,6 +12,7 @@ import {
   readKeyFromEnvFile,
   PUBLISHABLE_KEY_PATTERN as KEY_PATTERN,
 } from '../verify/key-file.js';
+import { describeKeyProblem } from '../verify/keyFormat.js';
 import { generateIntegration, type GenerateResult } from '../generate/integration.js';
 import { colors, banner, success, warn, info } from '../utils/colors.js';
 import { CLIREVENUE_API_BASE_URL, CLIREVENUE_SDK_VERSION } from '../config.js';
@@ -457,11 +458,14 @@ async function promptForKey(): Promise<string> {
       type: 'input',
       name: 'publisherKey',
       message: 'CLIRevenue publishable key (clirevenue_ads_…)',
-      validate: (value: string) =>
-        KEY_PATTERN.test(value.trim())
-          ? true
-          : 'That does not look like a CLIRevenue publishable key.',
-      filter: (value: string) => value.trim(),
+      /* Collapsed, not trimmed. A key that wrapped across two lines when it
+         was copied out of a rendered element keeps the newline inside it,
+         and `.trim()` never sees that. */
+      filter: (value: string) => String(value ?? '').replace(/\s+/g, ''),
+      validate: (value: string) => {
+        const key = String(value ?? '').replace(/\s+/g, '');
+        return KEY_PATTERN.test(key) ? true : describeKeyProblem(key);
+      },
     },
   ]);
   return publisherKey;
