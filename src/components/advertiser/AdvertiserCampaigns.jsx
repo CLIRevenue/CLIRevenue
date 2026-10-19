@@ -222,6 +222,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
       selectCampaign(created.id)
       setNotice(`Created ${created.name}. It starts as a draft — upload a creative, then activate it.`)
       setForm(EMPTY_FORM)
+      setFormOpen(false)
       await onChanged()
     } catch (err) {
       setFormErrors({ form: campaignErrorMessage(err, 'Campaign could not be created.') })
@@ -386,6 +387,36 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
   const creativeSummary = describeCreative(creative)
   const canActivate = Boolean(selected) && selected.status !== 'archived'
 
+  /* The editor is a dialog, not a region of the page. The form was the
+     largest thing in the layout and it was open before anything had been
+     asked of it: a screen of empty fields is not a starting point, it is a
+     question. Behind a "Create campaign" button it is a step. */
+  const [formOpen, setFormOpen] = useState(false)
+
+  function openCreate() {
+    selectCampaign(null)
+    setFormErrors({})
+    setFormOpen(true)
+  }
+
+  function openEdit() {
+    editSelected()
+    setFormOpen(true)
+  }
+
+  const closeForm = () => setFormOpen(false)
+
+  /* Escape closes, and so does the scrim. The one dismissal a dialog must
+     not have is "find the X". */
+  useEffect(() => {
+    if (!formOpen) return undefined
+    const onKey = (event) => {
+      if (event.key === 'Escape') closeForm()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [formOpen])
+
   return (
     <div className="adv-page">
       <AdvPageHead
@@ -394,6 +425,12 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
         title="Briefs, budgets, and delivery state."
         body="Every campaign starts as a draft. Activation is an explicit step, so nothing goes live by accident."
       />
+      <div className="adv-page__actions">
+        <button type="button" className="btn" onClick={openCreate}>
+          Create campaign
+        </button>
+      </div>
+
       <AdvError message={error} onRetry={onRetry} />
       {notice ? <div className="adv-notice" role="status">{notice}</div> : null}
 
@@ -422,7 +459,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
           </div>
           {loading ? <AdvLoading label="Loading campaigns…" /> : filtered.length === 0 ? (
             campaigns.length === 0 ? (
-              <AdvEmpty mark="No campaigns" title="No campaigns yet" body="Start your first brief in the New campaign form." />
+              <AdvEmpty mark="No campaigns" title="No campaigns yet" body="Create your first brief — a name, a headline, somewhere to send people, and a budget." />
             ) : (
               <AdvEmpty mark="No matches" title="No campaigns match" body="Adjust search or filters, or create a new brief." />
             )
@@ -501,7 +538,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                 {selected.status !== 'archived' ? (
                   <button type="button" className="btn btn--ghost" onClick={handleArchive}>Archive</button>
                 ) : null}
-                <button type="button" className="btn btn--ghost" onClick={() => selectCampaign(null)}>New…</button>
+                <button type="button" className="btn btn--ghost" onClick={openEdit}>Edit…</button>
               </div>
             ) : null}
             {detailError ? <div className="adv-notice adv-notice--error" role="alert">{detailError}</div> : null}
@@ -550,6 +587,42 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                 </div>
               </div>
             ) : null}
+
+          </Panel>
+        </div>
+      </div>
+
+      {formOpen ? (
+        <div
+          className="adv-modal__scrim"
+          role="dialog"
+          aria-modal="true"
+          aria-label={selected ? `Edit ${selected.name}` : 'Create campaign'}
+          onClick={closeForm}
+        >
+          <div className="adv-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="adv-modal__head">
+              <div>
+                <h2 className="adv-modal__title">
+                  {selected ? `Edit ${selected.name}` : 'Create campaign'}
+                </h2>
+                <p className="adv-modal__sub">
+                  {selected
+                    ? 'Changes save to this campaign. Spend and delivery counters are the server\u2019s.'
+                    : 'Name it, say what it says, point it somewhere, and give it a budget.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="adv-modal__close"
+                onClick={closeForm}
+                aria-label="Close"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
 
             <form className="form adv-form" onSubmit={selected ? handleUpdate : handleCreate} noValidate>
               <label className="field">
@@ -791,16 +864,39 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
               ) : null}
 
               {formErrors.form ? <p className="form__error" role="alert">{formErrors.form}</p> : null}
+              {/* validateCampaignInput returns a map keyed by field, and the
+                  fields do not each render their own copy of it. Without this
+                  the first thing a new advertiser does — press Create campaign
+                  on an empty form — does nothing at all and looks broken. */}
+              {!formErrors.form && Object.keys(formErrors).length ? (
+                <p className="form__error" role="alert">
+                  {Object.values(formErrors).filter((m) => m).slice(0, 3).join(' ')}
+                </p>
+              ) : null}
               {notice ? (
                 <div role="status" aria-live="polite" className="form__ok">
                   {notice}
                 </div>
               ) : null}
               <p className="form__note">Nothing is charged. Campaigns save to your account only.</p>
+
+              {/* The button the form was missing. It had an onSubmit and no
+                  submit control, and with eleven fields the browser will not
+                  submit implicitly either — so there was no way to create a
+                  campaign except tabbing to the end of the form and hoping.
+                  There was no end to tab to; the form just ended. */}
+              <div className="adv-modal__foot">
+                <button type="button" className="btn btn--ghost" onClick={closeForm} disabled={saving}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn" disabled={saving}>
+                  {saving ? 'Saving…' : selected ? 'Save changes' : 'Create campaign'}
+                </button>
+              </div>
             </form>
-          </Panel>
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   )
 }

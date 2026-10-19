@@ -562,3 +562,111 @@
   background: var(--hair-strong);
 }
 .adv-console .adv-chart__name[title="\u2014"] { color: var(--ink-4); }
+
+/* ── the campaign editor's dialog ──────────────────────────────────────
+
+   The same scrim-and-panel pair the account dialog uses, not a new shape:
+   a second dialog in a console reads as two dialogs, and the thing the
+   reader has to learn is the scrim, not the panel. The panel scrolls
+   rather than growing, because the form is taller than most of a laptop
+   screen and a dialog whose bottom is off-screen has no footer. */
+.adv-modal__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--text) 34%, transparent);
+  animation: adv-modal-in 180ms var(--ease-ui);
+}
+.adv-modal {
+  width: min(680px, 100%);
+  max-height: min(86dvh, 860px);
+  overflow-y: auto;
+  padding: 22px 24px 20px;
+  background: var(--panel);
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 64px -20px color-mix(in srgb, var(--text) 42%, transparent);
+  animation: adv-modal-rise 200ms var(--ease-ui);
+}
+.adv-modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.adv-modal__title {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--c-text-body);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--text);
+}
+.adv-modal__sub {
+  margin: 4px 0 0;
+  font-size: var(--c-text-small);
+  color: var(--ink-3);
+}
+.adv-modal__close {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-ui),
+              background var(--dur-fast) var(--ease-ui),
+              transform var(--dur-fast) var(--ease-ui);
+}
+.adv-modal__close:hover {
+  color: var(--text);
+  background: var(--hair);
+  transform: rotate(90deg);
+}
+.adv-modal__close:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.adv-modal__close svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+@keyframes adv-modal-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes adv-modal-rise {
+  from { opacity: 0; transform: translateY(10px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adv-modal__scrim,
+  .adv-modal { animation: none; }
+  .adv-modal__close { transition: none; }
+  .adv-modal__close:hover { transform: none; }
+}
+
+/* The one control this page exists to offer, kept out of the flow of the
+   grid so it is in the same place whether the list has four campaigns or
+   none, and whether it loaded or errored. A create button that only exists
+   once something else does is a create button you cannot find. */
+.adv-page__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: -8px 0 14px;
+}
+
+/* The dialog's footer sticks to the bottom of a scrolling panel, so the
+   button that ends the task is never the thing that scrolled away. */
+.adv-modal__foot {
+  position: sticky;
+  bottom: -20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 16px -24px -20px;
+  padding: 14px 24px 0;
+  background: linear-gradient(to top, var(--panel) 60%, color-mix(in srgb, var(--panel) 0%, transparent));
+}
