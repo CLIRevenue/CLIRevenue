@@ -1,9 +1,9 @@
-import PageChrome from '../landing/PageChrome.jsx'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AdvBarChart, AdvEmpty, AdvError, AdvLoading, AdvPageHead, AdvStats } from '../advertiser/AdvertiserUI.jsx'
 import { Panel } from '../console/ui.jsx'
 import { supabase } from '../../lib/api.js'
 import DeveloperAccount from './DeveloperAccount.jsx'
+import DeveloperSidebar from './DeveloperSidebar.jsx'
 import SdkSetup from './SdkSetup.jsx'
 import PublisherKeys from './PublisherKeys.jsx'
 import PublisherPlacements from './PublisherPlacements.jsx'
@@ -11,6 +11,58 @@ import { LogoutButton } from '../auth/LogoutButton.jsx'
 import './DeveloperConsole.css'
 
 const STORAGE_KEY = 'clirevenueDeveloperTab'
+const THEME_KEY = 'clirevenue.devtheme'
+
+function readTheme() {
+  try {
+    return window.localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light'
+  } catch {
+    return 'light'
+  }
+}
+
+/* The account dialog. Same shape as the advertiser console's, because the
+   two consoles are the same product and a person who uses both should not
+   have to learn the dialog twice. */
+function SettingsPanel({ onClose }) {
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div
+      className="adv-settings__scrim"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Account settings"
+      onClick={onClose}
+    >
+      <div className="adv-settings" onClick={(event) => event.stopPropagation()}>
+        <div className="adv-settings__head">
+          <div>
+            <h2 className="adv-settings__title">Settings</h2>
+            <p className="adv-settings__sub">Your account, and the way out of it.</p>
+          </div>
+          <button type="button" className="adv-settings__close" onClick={onClose} aria-label="Close">
+            <svg className="adv-settings__close-mark" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+        <div className="adv-settings__body">
+          <DeveloperAccount />
+        </div>
+        <div className="adv-settings__foot">
+          <LogoutButton />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function trimBase(raw) {
   return String(raw || '').replace(/\/+$/, '')
@@ -108,6 +160,9 @@ export default function DeveloperApp() {
   const [error, setError] = useState('')
   const [balance, setBalance] = useState(null)
   const [rewards, setRewards] = useState([])
+  const [theme, setTheme] = useState(readTheme)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const shellRef = useRef(null)
 
   // Persist tab state to sessionStorage whenever it changes
   useEffect(() => {
@@ -198,35 +253,57 @@ export default function DeveloperApp() {
   })), [rewards])
 
   const TABS = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'earnings', label: 'Earnings' },
-    { id: 'sdk', label: 'SDK setup' },
-    { id: 'keys', label: 'Publisher Keys' },
-    { id: 'placements', label: 'Placements' },
-    { id: 'integrations', label: 'Integrations' },
-    { id: 'analytics', label: 'Analytics' },
-    { id: 'account', label: 'Account' },
+    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+    { id: 'earnings', label: 'Earnings', icon: 'earnings' },
+    { id: 'sdk', label: 'SDK setup', icon: 'sdk' },
+    { id: 'keys', label: 'Publisher Keys', icon: 'keys' },
+    { id: 'placements', label: 'Placements', icon: 'placements' },
+    { id: 'integrations', label: 'Integrations', icon: 'integrations' },
+    { id: 'analytics', label: 'Analytics', icon: 'analytics' },
+    { id: 'account', label: 'Account', icon: 'account' },
   ]
+  /* Account is in TABS because the panel and the deep link both read it,
+     but it is not a destination in the rail: it opens a dialog, and a rail
+     is for pages. */
+  const NAV = TABS.filter((t) => t.id !== 'account')
 
   return (
-    <PageChrome active="/developer">
-      <section className="adv-shell" aria-label="Developer dashboard">
-        <div className="adv-shell__inner">
-          <nav className="adv-nav" aria-label="Developer">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                className="adv-nav__btn"
-                data-active={tab === t.id}
-                aria-current={tab === t.id ? 'page' : undefined}
-                onClick={() => setTab(t.id)}
-              >
-                {t.label}
-              </button>
-            ))}
-            <LogoutButton />
-          </nav>
+    <div
+      className="clr-surface adv-console"
+      data-theme={theme === 'dark' ? 'dark' : undefined}
+      ref={shellRef}
+    >
+      <DeveloperSidebar
+        shellRef={shellRef}
+        items={NAV}
+        active={tab}
+        activeLabel={TABS.find((t) => t.id === tab)?.label || 'Dashboard'}
+        onNavigate={(item) => setTab(item.id)}
+        onOpenSettings={() => setSettingsOpen(true)}
+        logoutSlot={<LogoutButton />}
+        theme={theme}
+        onToggleTheme={() =>
+          setTheme((current) => {
+            const next = current === 'dark' ? 'light' : 'dark'
+            try {
+              window.localStorage.setItem(THEME_KEY, next)
+            } catch {
+              /* Storage off still toggles; it just forgets by reload. */
+            }
+            return next
+          })
+        }
+      />
+
+      <main className="adv-main" aria-label="Developer dashboard">
+        <header className="adv-topbar">
+          <span className="adv-topbar__mark">
+            <span className="adv-topbar__cli">CLI</span>
+            <span className="adv-topbar__rev">Revenue</span>
+          </span>
+        </header>
+
+        <div className="adv-main__inner">
 
           {tab !== 'account' && tab !== 'sdk' ? (
             <AdvPageHead
@@ -416,8 +493,9 @@ export default function DeveloperApp() {
             </>
           )}
         </div>
+      </main>
 
-      </section>
-    </PageChrome>
+      {settingsOpen ? <SettingsPanel onClose={() => setSettingsOpen(false)} /> : null}
+    </div>
   )
 }
