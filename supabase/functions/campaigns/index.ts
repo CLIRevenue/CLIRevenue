@@ -61,10 +61,6 @@ function formatCampaign(
     status: row.status,
     starts_at: row.starts_at ?? null,
     ends_at: row.ends_at ?? null,
-    /* Creative summary only. The playable URL is deliberately absent here:
-       it is minted only by the creatives endpoint (and at delivery time)
-       from a short-lived signature. This keeps listing cheap and means a
-       campaign list response can never leak a durable object URL. */
     created_at: row.created_at,
     createdAt: row.created_at,
     updated_at: row.updated_at,
@@ -190,9 +186,7 @@ const handler = serveWithCors(async (req) => {
       const map = await audienceMap(admin);
       const rows = (data || []) as Record<string, unknown>[];
 
-      const campaigns = rows.map((row) =>
-        formatCampaign(row, map) || null)
-      );
+      const campaigns = rows.map((row) => formatCampaign(row, map));
       return json({ campaigns });
     }
 
@@ -261,11 +255,7 @@ const handler = serveWithCors(async (req) => {
       const createdRow = created as unknown as Record<string, unknown>;
       return json(
         {
-          campaign: formatCampaign(
-            createdRow,
-            map,
-            creatives.get(String(createdRow.id)) || null,
-          ),
+          campaign: formatCampaign(createdRow, map, ),
         },
         201,
       );
@@ -292,11 +282,7 @@ const handler = serveWithCors(async (req) => {
         const map = await audienceMap(admin);
 
         return json({
-          campaign: formatCampaign(
-            result.campaign!,
-            map,
-            creatives.get(campaignId) || null,
-          ),
+          campaign: formatCampaign(result.campaign!, map, ),
           archived: true,
         });
       }
@@ -307,11 +293,7 @@ const handler = serveWithCors(async (req) => {
         const map = await audienceMap(admin);
 
         return json({
-          campaign: formatCampaign(
-            result.campaign!,
-            map,
-            creatives.get(campaignId) || null,
-          ),
+          campaign: formatCampaign(result.campaign!, map, ),
           archived: true,
         });
       }

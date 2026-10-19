@@ -13,7 +13,8 @@
     "typecheck": "deno check supabase/functions/*/index.ts supabase/functions/_shared/*.ts packages/sdk/src/*.ts",
     "test:deno": "deno test --allow-env=APP_ORIGINS supabase/functions/_shared/",
     "test:db": "vitest run tests/db",
-    "postbuild": "node scripts/generate-seo.mjs"
+    "postbuild": "node scripts/generate-seo.mjs",
+    "check:functions": "for f in supabase/functions/*/index.ts; do deno check \"$f\" || exit 1; done"
   },
   "dependencies": {
     "@clirevenue/sdk": "^2.1.0",
