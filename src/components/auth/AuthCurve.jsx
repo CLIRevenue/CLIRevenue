@@ -52,12 +52,14 @@ import {
   MASK_REGION,
   PATH_ID,
   PATH_REF,
+  TRAIL_REPEATS,
   advance,
   buildTrail,
   curveFor,
   dashPair,
   leadInPercent,
   stepPercentPerSecond,
+  unitLength,
   wrapPercent,
 } from '../../lib/authCurve.js'
 import './AuthCurve.css'
@@ -122,6 +124,35 @@ export default function AuthCurve({ mode = 'login' }) {
   useEffect(() => {
     draw()
   }, [draw, curve.id])
+
+  /* The trail has to outlast the path, or the ribbon runs out of badges
+     partway along and its last stretch is bare. A fixed repeat count cannot
+     promise that: the path length, the glyph size and the viewport all move,
+     and on /login the sixteen repeats were ending around x=77 while the
+     ribbon stayed visible to x=96.
+
+     Measured, not guessed — the unit's length comes from the rendered text
+     rather than from an assumed character width, and the count is rounded up
+     to whole units so the scroll's wrap stays seamless. Only ever grows the
+     string, and it writes to the DOM directly because re-rendering would
+     restart the draw. */
+  useEffect(() => {
+    const path = pathRef.current
+    const trailNode = trailRef.current
+    const trailPath = trailPathRef.current
+    if (!path || !trailNode || !trailPath) return
+
+    const pathLength = path.getTotalLength()
+    if (!(pathLength > 0)) return
+
+    const unit = unitLength(trailNode.getComputedTextLength(), TRAIL_REPEATS)
+    if (!(unit > 0)) return
+
+    const needed = Math.ceil((pathLength + unit) / unit)
+    if (needed <= TRAIL_REPEATS) return
+
+    trailPath.textContent = buildTrail(curve.label, needed)
+  }, [mode, curve.label])
 
   useEffect(() => {
     if (reduced) return undefined
