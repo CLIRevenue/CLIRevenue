@@ -61,7 +61,28 @@ queries" tab has nothing to read. Nothing in the build applies migrations.
 supabase db push          # or: supabase migration up
 ```
 
-Run it before the next deploy of the front end. The console now says this
+Run it before the next deploy of the front end.
+
+The same staleness applies to the Edge Functions, and it fails more
+quietly than the migration did. `public.campaigns` is still running a
+build of `_shared/campaignRules.ts` from before `landing_url` and
+`cpm_cents` were added to `CREATE_ALLOWED`, so a create comes back
+
+```
+Unsupported fields: landing_url, cpm_cents.
+```
+
+The source is correct — both names are allowed, and both are real columns
+— so this reads as a client bug and is not one. A function bundles its
+`_shared` imports at deploy time, so editing those files changes nothing
+until the function is redeployed:
+
+```bash
+supabase functions deploy campaigns
+```
+
+**Front end and backend deploy on different clocks.** A green Cloudflare
+build says nothing about either the migrations or the functions. The console now says this
 by name when the table is absent, rather than reporting a generic failure
 that retrying cannot fix.
 
