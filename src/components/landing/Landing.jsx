@@ -69,7 +69,7 @@ const ROLES = [
     k: 'For developers',
     h: 'Put a slot where your users already look',
     p:
-      'Publishers keep a share of every qualified impression. Register, paste your key, size your slots — the network handles the rest.',
+      'Developers keep a share of every qualified impression. Register, paste your key, size your slots — the network handles the rest.',
     a: 'Start earning — free',
   },
   {
@@ -155,7 +155,7 @@ export default function Landing() {
               <span data-pick>Sponsors in the tools developers<span className="muted"> already live in.</span></span>
             </h1>
             <p className="lede" data-reveal style={{ '--d': '120ms' }}>
-              CLIRevenue buys attention in the command line. Publishers place a slot, get a key, and keep a share
+              CLIRevenue buys attention in the command line. Developers place a slot, get a key, and keep a share
               of every qualified impression — without reading a single prompt.
             </p>
             <div className="lhero-actions" data-reveal style={{ '--d': '180ms' }}>

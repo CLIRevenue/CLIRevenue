@@ -10,7 +10,7 @@ const ROLE_FILTERS = [
   { key: 'all', label: 'All' },
   { key: 'advertiser', label: 'Advertisers' },
   { key: 'developer', label: 'Developers' },
-  { key: 'publisher', label: 'Publishers' },
+  { key: 'developer', label: 'Developers' },
   { key: 'admin', label: 'Admins' },
 ]
 
@@ -24,20 +24,20 @@ function roleTone(role) {
   if (role === 'admin') return 'paused'
   if (role === 'advertiser') return 'active'
   if (role === 'developer') return 'completed'
-  if (role === 'publisher') return 'enabled'
+  if (role === 'developer') return 'enabled'
   return 'archived'
 }
 
 /**
  * `null` here means "the schema has no such column", not "false" and not "0".
- * The distinctions matter: a suspended publisher is a real recorded fact,
+ * The distinctions matter: a suspended developer is a real recorded fact,
  * while an advertiser's review state has never been captured at all.
  */
 function AccountState({ account }) {
-  if (account.publisher?.status === 'suspended') {
+  if (account.developer?.status === 'suspended') {
     return <GovBadge tone="suspended">suspended</GovBadge>
   }
-  if (account.publisher?.status === 'active') {
+  if (account.developer?.status === 'active') {
     return <GovBadge tone="active">active</GovBadge>
   }
   if (account.advertiser && account.advertiser.canRunCampaigns === false) {
@@ -51,7 +51,7 @@ function identityLines(account) {
     { key: 'profile', value: account.profileId },
     account.advertiser ? { key: 'advertiser', value: `${account.advertiser.id}` } : null,
     account.developer ? { key: 'developer', value: `${account.developer.id}` } : null,
-    account.publisher ? { key: 'publisher', value: `${account.publisher.id}` } : null,
+    account.developer ? { key: 'developer', value: `${account.developer.id}` } : null,
   ].filter(Boolean)
 }
 
@@ -94,7 +94,7 @@ function AccountCard({ account, onToggleGate, gateBusy, gateError }) {
         <Cell label="Joined" value={fmtDateFull(account.createdAt)} />
         <Cell
           label="Publisher"
-          value={account.publisher ? account.publisher.name : null}
+          value={account.developer ? account.developer.name : null}
           empty={account.ownedPublisherCount > 0 ? `${account.ownedPublisherCount} owned, unlinked` : 'None'}
         />
         <Cell
@@ -198,9 +198,9 @@ export default function AdminAccounts() {
     return accounts.filter((a) => {
       if (role !== 'all' && a.role !== role) return false
       if (status === 'gated' && !(a.advertiser && a.advertiser.canRunCampaigns === false)) return false
-      if (status === 'suspended' && a.publisher?.status !== 'suspended') return false
+      if (status === 'suspended' && a.developer?.status !== 'suspended') return false
       if (!q) return true
-      return [a.displayName, a.fullName, a.email, a.profileId, a.advertiser?.companyName, a.developer?.developerType, a.publisher?.name]
+      return [a.displayName, a.fullName, a.email, a.profileId, a.advertiser?.companyName, a.developer?.developerType, a.developer?.name]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q))
     })
@@ -233,7 +233,7 @@ export default function AdminAccounts() {
       <PageHeader
         breadcrumb="Operations / Production"
         title="Accounts & Identity"
-        sub={`${counts.total ?? 0} profiles · ${counts.advertisers ?? 0} advertisers · ${counts.developers ?? 0} developers · ${counts.publishers ?? 0} publishers`}
+        sub={`${counts.total ?? 0} profiles · ${counts.advertisers ?? 0} advertisers · ${counts.developers ?? 0} developers · ${counts.developers ?? 0} developers`}
         status={capabilities.truncated ? `window capped at ${capabilities.rowLimit}` : 'live'}
         tone={capabilities.truncated ? 'amber' : ''}
       />
@@ -354,7 +354,7 @@ export default function AdminAccounts() {
           identityVerification: 'KYC / identity verification',
           riskFlags: 'Per-account risk flags',
           servingGate: 'Serving gate write',
-          publisherSuspension: 'Publisher suspension state',
+          developerSuspension: 'Publisher suspension state',
           pagination: 'Server-side pagination',
         }}
         title="What this screen can and cannot show"

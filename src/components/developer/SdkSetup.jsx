@@ -8,9 +8,9 @@
 
    Five rules this page obeys without exception:
 
-   1. It never prints a publisher key it did not receive. The key
+   1. It never prints a developer key it did not receive. The key
       below is shown only because this page asked the
-      provision_publisher Edge Function for it and that request
+      provision_developer Edge Function for it and that request
       genuinely minted it. Every other view of a key is the
       12-character fragment the server chose to keep, and the
       self-test keeps reporting the build-time key instead.
@@ -117,7 +117,7 @@ const HOSTS = [
 ]
 
 /* The order matters and it is not negotiable: a key cannot be
-   created before a publisher exists, a placement cannot exist
+   created before a developer exists, a placement cannot exist
    before a key can sign for it, and nothing can be delivered
    before a placement exists. Steps 1 and 2 happen here — no
    operator, no SQL — and so does step 3, because the CLI creates
@@ -126,20 +126,20 @@ const STEPS = [
   {
     phase: 'On this page',
     n: 1,
-    title: 'Create a publisher',
+    title: 'Create a developer',
     where: 'This page · done for you',
     body:
-      'A publisher is the account the whole integration hangs off. It owns the keys, the placements and the delivery log. Signing in provisions one for you and reuses it on every later visit.',
-    note: 'Provisioning is idempotent: refreshing this page will not create a second publisher, and it never takes one away.',
+      'A developer is the account the whole integration hangs off. It owns the keys, the placements and the delivery log. Signing in provisions one for you and reuses it on every later visit.',
+    note: 'Provisioning is idempotent: refreshing this page will not create a second developer, and it never takes one away.',
   },
   {
     phase: 'On this page',
     n: 2,
-    title: 'Issue a publishable publisher key',
+    title: 'Issue a publishable developer key',
     where: 'This page · done for you',
     body:
       'You get a pk_test_… key. Only a SHA-256 hash is stored, so the plaintext exists in exactly one response — the one that minted it — and the panel above is showing you that response.',
-    note: 'Reopening this page will not issue another key. Creating a replacement and revoking the old one is a deliberate action you take in Publisher Keys.',
+    note: 'Reopening this page will not issue another key. Creating a replacement and revoking the old one is a deliberate action you take in Developer Keys.',
   },
   {
     phase: 'In your project',
@@ -222,7 +222,7 @@ if (ad) cli.render('console-workbench', '#ad-region')`,
     title: 'Watch performance',
     where: 'Not available yet',
     body:
-      'Delivery counts live on the server in ad_serve_log. There is no publisher-facing reporting endpoint, so this page will not show you a number until one exists.',
+      'Delivery counts live on the server in ad_serve_log. There is no developer-facing reporting endpoint, so this page will not show you a number until one exists.',
   },
 ]
 
@@ -231,11 +231,11 @@ if (ad) cli.render('console-workbench', '#ad-region')`,
 
    Two entries that used to sit here no longer belong: placements
    are created by the CLI through the same API this dashboard
-   uses, and keys can be issued and revoked from Publisher Keys.
+   uses, and keys can be issued and revoked from Developer Keys.
    Claiming otherwise would send a developer looking for an
    operator who does not exist. */
 const BLOCKERS = [
-  'No publisher-facing delivery reporting endpoint, so step 10 cannot be completed from this dashboard. Until one exists this page shows no impressions, no fill rate and no revenue breakdown rather than a row of zeros that would read as measurements.',
+  'No developer-facing delivery reporting endpoint, so step 10 cannot be completed from this dashboard. Until one exists this page shows no impressions, no fill rate and no revenue breakdown rather than a row of zeros that would read as measurements.',
 ]
 
 /* Status vocabulary mirrors src/hooks/useServedAd.js. Keeping the
@@ -252,7 +252,7 @@ const OUTCOME = {
 const MASK = '•'.repeat(16)
 
 /**
- * Ask for the publisher account without touching React state, so the mount
+ * Ask for the developer account without touching React state, so the mount
  * effect and the retry button can share one request path.
  */
 async function readProvisioning() {
@@ -261,12 +261,12 @@ async function readProvisioning() {
   } catch (error) {
     return {
       ok: false,
-      message: error?.message || 'The publisher account could not be read.',
+      message: error?.message || 'The developer account could not be read.',
     }
   }
 }
 
-/* The publisher account, requested on mount. Deliberately not cached
+/* The developer account, requested on mount. Deliberately not cached
    across reloads: the raw key cannot be re-derived, and pretending a
    second request would bring it back would be a lie about the
    storage model. A reload therefore re-checks and reports the
@@ -319,10 +319,10 @@ function Provisioning() {
     : `${fragment || 'pk_test_'}${MASK}`
 
   return (
-    <section className="panel adv-panel" aria-label="Publisher provisioning">
+    <section className="panel adv-panel" aria-label="Developer provisioning">
       <h4 className="adv-panel__title">SDK setup</h4>
       <p className="adv-panel__sub">
-        Your publisher account and a test publishable key, requested from the server the
+        Your developer account and a test publishable key, requested from the server the
         first time you open this page. No operator, no SQL, no approval queue.
       </p>
 
@@ -332,17 +332,17 @@ function Provisioning() {
         </span>
         <span className="setup__status-headline">
           {state === 'checking'
-            ? 'Checking your publisher account…'
+            ? 'Checking your developer account…'
             : state === 'error'
               ? 'Provisioning is unavailable'
-              : 'Your publisher account is ready.'}
+              : 'Your developer account is ready.'}
         </span>
         {state === 'error' ? <span className="setup__status-detail">{message}</span> : null}
         {state === 'ready' ? (
           <span className="setup__status-detail">
-            {result.publisher.created
-              ? `Created ${result.publisher.name} just now.`
-              : `Reusing ${result.publisher.name}, which already existed.`}{' '}
+            {result.developer.created
+              ? `Created ${result.developer.name} just now.`
+              : `Reusing ${result.developer.name}, which already existed.`}{' '}
             Test key {result.key.created ? 'issued just now' : 'already in use'},{' '}
             {result.key.env === 'live' ? 'live' : 'test'} environment.
           </span>
@@ -373,7 +373,7 @@ function Provisioning() {
           <p className="setup__note">
             {raw
               ? 'Copy it now. Only the SHA-256 hash is stored, so this is the one time the full value exists outside your browser — a reload of this page will bring back the fragment, not the key.'
-              : `The full key was shown once, when it was first issued, and only its SHA-256 hash is stored, so it cannot be recovered here. The fragment above is the 12-character display value the server kept. Issue a replacement from Publisher Keys if you need one.`}
+              : `The full key was shown once, when it was first issued, and only its SHA-256 hash is stored, so it cannot be recovered here. The fragment above is the 12-character display value the server kept. Issue a replacement from Developer Keys if you need one.`}
           </p>
         </div>
       ) : null}
@@ -469,9 +469,9 @@ function SelfTest() {
     if (!clirevenue.configured) {
       setState('failed')
       setResult({
-        headline: 'Publisher key is not configured',
+        headline: 'Developer key is not configured',
         detail:
-          'VITE_CLIREVENUE_PUBLISHABLE_KEY is not set in this build, so there is no publisher to request an ad for. Nothing was sent. The key provisioned above is a different key: this test reads the one baked into the bundle at build time.',
+          'VITE_CLIREVENUE_PUBLISHABLE_KEY is not set in this build, so there is no developer to request an ad for. Nothing was sent. The key provisioned above is a different key: this test reads the one baked into the bundle at build time.',
       })
       return
     }
@@ -518,7 +518,7 @@ function SelfTest() {
 
       <ul className="setup__facts">
         <li className="setup__fact">
-          <span className="setup__fact-label">Publisher key</span>
+          <span className="setup__fact-label">Developer key</span>
           <span className="setup__fact-value" data-ok={configured ? 'yes' : 'no'}>
             {configured ? `present · ${clirevenue.publisherKeyHint()}` : 'not configured'}
           </span>
@@ -579,7 +579,7 @@ export default function SdkSetup() {
         index="D2"
         label="SDK"
         title="Ad delivery, end to end."
-        body="Your publisher account and a test key first, then the steps in order, with the only place each one can happen. Every step below was read off the released CLI and the released edge functions, not from memory."
+        body="Your developer account and a test key first, then the steps in order, with the only place each one can happen. Every step below was read off the released CLI and the released edge functions, not from memory."
       />
 
       <Provisioning />
@@ -637,7 +637,7 @@ export default function SdkSetup() {
         <h4 className="adv-panel__title">What the browser is allowed to hold</h4>
         <p className="adv-panel__sub">
           The publishable key is an identifier, not a credential. It authorises delivery for
-          one publisher and nothing else — it cannot create a publisher, issue a key, or
+          one developer and nothing else — it cannot create a developer, issue a key, or
           move money. Provisioning is the exception that proves the rule: the account is
           created behind the server's own bearer check, from the session token and never
           from a field the browser can set.
@@ -679,7 +679,7 @@ export default function SdkSetup() {
         </ul>
         <AdvEmpty
           title="No performance data is shown here"
-          body="Delivery counts exist on the server. Until a publisher-facing endpoint exists, showing zeros would look like a measurement and read as a fact, so this page shows nothing instead."
+          body="Delivery counts exist on the server. Until a developer-facing endpoint exists, showing zeros would look like a measurement and read as a fact, so this page shows nothing instead."
         />
       </Panel>
     </div>

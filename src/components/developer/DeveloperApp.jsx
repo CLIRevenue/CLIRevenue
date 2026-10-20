@@ -486,7 +486,7 @@ export default function DeveloperApp() {
                   <Panel className="adv-panel">
                     <h4 className="adv-panel__title">Not available yet</h4>
                     <p className="adv-panel__sub">
-                      Stated rather than faked. Each of these would need a publisher-facing
+                      Stated rather than faked. Each of these would need a developer-facing
                       endpoint that does not exist, and a row of zeros would read as a
                       measurement instead of the absence of one.
                     </p>
@@ -495,7 +495,7 @@ export default function DeveloperApp() {
                         <span className="adv-activity__label">Impressions and fill rate</span>
                         <span className="adv-activity__detail">
                           Delivery counts are recorded on the server, but nothing exposes them to
-                          a publisher yet.
+                          a developer yet.
                         </span>
                       </li>
                       <li className="adv-activity__row">

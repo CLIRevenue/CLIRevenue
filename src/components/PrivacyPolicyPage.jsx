@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
           <ul>
             <li><strong>Account information.</strong> Email, role, and profile fields you provide during signup.</li>
             <li><strong>Authentication data.</strong> Session tokens managed through Supabase Auth.</li>
-            <li><strong>Publisher and placement data.</strong> Information required to configure ad delivery.</li>
+            <li><strong>Developer and placement data.</strong> Information required to configure ad delivery.</li>
             <li><strong>Ad delivery logs.</strong> Impression, click, and serve events needed for measurement and fraud prevention.</li>
             <li><strong>Contact submissions.</strong> Messages sent through the public contact form.</li>
             <li><strong>Usage data.</strong> SDK version, placement identifiers, and delivery outcomes.</li>

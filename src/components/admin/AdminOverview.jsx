@@ -68,7 +68,7 @@ export default function AdminOverview() {
     )
   }
 
-  const { campaigns, advertisers, developers, publishers, placements, events, system } = data
+  const { campaigns, advertisers, developers, placements, events, system } = data
   const systemOk = system && Object.entries(system).filter(([k]) => k !== 'checkedAt').every(([, s]) => s.ok)
 
   return (
@@ -120,9 +120,9 @@ export default function AdminOverview() {
           <div className="adm-tele-card__value">{developers?.totalCount ?? '—'}</div>
         </div>
         <div className="adm-tele-card">
-          <div className="adm-tele-card__label">Publishers</div>
-          <div className="adm-tele-card__value">{publishers?.totalCount ?? '—'}</div>
-          <div className="adm-tele-card__context">{publishers?.activeCount ?? 0} active</div>
+          <div className="adm-tele-card__label">Live viewers</div>
+          <div className="adm-tele-card__value">{liveViewers ?? '—'}</div>
+          <div className="adm-tele-card__context">current visitors</div>
         </div>
         <div className="adm-tele-card">
           <div className="adm-tele-card__label">Placements</div>

@@ -70,7 +70,7 @@ export default function AdminEvents() {
                 <tr>
                   <th>Request ID</th>
                   <th>Campaign</th>
-                  <th>Publisher</th>
+                  <th>Developer</th>
                   <th>Placement key</th>
                   <th>Served at</th>
                   <th>Impression</th>
@@ -83,7 +83,7 @@ export default function AdminEvents() {
                   <tr key={s.id}>
                     <td className="adm-mono adm-dim adm-truncate">{s.request_id}</td>
                     <td className="adm-mono adm-dim adm-truncate">{s.campaign_id}</td>
-                    <td className="adm-mono adm-dim adm-truncate">{s.publisher_id}</td>
+                    <td className="adm-mono adm-dim adm-truncate">{s.developer_id}</td>
                     <td className="adm-mono">{s.placement_key}</td>
                     <td className="adm-muted">{fmtDate(s.served_at)}</td>
                     <td><HealthDot ok={!!s.impression_recorded_at} /></td>

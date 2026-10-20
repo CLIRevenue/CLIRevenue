@@ -57,7 +57,7 @@ export default function TermsConditionsPage() {
         </section>
 
         <section>
-          <h2>Publisher and Ad Functionality</h2>
+          <h2>Developer and Ad Functionality</h2>
           <p>
             CLIRevenue provides an advertising slot integration for CLI tools. Delivery is subject
             to inventory availability, campaign eligibility, and placement configuration.

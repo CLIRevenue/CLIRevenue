@@ -4,7 +4,6 @@ import AdminOverview from './AdminOverview.jsx'
 import AdminCampaigns from './AdminCampaigns.jsx'
 import AdminAdvertisers from './AdminAdvertisers.jsx'
 import AdminDevelopers from './AdminDevelopers.jsx'
-import AdminPublishers from './AdminPublishers.jsx'
 import AdminPlacements from './AdminPlacements.jsx'
 import AdminEvents from './AdminEvents.jsx'
 import AdminSystem from './AdminSystem.jsx'
@@ -23,7 +22,6 @@ const PAGES = {
   moderation: { label: 'Moderation', icon: AdminModerationIcon },
   advertisers:{ label: 'Advertisers',icon: AdminAdvertisersIcon },
   developers: { label: 'Developers', icon: AdminDevelopersIcon },
-  publishers: { label: 'Publishers', icon: AdminPublishersIcon },
   placements: { label: 'Placements', icon: AdminPlacementsIcon },
   events:     { label: 'Events',     icon: AdminEventsIcon },
   system:     { label: 'System',     icon: AdminSystemIcon },
@@ -65,7 +63,6 @@ function AdminOverviewIcon()  { return <IconSvg d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2
 function AdminCampaignsIcon() { return <IconSvg d="M12 20V10M6 20V4M18 20v-6" /> }
 function AdminAdvertisersIcon() { return <IconSvg d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" /> }
 function AdminDevelopersIcon(){ return <IconSvg d="M16 18l6-6-6-6M8 6l-6 6 6 6" /> }
-function AdminPublishersIcon(){ return <IconSvg d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /> }
 function AdminPlacementsIcon() { return <IconSvg d="M4 4h16v16H4zM4 12h16M12 4v16" /> }
 function AdminEventsIcon()     { return <IconSvg d="M22 12h-4l-3 9L9 3l-3 9H2" /> }
 function AdminSystemIcon()     { return <IconSvg d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /> }
@@ -117,7 +114,6 @@ export default function AdminConsole() {
     campaigns: AdminCampaigns,
     advertisers: AdminAdvertisers,
     developers: AdminDevelopers,
-    publishers: AdminPublishers,
     placements: AdminPlacements,
     events: AdminEvents,
     system: AdminSystem,
