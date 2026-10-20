@@ -517,7 +517,7 @@
   color: var(--signal-text);
 }
 
-.placement-slot__publisher {
+.placement-slot__developer {
   font-family: var(--mono);
   font-size: 9.5px;
   letter-spacing: 0.14em;

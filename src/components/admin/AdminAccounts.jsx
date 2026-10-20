@@ -17,7 +17,7 @@ const ROLE_FILTERS = [
 const STATUS_FILTERS = [
   { key: 'all', label: 'All states' },
   { key: 'gated', label: 'Serving gated' },
-  { key: 'suspended', label: 'Publisher suspended' },
+  { key: 'suspended', label: 'Developer suspended' },
 ]
 
 function roleTone(role) {
@@ -93,9 +93,9 @@ function AccountCard({ account, onToggleGate, gateBusy, gateError }) {
         <Cell label="Email" value={account.email} empty={account.emailSource || 'No email column for this role'} />
         <Cell label="Joined" value={fmtDateFull(account.createdAt)} />
         <Cell
-          label="Publisher"
+          label="Developer"
           value={account.developer ? account.developer.name : null}
-          empty={account.ownedPublisherCount > 0 ? `${account.ownedPublisherCount} owned, unlinked` : 'None'}
+          empty={account.ownedDeveloperCount > 0 ? `${account.ownedDeveloperCount} owned, unlinked` : 'None'}
         />
         <Cell
           label="Serving gate"
@@ -354,7 +354,7 @@ export default function AdminAccounts() {
           identityVerification: 'KYC / identity verification',
           riskFlags: 'Per-account risk flags',
           servingGate: 'Serving gate write',
-          developerSuspension: 'Publisher suspension state',
+          developerSuspension: 'Developer suspension state',
           pagination: 'Server-side pagination',
         }}
         title="What this screen can and cannot show"

@@ -1396,7 +1396,7 @@ html {
 }
 
 /* ── 44. the switch gets built ─────────────────────────────────────
-   `PublisherPlacements` ships a `<label className="toggle">` wrapping a
+   `DeveloperPlacements` ships a `<label className="toggle">` wrapping a
    checkbox and `<span className="toggle__slider" aria-hidden="true">`
    beside it. A grep across every stylesheet in `src/` finds the class
    `.toggle` in no rule at all: the designer's switch was never drawn.

@@ -520,7 +520,7 @@ function SelfTest() {
         <li className="setup__fact">
           <span className="setup__fact-label">Developer key</span>
           <span className="setup__fact-value" data-ok={configured ? 'yes' : 'no'}>
-            {configured ? `present · ${clirevenue.publisherKeyHint()}` : 'not configured'}
+            {configured ? `present · ${clirevenue.developerKeyHint()}` : 'not configured'}
           </span>
         </li>
         <li className="setup__fact">

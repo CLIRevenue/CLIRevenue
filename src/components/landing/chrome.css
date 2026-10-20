@@ -576,7 +576,7 @@
 
 /* The developer key flows (PublisherKeys, PublisherPlacements) shipped a bare
    <table class="key-table"> with no rule anywhere in the project, so those two
-   tables — the only ones a publisher actually reads on a regular basis — were
+   tables — the only ones a developer actually reads on a regular basis — were
    the one part of the console with no landing treatment at all. They now take
    the same measure and voice as .adv-table. */
 .clr-surface .key-table {
