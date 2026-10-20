@@ -187,7 +187,7 @@ export async function fetchAdvertiserCampaigns() {
   return normalizeList(data)
 }
 
-export function validateCampaignInput(input) {
+export function validateCampaignInput(input, base = null) {
   const errors = {}
   if (!String(input.name || '').trim()) errors.name = 'Campaign name is required.'
   if (!String(input.headline || '').trim()) errors.headline = 'Headline is required.'
@@ -212,7 +212,61 @@ export function validateCampaignInput(input) {
   if (starts !== null && ends !== null && !Number.isNaN(starts) && !Number.isNaN(ends) && starts >= ends) {
     errors.endsAt = 'The end date must come after the start date.'
   }
+  // A campaign cannot be scheduled in the past. The server stores TIMESTAMPTZ
+  // and happily accepts a backdated row, but a backdated campaign is dead on
+  // arrival: delivery only looks forward from "now" and the advertiser gets a
+  // draft that can never activate. Catch it here so the form says why.
+  //
+  // In edit mode the check only applies to fields the advertiser actually
+  // changed. Otherwise opening an existing campaign whose start date has
+  // already passed would make the form refuse every other edit — the dates
+  // are not wrong, they are just old, and the advertiser is not proposing to
+  // move them.
+  const now = Date.now()
+  // Compare by resolved timestamp rather than by string. The form feeds
+  // `YYYY-MM-DDTHH:mm` while the campaign row carries a full ISO string, so a
+  // naive string comparison would always read the dates as changed and the
+  // past-date check would fire on every edit of an already-started campaign.
+  const baseStartMs = base && base.startsAt ? Date.parse(base.startsAt) : null
+  const baseEndMs = base && base.endsAt ? Date.parse(base.endsAt) : null
+  const startsChanged = !base || starts === null || baseStartMs === null || starts !== baseStartMs
+  const endsChanged = !base || ends === null || baseEndMs === null || ends !== baseEndMs
+  if (starts !== null && !Number.isNaN(starts) && starts < now && startsChanged) {
+    errors.startsAt = 'The start date cannot be in the past.'
+  }
+  if (ends !== null && !Number.isNaN(ends) && ends < now && endsChanged) {
+    errors.endsAt = 'The end date cannot be in the past.'
+  }
   return errors
+}
+
+/**
+ * Budget-and-schedule warnings, separate from validation. These do not block
+ * anything; they tell the advertiser they are about to run out of room.
+ *   - spend has crossed 80% of budget
+ *   - the end date is within seven days
+ * Returns an array of human strings, empty when there is nothing to say.
+ */
+export function campaignWarnings(campaign) {
+  if (!campaign) return []
+  const warnings = []
+  const budgetCents = Number(campaign.budgetCents || 0)
+  const spendCents = Number(campaign.spendCents || 0)
+  if (budgetCents > 0 && spendCents >= budgetCents * 0.8) {
+    warnings.push(
+      `You have spent ${formatCents(spendCents)} of your ${formatCents(budgetCents)} budget — ${formatCents(Math.max(0, budgetCents - spendCents))} remains.`,
+    )
+  }
+  const endsAt = campaign.endsAt ? Date.parse(campaign.endsAt) : null
+  if (endsAt && !Number.isNaN(endsAt)) {
+    const daysLeft = Math.ceil((endsAt - Date.now()) / 86_400_000)
+    if (daysLeft <= 7) {
+      warnings.push(
+        `This campaign ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Extend the end date or let it finish.`,
+      )
+    }
+  }
+  return warnings
 }
 
 /** ISO or null. The API stores TIMESTAMPTZ; an empty input clears the date. */
@@ -335,6 +389,16 @@ export async function archiveAdvertiserCampaign(id) {
     }
   }
   throw lastErr
+}
+
+/**
+ * Delete a campaign. The campaigns Edge Function answers DELETE on
+ * `/:id` by archiving it (status -> archived), which keeps the accounting
+ * rows intact rather than cascading through every impression and click.
+ * The advertiser sees "Delete"; the row becomes archived.
+ */
+export async function deleteAdvertiserCampaign(id) {
+  return archiveAdvertiserCampaign(id)
 }
 
 export async function setActiveCampaign(id) {

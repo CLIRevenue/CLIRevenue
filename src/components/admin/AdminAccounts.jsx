@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { fetchAdminAccounts, updateAdvertiserGate } from '../../lib/adminApi.js'
+import { fetchAdminAccounts, updateAdvertiserGate, deleteAdvertiserAccount, deleteDeveloperAccount } from '../../lib/adminApi.js'
 import {
   CapabilityLedger, Cell, EmptyState, ErrorState, GovBadge, LoadingState, PageHeader,
   Pill, Section, Stdout, Unavailable, errorText, fmtDateFull, shortId,
@@ -55,9 +55,11 @@ function identityLines(account) {
   ].filter(Boolean)
 }
 
-function AccountCard({ account, onToggleGate, gateBusy, gateError }) {
+function AccountCard({ account, onToggleGate, gateBusy, gateError, onDelete, deleteBusy, deleteError }) {
   const [reason, setReason] = useState('')
   const [confirming, setConfirming] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteConfirming, setDeleteConfirming] = useState(false)
 
   const gated = account.advertiser?.canRunCampaigns === false
   const canToggle = Boolean(account.advertiser)
@@ -144,6 +146,36 @@ function AccountCard({ account, onToggleGate, gateBusy, gateError }) {
           )}
         </div>
       )}
+      {deleteError ? <p className="adm-gate__warning">{deleteError}</p> : null}
+      {deleteConfirming ? (
+        <div className="adm-gate__confirm">
+          <p className="adm-gate__warning">
+            Delete <span className="adm-mono">{account.displayName || account.fullName || 'this account'}</span>?
+            The auth user is dropped and its role row cascades. Every campaign,
+            impression and click belonging to it goes with it. There is no
+            restore, and this is recorded in the governance audit trail.
+          </p>
+          <div className="adm-gate__buttons">
+            <button type="button" className="adm-gov-btn" onClick={() => setDeleteConfirming(false)} disabled={deleteBusy}>
+              Cancel
+            </button>
+            <button type="button" className="adm-gov-btn adm-gov-btn--danger" disabled={deleteBusy} onClick={onDelete}>
+              {deleteBusy ? 'Deleting…' : 'Delete account'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="adm-gate__foot">
+          <button
+            type="button"
+            className="adm-gov-btn adm-gov-btn--danger"
+            onClick={() => setDeleteConfirming(true)}
+            disabled={deleteBusy}
+          >
+            Delete account
+          </button>
+        </div>
+      )}
     </article>
   )
 }
@@ -182,6 +214,25 @@ export default function AdminAccounts() {
         text: result.auditRecorded
           ? `Serving gate updated for ${result.advertiser?.companyName || 'advertiser'}. Change appended to the audit trail.`
           : `Serving gate updated, but the audit append failed: ${result.note || 'unknown reason'}.`,
+      })
+      await load()
+    } catch (e) {
+      setGateMessage({ tone: 'error', text: errorText(e) })
+    } finally {
+      setGateBusy(false)
+    }
+  }, [load])
+
+  const deleteAccount = useCallback(async (profileId, role) => {
+    setGateBusy(true)
+    setGateMessage({ tone: '', text: '' })
+    try {
+      const result = role === 'advertiser'
+        ? await deleteAdvertiserAccount(profileId)
+        : await deleteDeveloperAccount(profileId)
+      setGateMessage({
+        tone: 'ok',
+        text: `${role} account deleted. ${result.auditRecorded ? 'Appended to the governance audit trail.' : 'Audit append failed.'}`,
       })
       await load()
     } catch (e) {
@@ -304,8 +355,11 @@ export default function AdminAccounts() {
                 key={account.profileId}
                 account={account}
                 gateBusy={gateBusy}
+                deleteBusy={gateBusy}
                 gateError={(text) => setGateMessage({ tone: 'error', text })}
+                deleteError={gateMessage.tone === 'error' ? gateMessage.text : ''}
                 onToggleGate={toggleGate}
+                onDelete={deleteAccount}
               />
             ))}
           </div>

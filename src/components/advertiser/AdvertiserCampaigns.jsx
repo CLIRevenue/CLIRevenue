@@ -7,11 +7,13 @@ import {
   archiveAdvertiserCampaign,
   createAdvertiserCampaign,
   ctrPct,
+  deleteAdvertiserCampaign,
   formatCents,
   setActiveCampaign,
   toBudgetDollars,
   updateAdvertiserCampaign,
   validateCampaignInput,
+  campaignWarnings,
 } from '../../lib/advertiserApi.js'
 import { campaignErrorCode, campaignErrorMessage } from '../../lib/campaignErrors.js'
 import {
@@ -111,6 +113,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
 
   const selected = campaigns.find((c) => c.id === selectedId) || null
   const hints = useMemo(() => (selected ? advisoryBlockers(selected) : []), [selected])
+  const warnings = useMemo(() => (selected ? campaignWarnings(selected) : []), [selected])
 
   const stepState = useMemo(() => {
     const name = form.name.trim()
@@ -171,6 +174,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
     setFormErrors(errors)
     if (Object.keys(errors).length) return
     setSaving(true)
+    setSaving(true)
     setNotice('')
     setDetailError('')
     setBlockers([])
@@ -203,7 +207,11 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
     e.preventDefault()
     if (!selected) return
     const apiInput = formToApiInput()
-    const errors = validateCampaignInput(apiInput)
+    // Pass the existing campaign as the baseline so the past-date check only
+    // applies to fields the advertiser actually changed. Otherwise opening a
+    // campaign whose start date has already passed makes the form refuse
+    // every other edit — the dates are not wrong, they are old.
+    const errors = validateCampaignInput(apiInput, selected)
     setFormErrors(errors)
     if (Object.keys(errors).length) return
     setSaving(true)
@@ -291,6 +299,33 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
     }
   }
 
+  /**
+   * Delete. The server answers DELETE by archiving the row, so the
+   * accounting history is preserved and the advertiser can still see what
+   * ran; the row just stops being editable and stops being served. The
+   * confirmation step exists because "Delete" and "Archive" read the same
+   * in a list and the difference is permanent from the advertiser's point
+   * of view: an archived campaign can come back, a deleted one cannot.
+   */
+  async function handleDelete() {
+    if (!selected) return
+    setDetailError('')
+    setDeleteConfirm(false)
+    setDeleting(true)
+    try {
+      const deleted = await deleteAdvertiserCampaign(selected.id)
+      onUpsert?.(deleted)
+      setNotice(`${deleted.name} deleted.`)
+      setSelectedId(null)
+      setForm(EMPTY_FORM)
+      await onChanged()
+    } catch (err) {
+      setDetailError(campaignErrorMessage(err, 'Campaign could not be deleted.'))
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   function selectCampaign(id) {
     setSelectedId(id)
     setNotice('')
@@ -304,6 +339,8 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
      asked of it: a screen of empty fields is not a starting point, it is a
      question. Behind a "Create campaign" button it is a step. */
   const [formOpen, setFormOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
 
   function openCreate() {
     selectCampaign(null)
@@ -450,6 +487,14 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                   <button type="button" className="btn btn--ghost" onClick={handleArchive}>Archive</button>
                 ) : null}
                 <button type="button" className="btn btn--ghost" onClick={openEdit}>Edit…</button>
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--danger"
+                  onClick={() => setDeleteConfirm(true)}
+                  disabled={deleting}
+                >
+                  Delete
+                </button>
               </div>
             ) : null}
             {detailError ? <div className="adv-notice adv-notice--error" role="alert">{detailError}</div> : null}
@@ -459,6 +504,11 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                   {blockers.map((code) => <li key={code}>{activationBlockerMessage(code)}</li>)}
                 </ul>
               </div>
+            ) : null}
+            {selected && warnings.length ? (
+              <p className="adv-note adv-note--warn">
+                {warnings.map((w, i) => <span key={i}>{w}</span>)}
+              </p>
             ) : null}
             {selected && hints.length ? (
               <p className="adv-note adv-note--warn">
@@ -706,6 +756,47 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+      {deleteConfirm ? (
+        <div
+          className="adv-modal__scrim"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Delete campaign"
+          onClick={() => (deleting ? null : setDeleteConfirm(false))}
+        >
+          <div className="adv-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="adv-modal__head">
+              <div>
+                <h2 className="adv-modal__title">Delete {selected?.name || 'campaign'}</h2>
+                <p className="adv-modal__sub">
+                  The row is archived and stops being served. Its accounting
+                  history — impressions, clicks, spend — is kept. This is
+                  permanent from your side: there is no restore.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="adv-modal__close"
+                onClick={() => setDeleteConfirm(false)}
+                aria-label="Close"
+                disabled={deleting}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
+            <div className="adv-modal__foot">
+              <button type="button" className="btn btn--ghost" onClick={() => setDeleteConfirm(false)} disabled={deleting}>
+                Keep it
+              </button>
+              <button type="button" className="btn btn--ghost" onClick={handleDelete} disabled={deleting}>
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

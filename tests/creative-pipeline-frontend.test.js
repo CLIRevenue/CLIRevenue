@@ -115,6 +115,13 @@ describe("campaign field rules", () => {
   });
 
   it("accepts a fully specified campaign", () => {
+    // The past-date check rejects a start or end that has already passed, so
+    // the fixture dates are anchored to "now" rather than written in stone.
+    // A static 2024 date used to pass and now fails; the assertion is about
+    // the other fields, not about the calendar.
+    const now = new Date()
+    const soon = new Date(now.getTime() + 2 * 86_400_000).toISOString()
+    const later = new Date(now.getTime() + 4 * 86_400_000).toISOString()
     expect(
       validateCampaignInput({
         name: "n",
@@ -123,10 +130,51 @@ describe("campaign field rules", () => {
         budgetDollars: "100",
         landingUrl: "https://example.test",
         cpmCents: 10,
-        startsAt: "2024-01-01T00:00:00.000Z",
-        endsAt: "2024-03-01T00:00:00.000Z",
+        startsAt: soon,
+        endsAt: later,
       }),
     ).toEqual({});
+  });
+
+  it("lets an edit keep a past start date when it is not being changed", () => {
+    // Editing an already-started campaign must not make the form refuse every
+    // other field. The past-date check only fires on dates the advertiser is
+    // actually proposing to move.
+    const past = "2024-01-01T00:00:00.000Z"
+    expect(
+      validateCampaignInput(
+        {
+          name: "n",
+          headline: "h",
+          audienceId: "backend",
+          budgetDollars: "100",
+          landingUrl: "https://example.test",
+          cpmCents: 10,
+          startsAt: past,
+          endsAt: "2099-01-01T00:00:00.000Z",
+        },
+        { startsAt: past, endsAt: "2099-01-01T00:00:00.000Z" },
+      ),
+    ).toEqual({});
+  });
+
+  it("rejects a past date only when it is being changed", () => {
+    const past = "2024-01-01T00:00:00.000Z"
+    const result = validateCampaignInput(
+      {
+        name: "n",
+        headline: "h",
+        audienceId: "backend",
+        budgetDollars: "100",
+        landingUrl: "https://example.test",
+        cpmCents: 10,
+        startsAt: past,
+        endsAt: "2099-01-01T00:00:00.000Z",
+      },
+      { startsAt: "2099-01-01T00:00:00.000Z", endsAt: "2099-01-01T00:00:00.000Z" },
+    )
+    expect(result.startsAt).toBeTruthy()
+    expect(result.endsAt).toBeUndefined()
   });
 });
 

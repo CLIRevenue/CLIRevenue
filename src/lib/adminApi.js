@@ -198,3 +198,32 @@ export async function deleteContact(id) {
   )
   return data?.data ?? data
 }
+
+/**
+ * Admin deletes an advertiser account. The route is
+ * DELETE /admin/accounts/advertiser/:profileId, which the edge function
+ * resolves through the service role and then drops the auth user, so the
+ * row-level security on every downstream table can never see it.
+ */
+export async function deleteAdvertiserAccount(profileId) {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates(
+    [...urls.map(u => `${u}/accounts/advertiser/${profileId}`)],
+    { method: 'DELETE' }
+  )
+  return data?.data ?? data
+}
+
+/**
+ * Admin deletes a developer account. Same shape as the advertiser delete:
+ * the function owns the cascade, so the caller never reaches a table
+ * directly.
+ */
+export async function deleteDeveloperAccount(profileId) {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates(
+    [...urls.map(u => `${u}/accounts/developer/${profileId}`)],
+    { method: 'DELETE' }
+  )
+  return data?.data ?? data
+}

@@ -374,6 +374,139 @@ async function deleteContact(id: unknown) {
   return { data: { id } };
 }
 
+/**
+ * Admin hard-delete of a campaign. The advertiser-facing DELETE on
+ * /campaigns/:id archives the row and keeps its accounting history; an
+ * admin can go further and remove it outright. The campaigns table has
+ * ON DELETE CASCADE to ad_impressions, ad_interactions and the creative
+ * slots, so the function does not have to walk them by hand -- but it
+ * does have to report what went, which is why it selects before deleting
+ * instead of answering with a boolean.
+ */
+async function deleteCampaign(id: unknown, actor: Actor) {
+  if (typeof id !== "string" || !isUuid(id)) {
+    return apiError("INVALID_ID", "Campaign identifier is not valid.", 400);
+  }
+  const { data: existing, error: findError } = await admin
+    .from("campaigns")
+    .select("id, name, advertiser_id, status")
+    .eq("id", id)
+    .maybeSingle();
+  if (findError) {
+    console.error("delete campaign lookup error:", findError.message);
+    return apiError("INTERNAL_ERROR", "Could not load campaign.", 500);
+  }
+  if (!existing) {
+    return apiError("CAMPAIGN_NOT_FOUND", "Campaign not found.", 404);
+  }
+  const { error: deleteError } = await admin.from("campaigns").delete().eq("id", id);
+  if (deleteError) {
+    console.error("delete campaign error:", deleteError.message);
+    return apiError("INTERNAL_ERROR", "Could not delete campaign.", 500);
+  }
+  await recordGovernanceAction(
+    actor,
+    "campaign_delete",
+    String(id),
+    `Hard-deleted campaign "${existing.name}" (${String(existing.advertiser_id)})`,
+    "",
+    "",
+  );
+  return { data: { id, name: existing.name ?? null } };
+}
+
+/**
+ * Admin deletes an advertiser account. Resolves the profile row, then drops
+ * the auth user: the advertisers row and every campaign, impression and
+ * click cascade off it through FKs, so this one call is the whole job.
+ * The service role bypasses RLS by construction, which is the only reason
+ * this route exists at all -- it is not a way for an advertiser to delete
+ * a neighbour.
+ */
+async function deleteAdvertiserAccount(profileId: unknown, actor: Actor) {
+  if (typeof profileId !== "string" || !isUuid(profileId)) {
+    return apiError("INVALID_ID", "Profile identifier is not valid.", 400);
+  }
+  const { data: profile, error: findError } = await admin
+    .from("profiles")
+    .select("id, role, full_name")
+    .eq("id", profileId)
+    .maybeSingle();
+  if (findError) {
+    console.error("delete advertiser lookup error:", findError.message);
+    return apiError("INTERNAL_ERROR", "Could not load profile.", 500);
+  }
+  if (!profile) {
+    return apiError("PROFILE_NOT_FOUND", "Account not found.", 404);
+  }
+  if (String(profile.role ?? "") !== "advertiser") {
+    return apiError("INVALID_ROLE", "That profile is not an advertiser account.", 400);
+  }
+  const { data: advertiser } = await admin
+    .from("advertisers")
+    .select("id")
+    .eq("profile_id", profileId)
+    .maybeSingle();
+  const { error: deleteError } = await admin.auth.admin.deleteUser(profileId);
+  if (deleteError) {
+    console.error("delete advertiser error:", deleteError.message);
+    return apiError("INTERNAL_ERROR", "Could not delete the advertiser account.", 500);
+  }
+  await recordGovernanceAction(
+    actor,
+    "advertiser_delete",
+    String(profileId),
+    `Deleted advertiser account "${profile.full_name ?? profileId}" (${advertiser?.id ?? "no row"})`,
+    "",
+    "",
+  );
+  return { data: { deleted: true, profileId, role: profile.role } };
+}
+
+/**
+ * Admin deletes a developer account. Same shape as the advertiser delete:
+ * the auth user goes first and the developer_accounts row cascades off it.
+ */
+async function deleteDeveloperAccount(profileId: unknown, actor: Actor) {
+  if (typeof profileId !== "string" || !isUuid(profileId)) {
+    return apiError("INVALID_ID", "Profile identifier is not valid.", 400);
+  }
+  const { data: profile, error: findError } = await admin
+    .from("profiles")
+    .select("id, role, full_name")
+    .eq("id", profileId)
+    .maybeSingle();
+  if (findError) {
+    console.error("delete developer lookup error:", findError.message);
+    return apiError("INTERNAL_ERROR", "Could not load profile.", 500);
+  }
+  if (!profile) {
+    return apiError("PROFILE_NOT_FOUND", "Account not found.", 404);
+  }
+  if (String(profile.role ?? "") !== "developer") {
+    return apiError("INVALID_ROLE", "That profile is not a developer account.", 400);
+  }
+  const { data: developer } = await admin
+    .from("developer_accounts")
+    .select("id")
+    .eq("profile_id", profileId)
+    .maybeSingle();
+  const { error: deleteError } = await admin.auth.admin.deleteUser(profileId);
+  if (deleteError) {
+    console.error("delete developer error:", deleteError.message);
+    return apiError("INTERNAL_ERROR", "Could not delete the developer account.", 500);
+  }
+  await recordGovernanceAction(
+    actor,
+    "developer_delete",
+    String(profileId),
+    `Deleted developer account "${profile.full_name ?? profileId}" (${developer?.id ?? "no row"})`,
+    "",
+    "",
+  );
+  return { data: { deleted: true, profileId, role: profile.role } };
+}
+
 // --------------------------------------------------------------
 // Identity, moderation, health, audit and operations
 //
@@ -1602,6 +1735,19 @@ const handler = serveWithCors(async (req) => {
         return json({ campaigns: data ?? [] });
       }
 
+      case "campaign": {
+        // Admin-only hard delete of a single campaign. The advertiser-facing
+        // DELETE on /campaigns/:id archives the row; this route removes it
+        // outright and records who did it.
+        const id = path[1];
+        if (!id) return apiError("NOT_FOUND", "Not found.", 404);
+        if (req.method !== "DELETE") {
+          return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+        }
+        const result = await deleteCampaign(id, { profileId: user.id, email: user.email || "" });
+        return result instanceof Response ? result : json(result);
+      }
+
       case "advertisers": {
         if (req.method !== "GET") {
           return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
@@ -1779,6 +1925,25 @@ const handler = serveWithCors(async (req) => {
             profileId: user.id,
             email: user.email || "",
           });
+          return result instanceof Response ? result : json(result);
+        }
+
+        // Admin deletes. These resolve the profile row, check its role, then
+        // drop the auth user and let the FKs cascade. They are the only path
+        // that can remove an account, which is why they live here rather than
+        // in delete_account: a self-service route cannot be handed a target.
+        if (sub === "advertiser") {
+          if (req.method !== "DELETE") {
+            return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+          }
+          const result = await deleteAdvertiserAccount(path[2], { profileId: user.id, email: user.email || "" });
+          return result instanceof Response ? result : json(result);
+        }
+        if (sub === "developer") {
+          if (req.method !== "DELETE") {
+            return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+          }
+          const result = await deleteDeveloperAccount(path[2], { profileId: user.id, email: user.email || "" });
           return result instanceof Response ? result : json(result);
         }
 
