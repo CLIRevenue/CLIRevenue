@@ -121,7 +121,7 @@ export default function AdminOverview() {
         </div>
         <div className="adm-tele-card">
           <div className="adm-tele-card__label">Live viewers</div>
-          <div className="adm-tele-card__value">{liveViewers ?? '—'}</div>
+          <div className="adm-tele-card__value">{data?.liveViewers ?? '—'}</div>
           <div className="adm-tele-card__context">current visitors</div>
         </div>
         <div className="adm-tele-card">
