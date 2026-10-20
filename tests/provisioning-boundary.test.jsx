@@ -280,7 +280,7 @@ describe('server-rendered, the page holds no key at all', () => {
     // Effects do not run during server rendering, so this is the state a
     // non-JS client sees: a request outstanding and nothing to leak.
     expect(html).toMatch(/SDK setup/)
-    expect(html).toMatch(/Checking your publisher account/)
+    expect(html).toMatch(/Checking your developer account/)
   })
 
   test('shows no publishable key and no copy control', () => {
