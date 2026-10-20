@@ -1,6 +1,6 @@
 {
   "name": "clirevenue",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "bin": {
     "clirevenue": "dist/index.js"
