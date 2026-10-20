@@ -34,7 +34,7 @@ const GLYPH = {
  * It is not resizable and does not collapse. A rail that can be dragged
  * between 72px and 420px spends a permanent part of the screen on an
  * axis nobody asked to change, and on a laptop that is a column of
- * content gone. 240px is what this rail's longest label — "Publisher
+ * content gone. 240px is what this rail's longest label — "Campaigns
  * Keys" on the developer side, "Campaigns" here — actually needs with
  * room to spare, so that is what it gets, and that is the end of it.
  *

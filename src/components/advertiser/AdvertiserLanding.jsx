@@ -182,7 +182,7 @@ const METRICS = [
 const FAQ_ITEMS = [
   {
     q: 'Do I need to install anything?',
-    a: 'No. The SDK belongs to the publisher’s side of delivery. Advertisers need an account and a browser — the console is the whole toolchain.',
+    a: 'No. The SDK belongs to the developer’s side of delivery. Advertisers need an account and a browser — the console is the whole toolchain.',
   },
   {
     q: 'How do I start advertising?',
@@ -275,7 +275,7 @@ function HowItWorks() {
       <p className="advx-note">
         Advertisers never install anything. A browser and an account are the whole
         toolchain — the SDK, the placements, and the viewability watch all belong to the
-        publisher’s side of the exchange.
+        developer’s side of the exchange.
       </p>
     </section>
   )
@@ -388,8 +388,8 @@ function Targeting() {
           <h3 className="advx-panel__title">Where your ad runs</h3>
           <ul className="advx-checks">
             <li>
-              A placement is a named slot on a publisher’s surface. Its key is chosen by the
-              publisher, unique on that surface, and must already exist — an unknown key
+              A placement is a named slot on a developer’s surface. Its key is chosen by the
+              developer, unique on that surface, and must already exist — an unknown key
               answers <code className="advx-inline">INVALID_PLACEMENT</code>.
             </li>
             <li>A disabled placement serves nothing at all.</li>

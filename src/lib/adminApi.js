@@ -105,12 +105,6 @@ export async function fetchAdminDevelopers() {
   return data?.developers ?? data ?? []
 }
 
-export async function fetchAdminPublishers() {
-  const urls = adminBaseCandidates()
-  const { data } = await tryCandidates([...urls.map(u => `${u}/publishers`)], { method: 'GET' })
-  return data?.publishers ?? data ?? []
-}
-
 export async function fetchAdminPlacements() {
   const urls = adminBaseCandidates()
   const { data } = await tryCandidates([...urls.map(u => `${u}/placements`)], { method: 'GET' })

@@ -41,7 +41,7 @@ export default function AdminPlacements() {
                 <th>Name</th>
                 <th>Enabled</th>
                 <th>Audience</th>
-                <th>Publisher ID</th>
+                <th>Developer ID</th>
                 <th>Created</th>
                 <th>Updated</th>
               </tr>

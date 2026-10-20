@@ -338,7 +338,7 @@ function PublishableKey() {
         A publishable key is an identifier. It is what the browser uses
         to ask the gateway for an ad, and it is safe to ship in your
         JavaScript bundle because it authorises delivery only — it cannot
-        create a publisher, issue or revoke a key, create a placement or
+        create a developer, issue or revoke a key, create a placement or
         read a balance.
       </p>
       <dl className="sdk-spec">
@@ -426,7 +426,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What is a placement?',
-    a: 'A named advertising surface chosen by the publisher when a placement is created on the server. You render ads per placement key, which is your own readable slug.',
+    a: 'A named advertising surface chosen by the developer when a placement is created on the server. You render ads per placement key, which is your own readable slug.',
   },
   {
     q: 'Can I resize the ad?',
@@ -637,7 +637,7 @@ const PLACEMENT_FACTS = [
   },
   {
     label: 'Unique',
-    body: 'One key per publisher; the server owns the mapping from key to a placement row.',
+    body: 'One key per developer; the server owns the mapping from key to a placement row.',
   },
   {
     label: 'Stable',
@@ -656,7 +656,7 @@ function Placements() {
       <p className="sdk-p">
         A placement is a named advertising surface. When you render an ad
         you do it for a placement key, and the key is chosen by the
-        publisher when the placement is created on the server. It is your
+        developer when the placement is created on the server. It is your
         own readable slug — for example{' '}
         <code className="sdk-inline">console-workbench</code> — because
         you will type it into your own configuration.
@@ -773,7 +773,7 @@ const SIZING_FACTS = [
   },
   {
     label: 'Responsive behaviour',
-    body: 'The SDK keeps the ad inside its container, so the same placement works in a wide terminal pane and a narrow one without any JavaScript from the publisher.',
+    body: 'The SDK keeps the ad inside its container, so the same placement works in a wide terminal pane and a narrow one without any JavaScript from the developer.',
   },
 ]
 
@@ -787,7 +787,7 @@ function Sizing() {
       </header>
       <p className="sdk-p">
         Ad sizing and positioning are handled by the SDK, not by the page,
-        so a publisher can ask for a natural size and the ad can never
+        so a developer can ask for a natural size and the ad can never
         break out of the container it was asked to live in.
       </p>
 

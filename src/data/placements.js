@@ -3,9 +3,9 @@
    -------------------------------------------------------------
    Every virtual ad surface in this application resolves to exactly
    one placement key here, and nowhere else. A placement key is not
-   something the browser may invent: it is chosen by the publisher when
+   something the browser may invent: it is chosen by the developer when
    the placement row is created on the server, it is unique per
-   publisher, and it has to already exist or `/ads/deliver` answers
+   developer, and it has to already exist or `/ads/deliver` answers
    `INVALID_PLACEMENT`. So the keys live in one table, next to the
    surface they belong to, and a screen that has no entry here simply
    does not request an ad.
@@ -176,7 +176,7 @@ export const PLACEMENTS = {
 
   /* The film's own slot is a scripted beat in a narrative scene, not
      a delivery surface: it has no campaign behind it, nothing to
-     attribute, and it must keep working in a build with no publisher
+     attribute, and it must keep working in a build with no developer
      key at all. It is registered here so the map is complete and so
      nobody later mistakes it for an un-wired live surface. */
   filmSlot: {

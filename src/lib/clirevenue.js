@@ -1,5 +1,5 @@
 /* =============================================================
-   CLIRevenue — publisher initialization boundary
+   CLIRevenue — developer initialization boundary
    -------------------------------------------------------------
    One module decides whether this build may talk to the ad server at
    all, and it does so from three environment values:
@@ -38,7 +38,7 @@
    The publishable key is safe in a browser bundle: it is the same
    credential a page has to present to be allowed to ask for an ad,
    the server hashes it on arrival, and it authorises nothing but
-   delivery for its own publisher. It cannot mint impressions, cannot
+   delivery for its own developer. It cannot mint impressions, cannot
    read a placement list, cannot touch an advertiser balance, and
    cannot complete a conversion.
 
