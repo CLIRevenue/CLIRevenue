@@ -11,6 +11,7 @@ import AdvertiserCampaigns from './AdvertiserCampaigns.jsx'
 import AdvertiserAnalytics from './AdvertiserAnalytics.jsx'
 import AdvertiserBilling from './AdvertiserBilling.jsx'
 import AdvertiserAccount from './AdvertiserAccount.jsx'
+import { campaignWarnings } from '../../lib/advertiserApi.js'
 import './advertiser.css'
 
 const TABS = [
@@ -123,6 +124,22 @@ function insights(campaigns) {
       body: `${ctr.toFixed(2)}% across ${live.length} live campaign${live.length === 1 ? '' : 's'}.`,
     })
   }
+  // Per-campaign spend and end-date warnings. These come from
+  // campaignWarnings(), which reads the same fields the detail panel does,
+  // so the bell and the panel can never disagree about what is running low.
+  // Each warning is tagged with its campaign name so the note is actionable
+  // — "budget nearly spent" is only useful if it says which campaign.
+  for (const c of campaigns) {
+    if (c.status === 'archived') continue
+    for (const body of campaignWarnings(c)) {
+      out.push({
+        id: `warn-${c.id}`,
+        tone: 'warn',
+        title: `${c.name} needs attention`,
+        body,
+      })
+    }
+  }
   return out
 }
 
@@ -205,14 +222,14 @@ export default function AdvertiserApp() {
               onCreate={() => navigateApp('/app/advertiser/campaigns')}
             />
           ) : null}
-          {tab === 'campaigns' ? (
+{tab === 'campaigns' ? (
             <AdvertiserCampaigns
               campaigns={campaignsState.campaigns}
               loading={campaignsState.loading}
               error={campaignsState.error}
               onRetry={campaignsState.refresh}
-              onChanged={campaignsState.refresh}
               onUpsert={campaignsState.upsertCampaign}
+              onChanged={campaignsState.refresh}
             />
           ) : null}
           {tab === 'analytics' ? (

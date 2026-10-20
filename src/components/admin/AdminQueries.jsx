@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { checkAdminAccess, fetchAllQueries, replyToQuery, closeQuery } from '../../lib/advertiserQueries.js'
+import { checkAdminAccess, bootstrapAdminAllowlist, fetchAllQueries, replyToQuery, closeQuery } from '../../lib/advertiserQueries.js'
 
 /**
  * Advertiser queries, and the reply box.
@@ -36,6 +36,8 @@ export default function AdminQueries() {
   const [drafts, setDrafts] = useState({})
   const [saving, setSaving] = useState(false)
   const [admin, setAdmin] = useState(null)
+  const [bootstrapping, setBootstrapping] = useState(false)
+  const [bootstrapNotice, setBootstrapNotice] = useState('')
 
   const load = useCallback(async () => {
     try {
@@ -58,6 +60,22 @@ export default function AdminQueries() {
       .finally(() => { if (alive) setLoading(false) })
     return () => { alive = false }
   }, [])
+
+  async function handleBootstrap() {
+    setBootstrapping(true)
+    setBootstrapNotice('')
+    try {
+      const result = await bootstrapAdminAllowlist()
+      setBootstrapNotice(result?.email
+        ? `Added ${result.email} to the admin allowlist. Refreshing…`
+        : 'Admin allowlist refreshed.')
+      await load()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBootstrapping(false)
+    }
+  }
 
   const shown = useMemo(
     () => (filter === 'all' ? rows : rows.filter((r) => r.status === filter)),
@@ -109,9 +127,14 @@ export default function AdminQueries() {
           This account is signed in but its email is not on the admin allowlist
           (<span className="mono">public.admin_emails</span>), so row level security is
           filtering every admin read on this page — returning no rows and no error.
-          An operator has to add it:{' '}
+          {' '}
+          <button type="button" className="btn btn--primary btn--sm" disabled={bootstrapping} onClick={handleBootstrap}>
+            {bootstrapping ? 'Adding…' : 'Add me to the allowlist'}
+          </button>
+          {' '}
           <span className="mono">INSERT INTO public.admin_emails (email) VALUES (lower(…));</span>
           {admin.reason ? ` (${admin.reason})` : ''}
+          {bootstrapNotice ? <><br />{bootstrapNotice}</> : null}
         </p>
       ) : null}
       {loading ? <p className="adm-empty">Loading…</p> : null}

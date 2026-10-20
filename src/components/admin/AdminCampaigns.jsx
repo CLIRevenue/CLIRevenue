@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchAdminCampaigns } from '../../lib/adminApi.js'
+import { deleteAdminCampaign, fetchAdminCampaigns } from '../../lib/adminApi.js'
 
 export default function AdminCampaigns() {
   const [rows, setRows] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [busyId, setBusyId] = useState(null)
+  const [notice, setNotice] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -14,6 +16,19 @@ export default function AdminCampaigns() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  async function handleDelete(id) {
+    setBusyId(id); setNotice('')
+    try {
+      const result = await deleteAdminCampaign(id)
+      setRows((r) => r.filter((c) => c.id !== id))
+      setNotice(result?.name ? `Deleted "${result.name}".` : 'Campaign deleted.')
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusyId(null)
+    }
+  }
 
   if (loading) return <div className="adm-loading"><div className="adm-spinner" /> Loading campaigns…</div>
   if (error)   return <div className="adm-error">{error}</div>
@@ -33,6 +48,7 @@ export default function AdminCampaigns() {
           </div>
         </div>
       </div>
+      {notice ? <p className="adm-notice adm-notice--ok" role="status">{notice}</p> : null}
       <div className="adm-table-wrap">
         <div className="adm-table-header">
           <span className="adm-table-title">All campaigns</span>
@@ -54,6 +70,7 @@ export default function AdminCampaigns() {
                 <th>Starts</th>
                 <th>Ends</th>
                 <th>Created</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -71,9 +88,19 @@ export default function AdminCampaigns() {
                   <td className="adm-muted">{fmtDate(c.starts_at)}</td>
                   <td className="adm-muted">{fmtDate(c.ends_at)}</td>
                   <td className="adm-muted">{fmtDate(c.created_at)}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="adm-gov-btn adm-gov-btn--danger btn--sm"
+                      disabled={busyId === c.id}
+                      onClick={() => handleDelete(c.id)}
+                    >
+                      {busyId === c.id ? 'Deleting…' : 'Delete'}
+                    </button>
+                  </td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={12}><div className="adm-empty">No campaigns found.</div></td></tr>}
+              {rows.length === 0 && <tr><td colSpan={13}><div className="adm-empty">No campaigns found.</div></td></tr>}
             </tbody>
           </table>
         </div>

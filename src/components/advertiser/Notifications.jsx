@@ -72,6 +72,8 @@ export default function Notifications({ insights = [] }) {
   }, [open])
 
   const unread = data.answered.filter((q) => !seen.includes(q.id)).length
+  const hasInsights = insights.length > 0
+  const bellUnread = unread + hasInsights
 
   function openReply(query) {
     setSeen((s) => (s.includes(query.id) ? s : [...s, query.id]))
@@ -84,13 +86,13 @@ export default function Notifications({ insights = [] }) {
         type="button"
         className="adv-side__icon-btn adv-bell__btn"
         onClick={() => setOpen((v) => !v)}
-        aria-label={unread ? `Notifications, ${unread} new` : 'Notifications'}
+        aria-label={bellUnread ? `Notifications, ${bellUnread} new` : 'Notifications'}
         aria-expanded={open}
         title="Notifications"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d={bellPath(unread > 0)} />
-          {unread > 0 ? <circle cx="18" cy="6" r="4.5" className="adv-bell__dot" /> : null}
+          <path d={bellPath(bellUnread > 0)} />
+          {bellUnread > 0 ? <circle cx="18" cy="6" r="4.5" className="adv-bell__dot" /> : null}
         </svg>
       </button>
 

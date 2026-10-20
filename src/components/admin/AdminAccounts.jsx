@@ -159,7 +159,7 @@ function AccountCard({ account, onToggleGate, gateBusy, gateError, onDelete, del
             <button type="button" className="adm-gov-btn" onClick={() => setDeleteConfirming(false)} disabled={deleteBusy}>
               Cancel
             </button>
-            <button type="button" className="adm-gov-btn adm-gov-btn--danger" disabled={deleteBusy} onClick={onDelete}>
+            <button type="button" className="adm-gov-btn adm-gov-btn--danger" disabled={deleteBusy} onClick={() => onDelete(account.profileId, account.role)}>
               {deleteBusy ? 'Deleting…' : 'Delete account'}
             </button>
           </div>

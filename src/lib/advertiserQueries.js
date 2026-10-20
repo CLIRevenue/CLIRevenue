@@ -146,6 +146,38 @@ export async function checkAdminAccess() {
   return { admin: data === true, reason: '' }
 }
 
+/**
+ * The caller's own role row. Used alongside checkAdminAccess() to tell the
+ * difference between "your profile is not admin" and "your profile is admin
+ * but the allowlist is empty" — only the second one is bootstrapable, and
+ * only the second one gets a button instead of a SQL console instruction.
+ */
+export async function fetchMyRole() {
+  const { data, error } = await supabase.from('profiles').select('role').eq('id', (await supabase.auth.getUser()).data.user?.id).maybeSingle()
+  if (error) return { role: null, error: error.message }
+  return { role: data?.role ?? null, error: null }
+}
+
+/**
+ * Bootstrap the admin allowlist for the signed-in account.
+ *
+ * The first admin cannot bootstrap through requireAdmin: that function reads
+ * public.admin_emails, which is empty until somebody puts an email in it,
+ * and the only way to put an email in it is to be an admin. This route
+ * breaks that cycle by accepting the call when the table is empty and the
+ * caller's profile already says 'admin'. It is idempotent: once the table
+ * has a row the server answers 409 and the caller falls back to the SQL
+ * console, where further admins are supposed to be added by a human.
+ */
+export async function bootstrapAdminAllowlist() {
+  const { data, error } = await supabase.functions.invoke('admin', {
+    body: '{}',
+    method: 'POST',
+  })
+  if (error) throw queryError('BOOTSTRAP_FAILED', error.message || 'Could not bootstrap the admin allowlist.')
+  return data
+}
+
 /** Admin only. The RLS policy is the gate; the UI is not. */
 export async function replyToQuery(id, reply) {
   const text = String(reply || '').trim()

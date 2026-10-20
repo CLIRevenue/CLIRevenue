@@ -200,6 +200,22 @@ export async function deleteContact(id) {
 }
 
 /**
+ * Admin hard-deletes a campaign. The route is DELETE /admin/campaign/:id.
+ * The campaigns table cascades to ad_impressions, ad_interactions and the
+ * creative slots, so the function does not have to walk them by hand -- but
+ * it does have to report what went, which is why it selects before deleting
+ * instead of answering with a boolean.
+ */
+export async function deleteAdminCampaign(id) {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates(
+    [...urls.map(u => `${u}/campaign/${id}`)],
+    { method: 'DELETE' }
+  )
+  return data?.data ?? data
+}
+
+/**
  * Admin deletes an advertiser account. The route is
  * DELETE /admin/accounts/advertiser/:profileId, which the edge function
  * resolves through the service role and then drops the auth user, so the

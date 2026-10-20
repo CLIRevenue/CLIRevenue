@@ -104,6 +104,12 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return campaigns.filter((c) => {
+      // "Delete" archives the row, which keeps its accounting history but
+      // takes it out of the advertiser's working set. Archived campaigns are
+      // hidden from the default view and only surface when the status
+      // filter is explicitly set to archived — so the list reads as "gone"
+      // while the history stays reachable.
+      if (status !== 'archived' && c.status === 'archived') return false
       if (status !== 'all' && c.status !== status) return false
       if (audience !== 'all' && c.audienceId !== audience) return false
       if (!q) return true

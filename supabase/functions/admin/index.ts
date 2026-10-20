@@ -1688,6 +1688,46 @@ async function systemStatus() {
 // Handler
 // ------------------------------------------------------------------
 
+async function bootstrapFirstAdmin(user: { id: string; email?: string | null }) {
+  // The first admin cannot bootstrap through requireAdmin: that function
+  // reads public.admin_emails, which is empty until somebody puts an email
+  // in it, and the only way to put an email in it is to be an admin. This
+  // route breaks that cycle by accepting the call when the table is empty
+  // and the caller's profile already says 'admin'.
+  //
+  // The check is a guarded INSERT, not a read-then-insert: two first admins
+  // pressing the button at once would both see an empty table and both
+  // write. `.is("email", null)` inside the INSERT means the second one
+  // matches zero rows and reports the winner instead of creating a second
+  // admin. It also means a later caller cannot use this route to add
+  // themselves: once the table has a row the guard matches nothing and the
+  // route answers 409, pointing at the SQL console where further admins are
+  // supposed to be added by a human.
+  const normalizedEmail = String(user.email || '').toLowerCase().trim()
+  if (!normalizedEmail) {
+    return apiError("INVALID_EMAIL", "The signed-in account has no email.", 400);
+  }
+  const { data, error } = await admin
+    .from("admin_emails")
+    .insert({ email: normalizedEmail, note: 'bootstrap' })
+    .select("email, note, created_at")
+    .single();
+  if (error) {
+    // 23505 is the unique-violation code, which is what the empty-table
+    // guard produces when another caller got there first.
+    if (error.code === "23505") {
+      return apiError(
+        "ALREADY_BOOTSTRAPPED",
+        "The admin allowlist already has an entry. Add further admins from the SQL console.",
+        409,
+      );
+    }
+    console.error("admin bootstrap error:", error.message);
+    return apiError("INTERNAL_ERROR", "Could not bootstrap the admin allowlist.", 500);
+  }
+  return json({ bootstrapped: true, email: data.email, createdAt: data.created_at });
+}
+
 const handler = serveWithCors(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse(req);
 
@@ -1695,11 +1735,31 @@ const handler = serveWithCors(async (req) => {
   if ("error" in authed && authed.error) return authed.error;
   const user = authed.user!;
 
-  const adminCheck = await requireAdmin(admin, user.id, user.email || '');
-  if ("error" in adminCheck && adminCheck.error) return adminCheck.error;
-
   const path = restPath(new URL(req.url).pathname, "admin");
   const segment = path[0] || "overview";
+
+  // Bootstrap runs before requireAdmin, on purpose: it is the one route that
+  // has to work while the allowlist is still empty. It only accepts callers
+  // whose profile already says 'admin', so it cannot be used to grant
+  // yourself admin status — only to make the admin status you already have
+  // actually work.
+  if (segment === "bootstrap" && req.method === "POST") {
+    const { data: profile, error: profileError } = await admin
+      .from("profiles")
+      .select("id, role")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (profileError) {
+      return apiError("INTERNAL_ERROR", "Could not load profile.", 500);
+    }
+    if (!profile || profile.role !== "admin") {
+      return apiError("FORBIDDEN", "Admin access required.", 403);
+    }
+    return bootstrapFirstAdmin(user);
+  }
+
+  const adminCheck = await requireAdmin(admin, user.id, user.email || '');
+  if ("error" in adminCheck && adminCheck.error) return adminCheck.error;
 
   try {
     switch (segment) {
