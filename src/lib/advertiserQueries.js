@@ -170,7 +170,11 @@ export async function fetchMyRole() {
  * console, where further admins are supposed to be added by a human.
  */
 export async function bootstrapAdminAllowlist() {
-  const { data, error } = await supabase.functions.invoke('admin', {
+  // The route is /admin/bootstrap, not the function root: supabase.functions.invoke
+  // appends the function name to its own URL, so passing 'admin' alone lands on
+  // POST /admin, which the handler answers with 405. The bootstrap branch is
+  // keyed on the `bootstrap` segment, so the path has to carry it.
+  const { data, error } = await supabase.functions.invoke('admin/bootstrap', {
     body: '{}',
     method: 'POST',
   })
