@@ -463,7 +463,7 @@ body {
 .clr-surface .block__title,
 .clr-surface .sdk-head__title,
 .clr-surface .advx-head__title {
-  background-image: linear-gradient(100deg, var(--ink, #f2f2f4) 42%, var(--signal, #6f8cff) 58%, var(--ink, #f2f2f4) 74%);
+  background-image: linear-gradient(100deg, var(--ink, #f2f2f4) 42%, rgba(111, 140, 255, 0.85) 58%, var(--ink, #f2f2f4) 74%);
   background-size: 260% 100%;
   background-position: 100% 0;
   -webkit-background-clip: text;
@@ -1587,4 +1587,19 @@ html {
 }
 .btn.btn--ink:active:not(:disabled) {
   transform: translateY(2px) scale(.975);
+}
+
+/* The admin query's action row (Close, flag, delete) is a cluster of
+   ghost buttons; the ghost hover wash is amber because on the public
+   site that reads as "brand warmth". Inside a working queue amber is
+   the failure/status colour, and three amber pills read as three
+   errors. The hover here is a neutral lift: same plate as the row,
+   one step brighter, no hue. */
+.adm-query__body .btn--ghost:hover:not(:disabled),
+.adm-query__body .btn--ghost:focus-visible {
+  background: var(--hair);
+  border-color: var(--hair-strong);
+  color: var(--on-surface);
+  box-shadow: none;
+  transform: none;
 }

@@ -1070,3 +1070,37 @@
   font-style: normal;
   color: var(--clr-word-b, #ff1f2d);
 }
+
+/* ── 26. the consoles wear the paper when the document is light ─────
+   The dark block above re-points the console tokens at the --ld-*
+   identity family AFTER index.css, so a plain `light-theme` class on
+   the document could never reach inside a console: every surface,
+   ink and hairline resolved back to the dark canvas no matter what
+   the root said. This block re-points the SAME masters at the light
+   palette, scoped to the two consoles (both hang their shell on
+   `clr-surface adv-console`). The landing and the admin console keep
+   their own identity either way; the accent masters go to the paper
+   accent so "brand" reads as ink-blue on cream, not periwinkle on
+   black. */
+.light-theme .clr-surface.adv-console {
+  --ld-bg: #FAF9F6;
+  --ld-bg-tint: #F5F5F0;
+  --ld-surface: #F1F0F8;
+  --ld-well: #EBEBE4;
+  --ld-bg-glass: rgba(255, 254, 240, 0.85);
+  --ld-line: rgba(26, 27, 30, 0.12);
+  --ld-line-strong: rgba(26, 27, 30, 0.2);
+  --ld-ink: #171923;
+  --ld-ink-2: #524866;
+  --ld-ink-3: #736e82;
+  --ld-ink-4: #9a94a6;
+  --ld-accent: #2c46b8;
+  --ld-accent-soft: rgba(44, 70, 184, 0.14);
+  --ld-on-accent: #f2f2f4;
+  --ld-paper: #FFFFE3;
+  --void: #F5F5F0;
+  --hair: rgba(26, 27, 30, 0.12);
+  --hair-strong: rgba(26, 27, 30, 0.2);
+  --on-surface: #171923;
+  --paper: #FFFFE3;
+}

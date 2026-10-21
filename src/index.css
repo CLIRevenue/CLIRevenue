@@ -621,7 +621,7 @@ html.intro-lock body {
   font-weight: 500;
   letter-spacing: var(--track-label);
   text-transform: uppercase;
-  color: var(--signal);
+  color: var(--signal-text);
 }
 
 .eyebrow::before {
