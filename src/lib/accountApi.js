@@ -25,6 +25,8 @@ function cleanStrings(payload) {
   return out
 }
 
+import { DEFAULT_INTERNAL_BACKEND } from './backendBase.js'
+
 function trimBase(raw) {
   return String(raw || '').replace(/\/+$/, '')
 }
@@ -147,8 +149,12 @@ export async function changePassword({ currentPassword, newPassword }) {
 export async function deleteOwnAccount() {
   const raw = trimBase(import.meta.env.VITE_API_BASE_URL || '')
   // Canonical Supabase layout: <project>/functions/v1/delete_account.
-  const base = raw.endsWith('/functions/v1') ? raw : raw ? `${raw}/functions/v1` : ''
-  const url = base ? `${base}/delete_account` : '/api/delete_account'
+  const base = raw.endsWith('/functions/v1')
+    ? raw
+    : raw
+      ? `${raw}/functions/v1`
+      : DEFAULT_INTERNAL_BACKEND
+  const url = `${base}/delete_account`
 
   const { data: { session } } = await supabase.auth.getSession()
   const token = session?.access_token

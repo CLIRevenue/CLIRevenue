@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdvBarChart, AdvEmpty, AdvError, AdvLoading, AdvPageHead, AdvStats } from '../advertiser/AdvertiserUI.jsx'
 import { Panel } from '../console/ui.jsx'
 import { supabase } from '../../lib/api.js'
+import { DEFAULT_INTERNAL_BACKEND } from '../../lib/backendBase.js'
 import DeveloperAccount from './DeveloperAccount.jsx'
 import DeveloperSidebar from './DeveloperSidebar.jsx'
 import { useAuth } from '../auth/authState.js'
@@ -126,7 +127,7 @@ function formatCents(cents) {
 
 function rewardsBases() {
   const raw = trimBase(import.meta.env.VITE_API_BASE_URL || '')
-  if (!raw) return ['/api/rewards']
+  if (!raw) return ['/api/rewards', `${DEFAULT_INTERNAL_BACKEND}/rewards`]
   if (raw.endsWith('/functions/v1')) return [`${raw}/rewards`, `${raw}/api/reviews`]
   return [`${raw}/api/rewards`]
 }

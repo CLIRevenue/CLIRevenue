@@ -23,6 +23,8 @@ export const ADVERTISER_AUDIENCES = [
 
 export const CAMPAIGN_STATUSES = RULE_STATUSES
 
+import { DEFAULT_INTERNAL_BACKEND } from './backendBase.js'
+
 const AUDIENCE_LABELS = Object.fromEntries(ADVERTISER_AUDIENCES.map((a) => [a.id, a.label]))
 
 function trimBase(raw) {
@@ -33,7 +35,11 @@ function campaignsBaseCandidates() {
   const raw = trimBase(import.meta.env.VITE_API_BASE_URL || '')
   const out = []
   if (!raw) {
+    // Same-origin first for a host that proxies /api/*, then the internal
+    // backend for a host that does not. The walker falls through only on a
+    // routing miss, so the first candidate that answers wins.
     out.push('/api/campaigns')
+    out.push(`${DEFAULT_INTERNAL_BACKEND}/campaigns`)
     return out
   }
   if (raw.endsWith('/functions/v1')) {
@@ -53,7 +59,7 @@ function campaignsBaseCandidates() {
 
 function authBaseCandidates() {
   const raw = trimBase(import.meta.env.VITE_API_BASE_URL || '')
-  if (!raw) return ['/api/auth/status']
+  if (!raw) return ['/api/auth/status', `${DEFAULT_INTERNAL_BACKEND}/auth`]
   if (raw.endsWith('/functions/v1')) {
     return [`${raw}/auth`, `${raw}/api/auth/status`]
   }

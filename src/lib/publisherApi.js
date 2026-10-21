@@ -15,6 +15,8 @@ import { PUBLISHABLE_KEY_PATTERN } from './clirevenue.js'
  * only place allowed to put one into application state.
  */
 
+import { DEFAULT_INTERNAL_BACKEND } from './backendBase.js'
+
 function trimBase(raw) {
   return String(raw || '').replace(/\/+$/, '')
 }
@@ -24,6 +26,7 @@ function provisioningBaseCandidates() {
   const out = []
   if (!raw) {
     out.push('/api/provision_publisher')
+    out.push(`${DEFAULT_INTERNAL_BACKEND}/provision_publisher`)
     return out
   }
   if (raw.endsWith('/functions/v1')) {

@@ -8,6 +8,8 @@ import { supabase } from './api.js'
  * ever sent by the browser, and no admin password is stored here.
  */
 
+import { DEFAULT_INTERNAL_BACKEND } from './backendBase.js'
+
 function trimBase(raw) {
   return String(raw || '').replace(/\/+$/, '')
 }
@@ -17,6 +19,7 @@ function adminBaseCandidates() {
   const out = []
   if (!raw) {
     out.push('/api/admin')
+    out.push(`${DEFAULT_INTERNAL_BACKEND}/admin`)
     return out
   }
   if (raw.endsWith('/functions/v1')) {

@@ -8,6 +8,8 @@ import { supabase } from './api.js'
  * that authenticate the developer and then operate on their publisher's keys.
  */
 
+import { DEFAULT_INTERNAL_BACKEND } from './backendBase.js'
+
 function trimBase(raw) {
   return String(raw || '').replace(/\/+$/, '')
 }
@@ -17,6 +19,7 @@ function publisherKeysBaseCandidates() {
   const out = []
   if (!raw) {
     out.push('/api/publisher_keys')
+    out.push(`${DEFAULT_INTERNAL_BACKEND}/publisher_keys`)
     return out
   }
   if (raw.endsWith('/functions/v1')) {
