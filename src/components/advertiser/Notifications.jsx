@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchNotifications } from '../../lib/advertiserQueries.js'
+import { fetchNotifications, markQueriesRead, screenshotLinks } from '../../lib/advertiserQueries.js'
 
 /**
  * The bell. An icon and a count, and nothing else until you open it —
@@ -10,6 +10,12 @@ import { fetchNotifications } from '../../lib/advertiserQueries.js'
  * answer from support is something you are waiting on, so it is
  * unread until you read it. A performance note is a reading of numbers
  * this console already has — passed in, never invented here.
+ *
+ * Read state is a database column (subscriber_read_at), not component
+ * state: opening a reply stamps the row through mark_queries_read, so the
+ * red dot survives a refresh and follows the advertiser to another
+ * device. The optimistic local write is just for the same millisecond —
+ * the server row is the source of truth.
  */
 
 function bellPath(reading) {
@@ -21,8 +27,8 @@ function bellPath(reading) {
 export default function Notifications({ insights = [] }) {
   const [open, setOpen] = useState(false)
   const [data, setData] = useState({ answered: [], waiting: [], unread: 0, queries: [] })
-  const [seen, setSeen] = useState([])
   const [detail, setDetail] = useState(null)
+  const [linksByQuery, setLinksByQuery] = useState({})
   const [error, setError] = useState('')
   const rootRef = useRef(null)
 
@@ -71,13 +77,42 @@ export default function Notifications({ insights = [] }) {
     }
   }, [open])
 
-  const unread = data.answered.filter((q) => !seen.includes(q.id)).length
+  const unread = data.answered.filter((q) => !q.readAt).length
   const hasInsights = insights.length > 0
   const bellUnread = unread + hasInsights
 
+  function stampRead(ids) {
+    // Optimistic: the row the user just opened should stop counting as new
+    // immediately, even while the write is in flight. The server call is
+    // deliberately narrow — it can only stamp rows the signed-in user owns,
+    // and it is a no-op for rows already stamped. A failed stamp is not
+    // shouted about in the panel; the refresh button or the next fetch
+    // recovers it, the same way a dropped page view recovers.
+    setData((current) => ({
+      ...current,
+      answered: current.answered.map((q) => (ids.includes(q.id) ? { ...q, readAt: new Date().toISOString() } : q)),
+    }))
+    markQueriesRead(ids).catch(() => {})
+  }
+
+  const markAllRead = () => {
+    // No ids means "everything unread that is mine" — exactly one round
+    // trip, not one per row.
+    stampRead(data.answered.map((q) => q.id))
+  }
+
   function openReply(query) {
-    setSeen((s) => (s.includes(query.id) ? s : [...s, query.id]))
+    stampRead([query.id])
     setDetail(query)
+    // Same signed-link contract as the admin console: storage paths get a
+    // short-lived URL, legacy bare filenames stay plain text. Links are
+    // keyed by the query id, so a slow resolution can never land on another
+    // detail's list.
+    if (query.screenshots.length) {
+      screenshotLinks(query.screenshots).then((resolved) => {
+        setLinksByQuery((current) => ({ ...current, [query.id]: resolved }))
+      })
+    }
   }
 
   return (
@@ -100,7 +135,14 @@ export default function Notifications({ insights = [] }) {
         <div className="adv-bell__panel" role="dialog" aria-label="Notifications">
           <div className="adv-bell__head">
             <span className="adv-bell__title">Notifications</span>
-            <button type="button" className="adv-bell__refresh" onClick={load} aria-label="Refresh">↻</button>
+            <div className="adv-bell__head-actions">
+              {unread > 0 ? (
+                <button type="button" className="adv-bell__mark-read" onClick={markAllRead}>
+                  Mark all as read
+                </button>
+              ) : null}
+              <button type="button" className="adv-bell__refresh" onClick={load} aria-label="Refresh">↻</button>
+            </div>
           </div>
 
           {error ? <p className="adv-bell__empty">{error}</p> : null}
@@ -118,7 +160,7 @@ export default function Notifications({ insights = [] }) {
                   type="button"
                   className="adv-bell__item"
                   onClick={() => openReply(q)}
-                  data-unread={!seen.includes(q.id)}
+                  data-unread={!q.readAt}
                 >
                   <span className="adv-bell__item-title">{q.subject}</span>
                   <span className="adv-bell__item-sub">
@@ -173,7 +215,20 @@ export default function Notifications({ insights = [] }) {
                 <div><dt>Email</dt><dd>{detail.email}</dd></div>
                 {detail.phone ? <div><dt>Phone</dt><dd>{detail.phone}</dd></div> : null}
                 {detail.screenshots.length ? (
-                  <div><dt>Screenshots</dt><dd>{detail.screenshots.join(', ')}</dd></div>
+                  <div>
+                    <dt>Screenshots</dt>
+                    <dd>
+                      <ul className="adm-query__files">
+                        {(linksByQuery[detail.id] || detail.screenshots.map((value) => ({ value, name: value, url: null }))).map((f) => (
+                          <li key={f.value}>
+                            {f.url
+                              ? <a href={f.url} target="_blank" rel="noopener noreferrer">{f.name}</a>
+                              : <span>{f.name}</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    </dd>
+                  </div>
                 ) : null}
               </dl>
               <p className="adv-bell__eyebrow">Our answer</p>

@@ -27,7 +27,7 @@ export const QUERY_CATEGORIES = [
 ]
 
 const COLUMNS =
-  'id, profile_id, user_email, phone, company_name, subject, body, screenshots, status, admin_reply, replied_at, category, created_at, updated_at'
+  'id, profile_id, user_email, phone, company_name, subject, body, screenshots, status, admin_reply, replied_at, subscriber_read_at, category, created_at, updated_at'
 
 function queryError(code, message) {
   const err = new Error(message)
@@ -73,8 +73,10 @@ function normalize(row) {
     status: row.status,
     reply: row.admin_reply || '',
     repliedAt: row.replied_at || null,
+    readAt: row.subscriber_read_at || null,
     category: row.category,
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
   }
 }
 
@@ -109,9 +111,18 @@ export async function createQuery(input) {
   const userId = session.data?.user?.id
   if (!userId) throw queryError('NOT_SIGNED_IN', 'Sign in before opening a support request.')
 
+  // The id is chosen here, not by the database, because the upload paths
+  // embed it (<uid>/<query id>/<uuid>.<ext>) and the retention purge joins
+  // on that second segment. The id must also be answerable for RLS later.
+  const id = crypto.randomUUID()
+  const screenshots = input.files?.length
+    ? await uploadScreenshots(userId, id, input.files)
+    : []
+
   const { data, error } = await supabase
     .from(TABLE)
     .insert({
+      id,
       profile_id: userId,
       user_email: session.data.user.email || input.email || '',
       phone: input.phone || null,
@@ -119,7 +130,7 @@ export async function createQuery(input) {
       subject: input.subject.trim(),
       body: input.body.trim(),
       category: input.category || 'general',
-      screenshots: input.screenshots || [],
+      screenshots,
     })
     .select(COLUMNS)
     .single()
@@ -217,7 +228,112 @@ export async function fetchNotifications() {
   return {
     answered,
     waiting,
-    unread: answered.length,
+    // Unread is a DB fact now (subscribers stamp read time through
+    // mark_queries_read), not tab state — which is why the red dot
+    // survives a refresh.
+    unread: answered.filter((q) => !q.readAt).length,
     queries,
   }
 }
+
+/**
+ * Stamp read receipts. Called with an id array after opening one
+ * notification, or with nothing at all for "mark all as read". Resolved
+ * against the signed-in user server-side, so a caller cannot mark somebody
+ * else's rows and cannot re-touch rows that are already read. Returns how
+ * many rows were stamped, which the bell mostly ignores — the optimistic
+ * UI update and the next fetch disagree never.
+ */
+export async function markQueriesRead(ids) {
+  const { data, error } = await supabase.rpc('mark_queries_read', {
+    p_ids: Array.isArray(ids) && ids.length ? ids : null,
+  })
+  if (error) throw queryError(error.code, friendly(error, 'Could not mark that as read. Try again in a moment.'))
+  return typeof data === 'number' ? data : 0
+}
+
+/**
+ * Screenshots: attach, upload, and issue short-lived read links.
+ *
+ * Storage contract: private bucket `support-screenshots`, every object under
+ * `<auth uid>/<query id>/<uuid>.<ext>`. Storage RLS lets a signed-in user
+ * write only into their own folder and read their own folder — admins read
+ * anything via jwt_is_admin(). Retention is enforced DB-side by
+ * public.purge_support_screenshots(): once a query has been answered for 12
+ * hours an hourly cron removes its objects from storage. Nothing here needs
+ * the service key, so the browser keeps holding only the publishable key.
+ */
+
+const SUPPORT_BUCKET = 'support-screenshots'
+const SUPPORT_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif'])
+const SUPPORT_MAX_BYTES = 5 * 1024 * 1024
+
+export async function uploadScreenshots(userId, queryId, files) {
+  if (!userId) throw queryError('NOT_SIGNED_IN', 'Sign in before attaching screenshots.')
+  const uploaded = []
+  for (const file of files) {
+    if (!SUPPORT_TYPES.has(file.type)) {
+      throw queryError('UNSUPPORTED_FILE', `"${file.name}" is not a JPG, PNG, WEBP or GIF image.`)
+    }
+    if (file.size > SUPPORT_MAX_BYTES) {
+      throw queryError('FILE_TOO_LARGE', `"${file.name}" is over the 5 MB attachment limit.`)
+    }
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png'
+    const path = `${userId}/${queryId}/${crypto.randomUUID()}.${ext}`
+    const { error } = await supabase.storage.from(SUPPORT_BUCKET).upload(path, file, { contentType: file.type })
+    if (error) throw queryError(error.name || 'UPLOAD_FAILED', friendly(error, 'A screenshot could not upload. Try again, or send fewer files.'))
+    uploaded.push(path)
+  }
+  return uploaded
+}
+
+/**
+ * Turn stored screenshot values into what a viewer can click. Values are one
+ * of two shapes: a storage path ("<uid>/<uuid>.<ext>", signed now, TTL 1h) or
+ * a legacy bare filename recorded before any upload existed — those get url
+ * null and render as plain text, since the bytes were never stored.
+ */
+export async function screenshotLinks(values) {
+  return Promise.all(
+    values.map(async (value) => {
+      const name = value.split('/').pop() || value
+      if (!value.includes('/')) return { value, name, url: null }
+      try {
+        const { data } = await supabase.storage.from(SUPPORT_BUCKET).createSignedUrl(value, 3600)
+        return { value, name, url: data?.signedUrl || null }
+      } catch {
+        return { value, name, url: null }
+      }
+    })
+  )
+}
+
+/**
+ * Admin: flag/unflag a query as important. Flagged queries sort to the top
+ * of the console list and are pinned there, and their attachments ride the
+ * extended retention window (48h after the answer instead of 12h) — that is
+ * a DB-side contract in purge_support_screenshots(), not a client promise.
+ */
+export async function flagQuery(id, important) {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .update({ important: Boolean(important) })
+    .eq('id', id)
+    .select(COLUMNS)
+    .single()
+  if (error) throw queryError(error.code, 'Could not update that request.')
+  return normalize(data)
+}
+
+/**
+ * Admin: delete a query outright. The row goes for both sides (the
+ * advertiser's bell reads the same table) and no reply can be written into
+ * nothing. Attachments do not dangle: the purge matches objects to queries
+ * by path, and an object whose query row no longer exists will simply be
+ * removed on the next hourly sweep.
+ */
+export async function deleteQuery(id) {
+  const { error } = await supabase.from(TABLE).delete().eq('id', id)
+  if (error) throw queryError(error.code, 'Could not delete that request.')
+}
+

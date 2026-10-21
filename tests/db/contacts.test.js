@@ -10,7 +10,7 @@
  */
 import { describe, it, expect, afterAll, beforeEach } from 'vitest'
 import { migrate, close } from './pg.js'
-import { createUser, asRole, asService, asAnon, uuid } from './fixtures.js'
+import { createUser, asUser, asRole, asService, asAnon, uuid } from './fixtures.js'
 
 let db
 let adminUser
@@ -648,5 +648,52 @@ describe('contact_submissions complete flow', () => {
         /permission denied/,
       )
     })
+  })
+})
+describe('advertiser_queries read receipts (notify_read_state)', () => {
+  let adv, other, q1, q2
+
+  beforeEach(async () => {
+    adv = await createUser(db, { email: 'advread@test.invalid', role: 'advertiser' })
+    other = await createUser(db, { email: 'advother@test.invalid', role: 'advertiser' })
+    await asUser(db, adv.userId, (tx) =>
+      tx.query(
+        `INSERT INTO public.advertiser_queries (profile_id, user_email, subject, body)
+         VALUES ($1, 'advread@test.invalid', 'A', 'one two three')
+              , ($1, 'advread@test.invalid', 'B', 'four five six')`,
+        [adv.userId],
+      ),
+    )
+    const { rows } = await asService(db, (tx) =>
+      tx.query(`SELECT id FROM public.advertiser_queries WHERE profile_id = $1 ORDER BY subject`, [adv.userId]),
+    )
+    ;[q1, q2] = rows.map((r) => r.id)
+  })
+
+  it('marks the caller\'s row read and returns the count', async () => {
+    const { rows } = await asUser(db, adv.userId, (tx) =>
+      tx.query(`SELECT public.mark_queries_read($1) AS stamped`, [[q1]]),
+    )
+    expect(rows[0].stamped).toBe(1)
+    const { rows: seen } = await asService(db, (tx) =>
+      tx.query(`SELECT id, subscriber_read_at IS NOT NULL AS read FROM public.advertiser_queries ORDER BY subject`),
+    )
+    expect(seen.map((r) => r.read)).toEqual([true, false])
+  })
+
+  it('cannot mark somebody else\'s row, and stamping is one-way', async () => {
+    await asUser(db, other.userId, (tx) =>
+      tx.query(`SELECT public.mark_queries_read($1) AS stamped`, [[q1, q2]]),
+    )
+    const { rows: untouched } = await asService(db, (tx) =>
+      tx.query(`SELECT count(*) AS n FROM public.advertiser_queries WHERE subscriber_read_at IS NOT NULL AND profile_id = $1`, [adv.userId]),
+    )
+    expect(Number(untouched[0].n)).toBe(0)
+
+    await asUser(db, adv.userId, (tx) => tx.query(`SELECT public.mark_queries_read() AS stamped`))
+    const { rows: again } = await asUser(db, adv.userId, (tx) =>
+      tx.query(`SELECT public.mark_queries_read() AS stamped`),
+    )
+    expect(again[0].stamped).toBe(0)
   })
 })

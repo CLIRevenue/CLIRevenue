@@ -833,6 +833,22 @@
   padding: 2px 4px;
 }
 .adv-bell__refresh:hover { color: var(--signal); }
+.adv-bell__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.adv-bell__mark-read {
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: .02em;
+  padding: 2px 4px;
+}
+.adv-bell__mark-read:hover { color: var(--ink); text-decoration: underline; }
 .adv-bell__group + .adv-bell__group { margin-top: 12px; }
 .adv-bell__group-title {
   margin: 0 0 6px;
