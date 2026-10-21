@@ -34,8 +34,18 @@ function developerInsights(balance, rewards) {
 const THEME_KEY = 'clirevenue.devtheme'
 
 function readTheme() {
+  // Default to the OS instead of to "light". The console used to always
+  // paint its dark canvas, so a machine in dark mode and one in light
+  // mode looked identical and the toggle only ever went one way; the
+  // first thing anyone noticed after the light palette landed was that
+  // it had not landed at all.
   try {
-    return window.localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light'
+    const saved = window.localStorage.getItem(THEME_KEY)
+    if (saved === 'dark' || saved === 'light') return saved
+    return typeof matchMedia === 'function' &&
+      matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
   } catch {
     return 'light'
   }

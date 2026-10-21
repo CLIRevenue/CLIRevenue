@@ -3,8 +3,7 @@ import { serveWithCors } from "../_shared/http.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { adminClient } from "../_shared/auth.ts";
 import { apiError, corsFor, isUuid, json, optionsResponse, readJsonObjectBody, restPath } from "../_shared/http.ts";
-import { isEligible } from "../_shared/eligibility.ts";
-import { validateAdText } from "../_shared/adText.ts";
+import { pickServable } from "../_shared/eligibility.ts";
 import { adTokenSecret, signServeToken, verifyServeToken } from "../_shared/adToken.ts";
 import { authenticatePublisher, rateLimitDelivery } from "../_shared/publisherAuth.ts";
 import { authorizeServe } from "../_shared/serveAuthz.ts";
@@ -161,26 +160,22 @@ async function handleDeliver(req: Request, admin: SupabaseClient): Promise<Respo
      row can only be served if it is a valid advertisement. A campaign whose
      headline is empty or longer than 60 characters is skipped here, the same
      way an over-budget campaign is skipped: it is not an error, it is a
-     campaign that is not ready to be shown.
+     campaign that is not ready to be shown. The campaigns behind it are
+     still served.
 
-     The validated text is carried alongside the campaign rather than
-     re-derived at the response, so what is measured and what is sent are
-     the same string by construction. */
-  const candidates: { campaign: Candidate; headline: string }[] = [];
-  for (const candidate of (data ?? []) as unknown as Candidate[]) {
-    if (!isEligible(candidate, now)) continue;
-    const headline = validateAdText(candidate.headline);
-    if (!headline.ok) continue;
-    candidates.push({ campaign: candidate, headline: headline.value });
-  }
-  if (candidates.length === 0) return noFill(req);
+     `pickServable` applies both filters and returns the validated text with
+     the campaign, so what is measured and what is sent are the same string by
+     construction. It lives in `_shared/eligibility.ts` so the rule can be
+     tested without a database. */
+  const servable = pickServable((data ?? []) as unknown as Candidate[], now);
+  if (!servable) return noFill(req);
 
   /* Ads are text. There is no asset to look up, no bucket to sign and no
-     object that can be missing, so the first eligible campaign in the
+     object that can be missing, so the first servable campaign in the
      already-filtered list is the one — the oldest-first priority is
      unchanged, and there is now nothing that can degrade a serve into a
      no-fill between eligibility and delivery. */
-  const { campaign, headline } = candidates[0];
+  const { campaign, headline } = servable;
 
   const requestId = crypto.randomUUID();
   const expiresAt = now + SERVE_TTL_MS;

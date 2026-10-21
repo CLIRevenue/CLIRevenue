@@ -9,6 +9,8 @@
  * implementations drifting apart on the money question.
  */
 
+import { validateAdText } from "./adText.ts";
+
 /** The subset of a campaign row these predicates read. */
 export type Candidate = {
   status?: string | null;
@@ -67,6 +69,38 @@ export function pickEligible<T extends Candidate>(
 ): T | null {
   for (const c of candidates) {
     if (isEligible(c, now)) return c;
+  }
+  return null;
+}
+
+/**
+ * The first candidate that may actually be shown, and the ad text to show.
+ *
+ * Eligibility is the money question: status, schedule, budget. This adds the
+ * other one: the ad text itself has to be a valid advertisement.
+ *
+ * The database constrains the headline for every write, but the constraint was
+ * added NOT VALID so that campaigns written before the 60-character rule
+ * existed are not destroyed by the upgrade. A row can therefore exist that the
+ * database will not let you edit and that must not be served: an empty
+ * headline, or one longer than 60 characters. Such a campaign is skipped the
+ * same way an over-budget campaign is skipped — it is not an error, it is a
+ * campaign that is not ready to be shown — and the campaigns behind it are
+ * still served.
+ *
+ * The validated text is returned alongside the campaign rather than
+ * re-derived at the response, so what is measured and what is sent are the
+ * same string by construction.
+ */
+export function pickServable<T extends Candidate & { headline?: string | null }>(
+  candidates: readonly T[],
+  now: number,
+): { campaign: T; headline: string } | null {
+  for (const campaign of candidates) {
+    if (!isEligible(campaign, now)) continue;
+    const headline = validateAdText(campaign.headline);
+    if (!headline.ok) continue;
+    return { campaign, headline: headline.value };
   }
   return null;
 }

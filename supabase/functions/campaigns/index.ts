@@ -5,6 +5,7 @@ import {
   activationBlockerMessage,
   canTransition,
   createUnknownFields,
+  effectiveAdText,
   isCampaignStatus,
   parseBudgetCents,
   parseCpmCents,
@@ -13,6 +14,7 @@ import {
   requireNonEmptyString,
 } from "../_shared/campaignRules.ts";
 import { apiError, isUuid, json, optionsResponse, restPath } from "../_shared/http.ts";
+import { validateAdText } from "../_shared/adText.ts";
 
 type AudienceRow = { id: string; label: string };
 type CreativeRow = Record<string, unknown>;
@@ -202,9 +204,15 @@ const handler = serveWithCors(async (req) => {
         return apiError("UNKNOWN_FIELDS", `Unsupported fields: ${unknown.join(", ")}.`, 400);
       }
       const nameErr = requireNonEmptyString(body.name, "name");
-      const headlineErr = requireNonEmptyString(body.headline, "headline");
       if (nameErr) return apiError("MISSING_FIELDS", "Campaign name is required.", 400);
-      if (headlineErr) return apiError("MISSING_FIELDS", "Headline is required.", 400);
+      /* The ad text is the advertisement. It is measured in Unicode code
+         points, on the trimmed and NFC-normalised form, and the same
+         measurement is performed by the database constraint, by the
+         dashboard's counter and by the SDK. See _shared/adText.ts. */
+      const headline = validateAdText(body.headline);
+      if (!headline.ok) {
+        return apiError(headline.code, headline.message, 400);
+      }
       const audienceId = body.audience_id ?? body.audience;
       if (typeof audienceId !== "string" || !audienceId.trim()) {
         return apiError("INVALID_AUDIENCE", "Select an audience.", 400);
@@ -229,7 +237,7 @@ const handler = serveWithCors(async (req) => {
       const insert = {
         advertiser_id: advertiserId,
         name: String(body.name).trim(),
-        headline: String(body.headline).trim(),
+        headline: headline.value,
         description: body.description == null ? null : String(body.description),
         cta: body.cta ? String(body.cta) : "Learn more",
         audience_id: audienceId,
@@ -331,15 +339,23 @@ const handler = serveWithCors(async (req) => {
         }
 
         const filtered: Record<string, unknown> = {};
+        /* The ad text of the campaign as it will be after this patch: the
+           incoming headline when the patch carries one, otherwise the stored
+           one. The rule lives in `campaignRules.ts` so it can be tested
+           without a database — see `effectiveAdText`. */
+        const effectiveHeadline = effectiveAdText(body.headline, existing.headline);
+        if (!effectiveHeadline.ok) {
+          return apiError(effectiveHeadline.code, effectiveHeadline.message, 400);
+        }
         if (body.name !== undefined) {
           const err = requireNonEmptyString(body.name, "name");
           if (err) return apiError("MISSING_FIELDS", "Campaign name is required.", 400);
           filtered.name = String(body.name).trim();
         }
         if (body.headline !== undefined) {
-          const err = requireNonEmptyString(body.headline, "headline");
-          if (err) return apiError("MISSING_FIELDS", "Headline is required.", 400);
-          filtered.headline = String(body.headline).trim();
+          /* Already validated above — `effectiveHeadline` is the incoming
+             headline whenever the patch carries one. */
+          filtered.headline = effectiveHeadline.value;
         }
         if (body.description !== undefined) filtered.description = body.description;
         if (body.cta !== undefined) filtered.cta = body.cta;

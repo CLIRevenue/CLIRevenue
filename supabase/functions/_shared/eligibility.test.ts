@@ -15,6 +15,7 @@ import {
   withinSchedule,
   isEligible,
   pickEligible,
+  pickServable,
   CANDIDATE_WINDOW,
 } from "./eligibility.ts";
 
@@ -90,4 +91,59 @@ Deno.test("pickEligible returns null when nothing is servable", () => {
 
 Deno.test("the candidate window is a deliberate, bounded walk", () => {
   assertEquals(CANDIDATE_WINDOW, 25);
+});
+
+/* The ad text, at the point of delivery. The database constrains the headline
+   for every write, but the constraint was added NOT VALID so that campaigns
+   written before the 60-character rule existed are not destroyed by the
+   upgrade. Such a row exists, it must not be served, and the campaigns
+   behind it still must be. */
+Deno.test("a campaign whose headline is too long is not served", () => {
+  const now = Date.now();
+  const legacy = {
+    ...active,
+    status: "active" as const,
+    id: "a",
+    headline: "x".repeat(61),
+  };
+  assertEquals(pickServable([legacy], now), null);
+});
+
+Deno.test("a campaign with an empty headline is not served", () => {
+  const now = Date.now();
+  const empty = { ...active, status: "active" as const, id: "a", headline: "   " };
+  assertEquals(pickServable([empty], now), null);
+});
+
+Deno.test("an invalid campaign does not stop the valid one behind it being served", () => {
+  const now = Date.now();
+  const legacy = {
+    ...active,
+    status: "active" as const,
+    id: "a",
+    headline: "x".repeat(80),
+  };
+  const servable = { ...active, status: "active" as const, id: "b", headline: "A real headline" };
+  const picked = pickServable([legacy, servable], now);
+  assertEquals(picked?.campaign.id, "b");
+  assertEquals(picked?.headline, "A real headline");
+});
+
+Deno.test("the served headline is the normalised one", () => {
+  const now = Date.now();
+  const servable = {
+    ...active,
+    status: "active" as const,
+    id: "a",
+    headline: "  caf\u00e9  ",
+  };
+  assertEquals(pickServable([servable], now)?.headline, "caf\u00e9");
+});
+
+Deno.test("a campaign that is eligible but has no headline at all is not served", () => {
+  /* The column is NOT NULL, but the delivery payload is untrusted input and
+     a row from before the column was tightened should not become an ad. */
+  const now = Date.now();
+  const noHeadline = { ...active, status: "active" as const, id: "a" };
+  assertEquals(pickServable([noHeadline], now), null);
 });

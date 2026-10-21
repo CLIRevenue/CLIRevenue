@@ -1,3 +1,5 @@
+import { validateAdText } from "./adText.ts";
+
 export const CAMPAIGN_STATUSES = [
   "draft",
   "active",
@@ -166,6 +168,34 @@ export function parseCpmCents(
   return { ok: true, value: raw };
 }
 
+/**
+ * The ad text a campaign will have once a patch has been applied.
+ *
+ * A patch that carries a headline replaces the stored one; a patch that does
+ * not leaves the stored one in place. The stored one still has to be valid,
+ * because the database re-checks the whole row on every UPDATE and the
+ * constraint was added NOT VALID: a campaign written before the 60-character
+ * rule existed can still hold a longer headline, and editing *any* field of
+ * it would otherwise fail with a raw constraint violation.
+ *
+ * So the rule is: validate the headline the campaign will end up with, and
+ * refuse the patch with the same code the dashboard's counter uses when it is
+ * the stored headline that is wrong. The only way forward for a legacy
+ * campaign is to send a shorter headline in the same request, which is
+ * exactly what the constraint would demand anyway.
+ */
+export function effectiveAdText(
+  incoming: unknown,
+  stored: unknown,
+): { ok: true; value: string; length: number } | {
+  ok: false;
+  code: string;
+  message: string;
+  length: number;
+} {
+  return validateAdText(incoming !== undefined ? incoming : stored);
+}
+
 /* campaign_activation_blockers() is the single authority on whether a campaign
    is allowed to go live. It runs in the database so the same rules apply no
    matter which caller asks, and so a rule can never drift between the Edge
@@ -182,6 +212,13 @@ export const ACTIVATION_BLOCKER_MESSAGES: Record<string, string> = {
   SCHEDULE_ENDED: "This campaign's end date has passed.",
   INVALID_LANDING_URL: "Add a valid http(s) landing URL before activating.",
   BUDGET_EXCEEDED: "This campaign has already spent its full budget.",
+  /* The ad text contract. These two codes are produced by the database
+     blockers (the ad-text migration added them), so the API has to name them
+     too: an activation refused for an over-long headline has to say so,
+     not "Campaign is not ready to activate." The dashboard's copy of this
+     map says the same thing in the same words. */
+  AD_TEXT_REQUIRED: "Write the ad text before activating.",
+  AD_TEXT_TOO_LONG: "Shorten the ad text to 60 characters or fewer before activating.",
 };
 
 export function activationBlockerMessage(code: string): string {
