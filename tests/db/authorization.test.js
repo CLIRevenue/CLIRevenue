@@ -177,6 +177,39 @@ describe('accounting integrity', () => {
     )
     expect(rows[0].full_name).toBeNull()
   })
+
+  it('10d. jwt_is_admin reads the allowlist on behalf of its caller', async () => {
+    // 000018 documented this function as SECURITY DEFINER but shipped it as
+    // SECURITY INVOKER: inside the caller's row visibility, admin_emails (RLS
+    // enabled, no policies) hid every row, so the check silently answered
+    // FALSE for the real admin and every policy built on it denied access.
+    const { rows } = await asService(db, (tx) =>
+      tx.query(`SELECT prosecdef FROM pg_proc WHERE oid = 'public.jwt_is_admin'::regproc`),
+    )
+    expect(rows[0].prosecdef).toBe(true)
+
+    // Functional proof under the same conditions the Data API uses: the
+    // caller's own email allowlisted, queried as `authenticated`.
+    await asService(db, (tx) =>
+      tx.query(
+        `INSERT INTO public.admin_emails (email, note) VALUES ($1, 'definer test') ON CONFLICT (email) DO NOTHING`,
+        ['deva@test.invalid'],
+      ),
+    )
+    try {
+      const { rows } = await asUser(db, devA.userId, (tx) =>
+        tx.query(
+          `SELECT set_config('request.jwt.claims', $1, true), public.jwt_is_admin() AS admin`,
+          [JSON.stringify({ sub: devA.userId, email: 'deva@test.invalid', role: 'authenticated' })],
+        ),
+      )
+      expect(rows[0].admin).toBe(true)
+    } finally {
+      await asService(db, (tx) =>
+        tx.query(`DELETE FROM public.admin_emails WHERE email = $1 AND note = 'definer test'`, ['deva@test.invalid']),
+      )
+    }
+  })
 })
 
 describe('audience definitions', () => {
