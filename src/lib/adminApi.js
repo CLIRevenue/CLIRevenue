@@ -237,11 +237,11 @@ export async function deleteDeveloperAccount(profileId) {
 /**
  * The account delete used to be an Edge-Function round trip
  * (DELETE /admin/accounts/...), which is exactly the flaky hop that turned
- * the button into a silent failure. The admin gate is a SQL check —
- * public.jwt_is_admin() on the profiles DELETE policy — so the browser call
- * under the admin's own session is just as authorized and far less moving
- * metal. The cascade does the rest; nothing downstream survives because
- * every table references the profile row.
+ * the button into a silent failure. The admin gate is a SQL check — the
+ * profiles DELETE policy evaluates the caller's admin status server-side —
+ * so the browser call under the admin's own session is just as authorized
+ * and far less moving metal. The cascade does the rest; nothing downstream
+ * survives because every table references the profile row.
  */
 async function deleteAccountProfile(profileId) {
   const { error } = await supabase.from('profiles').delete().eq('id', profileId)
