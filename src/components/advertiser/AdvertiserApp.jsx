@@ -87,18 +87,13 @@ function SettingsPanel({ onClose }) {
 const THEME_KEY = 'clirevenue.advtheme'
 
 function readTheme() {
-  // Default to the OS instead of to "light". The console used to always
-  // paint its dark canvas, so a machine in dark mode and one in light
-  // mode looked identical and the toggle only ever went one way; the
-  // first thing anyone noticed after the light palette landed was that
-  // it had not landed at all.
+  // The console is white paper (sidebar.css restates the whole palette
+  // for it), so "no choice made" means light, and it means light on
+  // every machine. Reading the OS here instead would hand a dark-OS
+  // visitor a dark console they never asked for -- and would have
+  // turned a design decision into a setting nobody can see.
   try {
-    const saved = window.localStorage.getItem(THEME_KEY)
-    if (saved === 'dark' || saved === 'light') return saved
-    return typeof matchMedia === 'function' &&
-      matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light'
+    return window.localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light'
   } catch {
     return 'light'
   }

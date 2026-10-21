@@ -186,14 +186,17 @@ body {
 }
 
 /* ── 4. selection that survives both canvases ───────────────────────
-   `::selection` is `--signal` on `--bg`. That is legible on every dark
-   surface and catastrophic on the front page's light hero, where the
-   same paint selects near-black text on a mid blue. The ink side now
-   uses the accent's own on-colour, which is dark, so a selection reads
-   as INVERTED on light and as inverted on dark too — one rule, both
-   canvases. */
+   The selection is the ACCENT, and the text on it is the accent's own
+   on-colour. It used to be `--signal` on `--bg`, which worked while
+   --signal was the blue and inverted cleanly against the ground; the
+   palette made --signal ink, and ink against a near-black canvas is a
+   selection of black text on a black ground — the words you highlighted
+   disappeared. The accent is the one colour that is legible with its
+   own on-colour on every surface this project has: periwinkle with
+   near-black text on the dark ones, ink-blue with paper text on the
+   light console. */
 ::selection {
-  background: var(--signal, #6f8cff);
+  background: var(--accent, #6f8cff);
   color: var(--ld-on-accent, #09090c);
 }
 
@@ -459,11 +462,21 @@ body {
    `background-clip: text` gradient has to be re-rasterised — so it is
    hover-triggered, on one element, and it transitions a
    `background-position` rather than running on a loop. The text is
-   readable in both states; the second one is just lit from the left. */
+   readable in both states; the second one is just lit from the left.
+
+   The band is the ACCENT, and it is opaque. It was a literal
+   `rgba(111, 140, 255, 0.85)`, which is the periwinkle at 85% — on
+   the light console that is 15% of the ivory ground showing through a
+   dark ink, so the sweep read as a murky black band with a blue
+   ghost in it rather than as the blue it was supposed to be. The
+   accent is a solid colour in every scope this rule runs in
+   (periwinkle on the dark surfaces, ink-blue on the light console),
+   so the band is now the same blue everywhere, and it is the one that
+   moves. */
 .clr-surface .block__title,
 .clr-surface .sdk-head__title,
 .clr-surface .advx-head__title {
-  background-image: linear-gradient(100deg, var(--ink, #f2f2f4) 42%, rgba(111, 140, 255, 0.85) 58%, var(--ink, #f2f2f4) 74%);
+  background-image: linear-gradient(100deg, var(--ink, #f2f2f4) 42%, var(--accent, #6f8cff) 58%, var(--ink, #f2f2f4) 74%);
   background-size: 260% 100%;
   background-position: 100% 0;
   -webkit-background-clip: text;

@@ -1080,7 +1080,7 @@
   color: var(--clr-word-b, #ff1f2d);
 }
 
-/* ── 26. the consoles wear the paper when the document is light ─────
+/* ── 26. the consoles wear the paper ──────────────────────────────────
    The dark block above re-points the console tokens at the --ld-*
    identity family AFTER index.css, so a plain `light-theme` class on
    the document could never reach inside a console: every surface,
@@ -1090,8 +1090,17 @@
    `clr-surface adv-console`). The landing and the admin console keep
    their own identity either way; the accent masters go to the paper
    accent so "brand" reads as ink-blue on cream, not periwinkle on
-   black. */
-.light-theme .clr-surface.adv-console {
+   black.
+
+   The gate is the console's OWN state, not the document's. The console
+   is white paper by design (sidebar.css restates the whole palette for
+   it: --bg, --ink, --signal, the lot) and its only dark mode is the
+   `data-theme="dark"` the toggle writes. Gating on `.light-theme`
+   instead meant the console's palette was the OS's business: a visitor
+   on a dark-OS machine got the dark console, which is the one thing
+   they never asked for and the reason the ivory canvas "was not
+   delivered". The console is asked, and its answer is paper. */
+.clr-surface.adv-console:not([data-theme="dark"]) {
   --ld-bg: #FAF9F6;
   --ld-bg-tint: #F5F5F0;
   --ld-surface: #F1F0F8;
@@ -1146,6 +1155,6 @@
    So in the light console the label takes the console's second ink, which
    is 7.49:1 on a panel and 8.05:1 on the canvas. The dark console keeps
    its white: the same value, read against the right ground. */
-.light-theme .clr-surface.adv-console .eyebrow {
+.clr-surface.adv-console:not([data-theme="dark"]) .eyebrow {
   color: var(--ld-ink-2);
 }

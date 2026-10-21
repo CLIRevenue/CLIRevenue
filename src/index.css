@@ -564,10 +564,12 @@ a {
   outline-offset: 2px;
 }
 
-::selection {
-  background: var(--signal);
-  color: var(--bg);
-}
+/* The selection paint lives in fx.css, which is the last stylesheet in
+   the bundle and therefore the one that decides. It used to be declared
+   here as well, and the copy here was the one that ran on the pages
+   where fx.css is not loaded -- but fx.css IS loaded on every page, so
+   this copy was dead weight at best and a second, contradictory answer
+   at worst. */
 
 html.lenis,
 html.lenis body {
