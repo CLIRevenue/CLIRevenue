@@ -82,7 +82,16 @@
      #80808b keeps the landing's neutral hue and clears the floor on both
      surfaces (5.09:1 canvas, 4.57:1 panel), which is what a 9-10px mono
      label actually needs. It was already the legacy --ink-4 below; this
-     puts it in the --ld-* family so a console token can point at it. */
+     puts it in the --ld-* family so a console token can point at it.
+
+     ONE hex for the role, aliased below. A second literal would be a value
+     free to drift, which is how --ink-4 ended up at 2.6:1 last time.
+
+     The advertiser console does not read this one in its dark theme: it
+     restates its own fourth ink where it uses it, because a console with a
+     palette of its own is the only way to give a console a different
+     answer from the admin one. That restatement is measured in
+     sidebar.css; this value is the landing's and the admin's. */
   --ld-ink-4: #80808b;
   --ld-accent: #6f8cff;
   --ld-accent-soft: rgba(255, 255, 255, .14);
@@ -1093,7 +1102,28 @@
   --ld-ink: #171923;
   --ld-ink-2: #524866;
   --ld-ink-3: #736e82;
-  --ld-ink-4: #9a94a6;
+  /* The fourth ink, and the only one that may legally carry small text.
+     The dark console says so in its own words: --ld-ink-3 there is a
+     decorative rung (4.31:1 on the canvas, 3.86:1 on a panel) and
+     --ld-ink-4 is the one that clears 4.5:1 — 5.22:1 and 5.22:1 there —
+     which is the floor for the 9px mono the console uses for its stat
+     labels, its status flags and its empty-state lines.
+
+     The value below was #9a94a6, which is that same decorative rung read
+     against a light surface: 2.59:1 on a panel and 2.79:1 on the canvas.
+     Every small label in the console was under AA by a factor of two, and
+     the only reason it was not invisible was that the darker tiers around
+     it were legible.
+
+     #5f5a6c is the light counterpart of the dark tier it mirrors, and it
+     is set where the dark one is (#8a8a95) rather than where it was: the
+     sidebar prints its own numbers on a tinted box, and #665f72 measured
+     4.53:1 on a panel but only 4.24:1 on that box — under the floor, on
+     the one surface in the console that has a tint of its own. #5f5a6c
+     measures 5.86:1 on a panel and 4.93:1 on that box: the same hue family
+     as --ld-ink-3, so the ladder still reads as one ramp, just a ramp that
+     can be read. */
+  --ld-ink-4: #5f5a6c;
   --ld-accent: #2c46b8;
   --ld-accent-soft: rgba(44, 70, 184, 0.14);
   --ld-on-accent: #f2f2f4;
@@ -1103,4 +1133,19 @@
   --hair-strong: rgba(26, 27, 30, 0.2);
   --on-surface: #171923;
   --paper: #FFFFE3;
+}
+
+/* The page-head label ("A1 — Advertiser · Overview").
+
+   `.eyebrow` paints itself with --signal-text, which is a colour meant for
+   text ON a signal plate: white, in both themes. On the dark console that
+   reads as a light label on a dark canvas, so it was never questioned. On
+   the ivory console the same white sits on cream at 1.03:1 — which is not a
+   label, it is a gap where a label should be.
+
+   So in the light console the label takes the console's second ink, which
+   is 7.49:1 on a panel and 8.05:1 on the canvas. The dark console keeps
+   its white: the same value, read against the right ground. */
+.light-theme .clr-surface.adv-console .eyebrow {
+  color: var(--ld-ink-2);
 }

@@ -25,8 +25,8 @@
      29 of the console's 70 text elements under WCAG AA: every sidebar
      section, table header, status pill, telemetry label, note, empty-state
      line and .adm-muted table cell (spend, impressions, dates). --ld-ink-3
-     is 4.31:1 on the canvas and 3.86:1 on a panel; --ld-ink-4 is 5.09:1 and
-     4.57:1. One line here fixes every one of them. */
+     is 4.31:1 on the canvas and 3.86:1 on a panel; --ld-ink-4 is 5.22:1 and
+     5.22:1. One line here fixes every one of them. */
   --adm-muted:       var(--ld-ink-4);
   /* Was var(--ink-4), which nothing in the project defines — it fell through
      to :root and came back as a grey that could not be read. */

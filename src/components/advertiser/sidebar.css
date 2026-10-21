@@ -248,7 +248,14 @@
   font-size: var(--c-text-small);
   letter-spacing: var(--track-caps);
   text-transform: uppercase;
-  color: var(--ink-3);
+  /* The fourth ink, not the third. The nav label is 11px mono and it is
+     the one thing in the rail a reader has to be able to read, and the
+     console's own rule is that the fourth ink is the tier that may carry
+     small text: --ink-3 is a decorative rung (4.31:1 on the canvas in the
+     dark console, 4.33:1 on a panel in the light one) and --ink-4 clears
+     4.5:1 in both. The active item is unaffected: it sets its own colour
+     on the ink plate. */
+  color: var(--ink-4);
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
@@ -559,7 +566,16 @@
   --ink: rgba(241, 239, 246, 1);
   --ink-2: rgba(228, 225, 238, 1);
   --ink-3: rgba(164, 158, 180, 1);
-  --ink-4: rgba(130, 124, 148, 1);
+  /* The fourth ink: the tier that may carry small text, and here it was
+     not. Measured against the real console, #827c94 is 4.47:1 on a stat
+     card, 4.38:1 on the rail, 4.24:1 on a stat label and 3.36:1 on the
+     tinted fact box the sidebar's own numbers are printed on -- so every
+     9-10px mono label in the console was under AA, which is what "the
+     text looks thin" is made of. #9a9aa5 is 6.40:1 on a card, 6.31:1 on
+     the rail and 4.81:1 on that box: the same neutral hue the third ink
+     has (r=g, b ahead by 11) and the same relationship the light console's
+     fourth ink now has to its own third. */
+  --ink-4: rgba(154, 154, 165, 1);
   --hair: rgba(241, 239, 246, 0.10);
   --hair-strong: rgba(241, 239, 246, 0.18);
   --signal: rgba(122, 162, 255, 1);
