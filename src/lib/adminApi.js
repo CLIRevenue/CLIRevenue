@@ -222,12 +222,7 @@ export async function deleteAdminCampaign(id) {
  * row-level security on every downstream table can never see it.
  */
 export async function deleteAdvertiserAccount(profileId) {
-  const urls = adminBaseCandidates()
-  const { data } = await tryCandidates(
-    [...urls.map(u => `${u}/accounts/advertiser/${profileId}`)],
-    { method: 'DELETE' }
-  )
-  return data?.data ?? data
+  return deleteAccountProfile(profileId)
 }
 
 /**
@@ -236,10 +231,24 @@ export async function deleteAdvertiserAccount(profileId) {
  * directly.
  */
 export async function deleteDeveloperAccount(profileId) {
-  const urls = adminBaseCandidates()
-  const { data } = await tryCandidates(
-    [...urls.map(u => `${u}/accounts/developer/${profileId}`)],
-    { method: 'DELETE' }
-  )
-  return data?.data ?? data
+  return deleteAccountProfile(profileId)
+}
+
+/**
+ * The account delete used to be an Edge-Function round trip
+ * (DELETE /admin/accounts/...), which is exactly the flaky hop that turned
+ * the button into a silent failure. The admin gate is a SQL check —
+ * public.jwt_is_admin() on the profiles DELETE policy — so the browser call
+ * under the admin's own session is just as authorized and far less moving
+ * metal. The cascade does the rest; nothing downstream survives because
+ * every table references the profile row.
+ */
+async function deleteAccountProfile(profileId) {
+  const { error } = await supabase.from('profiles').delete().eq('id', profileId)
+  if (error) {
+    const thing = new Error(error.message || 'Could not remove that account.')
+    thing.status = error.code || 'DELETE_FAILED'
+    throw thing
+  }
+  return { ok: true }
 }

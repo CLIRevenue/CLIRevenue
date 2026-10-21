@@ -27,7 +27,7 @@ export const QUERY_CATEGORIES = [
 ]
 
 const COLUMNS =
-  'id, profile_id, user_email, phone, company_name, subject, body, screenshots, status, admin_reply, replied_at, subscriber_read_at, category, created_at, updated_at'
+  'id, profile_id, user_email, phone, company_name, subject, body, screenshots, status, admin_reply, replied_at, subscriber_read_at, category, created_at, updated_at, admin_dismissed_at'
 
 function queryError(code, message) {
   const err = new Error(message)
@@ -95,6 +95,7 @@ export async function fetchAllQueries({ limit = 100 } = {}) {
   const { data, error } = await supabase
     .from(TABLE)
     .select(COLUMNS)
+    .is('admin_dismissed_at', null)
     .order('created_at', { ascending: false })
     .limit(limit)
   if (error) throw queryError(error.code, friendly(error, 'Could not load support requests.'))
@@ -326,14 +327,17 @@ export async function flagQuery(id, important) {
 }
 
 /**
- * Admin: delete a query outright. The row goes for both sides (the
- * advertiser's bell reads the same table) and no reply can be written into
- * nothing. Attachments do not dangle: the purge matches objects to queries
- * by path, and an object whose query row no longer exists will simply be
- * removed on the next hourly sweep.
+ * Admin: remove a query from the admin console. The row itself stays — the
+ * advertiser keeps their request and the answer they were given, plus any
+ * attachments — because a hard delete would also erase it from the
+ * advertiser's bell, where the same table is read. Removal is a stamp the
+ * admin reads filter out, exactly like the read receipts.
  */
 export async function deleteQuery(id) {
-  const { error } = await supabase.from(TABLE).delete().eq('id', id)
-  if (error) throw queryError(error.code, 'Could not delete that request.')
+  const { error } = await supabase
+    .from(TABLE)
+    .update({ admin_dismissed_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw queryError(error.code, 'Could not remove that request.')
 }
 

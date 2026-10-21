@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { checkAdminAccess, bootstrapAdminAllowlist, fetchAllQueries, replyToQuery, closeQuery } from '../../lib/advertiserQueries.js'
+import { checkAdminAccess, bootstrapAdminAllowlist, fetchAllQueries, replyToQuery, closeQuery, screenshotLinks, flagQuery, deleteQuery } from '../../lib/advertiserQueries.js'
 
 /**
  * Advertiser queries, and the reply box.
@@ -38,6 +38,23 @@ export default function AdminQueries() {
   const [admin, setAdmin] = useState(null)
   const [bootstrapping, setBootstrapping] = useState(false)
   const [bootstrapNotice, setBootstrapNotice] = useState('')
+  const [links, setLinks] = useState({})
+
+  // Attachments open from short-lived signed URLs, signed only while the
+  // row is expanded. Legacy rows (bare filenames, pre-upload era) get url
+  // null and fall back to plain text.
+  useEffect(() => {
+    if (!openId) return undefined
+    const open = rows.find((q) => q.id === openId)
+    if (!open || !open.screenshots.length) return undefined
+    let cancelled = false
+    screenshotLinks(open.screenshots).then((resolved) => {
+      if (!cancelled) setLinks((current) => ({ ...current, [openId]: resolved }))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [openId, rows])
 
   const load = useCallback(async () => {
     try {
@@ -89,10 +106,36 @@ export default function AdminQueries() {
     setError(bootstrapError?.message || 'Could not reach the admin bootstrap. Insert your email into public.admin_emails from the SQL console, then refresh.')
   }
 
-  const shown = useMemo(
-    () => (filter === 'all' ? rows : rows.filter((r) => r.status === filter)),
-    [rows, filter],
-  )
+  const shown = useMemo(() => {
+    const base = filter === 'all' ? rows : rows.filter((r) => r.status === filter)
+    // A flagged query is a fire drill — nobody scrolls past it by accident:
+    // important first, newest first within each group.
+    return base
+      .map((r, i) => ({ r, i }))
+      .sort((a, b) => Number(b.r.important) - Number(a.r.important) || a.i - b.i)
+      .map(({ r }) => r)
+  }, [rows, filter])
+
+  async function toggleImportant(query) {
+    setError('')
+    try {
+      const updated = await flagQuery(query.id, !query.important)
+      setRows((current) => current.map((r) => (r.id === updated.id ? updated : r)))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function remove(query) {
+    if (!window.confirm(`Remove "${query.subject}" from the admin console? The advertiser keeps the request and its attachments until retention purges them.`)) return
+    setError('')
+    try {
+      await deleteQuery(query.id)
+      setRows((current) => current.filter((r) => r.id !== query.id))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
 
   async function send(query) {
     const text = drafts[query.id]
@@ -158,7 +201,10 @@ export default function AdminQueries() {
         {shown.map((q) => (
           <li key={q.id} className="adm-query" data-status={q.status}>
             <button type="button" className="adm-query__head" onClick={() => setOpenId(openId === q.id ? null : q.id)}>
-              <span className="adm-query__subject">{q.subject}</span>
+              <span className="adm-query__subject">
+                {q.important ? <span className="adm-query__flag" data-important="true">⚑</span> : null}
+                {q.subject}
+              </span>
               <span className={`adm-query__status adm-query__status--${STATUS[q.status].tone}`}>
                 {STATUS[q.status].label}
               </span>
@@ -173,7 +219,22 @@ export default function AdminQueries() {
                   <div><dt>Phone</dt><dd>{q.phone || '—'}</dd></div>
                   {q.company ? <div><dt>Company</dt><dd>{q.company}</dd></div> : null}
                   <div><dt>Category</dt><dd>{q.category}</dd></div>
-                  <div><dt>Screenshots</dt><dd>{q.screenshots.length ? q.screenshots.join(', ') : 'none attached'}</dd></div>
+                  <div>
+                    <dt>Screenshots</dt>
+                    <dd>
+                      {q.screenshots.length ? (
+                        <ul className="adm-query__files">
+                          {(links[q.id] || q.screenshots.map((value) => ({ value, name: value, url: null }))).map((f) => (
+                            <li key={f.value}>
+                              {f.url
+                                ? <a href={f.url} target="_blank" rel="noopener noreferrer">{f.name}</a>
+                                : <span>{f.name}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : 'none attached'}
+                    </dd>
+                  </div>
                 </dl>
 
                 <p className="adm-query__message">{q.body}</p>
@@ -205,6 +266,21 @@ export default function AdminQueries() {
                     {q.status !== 'closed' ? (
                       <button type="button" className="btn btn--ghost btn--sm" onClick={() => close(q)}>Close</button>
                     ) : null}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      data-important={Boolean(q.important)}
+                      onClick={() => toggleImportant(q)}
+                    >
+                      {q.important ? 'Unflag' : 'Flag important'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => remove(q)}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               </div>

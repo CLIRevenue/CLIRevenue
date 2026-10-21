@@ -6,12 +6,14 @@ import { QUERY_CATEGORIES, createQuery } from '../../lib/advertiserQueries.js'
  *
  * It lands in advertiser_queries, and everything the user types here is
  * shown back to them verbatim when an admin answers, which is why the
- * fields are plain text and the copy says what happens to them. Screenshots
- * are accepted and their names are recorded against the request; the bytes
- * are uploaded through the object-storage handshake, which is deliberately
- * not faked here — a path recorded for a file that was never uploaded
- * would show an admin a broken image and tell them the request is broken
- * too.
+ * fields are plain text and the copy says what happens to them. Picked
+ * screenshots travel to createQuery as File objects; the request row and
+ * the private-bucket upload happen in one shot, so a query is never sent
+ * half-attached — a path recorded for a file that never uploaded would
+ * show an admin a broken image and tell them the request is broken too.
+ * Attachments are purged from storage 12 hours after the answer, by the
+ * scheduled purge_support_screenshots() job; that promise is the reason
+ * the dialog says the screenshots are temporary.
  */
 
 const EMPTY = {
@@ -63,7 +65,7 @@ export default function SupportDialog({ onClose, onSent, userEmail, companyName 
     try {
       const created = await createQuery({
         ...form,
-        screenshots: files.map((f) => f.name),
+        files,
       })
       setForm({ ...EMPTY, email: form.email, company: form.company })
       setFiles([])
