@@ -85,7 +85,7 @@
      puts it in the --ld-* family so a console token can point at it. */
   --ld-ink-4: #80808b;
   --ld-accent: #6f8cff;
-  --ld-accent-soft: rgba(111, 140, 255, .14);
+  --ld-accent-soft: rgba(255, 255, 255, .14);
   /* Text that sits ON a filled accent. The periwinkle is a mid-lightness
      colour: white on #6f8cff measures 3.06:1 and fails AA for normal text,
      while the near-black this canvas is built on measures about 6.4:1. So the
@@ -154,7 +154,7 @@
   --hair: rgba(255, 255, 255, .09);
   --hair-strong: rgba(255, 255, 255, .17);
   --hair-amber: rgba(232, 117, 47, .34);
-  --signal: #6f8cff;
+  --signal: #09090c;
   --signal-text: #f2f2f4;
   --ok: #3fbf7f;
   --amber: #e8752f;

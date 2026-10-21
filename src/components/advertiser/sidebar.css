@@ -758,6 +758,38 @@
 /* Support: a dialog is a dialog, so this borrows the account panel's
    scrim and shell verbatim rather than becoming a second one. */
 .adv-support__form { display: grid; gap: 14px; }
+
+/* The picker stopped being a native file input. The input is now a
+   visually-hidden overlay spanning a styled plate, so the whole row is
+   the affordance: one click target, stated formats, no browser chrome
+   the dialog cannot restyle. It stays a <label> around the <input>,
+   which is what makes the plate itself activate the picker without any
+   click-handler wiring. */
+.adv-upload { position: relative; display: block; cursor: pointer; }
+.adv-upload__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 0;
+}
+.adv-upload__plate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-bright);
+  color: var(--ink-2);
+}
+.adv-upload__title { font-weight: 600; font-size: 13px; letter-spacing: .02em; }
+.adv-upload__hint { font-size: 11px; opacity: .7; }
+.adv-upload:hover .adv-upload__plate { border-color: var(--signal); color: var(--signal-text); }
+
 .adv-support__files { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
 .adv-support__file {
   display: flex;

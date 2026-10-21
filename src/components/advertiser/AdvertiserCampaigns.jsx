@@ -21,6 +21,7 @@ import {
   advisoryBlockers,
   allowedNextStatuses,
 } from '../../lib/campaignRules.js'
+import { MAX_AD_TEXT_LENGTH, countAdTextLength } from '../../lib/adText.js'
 
 // Stable ids help the form's aria-describedby/aria-invalid wiring so the
 // status/field errors stay programmatically linked to the inputs they describe.
@@ -120,6 +121,14 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
   const selected = campaigns.find((c) => c.id === selectedId) || null
   const hints = useMemo(() => (selected ? advisoryBlockers(selected) : []), [selected])
   const warnings = useMemo(() => (selected ? campaignWarnings(selected) : []), [selected])
+
+  /* The ad text is measured the way the server measures it — code points of
+     the trimmed, NFC-normalised string — so the number in the counter is the
+     number the API will compute. `String.length` would disagree: 60 emoji are
+     120 UTF-16 code units, and an advertiser writing an ad in emoji would be
+     told their ad was twice as long as it is. */
+  const headlineLength = useMemo(() => countAdTextLength(form.headline), [form.headline])
+  const headlineOver = headlineLength > MAX_AD_TEXT_LENGTH
 
   const stepState = useMemo(() => {
     const name = form.name.trim()
@@ -381,7 +390,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
         body="Every campaign starts as a draft. Activation is an explicit step, so nothing goes live by accident."
       />
       <div className="adv-page__actions">
-        <button type="button" className="btn" onClick={openCreate}>
+        <button type="button" className="btn btn--ink" onClick={openCreate}>
           Create campaign
         </button>
       </div>
@@ -589,11 +598,18 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                   className="field__input"
                   id={fid('headline')}
                   value={form.headline}
-                  aria-invalid={Boolean(formErrors.headline)}
+                  aria-invalid={Boolean(formErrors.headline) || headlineOver}
                   aria-describedby={formErrors.headline ? fid('headline-error') : undefined}
                   onChange={(e) => setForm({ ...form, headline: e.target.value })}
                   autoComplete="off"
                 />
+                <span
+                  id={fid('headline-count')}
+                  className={`field__counter${headlineOver ? ' field__counter--over' : ''}`}
+                  aria-hidden="true"
+                >
+                  {headlineLength}/{MAX_AD_TEXT_LENGTH}
+                </span>
                 {formErrors.headline ? <span id={fid('headline-error')} className="adv-field-error">{formErrors.headline}</span> : null}
               </label>
               <label className="field">

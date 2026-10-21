@@ -49,7 +49,7 @@
   --text-subtle: var(--text-dim);
 
   /* Signal/brand tokens */
-  --signal: #60A5FA;
+  --signal: #09090c;
   --signal-text: #FFFFFF;
   --brand: #A78BFA;
   --brand-bright: #C084FC;
@@ -106,7 +106,7 @@
   /* Additional tokens */
   --muted: var(--text-dim);
   --paper: var(--inverse-on-surface);
-  --signal-soft: rgba(96, 165, 250, 0.12);
+  --signal-soft: rgba(255, 255, 255, 0.10);
 
   /* Borders & structure */
   --outline: rgba(227, 225, 233, 0.12);
@@ -300,8 +300,8 @@
   --text-dim: #736e82;
   --text-subtle: #9a94a6;
 
-  --signal: #2563EB;
-  --signal-text: #000000;
+  --signal: #09090c;
+  --signal-text: #FFFFFF;
   --brand: #7C3AED;
   --brand-bright: #8B51FF;
   --brand-dim: #6B00CC;
@@ -353,8 +353,8 @@
 
   /* Additional tokens */
   --muted: var(--text-dim);
-  --paper: var(--inverse-on-surface);
-  --signal-soft: rgba(37, 99, 235, 0.12);
+  --paper: #FFFFE3;
+  --signal-soft: rgba(18, 20, 26, 0.12);
 
   --outline: rgba(26, 27, 30, 0.16);
   --outline-variant: rgba(82, 57, 115, 0.24);
@@ -1470,4 +1470,20 @@ html.intro-lock body {
   .adv-shell__inner {
     padding: var(--space-sm);
   }
+}
+/* Light theme wears its paper from the top: the browser picks the theme
+   class in main.jsx before render, so the shell can commit to one
+   painting - no flash, and no per-page sheet has to know the theme. */
+.light-theme body {
+  background: var(--paper);
+}
+
+/* Closes must be closes. The mark is a bare <path> with no paints of
+   its own, so it inherited the default zero-width stroke and rendered
+   as an empty box. Painting it from the button's own colour keeps the
+   mark in step with whatever plate it sits on. */
+.adv-settings__close-mark path {
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
 }

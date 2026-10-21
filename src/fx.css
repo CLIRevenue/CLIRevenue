@@ -145,16 +145,17 @@ body {
    on-colour at 6.4:1. */
 .btn--primary,
 .btn--signal {
-  background: var(--signal, #6f8cff);
-  border-color: var(--signal, #6f8cff);
-  color: var(--ld-on-accent, #09090c);
+  background: var(--signal, #09090c);
+  border-color: var(--signal, #09090c);
+  color: var(--signal-text, #f2f2f4);
 }
 .btn--primary:hover:not(:disabled),
 .btn--signal:hover:not(:disabled) {
-  background: var(--ld-on-accent, #09090c);
-  border-color: var(--ld-on-accent, #09090c);
-  color: var(--signal, #6f8cff);
-  box-shadow: 4px 4px 0 0 var(--signal, #6f8cff);
+  background: var(--signal-text, #f2f2f4);
+  border-color: var(--signal-text, #f2f2f4);
+  color: var(--signal, #09090c);
+  box-shadow: 4px 4px 0 0 var(--signal, #09090c);
+  transform: none;
 }
 /* .btn--primary at (0,1,0) ties with the rule above at (0,2,0) plus a
    pseudo-class, so this file wins by load order — which is the whole
@@ -1566,4 +1567,24 @@ html {
      spotlight, the progress head and every underline stay. None of them
      move anything; they are colour and texture, and a reader who asked
      for less motion did not ask for a flatter page. */
+}
+/* ── 24. the ink plate — plain .btn that must read as a filled action ─
+   `Create campaign` renders as a bare `.btn`, so it inherits the text
+   button's hover wash (amber) and reads as a tertiary. The campaigns
+   tab's one action is its primary; this class gives it the same ink
+   plate the other primary actions wear, with a flipped hover so the
+   state change still reads on a dark canvas. */
+.btn--ink {
+  background: var(--signal, #09090c);
+  border-color: var(--signal, #09090c);
+  color: var(--signal-text, #f2f2f4);
+}
+.btn--ink:hover:not(:disabled) {
+  background: var(--signal-text, #f2f2f4);
+  border-color: var(--signal-text, #f2f2f4);
+  color: var(--signal, #09090c);
+  transform: none;
+}
+.btn.btn--ink:active:not(:disabled) {
+  transform: translateY(2px) scale(.975);
 }

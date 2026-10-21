@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { QUERY_CATEGORIES, createQuery } from '../../lib/advertiserQueries.js'
 
 /**
@@ -29,7 +29,6 @@ export default function SupportDialog({ onClose, onSent, userEmail, companyName 
   const [files, setFiles] = useState([])
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
-  const fileRef = useRef(null)
 
   useEffect(() => {
     const onKey = (event) => {
@@ -129,7 +128,13 @@ export default function SupportDialog({ onClose, onSent, userEmail, companyName 
 
           <div className="adv-field">
             <span className="adv-field__label">Screenshots <span className="adv-field__opt">optional, up to 10</span></span>
-            <input ref={fileRef} className="adv-input" type="file" accept="image/*" multiple onChange={addFiles} />
+            <label className="adv-upload">
+              <input className="adv-upload__input" type="file" accept="image/*" multiple onChange={addFiles} />
+              <span className="adv-upload__plate">
+                <span className="adv-upload__title">Add screenshots</span>
+                <span className="adv-upload__hint">JPG, PNG or WEBP - up to 10 files</span>
+              </span>
+            </label>
             {files.length ? (
               <ul className="adv-support__files">
                 {files.map((file, i) => (
