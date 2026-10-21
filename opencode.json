@@ -1,0 +1,11 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "pinelabs": {
+      "type": "local",
+      "command": ["npx", "-y", "pinelabs-mcp"],
+      "timeout": 30000,
+      "enabled": true
+    }
+  }
+}
