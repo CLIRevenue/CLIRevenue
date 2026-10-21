@@ -51,3 +51,8 @@ create policy "site_hearts are readable by everyone"
 revoke insert, update, delete on public.site_hearts from anon, authenticated;
 
 grant execute on function public.increment_heart() to anon, authenticated;
+
+-- The counter must stay readable through the Data API after the platform
+-- stops auto-granting new public-schema tables on 2026-10-30; the RLS policy
+-- alone does not create the underlying privilege.
+grant select on public.site_hearts to anon, authenticated;

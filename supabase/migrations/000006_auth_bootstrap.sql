@@ -100,3 +100,8 @@ CREATE POLICY "Developers can view their own payout transactions" ON public.payo
     WHERE payouts.id = payout_transactions.payout_id
       AND payouts.developer_id IN (SELECT id FROM public.developer_accounts WHERE profile_id = auth.uid())
   ));
+
+-- ensure_own_profile is the browser-facing fallback for users whose auth
+-- trigger did not fire, so it is called over the Data API and needs EXECUTE
+-- spelled out (handle_new_user as a trigger function needs no caller grant).
+GRANT EXECUTE ON FUNCTION public.ensure_own_profile(TEXT) TO anon, authenticated;

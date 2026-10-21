@@ -118,3 +118,10 @@ DROP POLICY IF EXISTS "Admins can answer queries" ON public.advertiser_queries;
 CREATE POLICY "Admins can answer queries" ON public.advertiser_queries
     FOR UPDATE USING (public.jwt_is_admin())
     WITH CHECK (public.jwt_is_admin());
+
+-- Explicit Data API grants mirroring the policies above: advertiser queries
+-- are browser-first (supabase-js only, no Edge Function), so authenticated
+-- needs its table privileges spelled out rather than inherited from the
+-- legacy default-privilege baseline that the platform is retiring on
+-- 2026-10-30. The touch trigger function needs no caller grant.
+GRANT SELECT, INSERT, UPDATE ON public.advertiser_queries TO authenticated;

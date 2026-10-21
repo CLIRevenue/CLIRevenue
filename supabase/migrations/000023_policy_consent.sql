@@ -15,3 +15,8 @@ COMMENT ON COLUMN "public"."profiles"."privacy_policy_version" IS 'Privacy polic
 COMMENT ON COLUMN "public"."profiles"."terms_version" IS 'Terms & conditions version accepted by the user.';
 COMMENT ON COLUMN "public"."profiles"."privacy_policy_accepted_at" IS 'Timestamp of privacy policy acceptance.';
 COMMENT ON COLUMN "public"."profiles"."terms_accepted_at" IS 'Timestamp of terms & conditions acceptance.';
+
+-- 000007 narrowed the authenticated UPDATE to an explicit column list, so
+-- each later column must join that list or the login-time consent save
+-- (AuthProvider) fails with a permission error.
+GRANT UPDATE ("privacy_policy_version", "terms_version", "privacy_policy_accepted_at", "terms_accepted_at") ON public.profiles TO authenticated;

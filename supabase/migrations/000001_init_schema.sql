@@ -238,3 +238,13 @@ BEGIN
         EXECUTE FUNCTION update_updated_at_column();
     END IF;
 END $$;
+
+-- Explicit Data API grants. The platform baseline that auto-granted every role
+-- ALL on new public-schema tables stops on 2026-10-30, so spell out what each
+-- role actually gets. These mirror the 000004 RLS policies: every row reachable
+-- here is self-owned through auth.uid(), and the service_role bypasses RLS
+-- (its grants are made per-table in later migrations that narrow it).
+-- Trigger functions need no EXECUTE grant from their callers, so
+-- update_updated_at_column() is deliberately left alone.
+GRANT SELECT, INSERT, UPDATE ON public.profiles, public.advertisers, public.developer_accounts TO authenticated;
+GRANT SELECT ON public.platform_settings TO authenticated;

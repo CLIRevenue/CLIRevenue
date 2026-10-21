@@ -111,6 +111,12 @@ jobs:
         with:
           deno-version: v2.x
 
+      # Deno type-checks `node:async_hooks` (imported by _shared/http.ts)
+      # against @types/node from the root lockfile. Without node_modules it
+      # does not materialise the folder itself and errors out mid-suite.
+      - name: Install node dependencies for Deno type resolution
+        run: npm ci
+
       # `--allow-env=APP_ORIGINS` is the only permission these tests need. No
       # net, no fs write, no run: if a test ever reaches for one it should fail
       # here rather than pass silently against a local machine's defaults.
@@ -168,7 +174,7 @@ jobs:
 
             // Three kinds of check, because each catches a different mistake.
             const top = files.filter(f => !f.startsWith("dist/")).sort();
-            const expectedTop = ["LICENSE", "README.md", "package.json"];
+            const expectedTop = ["LICENSE", "README.md", "install.sh", "package.json"];
             if (JSON.stringify(top) !== JSON.stringify(expectedTop)) {
               console.error("Unexpected non-dist entries:", top);
               process.exit(1);
@@ -189,7 +195,7 @@ jobs:
             for (const path of walk("dist")) {
               if (credential.test(require("fs").readFileSync(path, "utf8"))) leaks.push(path);
             }
-            for (const path of ["README.md", "package.json"]) {
+            for (const path of ["README.md", "install.sh", "package.json"]) {
               if (credential.test(require("fs").readFileSync(path, "utf8"))) leaks.push(path);
             }
             if (leaks.length) {

@@ -307,3 +307,14 @@ REVOKE ALL ON FUNCTION public.reward_balance(UUID) FROM PUBLIC, anon, authentica
 GRANT EXECUTE ON FUNCTION public.apply_settlement(INTEGER, UUID) TO service_role;
 GRANT EXECUTE ON FUNCTION public.request_payout(UUID, INTEGER, TEXT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.reward_balance(UUID) TO service_role;
+
+-- Same service-grant hygiene for the reward/payout machinery, plus the
+-- remaining anon SELECT rows that the legacy default-privilege baseline left
+-- behind (the authored grant world gives SELECT to authenticated only).
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.audiences TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.reward_ledger TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.payouts TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.payout_transactions TO service_role;
+REVOKE SELECT ON public.reward_ledger FROM anon;
+REVOKE SELECT ON public.payouts FROM anon;
+REVOKE SELECT ON public.payout_transactions FROM anon;

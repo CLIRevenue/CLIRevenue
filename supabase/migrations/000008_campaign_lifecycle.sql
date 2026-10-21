@@ -323,3 +323,15 @@ REVOKE ALL ON FUNCTION public.apply_impression(UUID, UUID, TEXT, TEXT, TEXT) FRO
 REVOKE ALL ON FUNCTION public.apply_interaction(UUID, UUID, TEXT, TEXT, TEXT, UUID, public.interaction_kind, INTEGER) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.apply_impression(UUID, UUID, TEXT, TEXT, TEXT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.apply_interaction(UUID, UUID, TEXT, TEXT, TEXT, UUID, public.interaction_kind, INTEGER) TO service_role;
+
+-- With browser writes revoked, make the service grants explicit so the
+-- Edge Function path does not depend on the default-privilege baseline
+-- (the Data API stops auto-granting new public-schema tables on 2026-10-30).
+-- Accounting rows were never meant to be readable by anon at all; the legacy
+-- baseline left anon with SELECT on ledger_events, which the RLS policy
+-- never intended.
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.campaigns TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.ad_impressions TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.ad_interactions TO service_role;
+REVOKE SELECT ON public.ledger_events FROM anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.ledger_events TO service_role;
