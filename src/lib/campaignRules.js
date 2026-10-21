@@ -1,3 +1,5 @@
+import { validateAdText } from './adText.js'
+
 export const CAMPAIGN_STATUSES = ['draft', 'active', 'paused', 'completed', 'archived']
 
 export const TRANSITIONS = {
@@ -76,6 +78,11 @@ export const ACTIVATION_BLOCKER_MESSAGES = {
   SCHEDULE_ENDED: 'This campaign has already ended. Extend the end date to deliver again.',
   INVALID_LANDING_URL: 'Set a valid http(s) landing URL before activating.',
   BUDGET_EXCEEDED: 'This campaign has spent its full budget.',
+  /* The ad text itself. A campaign whose headline is empty or longer than
+     the 60 character limit cannot go live, because the server will not serve
+     an ad it cannot measure. */
+  AD_TEXT_REQUIRED: 'Write the ad text before activating.',
+  AD_TEXT_TOO_LONG: 'Shorten the ad text to 60 characters or fewer before activating.',
   /* Named rather than left to the fallback. Ads are text and the server
      has no reason to ask for a creative any more, so seeing this code
      means the deployed campaigns function predates that change — a deploy
@@ -100,6 +107,8 @@ export function advisoryBlockers(campaign = {}, { nowMs = Date.now() } = {}) {
   const out = []
   if (!campaign.budgetCents || campaign.budgetCents <= 0) out.push('INVALID_BUDGET')
   if (!campaign.audienceId) out.push('INVALID_AUDIENCE')
+  const text = validateAdText(campaign.headline)
+  if (!text.ok) out.push(text.code)
   const url = parseLandingUrl(campaign.landingUrl)
   if (!url.ok) out.push('INVALID_LANDING_URL')
   const starts = campaign.startsAt ? Date.parse(campaign.startsAt) : null

@@ -21,6 +21,10 @@ const MESSAGES = {
   INVALID_ID: 'That campaign id is not valid.',
   UNKNOWN_FIELDS: 'Some fields cannot be updated.',
   MISSING_FIELDS: 'Please complete the required fields.',
+  /* The ad text contract. The server refuses an empty headline and a headline
+     over 60 characters, and says which of the two it was. */
+  AD_TEXT_REQUIRED: 'The ad text is required.',
+  AD_TEXT_TOO_LONG: 'The ad text must be 60 characters or fewer.',
   NOT_FOUND: 'Campaigns endpoint not found. Check Edge Function deployment.',
   // Creative pipeline (Phase 3)
   STORAGE_NOT_CONFIGURED: 'Creative storage is not configured on the server yet.',

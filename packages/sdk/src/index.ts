@@ -42,6 +42,34 @@ import {
   type AdSize,
 } from "./layout.ts";
 
+import {
+  AD_TEXT_REQUIRED,
+  AD_TEXT_TOO_LONG,
+  MAX_AD_TEXT_LENGTH,
+  countAdTextLength,
+  normalizeAdText,
+  resolveAdDestination,
+  validateAdText,
+} from "./adText.ts";
+
+/**
+ * The ad-text contract, re-exported from the package root.
+ *
+ * A publisher writing their own ad copy — in a build step, in a CMS
+ * template, in a test — can check it against the same bound the SDK, the
+ * dashboard and the database enforce, instead of guessing at it.
+ */
+export {
+  AD_TEXT_REQUIRED,
+  AD_TEXT_TOO_LONG,
+  MAX_AD_TEXT_LENGTH,
+  countAdTextLength,
+  normalizeAdText,
+  resolveAdDestination,
+  validateAdText,
+};
+export type { AdTextValidation } from "./adText.ts";
+
 /**
  * The presentation API. Re-exported from the package root so a publisher can
  * type-check their own configuration against the same bounds the SDK enforces,
@@ -66,120 +94,79 @@ function measureHost(root: Element): AdContainer {
   return { width, height };
 }
 
-type CreativeMedia = { node: HTMLElement; type: AdCreativeType };
-
 /**
- * Turn a served creative into a DOM node, or nothing at all.
+ * A served payload, checked before anything is rendered.
  *
- * The type comes from the server and never from the URL: an extension is a
- * claim the publisher makes about bytes they have not read. An unrecognised
- * type, a missing URL, or a host without the DOM surface needed to place media
- * all degrade to `null`, and the ad still renders as text. A broken asset is
- * a worse advertisement, never a failed render.
+ * The delivery response is untrusted input. It arrives over the network from
+ * a server this SDK does not control the behaviour of, it is cached, and it
+ * ends up in an `href` and in the text of a page a stranger is reading. Three
+ * things are therefore checked before any of it is used:
+ *
+ *   1. The ad text is within the contract — present, and at most 60
+ *      characters. An advertisement the advertiser did not write is not
+ *      rendered, and neither is a sentence the server invented.
+ *   2. The destination is an absolute http(s) URL. A `javascript:` URL in an
+ *      ad slot is a script injection into every page that renders the ad, and
+ *      a relative URL means something different on every page.
+ *   3. The ad has an identity, because the impression and the click are
+ *      reported against it.
+ *
+ * A payload that fails any of these is treated as no fill: the slot stays
+ * empty and nothing is reported. A *request* that fails is a different thing
+ * entirely and still throws — see `deliver()` — because a publisher needs to
+ * hear about a broken network and does not need to hear about a well-formed
+ * response carrying an unusable ad.
  */
-function buildCreativeMedia(
-  creative: AdCreative | null | undefined,
-): CreativeMedia | null {
-  const doc = globalThis.document;
-  if (!doc || !creative) return null;
-  if (typeof creative.url !== "string" || !creative.url.trim()) return null;
-  if (creative.type !== "image" && creative.type !== "video") return null;
+function validateServedAd(raw: unknown): ServedAd | null {
+  if (!raw || typeof raw !== "object") return null;
+  const served = raw as Record<string, unknown>;
 
-  const isVideo = creative.type === "video";
-  const node: HTMLElement = isVideo ? doc.createElement("video") : doc.createElement("img");
-  const set = (name: string, value: string) => {
-    try {
-      node.setAttribute(name, value);
-    } catch {
-      /* a host that refuses attributes still gets the src below */
-    }
+  const requestId = served.requestId;
+  if (typeof requestId !== "string" || !requestId.trim()) return null;
+
+  const token = served.impressionToken;
+  if (typeof token !== "string" || !token.trim()) return null;
+
+  const ad = served.ad;
+  if (!ad || typeof ad !== "object") return null;
+  const adRecord = ad as Record<string, unknown>;
+
+  const id = adRecord.id;
+  if (typeof id !== "string" || !id.trim()) return null;
+
+  const headline = validateAdText(adRecord.headline);
+  if (!headline.ok) return null;
+
+  const landingUrl = adRecord.landingUrl;
+  let destination: string | null = null;
+  if (landingUrl !== null && landingUrl !== undefined) {
+    if (typeof landingUrl !== "string") return null;
+    const resolved = resolveAdDestination(landingUrl);
+    /* A destination that is present but not an http(s) URL is refused, and the
+       whole ad with it: rendering the text behind a dead or hostile link
+       would show the reader an advertisement that cannot be acted on, and a
+       click on it would still be reported and paid for. */
+    if (!resolved) return null;
+    destination = resolved.toString();
+  }
+
+  const name = adRecord.name;
+  const audience = adRecord.audience;
+
+  return {
+    requestId: requestId.trim(),
+    ad: {
+      id: id.trim(),
+      name: typeof name === "string" ? name : null,
+      headline: headline.value,
+      description: typeof adRecord.description === "string" ? adRecord.description : null,
+      cta: typeof adRecord.cta === "string" ? adRecord.cta : null,
+      audience: typeof audience === "string" ? audience : "",
+      landingUrl: destination,
+    },
+    impressionToken: token.trim(),
+    expiresAt: typeof served.expiresAt === "string" ? served.expiresAt : "",
   };
-
-  set("src", creative.url);
-  set("data-clirevenue-creative-id", creative.id);
-  set("data-clirevenue-creative-type", creative.type);
-  if (typeof creative.mimeType === "string" && creative.mimeType) {
-    set("data-clirevenue-creative-mime", creative.mimeType);
-  }
-
-  const dimension = (value: number | null | undefined): string | null =>
-    typeof value === "number" && Number.isFinite(value) && value > 0 ? String(value) : null;
-
-  if (isVideo) {
-    const video = node as HTMLVideoElement;
-    /* Muted, inline and looping are the only autoplay settings an ad can
-       assume a browser will permit, and every one of them is what keeps the
-       impression working on a surface that blocks audible autoplay. */
-    try {
-      video.muted = true;
-      video.defaultMuted = true;
-      video.loop = true;
-      video.playsInline = true;
-      /* Metadata, not auto: the file is served as a single object, and a player
-         that streams it must never be told to pull the whole thing down first. */
-      video.preload = "metadata";
-    } catch {
-      /* fall through to the attribute spellings below */
-    }
-    set("muted", "");
-    set("playsinline", "");
-    set("loop", "");
-    set("autoplay", "");
-    set("preload", "metadata");
-    const poster = typeof creative.posterUrl === "string" ? creative.posterUrl.trim() : "";
-    if (poster) set("poster", poster);
-    const w = dimension(creative.width);
-    const h = dimension(creative.height);
-    if (w) set("width", w);
-    if (h) set("height", h);
-  } else {
-    /* Decorative: the anchor's text is the accessible name, and an empty alt
-       stops a screen reader announcing the asset twice. */
-    set("alt", "");
-    set("loading", "lazy");
-    set("decoding", "async");
-  }
-  return { node, type: creative.type };
-}
-
-/**
- * Put the asset first inside the anchor so a click anywhere on it reads as a
- * click on the ad. Returns false when the host cannot host children, which
- * leaves a perfectly good text-only ad in place.
- */
-function insertCreativeMedia(anchor: HTMLElement, media: CreativeMedia): boolean {
-  const target = anchor as unknown as {
-    insertBefore?: (child: unknown, reference: unknown) => unknown;
-    firstChild?: unknown;
-  };
-  if (typeof target.insertBefore !== "function") return false;
-  try {
-    target.insertBefore(media.node, target.firstChild ?? null);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Ask a video to start, and swallow the refusal. A blocked autoplay must never
- * surface to a publisher or stop the impression, which is earned by visibility
- * rather than by playback.
- */
-function startCreativePlayback(media: CreativeMedia | null): void {
-  if (!media || media.type !== "video") return;
-  const play = (media.node as HTMLVideoElement).play;
-  if (typeof play !== "function") return;
-  try {
-    const started = play.call(media.node) as unknown;
-    if (started && typeof (started as Promise<void>).catch === "function") {
-      (started as Promise<void>).catch(() => {
-        /* autoplay refused */
-      });
-    }
-  } catch {
-    /* autoplay refused synchronously */
-  }
 }
 
 export const SDK_VERSION = "2.1.0";
@@ -205,17 +192,27 @@ export const DEFAULT_BASE_URL = "https://api.clirevenue.in";
  * `./keyFormat.ts` for why the legacy branch is permanent.
  */
 
-/** The only creative kinds this SDK knows how to place. */
+/**
+ * The only creative kinds this SDK knows how to place.
+ *
+ * @deprecated Ads are text. The SDK places no creative of any kind, so this
+ * union is no longer meaningful at runtime. It is kept exported so that
+ * publisher code which references it still compiles; it will be removed in
+ * the next major version.
+ */
 export type AdCreativeType = "image" | "video";
 
 /**
  * A served creative asset.
  *
- * `url` is a short-lived, server-signed object URL minted at delivery time. It
- * is a capability, not an identity: it expires, it is not cacheable, and it
- * must never be persisted or sent to a third party. `type` is authoritative —
- * a publisher that guesses a type from the URL extension will eventually be
- * wrong, and the server is the only party that knows.
+ * @deprecated Ads are text. Nothing renders a creative any more, and the
+ * delivery payload no longer carries one. The type is kept so that existing
+ * publisher code which imports it still compiles; it will be removed in the
+ * next major version. Do not build anything on it.
+ *
+ * `url` used to be a short-lived, server-signed object URL minted at delivery
+ * time — a capability, not an identity: it expired, it was not cacheable, and
+ * it must never have been persisted or sent to a third party.
  */
 export type AdCreative = {
   id: string;
@@ -231,17 +228,30 @@ export type AdCreative = {
 export type Ad = {
   id: string;
   name: string | null;
+  /**
+   * The advertisement. At most 60 characters, measured in Unicode code
+   * points on the trimmed and NFC-normalised form — the same measurement the
+   * dashboard's counter and the database constraint make.
+   */
   headline: string;
-  description: string | null;
-  cta: string | null;
+  /**
+   * @deprecated Not delivered any more. An ad is its headline and its
+   * destination; there is no body copy. The field is kept optional so that
+   * publisher code reading it still compiles.
+   */
+  description?: string | null;
+  /**
+   * @deprecated Not delivered any more. See `description`.
+   */
+  cta?: string | null;
   audience: string;
   landingUrl: string | null;
   /**
    * The asset for this ad, when the server had one to give.
    *
-   * Optional and nullable on purpose: a response from an older deployment, or
-   * one that degraded to a text-only unit, simply omits it. A missing creative
-   * is not an error and never blocks a render.
+   * @deprecated Ads are text. The SDK never renders a creative; this field
+   * is kept optional and nullable so that publisher code reading it still
+   * compiles, and it is always absent in practice.
    */
   creative?: AdCreative | null;
 };
@@ -475,7 +485,7 @@ export class CLIRevenue {
       random: this.random,
     });
 
-    const served = result.data ?? null;
+    const served = result.data ? validateServedAd(result.data) : null;
     this.cache.set(placementKey, served);
     return served;
   }
@@ -515,6 +525,10 @@ export class CLIRevenue {
     }
 
     const node = globalThis.document!.createElement("a");
+    /* The destination was checked by validateServedAd before it got here: it
+       is either absent or an absolute http(s) URL. Nothing else can reach
+       this `href`, so a `javascript:` URL cannot become a link on a
+       publisher's page. */
     node.href = served.ad.landingUrl ?? "#";
     node.textContent = served.ad.headline;
     node.setAttribute("data-clirevenue-request-id", served.requestId);
@@ -524,12 +538,10 @@ export class CLIRevenue {
       });
     });
 
-    /* The asset goes inside the anchor, ahead of the headline text, so a click
-       on the creative is a click on the ad. The text stays: it is the
-       accessible name, the visual fallback, and the whole ad when there is no
-       usable creative. */
-    const media = buildCreativeMedia(served.ad.creative);
-    if (media) insertCreativeMedia(node, media);
+    /* An ad is its text. There is no asset to place, no object to sign and
+       nothing that can fail to load, so the anchor holds the headline and
+       nothing else. The headline is the accessible name, the visual, and
+       the whole advertisement. */
 
     /* An absolutely positioned ad is contained by its host, so the host has to
        establish a containing block. We only do that when the host is `static`
@@ -579,10 +591,6 @@ export class CLIRevenue {
     resizeObserver?.observe(root);
 
     root.appendChild(node);
-
-    /* Only now that the asset is in the document can a video honestly be asked
-       to play. */
-    startCreativePlayback(media);
 
     /* The ad is now in the document, which is exactly what "rendered" means.
        It precedes the impression in the lifecycle: the impression is only

@@ -1,4 +1,5 @@
 import { supabase } from './api.js'
+import { validateAdText } from './adText.js'
 import {
   CAMPAIGN_STATUSES as RULE_STATUSES,
   MAX_BUDGET_CENTS,
@@ -190,7 +191,13 @@ export async function fetchAdvertiserCampaigns() {
 export function validateCampaignInput(input, base = null) {
   const errors = {}
   if (!String(input.name || '').trim()) errors.name = 'Campaign name is required.'
-  if (!String(input.headline || '').trim()) errors.headline = 'Headline is required.'
+  /* The ad text is measured the way the server measures it: code points of
+     the trimmed, NFC-normalised string. Using the dashboard's own copy of the
+     rule is what keeps the counter and the error message honest — a headline
+     of 60 emoji is 60 characters to the advertiser and 60 to the database,
+     and `String.length` would call it 120 and refuse a valid ad. */
+  const headline = validateAdText(input.headline)
+  if (!headline.ok) errors.headline = headline.message
   if (!ADVERTISER_AUDIENCES.some((a) => a.id === input.audienceId)) {
     errors.audienceId = 'Select an audience.'
   }

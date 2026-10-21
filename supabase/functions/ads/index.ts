@@ -4,6 +4,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { adminClient } from "../_shared/auth.ts";
 import { apiError, corsFor, isUuid, json, optionsResponse, readJsonObjectBody, restPath } from "../_shared/http.ts";
 import { isEligible } from "../_shared/eligibility.ts";
+import { validateAdText } from "../_shared/adText.ts";
 import { adTokenSecret, signServeToken, verifyServeToken } from "../_shared/adToken.ts";
 import { authenticatePublisher, rateLimitDelivery } from "../_shared/publisherAuth.ts";
 import { authorizeServe } from "../_shared/serveAuthz.ts";
@@ -15,8 +16,6 @@ type Candidate = {
   id: string;
   name: string;
   headline: string;
-  description: string | null;
-  cta: string | null;
   /* Nullable in the table, and it must say so here: the SDK types Ad.audience
      as a non-optional string, so a type that lied about this column would
      let a null reach a client that believes it cannot happen. In practice
@@ -33,63 +32,8 @@ type Candidate = {
   cpm_cents: number;
 };
 
-/* The deliverable half of a campaign_creatives row. Only rows that reached
-   'validated' are ever selected, and only their canonical object_key leaves
-   the server; the client never names a bucket or an object. */
-type ServeCreative = {
-  id: string;
-  media_type: string;
-  mime_type: string;
-  object_key: string;
-  width: number | null;
-  height: number | null;
-  duration_ms: number | null;
-  poster_object_key: string | null;
-};
-
 function noFill(req: Request): Response {
   return new Response(null, { status: 204, headers: { ...corsFor(req) } });
-}
-
-/**
- * Validated creatives for the given campaigns, keyed by campaign id.
- *
- * Delivery does not trust that an active campaign necessarily has one — that
- * is an invariant the activation gate maintains, not a fact about the row —
- * so a candidate without a usable creative is skipped rather than served with
- * an empty asset.
- */
-async function loadValidatedCreatives(
-  admin: SupabaseClient,
-  campaignIds: string[],
-): Promise<Map<string, ServeCreative>> {
-  const map = new Map<string, ServeCreative>();
-  if (campaignIds.length === 0) return map;
-  const { data, error } = await admin
-    .from("campaign_creatives")
-    .select(
-      "id, campaign_id, media_type, mime_type, object_key, width, height, duration_ms, poster_object_key",
-    )
-    .eq("status", "validated")
-    .in("campaign_id", campaignIds);
-  if (error) {
-    console.error("delivery creative query failed:", error.message);
-    return map;
-  }
-  for (const row of (data ?? []) as unknown as Record<string, unknown>[]) {
-    if (!row.object_key) continue;
-    map.set(String(row.campaign_id), {
-      id: String(row.id),
-      media_type: String(row.media_type),
-      mime_type: String(row.mime_type),
-      object_key: String(row.object_key),
-      width: row.width == null ? null : Number(row.width),
-      height: row.height == null ? null : Number(row.height),
-      duration_ms: row.duration_ms == null ? null : Number(row.duration_ms),
-      poster_object_key: row.poster_object_key == null ? null : String(row.poster_object_key),
-    });
-  }
-  return map;
 }
 
 function readContext(body: Record<string, unknown>): { url: string | null; referrer: string | null } {
@@ -187,7 +131,7 @@ async function handleDeliver(req: Request, admin: SupabaseClient): Promise<Respo
   let query = admin
     .from("campaigns")
     .select(
-      "id, name, headline, description, cta, audience_id, landing_url, " +
+      "id, name, headline, audience_id, landing_url, " +
       "status, starts_at, ends_at, budget_cents, spend_milli_cents, cpm_cents",
     )
     .eq("status", "active")
@@ -206,7 +150,29 @@ async function handleDeliver(req: Request, admin: SupabaseClient): Promise<Respo
   }
 
   const now = Date.now();
-  const candidates = ((data ?? []) as unknown as Candidate[]).filter((c) => isEligible(c, now));
+  /* Two filters, in this order.
+
+     The first is the money question: status, schedule and budget, which is
+     what `isEligible` decides.
+
+     The second is the ad text itself. The database constrains the headline
+     for every write, but the constraint was added NOT VALID so that campaigns
+     written before the rule existed are not destroyed by the upgrade, and a
+     row can only be served if it is a valid advertisement. A campaign whose
+     headline is empty or longer than 60 characters is skipped here, the same
+     way an over-budget campaign is skipped: it is not an error, it is a
+     campaign that is not ready to be shown.
+
+     The validated text is carried alongside the campaign rather than
+     re-derived at the response, so what is measured and what is sent are
+     the same string by construction. */
+  const candidates: { campaign: Candidate; headline: string }[] = [];
+  for (const candidate of (data ?? []) as unknown as Candidate[]) {
+    if (!isEligible(candidate, now)) continue;
+    const headline = validateAdText(candidate.headline);
+    if (!headline.ok) continue;
+    candidates.push({ campaign: candidate, headline: headline.value });
+  }
   if (candidates.length === 0) return noFill(req);
 
   /* Ads are text. There is no asset to look up, no bucket to sign and no
@@ -214,7 +180,7 @@ async function handleDeliver(req: Request, admin: SupabaseClient): Promise<Respo
      already-filtered list is the one — the oldest-first priority is
      unchanged, and there is now nothing that can degrade a serve into a
      no-fill between eligibility and delivery. */
-  const campaign = candidates[0];
+  const { campaign, headline } = candidates[0];
 
   const requestId = crypto.randomUUID();
   const expiresAt = now + SERVE_TTL_MS;
@@ -259,12 +225,19 @@ async function handleDeliver(req: Request, admin: SupabaseClient): Promise<Respo
   return json(
     {
       requestId,
+      /* The whole advertisement. An ad is a line of text and a link to
+         follow, and the payload carries nothing else: no description, no
+         call to action, no creative, no bucket, no object key. Everything
+         a renderer would need in order to draw something other than text
+         is deliberately absent, so there is nothing to render by accident.
+
+         The headline is sent in its canonical form — trimmed and
+         NFC-normalised — which is the form the counter measured and the
+         form the database stored. */
       ad: {
         id: campaign.id,
         name: campaign.name,
-        headline: campaign.headline,
-        description: campaign.description,
-        cta: campaign.cta,
+        headline,
         audience: campaign.audience_id ?? identity.allowedAudienceId ?? "",
         landingUrl: campaign.landing_url,
       },

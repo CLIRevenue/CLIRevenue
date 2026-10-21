@@ -1287,6 +1287,23 @@
   color: var(--ink-4);
 }
 
+/* A live count against a limit, shown next to the input it describes.
+   It is a convenience for the person typing, not the only thing that
+   enforces the limit: the form refuses to submit an over-long value and
+   the server refuses it again. */
+.field__counter {
+  font-family: var(--mono);
+  font-size: var(--c-text-micro);
+  letter-spacing: var(--track-caps);
+  color: var(--ink-4);
+  justify-self: end;
+  margin-top: calc(var(--c-space-2) * -1);
+}
+
+.field__counter--over {
+  color: var(--accent-error);
+}
+
 .field__input {
   width: 100%;
   padding: var(--c-space-3);

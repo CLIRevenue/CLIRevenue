@@ -1007,7 +1007,7 @@ describe('a request id is always canonical UUID text', () => {
       value: { getRandomValues: (a) => real.getRandomValues(a) },
     })
     try {
-      const fetchImpl = stubFetch([jsonResponse(200, { requestId: 'r', ad: {}, impressionToken: 't', expiresAt: 'x' })])
+      const fetchImpl = stubFetch([jsonResponse(200, servedAd('r'))])
       await makeClient(fetchImpl).getAd('home')
       const { requestId } = JSON.parse(fetchImpl.calls[0].init.body)
       expect(requestId).toMatch(UUID_RE)
@@ -1029,7 +1029,7 @@ describe('one logical event carries one idempotency key', () => {
   })
 
   it('sends the same key in the header and the body on a conversion', async () => {
-    const fetchImpl = stubFetch([jsonResponse(200, { requestId: 'req-1', ad: {}, impressionToken: 'tok-1', expiresAt: 'x' })])
+    const fetchImpl = stubFetch([jsonResponse(200, servedAd('req-1')), jsonResponse(200, { ok: true })])
     const client = makeClient(fetchImpl)
     await client.getAd('home')
     fetchImpl.calls.length = 0
