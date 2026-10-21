@@ -1595,8 +1595,8 @@ html {
    the failure/status colour, and three amber pills read as three
    errors. The hover here is a neutral lift: same plate as the row,
    one step brighter, no hue. */
-.adm-query__body .btn--ghost:hover:not(:disabled),
-.adm-query__body .btn--ghost:focus-visible {
+.adm-root .adm-query__body .btn--ghost:hover:not(:disabled),
+.adm-root .adm-query__body .btn--ghost:focus-visible {
   background: var(--hair);
   border-color: var(--hair-strong);
   color: var(--on-surface);
