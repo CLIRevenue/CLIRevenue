@@ -1010,6 +1010,22 @@
   margin-bottom: var(--c-space-3);
 }
 .adm-page__actions { display: flex; gap: var(--c-space-1); }
+/* Advertiser-queries tab buttons: flat paper↔ink colour swap on hover, no
+   lift, no shadow — the swap only. Presses keep the shared .btn:active. */
+.adm-page .adm-page__actions .btn,
+.adm-page .form__error .btn {
+  background: var(--ld-paper);
+  color: var(--ld-paper-ink);
+  border-color: var(--ld-paper-line);
+}
+.adm-page .adm-page__actions .btn:hover,
+.adm-page .form__error .btn:hover {
+  background: var(--ld-paper-ink);
+  color: var(--ld-paper);
+  border-color: var(--ld-paper-ink);
+  transform: none;
+  box-shadow: none;
+}
 .adm-query-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--c-space-1); }
 .adm-query {
   border: 1px solid var(--hair);

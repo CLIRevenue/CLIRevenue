@@ -64,17 +64,29 @@ export default function AdminQueries() {
   async function handleBootstrap() {
     setBootstrapping(true)
     setBootstrapNotice('')
+    setError('')
+    let bootstrapError = null
     try {
       const result = await bootstrapAdminAllowlist()
-      setBootstrapNotice(result?.email
-        ? `Added ${result.email} to the admin allowlist. Refreshing…`
-        : 'Admin allowlist refreshed.')
-      await load()
+      if (result?.email) {
+        setBootstrapNotice(`Added ${result.email} to the admin allowlist. Refreshing…`)
+      }
     } catch (err) {
-      setError(err.message)
+      // "Already bootstrapped" (409) is success for this button: the email
+      // is on the allowlist, so the confirmation check below is the real
+      // answer — not surfacing the Edge Function's raw error string into a
+      // red banner.
+      bootstrapError = err
     } finally {
       setBootstrapping(false)
     }
+    const after = await checkAdminAccess().catch(() => null)
+    if (after?.admin) {
+      setBootstrapNotice('')
+      await load()
+      return
+    }
+    setError(bootstrapError?.message || 'Could not reach the admin bootstrap. Insert your email into public.admin_emails from the SQL console, then refresh.')
   }
 
   const shown = useMemo(
