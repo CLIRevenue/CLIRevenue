@@ -32,7 +32,10 @@ function developerInsights(balance, rewards) {
   }
   return out
 }
-const THEME_KEY = 'clirevenue.devtheme'
+/* Versioned for the same reason as the advertiser console's key: a 'dark'
+   stored against the pre-ivory palette would pin this console to the dark
+   canvas forever, out of reach of any stylesheet. */
+const THEME_KEY = 'clirevenue.devtheme.v2'
 
 function readTheme() {
   // The console is white paper (sidebar.css restates the whole palette

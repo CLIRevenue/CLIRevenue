@@ -84,7 +84,20 @@ function SettingsPanel({ onClose }) {
   )
 }
 
-const THEME_KEY = 'clirevenue.advtheme'
+/* Versioned, and deliberately so.
+
+   The console is paper by default now. A 'dark' left in localStorage by a
+   visitor who once clicked the moon — against the OLD palette, before
+   the ivory design existed — pins the console to the dark canvas for as
+   long as the browser lives, and no amount of shipping a new stylesheet
+   can change that: the preference is read at render time and wins.
+
+   So the key carries the design it was chosen against. A preference made
+   against a palette that no longer exists is not a preference, it is a
+   leftover, and the next version of the console gets to decide for
+   itself. The toggle still writes here and still persists; only a
+   stranger's leftover is ignored. */
+const THEME_KEY = 'clirevenue.advtheme.v2'
 
 function readTheme() {
   // The console is white paper (sidebar.css restates the whole palette
