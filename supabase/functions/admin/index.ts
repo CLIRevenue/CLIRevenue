@@ -1767,8 +1767,17 @@ const handler = serveWithCors(async (req) => {
         if (req.method !== "GET") {
           return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
         }
-        const [campaigns, advertisers, developers, publishers, placements, events, system, pageViews, totalLifetimeViews] =
-          await Promise.all([
+        const [
+          campaigns,
+          advertisers,
+          developers,
+          publishers,
+          placements,
+          events,
+          system,
+          pageViews,
+          totalLifetimeViewsCount,
+        ] = await Promise.all([
             campaignsOverview(),
             advertisersOverview(),
             developersOverview(),
@@ -1779,7 +1788,7 @@ const handler = serveWithCors(async (req) => {
             pageViewsOverview(),
             totalLifetimeViews(),
           ]);
-        return json({ campaigns, advertisers, developers, publishers, placements, events, system, pageViews, totalLifetimeViews });
+        return json({ campaigns, advertisers, developers, publishers, placements, events, system, pageViews, totalLifetimeViews: totalLifetimeViewsCount });
       }
 
       case "campaigns": {
@@ -2064,8 +2073,8 @@ async function pageViewsOverview() {
   return { pageViews: data ?? [] };
 }
 
-async function totalLifetimeViews() {
+async function totalLifetimeViews(): Promise<number> {
   const { data, error } = await admin.rpc("get_total_lifetime_views");
-  if (error) return apiError("INTERNAL_ERROR", "Failed to get total lifetime views.", 500);
-  return { totalLifetimeViews: data ?? 0 };
+  if (error) throw new Error("Failed to get total lifetime views: " + error.message);
+  return data ?? 0;
 }
