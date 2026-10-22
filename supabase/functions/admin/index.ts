@@ -1767,7 +1767,7 @@ const handler = serveWithCors(async (req) => {
         if (req.method !== "GET") {
           return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
         }
-        const [campaigns, advertisers, developers, publishers, placements, events, system] =
+        const [campaigns, advertisers, developers, publishers, placements, events, system, pageViews, totalLifetimeViews] =
           await Promise.all([
             campaignsOverview(),
             advertisersOverview(),
@@ -1776,8 +1776,10 @@ const handler = serveWithCors(async (req) => {
             placementsOverview(),
             eventsOverview(),
             systemStatus(),
+            pageViewsOverview(),
+            totalLifetimeViews(),
           ]);
-        return json({ campaigns, advertisers, developers, publishers, placements, events, system });
+        return json({ campaigns, advertisers, developers, publishers, placements, events, system, pageViews, totalLifetimeViews });
       }
 
       case "campaigns": {
@@ -2052,3 +2054,18 @@ const handler = serveWithCors(async (req) => {
 });
 
 serve(handler);
+
+async function pageViewsOverview() {
+  const { data, error } = await admin
+    .from("site_page_views")
+    .select("path, view_count, first_seen_at, last_seen_at")
+    .order("view_count", { ascending: false });
+  if (error) return apiError("INTERNAL_ERROR", "Failed to load page views.", 500);
+  return { pageViews: data ?? [] };
+}
+
+async function totalLifetimeViews() {
+  const { data, error } = await admin.rpc("get_total_lifetime_views");
+  if (error) return apiError("INTERNAL_ERROR", "Failed to get total lifetime views.", 500);
+  return { totalLifetimeViews: data ?? 0 };
+}

@@ -255,3 +255,15 @@ async function deleteAccountProfile(profileId) {
   }
   return { ok: true }
 }
+
+export async function fetchAdminPageViews() {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates([...urls.map(u => `${u}/page-views`)], { method: 'GET' })
+  return data?.pageViews ?? data?.pageViews ?? []
+}
+
+export async function fetchAdminTotalLifetimeViews() {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates([...urls.map(u => `${u}/total-lifetime-views`)], { method: 'GET' })
+  return data?.totalLifetimeViews ?? data?.totalLifetimeViews ?? 0
+}

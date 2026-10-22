@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchAdminOverview } from '../../lib/adminApi.js'
 
-function StatCard({ label, value, sub }) {
+function StatCard({ label, value, sub, onClick, className }) {
   return (
-    <div className="adm-stat">
+    <div className={`adm-stat${className ? ' ' + className : ''}`} onClick={onClick}>
       <div className="adm-stat__label">{label}</div>
       <div className="adm-stat__value">{value ?? '—'}</div>
       {sub && <div className="adm-stat__sub">{sub}</div>}
@@ -20,10 +20,66 @@ function Section({ title, children }) {
   )
 }
 
+function LifetimeViewsOverlay({ isOpen, onClose, pageViews, totalLifetimeViews, onCloseOverlay }) {
+  if (!isOpen) return null
+
+  return (
+    <div className="adm-overlay" onClick={onCloseOverlay}>
+      <div className="adm-overlay__panel" onClick={(e) => e.stopPropagation()}>
+        <div className="adm-overlay__header">
+          <h3 className="adm-overlay__title">Lifetime Views by Page</h3>
+          <button className="adm-overlay__close" onClick={onCloseOverlay} aria-label="Close">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div className="adm-overlay__content">
+          <div className="adm-overlay__summary">
+            <div className="adm-overlay__summary-item">
+              <span className="adm-overlay__summary-label">Total Lifetime Views</span>
+              <span className="adm-overlay__summary-value">{totalLifetimeViews.toLocaleString()}</span>
+            </div>
+          </div>
+          <div className="adm-overlay__table-wrap">
+            <table className="adm-table adm-overlay__table">
+              <thead>
+                <tr>
+                  <th>Page</th>
+                  <th className="adm-mono">Lifetime Views</th>
+                  <th>First Seen</th>
+                  <th>Last Seen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(pageViews || []).map((pv, idx) => (
+                  <tr key={idx}>
+                    <td className="adm-mono adm-truncate">{pv.path}</td>
+                    <td className="adm-mono">{pv.view_count.toLocaleString()}</td>
+                    <td className="adm-muted">{pv.first_seen_at ? new Date(pv.first_seen_at).toLocaleDateString() : '—'}</td>
+                    <td className="adm-muted">{pv.last_seen_at ? new Date(pv.last_seen_at).toLocaleDateString() : '—'}</td>
+                  </tr>
+                ))}
+                {(!pageViews || pageViews.length === 0) && (
+                  <tr>
+                    <td colSpan="4"><div className="adm-empty">No page views recorded yet.</div></td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminOverview() {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [overlayOpen, setOverlayOpen] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -68,7 +124,7 @@ export default function AdminOverview() {
     )
   }
 
-  const { campaigns, advertisers, developers, placements, events, system } = data
+  const { campaigns, advertisers, developers, placements, events, system, pageViews, totalLifetimeViews } = data
   const systemOk = system && Object.entries(system).filter(([k]) => k !== 'checkedAt').every(([, s]) => s.ok)
 
   return (
@@ -129,6 +185,13 @@ export default function AdminOverview() {
           <div className="adm-tele-card__value">{placements?.totalCount ?? '—'}</div>
           <div className="adm-tele-card__context">{placements?.enabledCount ?? 0} enabled</div>
         </div>
+        <StatCard
+          label="Lifetime views"
+          value={data?.totalLifetimeViews?.toLocaleString() ?? '—'}
+          sub="Landing page: clirevenue.in"
+          onClick={() => setOverlayOpen(true)}
+          className="adm-stat--clickable"
+        />
       </div>
 
       <div className="adm-section">
@@ -184,6 +247,14 @@ export default function AdminOverview() {
           ))}
         </div>
       </div>
+
+      <LifetimeViewsOverlay
+        isOpen={overlayOpen}
+        onClose={() => setOverlayOpen(false)}
+        pageViews={pageViews}
+        totalLifetimeViews={data.totalLifetimeViews ?? 0}
+        onCloseOverlay={() => setOverlayOpen(false)}
+      />
     </div>
   )
 }
