@@ -122,7 +122,8 @@ async function walletNotifications(profileId: string) {
     .from("user_notifications")
     .select("id, kind, severity, title, body, read_at, created_at, related_freeze_id")
     .eq("profile_id", profileId)
-    .order("read_at ASC NULLS FIRST, created_at DESC")
+    .order("read_at", { ascending: true, nullsFirst: true })
+    .order("created_at", { ascending: false })
     .limit(50);
   if (error) {
     console.error("wallet notifications error:", error.message);
