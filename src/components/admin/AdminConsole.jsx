@@ -15,22 +15,24 @@ import AdminAccounts from './AdminAccounts.jsx'
 import AdminModeration from './AdminModeration.jsx'
 import AdminHealth from './AdminHealth.jsx'
 import AdminWalletManagement from './AdminWalletManagement.jsx'
+import AdminLifetimeViews from './AdminLifetimeViews.jsx'
 import './AdminConsole.css'
 
 const PAGES = {
-  overview:   { label: 'Overview',   icon: AdminOverviewIcon },
-  campaigns:  { label: 'Campaigns',  icon: AdminCampaignsIcon },
-  moderation: { label: 'Moderation', icon: AdminModerationIcon },
-  advertisers:{ label: 'Advertisers',icon: AdminAdvertisersIcon },
-  developers: { label: 'Developers', icon: AdminDevelopersIcon },
-  placements: { label: 'Placements', icon: AdminPlacementsIcon },
-  events:     { label: 'Events',     icon: AdminEventsIcon },
-  system:     { label: 'System',     icon: AdminSystemIcon },
-  health:     { label: 'Health & Audit', icon: AdminHealthIcon },
-  accounts:   { label: 'Accounts',   icon: AdminAccountsIcon },
-  contacts:   { label: 'Contacts',   icon: AdminContactsIcon },
-  queries:    { label: 'Advertiser queries', icon: AdminQueriesIcon },
-  wallet:     { label: 'Wallet management', icon: AdminWalletIcon },
+  overview:      { label: 'Overview',      icon: AdminOverviewIcon },
+  campaigns:     { label: 'Campaigns',     icon: AdminCampaignsIcon },
+  moderation:    { label: 'Moderation',    icon: AdminModerationIcon },
+  advertisers:   { label: 'Advertisers',   icon: AdminAdvertisersIcon },
+  developers:    { label: 'Developers',    icon: AdminDevelopersIcon },
+  placements:    { label: 'Placements',    icon: AdminPlacementsIcon },
+  events:        { label: 'Events',        icon: AdminEventsIcon },
+  system:        { label: 'System',        icon: AdminSystemIcon },
+  health:        { label: 'Health & Audit', icon: AdminHealthIcon },
+  lifetimeViews: { label: 'Lifetime views', icon: AdminLifetimeViewsIcon },
+  accounts:      { label: 'Accounts',      icon: AdminAccountsIcon },
+  contacts:      { label: 'Contacts',      icon: AdminContactsIcon },
+  queries:       { label: 'Advertiser queries', icon: AdminQueriesIcon },
+  wallet:        { label: 'Wallet management', icon: AdminWalletIcon },
 }
 
 // "Account" is the one admin entry that is not a platform read surface, so it
@@ -74,6 +76,7 @@ function AdminQueriesIcon()    { return <IconSvg d="M21 15a2 2 0 0 1-2 2H7l-4 4V
 function AdminWalletIcon()     { return <IconSvg d="M3 3v18h18M7 15l4-5 3 3 5-7M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /> }
 function AdminModerationIcon() { return <IconSvg d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /> }
 function AdminHealthIcon()     { return <IconSvg d="M2 12h4l3-8 4 16 3-8h6" /> }
+function AdminLifetimeViewsIcon() { return <IconSvg d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 12c-2.5 0-4.5-2-4.5-4.5S9.5 3 12 3s4.5 2 4.5 4.5S14.5 12 12 12z" /> }
 function AdminOperationsIcon()  { return <IconSvg d="M3 3v18h18M7 15l4-5 3 3 5-7" /> }
 function AdminAccountsIcon()   { return <IconSvg d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 11h-6" /> }
 // Sliders, not the sun/gear glyph AdminSystemIcon uses: two identical icons
@@ -128,6 +131,7 @@ export default function AdminConsole() {
     queries: AdminQueries,
     wallet: AdminWalletManagement,
     account: AdminAccount,
+    lifetimeViews: AdminLifetimeViews,
   }
   const PageComponent = PAGE_COMPONENTS[page] || AdminOverview
 

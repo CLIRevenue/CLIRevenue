@@ -20,66 +20,10 @@ function Section({ title, children }) {
   )
 }
 
-function LifetimeViewsOverlay({ isOpen, onClose, pageViews, totalLifetimeViews, onCloseOverlay }) {
-  if (!isOpen) return null
-
-  return (
-    <div className="adm-modal-overlay" onClick={onCloseOverlay}>
-      <div className="adm-modal-overlay__panel" onClick={(e) => e.stopPropagation()}>
-        <div className="adm-modal-overlay__header">
-          <h3 className="adm-modal-overlay__title">Lifetime Views by Page</h3>
-          <button className="adm-modal-overlay__close" onClick={onCloseOverlay} aria-label="Close">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <div className="adm-modal-overlay__content">
-          <div className="adm-modal-overlay__summary">
-            <div className="adm-modal-overlay__summary-item">
-              <span className="adm-modal-overlay__summary-label">Total Lifetime Views</span>
-              <span className="adm-modal-overlay__summary-value">{totalLifetimeViews.toLocaleString()}</span>
-            </div>
-          </div>
-          <div className="adm-modal-overlay__table-wrap">
-            <table className="adm-table adm-modal-overlay__table">
-              <thead>
-                <tr>
-                  <th>Page</th>
-                  <th className="adm-mono">Lifetime Views</th>
-                  <th>First Seen</th>
-                  <th>Last Seen</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(pageViews || []).map((pv, idx) => (
-                  <tr key={idx}>
-                    <td className="adm-mono adm-truncate">{pv.path}</td>
-                    <td className="adm-mono">{pv.view_count.toLocaleString()}</td>
-                    <td className="adm-muted">{pv.first_seen_at ? new Date(pv.first_seen_at).toLocaleDateString() : '—'}</td>
-                    <td className="adm-muted">{pv.last_seen_at ? new Date(pv.last_seen_at).toLocaleDateString() : '—'}</td>
-                  </tr>
-                ))}
-                {(!pageViews || pageViews.length === 0) && (
-                  <tr>
-                    <td colSpan="4"><div className="adm-empty">No page views recorded yet.</div></td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function AdminOverview() {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
-  const [overlayOpen, setOverlayOpen] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -124,7 +68,7 @@ export default function AdminOverview() {
     )
   }
 
-  const { campaigns, advertisers, developers, placements, events, system, pageViews, totalLifetimeViews } = data
+  const { campaigns, advertisers, developers, placements, events, system, totalLifetimeViews } = data
   const systemOk = system && Object.entries(system).filter(([k]) => k !== 'checkedAt').every(([, s]) => s.ok)
 
   return (
@@ -189,7 +133,6 @@ export default function AdminOverview() {
           label="Lifetime views"
           value={data?.totalLifetimeViews?.toLocaleString() ?? '—'}
           sub="Landing page: clirevenue.in"
-          onClick={() => setOverlayOpen(true)}
           className="adm-stat--clickable"
         />
       </div>
@@ -247,14 +190,6 @@ export default function AdminOverview() {
           ))}
         </div>
       </div>
-
-      <LifetimeViewsOverlay
-        isOpen={overlayOpen}
-        onClose={() => setOverlayOpen(false)}
-        pageViews={pageViews}
-        totalLifetimeViews={data.totalLifetimeViews ?? 0}
-        onCloseOverlay={() => setOverlayOpen(false)}
-      />
     </div>
   )
 }
