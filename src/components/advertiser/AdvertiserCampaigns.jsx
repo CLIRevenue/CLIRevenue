@@ -10,11 +10,11 @@ import {
   deleteAdvertiserCampaign,
   formatCents,
   setActiveCampaign,
-  toBudgetDollars,
   updateAdvertiserCampaign,
   validateCampaignInput,
   campaignWarnings,
 } from '../../lib/advertiserApi.js'
+import { fetchWalletSnapshot } from '../../lib/walletApi.js'
 import { campaignErrorCode, campaignErrorMessage } from '../../lib/campaignErrors.js'
 import {
   activationBlockerMessage,
@@ -46,8 +46,7 @@ const EMPTY_FORM = {
   description: '',
   cta: 'Learn more',
   audienceId: 'backend',
-  budgetDollars: '1500',
-  cpmDollars: '0.01',
+  budgetCredits: '1500',
   startsAt: '',
   endsAt: '',
   landingUrl: '',
@@ -64,21 +63,6 @@ const STEPS = [
   'Save draft',
   'Activate',
 ]
-
-/** `campaigns.cpm_cents` is milli-cents; the advertiser edits whole dollars. */
-function toCpmDollars(milliCents) {
-  if (typeof milliCents !== 'number' || !Number.isFinite(milliCents)) return ''
-  return String(Number((milliCents / 1000).toFixed(4)))
-}
-
-/** Returns a positive integer of milli-cents, `null` when cleared, or NaN when nonsense. */
-function toCpmMilliCents(dollars) {
-  const text = String(dollars ?? '').trim()
-  if (!text) return null
-  const value = Number(text)
-  if (!Number.isFinite(value) || value <= 0) return Number.NaN
-  return Math.round(value * 1000)
-}
 
 /** ISO timestamp -> the `YYYY-MM-DDTHH:mm` shape a datetime-local input expects. */
 function toLocalInput(iso) {
@@ -130,18 +114,24 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
   const headlineLength = useMemo(() => countAdTextLength(form.headline), [form.headline])
   const headlineOver = headlineLength > MAX_AD_TEXT_LENGTH
 
+  const [wallet, setWallet] = useState(null)
+
+  useEffect(() => {
+    fetchWalletSnapshot().then(setWallet).catch(() => {})
+  }, [])
+
   const stepState = useMemo(() => {
     const name = form.name.trim()
     const headline = form.headline.trim()
-    const budgetCents = Math.round(Number(form.budgetDollars) * 100)
-    const cpm = toCpmMilliCents(form.cpmDollars)
+    const budgetCredits = Number(form.budgetCredits)
     const scheduleStart = form.startsAt ? Date.parse(form.startsAt) : null
     const scheduleEnd = form.endsAt ? Date.parse(form.endsAt) : null
     const saved = Boolean(selected)
+    const hasBudget = Number.isFinite(budgetCredits) && budgetCredits > 0
     return [
       { done: name.length > 0 && headline.length > 0 },
       { done: Boolean(form.audienceId) },
-      { done: Number.isFinite(budgetCents) && budgetCents > 0 && (cpm === null || (Number.isFinite(cpm) && cpm > 0)) },
+      { done: hasBudget },
       { done: !(Number.isFinite(scheduleStart) && Number.isFinite(scheduleEnd) && scheduleStart >= scheduleEnd) },
       { done: saved },
       { done: selected?.status === 'active' },
@@ -154,7 +144,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
   }, [stepState])
 
   function formToApiInput() {
-    return { ...form, cpmCents: toCpmMilliCents(form.cpmDollars) }
+    return { ...form }
   }
 
   function editSelected() {
@@ -165,8 +155,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
       description: selected.description,
       cta: selected.cta,
       audienceId: selected.audienceId,
-      budgetDollars: toBudgetDollars(selected.budgetCents),
-      cpmDollars: toCpmDollars(selected.cpmCents),
+      budgetCredits: String(selected.budgetCents / 100),
       startsAt: toLocalInput(selected.startsAt),
       endsAt: toLocalInput(selected.endsAt),
       landingUrl: selected.landingUrl || '',
@@ -176,10 +165,6 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
     setNotice('')
     setDetailError('')
     setBlockers([])
-    /* Open the dialog as well as filling it. The form moved behind
-       formOpen when the campaign dialog landed, and this button kept
-       writing state into a component that renders nothing - so it looked
-       broken rather than looking forgotten. */
     setFormOpen(true)
   }
 
@@ -470,7 +455,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
           <Panel className="adv-panel">
             <h4 className="adv-panel__title">{selected ? 'Campaign details' : 'New campaign'}</h4>
             <p className="adv-panel__sub">
-              {selected ? 'Edit the brief or change delivery state — only the fields you touch are saved.' : 'Start a new draft. Nothing is charged until a campaign is active.'}
+              {selected ? 'Edit the brief or change delivery state — only the fields you touch are saved.' : 'Start a new draft. Budget is reserved from your credit wallet when activated.'}
             </p>
 
             <ol className="adv-detail" aria-label="Campaign setup steps">
@@ -530,14 +515,13 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                 Heads up: {hints.map((code) => activationBlockerMessage(code)).join(' ')}
               </p>
             ) : null}
-            {selected && !form.name && form.budgetDollars === EMPTY_FORM.budgetDollars ? (
+            {selected && !form.name && form.budgetCredits === EMPTY_FORM.budgetCredits ? (
               <dl className="adv-detail">
                 <div><dt>Headline</dt><dd>{selected.headline}</dd></div>
                 <div><dt>Description</dt><dd>{selected.description || '—'}</dd></div>
                 <div><dt>CTA</dt><dd>{selected.cta}</dd></div>
                 <div><dt>Landing URL</dt><dd>{selected.landingUrl || '—'}</dd></div>
                 <div><dt>Budget</dt><dd className="mono">{formatCents(selected.budgetCents)}</dd></div>
-                <div><dt>CPM</dt><dd className="mono">${toCpmDollars(selected.cpmCents) || '—'}</dd></div>
                 <div><dt>Schedule</dt><dd>{selected.startsAt ? new Date(selected.startsAt).toLocaleString() : 'Any time'}</dd></div>
                 <div><dt>Impressions / clicks / conv.</dt><dd className="mono">{selected.impressions.toLocaleString('en-US')} / {selected.clicks.toLocaleString('en-US')} / {selected.conversions.toLocaleString('en-US')}</dd></div>
               </dl>
@@ -656,36 +640,21 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
               </div>
               <div className="field-row">
                 <label className="field">
-                  <span className="field__label">Budget (USD)</span>
+                  <span className="field__label">Budget (credits)</span>
                   <input
                     className="field__input"
-                    id={fid('budgetDollars')}
+                    id={fid('budgetCredits')}
                     type="number"
                     min={1}
-                    step="0.01"
-                    value={form.budgetDollars}
-                    aria-invalid={Boolean(formErrors.budgetDollars)}
-                    aria-describedby={formErrors.budgetDollars ? fid('budgetDollars-error') : undefined}
-                    onChange={(e) => setForm({ ...form, budgetDollars: e.target.value })}
+                    step="1"
+                    value={form.budgetCredits}
+                    aria-invalid={Boolean(formErrors.budgetCredits)}
+                    aria-describedby={formErrors.budgetCredits ? fid('budgetCredits-error') : undefined}
+                    onChange={(e) => setForm({ ...form, budgetCredits: e.target.value })}
                     inputMode="decimal"
                   />
-                  {formErrors.budgetDollars ? <span id={fid('budgetDollars-error')} className="adv-field-error">{formErrors.budgetDollars}</span> : null}
-                </label>
-                <label className="field">
-                  <span className="field__label">CPM (USD)</span>
-                  <input
-                    className="field__input"
-                    id={fid('cpmDollars')}
-                    type="number"
-                    min={0.001}
-                    step="0.001"
-                    value={form.cpmDollars}
-                    aria-invalid={Boolean(formErrors.cpmCents)}
-                    aria-describedby={formErrors.cpmCents ? fid('cpmDollars-error') : undefined}
-                    onChange={(e) => setForm({ ...form, cpmDollars: e.target.value })}
-                    inputMode="decimal"
-                  />
-                  {formErrors.cpmCents ? <span id={fid('cpmDollars-error')} className="adv-field-error">{formErrors.cpmCents}</span> : null}
+                  {formErrors.budgetCredits ? <span id={fid('budgetCredits-error')} className="adv-field-error">{formErrors.budgetCredits}</span> : null}
+                  {wallet && <span className="field__hint">Available: {wallet.balance_credits} credits (reserved: {wallet.reserved_credits})</span>}
                 </label>
               </div>
               <div className="field-row">
@@ -762,7 +731,7 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
                   {notice}
                 </div>
               ) : null}
-              <p className="form__note">Nothing is charged. Campaigns save to your account only.</p>
+              <p className="form__note">Budget is reserved from your credit wallet when activated. 1 credit = 1 INR.</p>
 
               {/* The button the form was missing. It had an onSubmit and no
                   submit control, and with eleven fields the browser will not
