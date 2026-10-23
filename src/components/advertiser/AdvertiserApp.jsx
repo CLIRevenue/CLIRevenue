@@ -10,6 +10,7 @@ import AdvertiserOverview from './AdvertiserOverview.jsx'
 import AdvertiserCampaigns from './AdvertiserCampaigns.jsx'
 import AdvertiserAnalytics from './AdvertiserAnalytics.jsx'
 import AdvertiserBilling from './AdvertiserBilling.jsx'
+import BillingPage from './BillingPage.jsx'
 import AdvertiserAccount from './AdvertiserAccount.jsx'
 import { campaignWarnings } from '../../lib/advertiserApi.js'
 import './advertiser.css'
@@ -269,17 +270,12 @@ export default function AdvertiserApp() {
             />
           ) : null}
           {tab === 'billing' ? (
-            <div className="adv-page">
-              <AdvPageHead
-                index="A4"
-                label="Advertiser · Billing"
-                title="Billing and invoices."
-                body="Payment methods, invoices, and billing history."
-              />
-              <div className="adv-panel adv-note">
-                <p className="adv-note__body">Billing details coming soon.</p>
-              </div>
-            </div>
+            <BillingPage
+              campaigns={campaignsState.campaigns}
+              loading={campaignsState.loading}
+              error={campaignsState.error}
+              onRetry={campaignsState.refresh}
+            />
           ) : null}
           {tab === 'account' ? <AdvertiserAccount /> : null}
         </div>
