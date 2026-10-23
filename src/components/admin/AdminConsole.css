@@ -1097,9 +1097,9 @@
 .adm-query__compose { display: grid; gap: var(--c-space-2); }
 .adm-query__compose-actions { display: flex; gap: var(--c-space-1); }
 
-/* ── Lifetime Views Overlay ───────────────────────────────────────────── */
+/* ── Lifetime Views Overlay (Modal) ────────────────────────────────────── */
 
-.adm-overlay {
+.adm-modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -1116,7 +1116,7 @@
   to { opacity: 1; }
 }
 
-.adm-overlay__panel {
+.adm-modal-overlay__panel {
   width: min(90vw, 800px);
   max-height: 85vh;
   background: var(--surface);
@@ -1140,7 +1140,7 @@
   }
 }
 
-.adm-overlay__header {
+.adm-modal-overlay__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1150,14 +1150,14 @@
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
-.adm-overlay__title {
+.adm-modal-overlay__title {
   font-size: var(--c-text-title);
   font-weight: 600;
   color: var(--ink);
   margin: 0;
 }
 
-.adm-overlay__close {
+.adm-modal-overlay__close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1171,23 +1171,23 @@
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-.adm-overlay__close:hover {
+.adm-modal-overlay__close:hover {
   background: var(--surface-container-low);
   color: var(--ink);
 }
 
-.adm-overlay__close:focus-visible {
+.adm-modal-overlay__close:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.adm-overlay__content {
+.adm-modal-overlay__content {
   padding: var(--c-space-5);
   overflow-y: auto;
   flex: 1;
 }
 
-.adm-overlay__summary {
+.adm-modal-overlay__summary {
   display: flex;
   gap: var(--c-space-4);
   margin-bottom: var(--c-space-5);
@@ -1196,7 +1196,7 @@
   border-radius: var(--radius-md);
 }
 
-.adm-overlay__summary-item {
+.adm-modal-overlay__summary-item {
   display: flex;
   flex-direction: column;
   gap: var(--c-space-1);
@@ -1204,7 +1204,7 @@
   min-width: 120px;
 }
 
-.adm-overlay__summary-label {
+.adm-modal-overlay__summary-label {
   font-size: var(--c-text-label);
   letter-spacing: var(--track-caps);
   text-transform: uppercase;
@@ -1212,31 +1212,31 @@
   font-weight: 500;
 }
 
-.adm-overlay__summary-value {
+.adm-modal-overlay__summary-value {
   font-size: var(--c-text-hero);
   font-weight: 700;
   font-family: var(--mono);
   color: var(--ink);
 }
 
-.adm-overlay__table-wrap {
+.adm-modal-overlay__table-wrap {
   overflow-x: auto;
 }
 
-.adm-overlay__table {
+.adm-modal-overlay__table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--c-text-body);
 }
 
-.adm-overlay__table th,
-.adm-overlay__table td {
+.adm-modal-overlay__table th,
+.adm-modal-overlay__table td {
   padding: var(--c-space-3) var(--c-space-4);
   text-align: left;
   border-bottom: 1px solid var(--border);
 }
 
-.adm-overlay__table th {
+.adm-modal-overlay__table th {
   font-weight: 600;
   font-size: var(--c-text-label);
   letter-spacing: var(--track-caps);
@@ -1245,27 +1245,27 @@
   background: var(--surface-container-lowest);
 }
 
-.adm-overlay__table td {
+.adm-modal-overlay__table td {
   color: var(--ink);
 }
 
-.adm-overlay__table tbody tr:last-child td {
+.adm-modal-overlay__table tbody tr:last-child td {
   border-bottom: none;
 }
 
-.adm-overlay__table td.adm-truncate {
+.adm-modal-overlay__table td.adm-truncate {
   max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.adm-overlay__table .adm-muted {
+.adm-modal-overlay__table .adm-muted {
   color: var(--ink-3);
   font-size: var(--c-text-small);
 }
 
-.adm-overlay__table .adm-empty {
+.adm-modal-overlay__table .adm-empty {
   padding: var(--c-space-6);
   text-align: center;
   color: var(--ink-3);
@@ -1291,31 +1291,6 @@
 .adm-stat--clickable:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-}
-
-/* Overlay fade animation */
-.adm-overlay {
-  animation: adm-overlay-fade-in 0.2s ease-out;
-}
-
-@keyframes adm-overlay-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.adm-overlay__panel {
-  animation: adm-overlay-slide-up 0.25s ease-out;
-}
-
-@keyframes adm-overlay-slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* ---------- wallet drawer (admin) ---------- */

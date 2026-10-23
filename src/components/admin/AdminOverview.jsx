@@ -24,26 +24,26 @@ function LifetimeViewsOverlay({ isOpen, onClose, pageViews, totalLifetimeViews, 
   if (!isOpen) return null
 
   return (
-    <div className="adm-overlay" onClick={onCloseOverlay}>
-      <div className="adm-overlay__panel" onClick={(e) => e.stopPropagation()}>
-        <div className="adm-overlay__header">
-          <h3 className="adm-overlay__title">Lifetime Views by Page</h3>
-          <button className="adm-overlay__close" onClick={onCloseOverlay} aria-label="Close">
+    <div className="adm-modal-overlay" onClick={onCloseOverlay}>
+      <div className="adm-modal-overlay__panel" onClick={(e) => e.stopPropagation()}>
+        <div className="adm-modal-overlay__header">
+          <h3 className="adm-modal-overlay__title">Lifetime Views by Page</h3>
+          <button className="adm-modal-overlay__close" onClick={onCloseOverlay} aria-label="Close">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
         </div>
-        <div className="adm-overlay__content">
-          <div className="adm-overlay__summary">
-            <div className="adm-overlay__summary-item">
-              <span className="adm-overlay__summary-label">Total Lifetime Views</span>
-              <span className="adm-overlay__summary-value">{totalLifetimeViews.toLocaleString()}</span>
+        <div className="adm-modal-overlay__content">
+          <div className="adm-modal-overlay__summary">
+            <div className="adm-modal-overlay__summary-item">
+              <span className="adm-modal-overlay__summary-label">Total Lifetime Views</span>
+              <span className="adm-modal-overlay__summary-value">{totalLifetimeViews.toLocaleString()}</span>
             </div>
           </div>
-          <div className="adm-overlay__table-wrap">
-            <table className="adm-table adm-overlay__table">
+          <div className="adm-modal-overlay__table-wrap">
+            <table className="adm-table adm-modal-overlay__table">
               <thead>
                 <tr>
                   <th>Page</th>
