@@ -16,6 +16,7 @@ import PrivacyPolicyPage from './components/PrivacyPolicyPage.jsx'
 import TermsConditionsPage from './components/TermsConditionsPage.jsx'
 import useAppRoute, { navigateApp } from './hooks/useAppRoute.js'
 import { setRouteMetadata } from './seo/routeMeta.js'
+import { usePageViewTracking } from './hooks/usePageViewTracking.js'
 import './components/advertiser/advertiser.css'
 import './App.css'
 /* LAST stylesheet in the bundle, on purpose. fx.css is the effects
@@ -210,6 +211,7 @@ function Routes() {
 }
 
 function App() {
+  usePageViewTracking()
   return (
     <AuthProvider>
       {/* Three global render layers, all decorative and all above the router:

@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchAdminOverview } from '../../lib/adminApi.js'
 
-function StatCard({ label, value, sub, onClick, className }) {
+function StatCard({ label, value, sub, onClick, className, primary }) {
   return (
-    <div className={`adm-stat${className ? ' ' + className : ''}`} onClick={onClick}>
-      <div className="adm-stat__label">{label}</div>
-      <div className="adm-stat__value">{value ?? '—'}</div>
-      {sub && <div className="adm-stat__sub">{sub}</div>}
+    <div className={`adm-tele-card${primary ? ' adm-tele-card--primary' : ''}${className ? ' ' + className : ''}`} onClick={onClick}>
+      <div className="adm-tele-card__label">{label}</div>
+      <div className="adm-tele-card__value">{value ?? '—'}</div>
+      {sub && <div className="adm-tele-card__context">{sub}</div>}
     </div>
   )
 }
