@@ -108,7 +108,8 @@
 .adv-notice { border: 1px solid var(--hair-strong); background: var(--hair); padding: var(--c-space-3) var(--c-space-4); font-size: var(--c-text-read); display: flex; gap: var(--c-space-3); align-items: center; justify-content: space-between; border-radius: var(--radius-md); }
 .adv-notice--error { border-color: var(--accent-error); }
 .adv-notice__btn { flex: none; }
-.adv-note { display: flex; }
+.adv-note { display: flex; flex-direction: column; }
+.adv-note__body { margin: 0; color: var(--ink-2); line-height: 1.6; }
 .adv-note--warn { border: 1px solid var(--warm); padding: var(--c-space-3) var(--c-space-3); font-size: var(--c-text-body); color: var(--ink-2); margin-bottom: var(--c-space-3); border-radius: var(--radius-md); }
 .adv-empty { padding: var(--c-space-6); text-align: left; }
 .adv-empty__title { margin: 0 0 8px; font-size: var(--c-text-prose); }
