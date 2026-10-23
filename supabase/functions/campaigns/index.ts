@@ -8,6 +8,7 @@ import {
   effectiveAdText,
   isCampaignStatus,
   parseBudgetCents,
+  parseBudgetCredits,
   parseCpmCents,
   parseLandingUrl,
   patchUnknownFields,
@@ -217,8 +218,17 @@ const handler = serveWithCors(async (req) => {
       if (typeof audienceId !== "string" || !audienceId.trim()) {
         return apiError("INVALID_AUDIENCE", "Select an audience.", 400);
       }
-      const budgetRaw = body.budget_cents ?? body.budgetCents;
-      const budget = parseBudgetCents(budgetRaw);
+      const budgetCreditsRaw = body.budget_credits ?? body.budgetCredits;
+      const budgetCentsRaw = body.budget_cents ?? body.budgetCents;
+      // Prefer credits (1 credit = 100 cents), fall back to cents for backward compat
+      let budget;
+      if (budgetCreditsRaw !== undefined) {
+        budget = parseBudgetCredits(budgetCreditsRaw);
+      } else if (budgetCentsRaw !== undefined) {
+        budget = parseBudgetCents(budgetCentsRaw);
+      } else {
+        return apiError("MISSING_FIELDS", "Budget is required.", 400);
+      }
       if (!budget.ok) return apiError(budget.code, budget.message, 400);
 
       const { data: audience, error: audErr } = await admin
@@ -375,8 +385,13 @@ const handler = serveWithCors(async (req) => {
           if (!audience) return apiError("INVALID_AUDIENCE", "Select an audience.", 400);
           filtered.audience_id = audienceId;
         }
-        if (body.budget_cents !== undefined || body.budgetCents !== undefined) {
-          const budget = parseBudgetCents(body.budget_cents ?? body.budgetCents);
+        if (body.budget_credits !== undefined || body.budgetCredits !== undefined || body.budget_cents !== undefined || body.budgetCents !== undefined) {
+          let budget;
+          if (body.budget_credits !== undefined || body.budgetCredits !== undefined) {
+            budget = parseBudgetCredits(body.budget_credits ?? body.budgetCredits);
+          } else {
+            budget = parseBudgetCents(body.budget_cents ?? body.budgetCents);
+          }
           if (!budget.ok) return apiError(budget.code, budget.message, 400);
           filtered.budget_cents = budget.value;
         }
@@ -421,17 +436,52 @@ const handler = serveWithCors(async (req) => {
               }
             }
             const blockers = await activationBlockers(admin, campaignId);
-            if (blockers.failed) return blockers.response;
-            if (blockers.blockers.length) {
+          if (blockers.failed) return blockers.response;
+          if (blockers.blockers.length) {
+            return apiError(
+              "CAMPAIGN_NOT_ACTIVATABLE",
+              activationBlockerMessage(blockers.blockers[0]),
+              400,
+              { blockers: blockers.blockers },
+            );
+          }
+
+          // Hold the whole budget in the advertiser wallet before the
+          // campaign goes live. The reservation is idempotent per campaign,
+          // so a retried activation does not take the money twice.
+          const reservation = await admin.rpc("reserve_campaign_credits", {
+            p_campaign_id: campaignId,
+            p_actor_profile_id: adv.profile.id,
+          });
+          if (reservation.error) {
+            console.error("campaign credit reservation error:", reservation.error.message);
+            if (reservation.error.message === "INSUFFICIENT_CREDITS") {
               return apiError(
                 "CAMPAIGN_NOT_ACTIVATABLE",
-                activationBlockerMessage(blockers.blockers[0]),
+                "This campaign's budget exceeds your wallet balance.",
                 400,
-                { blockers: blockers.blockers },
+                { blockers: ["INSUFFICIENT_CREDITS"] },
               );
             }
-            filtered.status = "active";
+            return apiError("INTERNAL_ERROR", "Could not reserve the campaign budget.", 500);
+          }
+
+          filtered.status = "active";
           } else {
+            // Leaving the active state settles the credit hold: the unused
+            // part returns to the wallet and what was actually spent is
+            // booked. Settlement is idempotent, so a repeated deactivation
+            // is a no-op.
+            if (existing.status === "active" && body.status !== "active") {
+              const settlement = await admin.rpc("settle_campaign_credit_hold", {
+                p_campaign_id: campaignId,
+                p_actor_profile_id: adv.profile.id,
+              });
+              if (settlement.error) {
+                console.error("campaign credit settlement error:", settlement.error.message);
+                return apiError("INTERNAL_ERROR", "Could not settle the campaign budget.", 500);
+              }
+            }
             filtered.status = body.status;
           }
         }

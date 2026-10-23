@@ -197,29 +197,22 @@ export async function fetchAdvertiserCampaigns() {
 export function validateCampaignInput(input, base = null) {
   const errors = {}
   if (!String(input.name || '').trim()) errors.name = 'Campaign name is required.'
-  /* The ad text is measured the way the server measures it: code points of
-     the trimmed, NFC-normalised string. Using the dashboard's own copy of the
-     rule is what keeps the counter and the error message honest — a headline
-     of 60 emoji is 60 characters to the advertiser and 60 to the database,
-     and `String.length` would call it 120 and refuse a valid ad. */
   const headline = validateAdText(input.headline)
   if (!headline.ok) errors.headline = headline.message
   if (!ADVERTISER_AUDIENCES.some((a) => a.id === input.audienceId)) {
     errors.audienceId = 'Select an audience.'
   }
-  const budgetCents = Math.round(Number(input.budgetDollars) * 100)
+  const budgetCents = Math.round(Number(input.budgetCredits) * 100)
   if (!Number.isFinite(budgetCents) || budgetCents <= 0) {
-    errors.budgetDollars = 'Budget must be greater than $0.'
+    errors.budgetCredits = 'Budget must be greater than 0 credits.'
   } else if (budgetCents > MAX_BUDGET_CENTS) {
-    errors.budgetDollars = 'Budget must be $100,000 or less in this prototype.'
+    errors.budgetCredits = 'Budget must be 1,000,000 credits or less in this prototype.'
   }
   if (input.status && !CAMPAIGN_STATUSES.includes(input.status)) {
     errors.status = 'Invalid status.'
   }
   const landing = parseLandingUrl(input.landingUrl)
   if (!landing.ok) errors.landingUrl = landing.message
-  const cpm = parseCpmCents(input.cpmCents)
-  if (!cpm.ok) errors.cpmCents = cpm.message
   const starts = input.startsAt ? Date.parse(input.startsAt) : null
   const ends = input.endsAt ? Date.parse(input.endsAt) : null
   if (starts !== null && ends !== null && !Number.isNaN(starts) && !Number.isNaN(ends) && starts >= ends) {
@@ -263,11 +256,11 @@ export function validateCampaignInput(input, base = null) {
 export function campaignWarnings(campaign) {
   if (!campaign) return []
   const warnings = []
-  const budgetCents = Number(campaign.budgetCents || 0)
-  const spendCents = Number(campaign.spendCents || 0)
-  if (budgetCents > 0 && spendCents >= budgetCents * 0.8) {
+  const budgetCredits = Number(campaign.budgetCents || 0) / 100
+  const spendCredits = Number(campaign.spendCents || 0) / 100
+  if (budgetCredits > 0 && spendCredits >= budgetCredits * 0.8) {
     warnings.push(
-      `You have spent ${formatCents(spendCents)} of your ${formatCents(budgetCents)} budget — ${formatCents(Math.max(0, budgetCents - spendCents))} remains.`,
+      `You have spent ${formatCredits(spendCredits * 100)} of your ${formatCredits(budgetCredits * 100)} budget — ${formatCredits(Math.max(0, budgetCredits - spendCredits) * 100)} remains.`,
     )
   }
   const endsAt = campaign.endsAt ? Date.parse(campaign.endsAt) : null
@@ -290,7 +283,7 @@ function toIsoOrNull(value) {
 }
 
 export async function createAdvertiserCampaign(input) {
-  const budgetCents = Math.round(Number(input.budgetDollars) * 100)
+  const budgetCents = Math.round(Number(input.budgetCredits) * 100)
   const landing = parseLandingUrl(input.landingUrl)
   const cpm = parseCpmCents(input.cpmCents)
   const body = {
@@ -298,11 +291,6 @@ export async function createAdvertiserCampaign(input) {
     headline: String(input.headline).trim(),
     description: String(input.description || ''),
     cta: String(input.cta || 'Learn more'),
-    // Canonical names only. The Edge Function reads `body.audience_id ??
-    // body.audience` and `body.budget_cents ?? body.budgetCents`, so the
-    // camelCase spellings were never needed to be understood -- they were
-    // hedging against a server whose allowed-field set might not list them,
-    // and the server's own gate is what refuses a create with UNKNOWN_FIELDS.
     audience_id: input.audienceId,
     budget_cents: budgetCents,
     landing_url: landing.ok ? landing.value : null,
@@ -335,8 +323,8 @@ export async function updateAdvertiserCampaign(id, patch) {
     body.audience_id = patch.audienceId
     body.audience = patch.audienceId
   }
-  if (patch.budgetDollars !== undefined) {
-    body.budget_cents = Math.round(Number(patch.budgetDollars) * 100)
+  if (patch.budgetCredits !== undefined) {
+    body.budget_cents = Math.round(Number(patch.budgetCredits) * 100)
     body.budgetCents = body.budget_cents
   }
   if (patch.cpmCents !== undefined) {
@@ -471,6 +459,13 @@ export function toBudgetDollars(budgetCents) {
   return (Number(budgetCents || 0) / 100).toFixed(2)
 }
 
+export function formatCredits(credits) {
+  const n = Number(credits || 0)
+  const abs = Math.abs(n)
+  const formatted = abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return `${n < 0 ? '-' : ''}${formatted} credits`
+}
+
 export function formatCents(cents) {
   const n = Number(cents || 0)
   const abs = Math.abs(n)
@@ -478,6 +473,13 @@ export function formatCents(cents) {
     .toString()
     .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}.${(abs % 100).toString().padStart(2, '0')}`
   return `${n < 0 ? '-' : ''}$${body}`
+}
+
+export async function fetchAdvertiserWallet() {
+  const urls = campaignsBaseCandidates()
+  const walletUrls = urls.map(u => u.replace('/campaigns', '/wallet/snapshot'))
+  const { data } = await tryCandidates(walletUrls, { method: 'GET' })
+  return data?.wallet ?? data ?? null
 }
 
 export function ctrPct(clicks, impressions) {

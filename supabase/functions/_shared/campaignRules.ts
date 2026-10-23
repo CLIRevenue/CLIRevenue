@@ -113,6 +113,27 @@ export function parseBudgetCents(raw: unknown): { ok: true; value: number } | { 
   return { ok: true, value };
 }
 
+export function parseBudgetCredits(raw: unknown): { ok: true; value: number } | { ok: false; code: string; message: string } {
+  const value = raw;
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+    return {
+      ok: false,
+      code: "INVALID_BUDGET",
+      message: "Budget must be a non-negative integer (credits).",
+    };
+  }
+  // Convert credits to cents (1 credit = 100 cents)
+  const cents = value * 100;
+  if (cents > MAX_BUDGET_CENTS) {
+    return {
+      ok: false,
+      code: "INVALID_BUDGET",
+      message: "Budget exceeds the maximum allowed for this environment.",
+    };
+  }
+  return { ok: true, value: cents };
+}
+
 export function requireNonEmptyString(value: unknown, field: string): string | null {
   if (typeof value !== "string" || value.trim() === "") return `${field} is required.`;
   return null;
