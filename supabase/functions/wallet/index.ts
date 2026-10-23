@@ -140,9 +140,14 @@ async function createTopup(profileId: string, body: Record<string, unknown>) {
   const { value } = parsed;
   const idempotencyKey = `topup:${crypto.randomUUID()}`;
 
+  const amountMinor = parseAmountToMinor(value.amount);
+  if (!amountMinor.ok) {
+    return apiError("INVALID_REQUEST", "Invalid top-up amount.", 400, { errors: amountMinor.errors });
+  }
+
   const { data, error } = await supabase.rpc("create_wallet_topup", {
     p_profile_id: profileId,
-    p_amount_minor: parseAmountToMinor(value.amount).value!,
+    p_amount_minor: amountMinor.value,
     p_currency: value.currency,
     p_payment_method: value.paymentMethod,
     p_payment_reference: value.paymentReference || null,
@@ -204,16 +209,16 @@ async function requestUnfreeze(profileId: string, body: Record<string, unknown>)
   return json({ ok: true, request: data });
 }
 
-const handler = serveWithCors(async (req) => {
+const handler = serveWithCors(async (req): Promise<Response> => {
   if (req.method === "OPTIONS") return optionsResponse(req);
 
   const authed = await getJwtUser(req);
   if ("error" in authed && authed.error) return authed.error;
   const user = authed.user!;
 
-  const profile = await myProfile(user.id);
-  if ("error" in profile) return profile.error;
-  const profileId = profile.profile.id;
+  const { error: profileError, profile: prof } = await myProfile(user.id);
+  if (profileError) return profileError;
+  const profileId = prof.id;
 
   const path = restPath(new URL(req.url).pathname, "wallet");
   const segment = path[0] || "snapshot";
@@ -274,6 +279,7 @@ const handler = serveWithCors(async (req) => {
       default:
         return apiError("NOT_FOUND", "Not found.", 404);
     }
+    return apiError("INTERNAL_ERROR", "Internal server error.", 500);
   } catch (err) {
     console.error("wallet edge error:", err instanceof Error ? err.message : err);
     return apiError("INTERNAL_ERROR", "Internal server error.", 500);

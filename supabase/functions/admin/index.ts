@@ -420,7 +420,7 @@ async function deleteCampaign(id: unknown, actor: Actor) {
  * Admin deletes an advertiser account. Resolves the profile row, then drops
  * the auth user: the advertisers row and every campaign, impression and
  * click cascade off it through FKs, so this one call is the whole job.
- * The service role bypasses RLS by construction, which is the only reason
+ * The admin client bypasses RLS by construction, which is the only reason
  * this route exists at all -- it is not a way for an advertiser to delete
  * a neighbour.
  */
@@ -1688,7 +1688,7 @@ async function systemStatus() {
 // --------------------------------------------------------------
 // Credit wallet administration
 //
-// Every route here is service_role territory exposed through an admin
+// Every route here is admin-key territory exposed through an admin
 // JWT: granting credits, settling or rejecting a top-up, freezing and
 // releasing a freeze. The database enforces the monthly grant cap and
 // the freeze scopes, so the Edge Function only validates the request
@@ -1714,7 +1714,7 @@ async function adminGrantCredits(body: Record<string, unknown>, actor: Actor) {
   }
 
   const idempotencyKey = `admin-grant:${profileId}:${credits}:${crypto.randomUUID()}`;
-  const { data, error } = await supabase.rpc("grant_free_credits", {
+  const { data, error } = await admin.rpc("grant_free_credits", {
     p_profile_id: profileId,
     p_credits: credits,
     p_reason: reason.trim(),
@@ -1739,7 +1739,7 @@ async function adminConfirmTopup(body: Record<string, unknown>, actor: Actor) {
     return apiError("INVALID_ID", "A valid top-up identifier is required.", 400);
   }
 
-  const { data, error } = await supabase.rpc("confirm_wallet_topup", {
+  const { data, error } = await admin.rpc("confirm_wallet_topup", {
     p_topup_id: topupId,
     p_payment_reference: paymentReference || null,
     p_actor_profile_id: actor.profileId,
@@ -1764,7 +1764,7 @@ async function adminRejectTopup(body: Record<string, unknown>, actor: Actor) {
     return apiError("REASON_REQUIRED", "Give a reason between 3 and 500 characters.", 400);
   }
 
-  const { data, error } = await supabase.rpc("reject_wallet_topup", {
+  const { data, error } = await admin.rpc("reject_wallet_topup", {
     p_topup_id: topupId,
     p_reason: reason.trim(),
     p_actor_profile_id: actor.profileId,
@@ -1793,7 +1793,7 @@ async function adminFreeze(body: Record<string, unknown>, actor: Actor) {
     return apiError("REASON_REQUIRED", "Give a reason between 3 and 500 characters.", 400);
   }
 
-  const { data, error } = await supabase.rpc("freeze_account", {
+  const { data, error } = await admin.rpc("freeze_account", {
     p_profile_id: profileId,
     p_scope: scope,
     p_reason: reason.trim(),
@@ -1817,7 +1817,7 @@ async function adminReleaseFreeze(body: Record<string, unknown>, actor: Actor) {
     return apiError("REASON_REQUIRED", "Give a reason between 3 and 500 characters.", 400);
   }
 
-  const { data, error } = await supabase.rpc("release_freeze", {
+  const { data, error } = await admin.rpc("release_freeze", {
     p_freeze_id: freezeId,
     p_reason: reason.trim(),
     p_actor_profile_id: actor.profileId,
@@ -1831,7 +1831,7 @@ async function adminReleaseFreeze(body: Record<string, unknown>, actor: Actor) {
 }
 
 async function adminListFreezes(profileId: string | null) {
-  const { data, error } = await supabase.rpc("list_account_freezes", {
+  const { data, error } = await admin.rpc("list_account_freezes", {
     p_profile_id: profileId ?? null,
     p_only_active: true,
   });
