@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdvEmpty, AdvError, AdvLoading, AdvPageHead, AdvStats } from './AdvertiserUI.jsx'
 import { Panel } from '../console/ui.jsx'
 import { formatCents } from '../../lib/advertiserApi.js'
@@ -55,9 +55,9 @@ export default function AdvertiserWallet({ campaigns, loading, error, onRetry })
     }
   }, [])
 
-  useState(() => {
-    void load()
-  })
+  useEffect(() => {
+    load()
+  }, [load])
 
   const available = Number(wallet?.balance_credits ?? 0)
   const reserved = Number(wallet?.reserved_credits ?? 0)

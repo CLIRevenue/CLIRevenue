@@ -2095,8 +2095,8 @@ const handler = serveWithCors(async (req) => {
             pageViewsOverview(),
             totalLifetimeViews(),
           ]);
-        // pageViewsOverview returns { pageViews: [...] }, extract the array
-        const pageViewsArray = pageViews?.pageViews ?? [];
+        // pageViewsOverview returns { pageViews: [...] } or a Response on error
+        const pageViewsArray = pageViews instanceof Response ? [] : (pageViews?.pageViews ?? []);
         return json({ campaigns, advertisers, developers, publishers, placements, events, system, pageViews: pageViewsArray, totalLifetimeViews: totalLifetimeViewsCount });
       }
 

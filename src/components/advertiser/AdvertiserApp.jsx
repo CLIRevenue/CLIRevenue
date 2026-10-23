@@ -18,6 +18,7 @@ const TABS = [
   { id: 'overview', label: 'Overview', path: '/app/advertiser', icon: 'overview' },
   { id: 'campaigns', label: 'Campaigns', path: '/app/advertiser/campaigns', icon: 'campaigns' },
   { id: 'analytics', label: 'Analytics', path: '/app/advertiser/analytics', icon: 'analytics' },
+  { id: 'billing', label: 'Billing', path: '/app/advertiser/billing', icon: 'billing' },
   { id: 'wallet', label: 'Wallet', path: '/app/advertiser/wallet', icon: 'wallet' },
   { id: 'account', label: 'Account', path: '/app/advertiser/account', icon: 'settings' },
 ]
@@ -35,6 +36,7 @@ function tabForPath(path) {
   if (clean === '/app/advertiser') return 'overview'
   if (clean.startsWith('/app/advertiser/campaigns')) return 'campaigns'
   if (clean.startsWith('/app/advertiser/analytics')) return 'analytics'
+  if (clean.startsWith('/app/advertiser/billing')) return 'billing'
   if (clean.startsWith('/app/advertiser/wallet')) return 'wallet'
   if (clean.startsWith('/app/advertiser/account')) return 'account'
   return 'overview'
@@ -265,6 +267,19 @@ export default function AdvertiserApp() {
               error={campaignsState.error}
               onRetry={campaignsState.refresh}
             />
+          ) : null}
+          {tab === 'billing' ? (
+            <div className="adv-page">
+              <AdvPageHead
+                index="A4"
+                label="Advertiser · Billing"
+                title="Billing and invoices."
+                body="Payment methods, invoices, and billing history."
+              />
+              <div className="adv-panel adv-note">
+                <p className="adv-note__body">Billing details coming soon.</p>
+              </div>
+            </div>
           ) : null}
           {tab === 'account' ? <AdvertiserAccount /> : null}
         </div>
