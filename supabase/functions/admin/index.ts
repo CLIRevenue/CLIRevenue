@@ -2095,7 +2095,9 @@ const handler = serveWithCors(async (req) => {
             pageViewsOverview(),
             totalLifetimeViews(),
           ]);
-        return json({ campaigns, advertisers, developers, publishers, placements, events, system, pageViews, totalLifetimeViews: totalLifetimeViewsCount });
+        // pageViewsOverview returns { pageViews: [...] }, extract the array
+        const pageViewsArray = pageViews?.pageViews ?? [];
+        return json({ campaigns, advertisers, developers, publishers, placements, events, system, pageViews: pageViewsArray, totalLifetimeViews: totalLifetimeViewsCount });
       }
 
       case "campaigns": {
