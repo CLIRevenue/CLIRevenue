@@ -11,15 +11,6 @@ function StatCard({ label, value, sub, onClick, className, primary }) {
   )
 }
 
-function Section({ title, children }) {
-  return (
-    <div className="adm-section">
-      <div className="adm-section__title">{title}</div>
-      {children}
-    </div>
-  )
-}
-
 export default function AdminOverview() {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
@@ -68,7 +59,7 @@ export default function AdminOverview() {
     )
   }
 
-  const { campaigns, advertisers, developers, placements, events, system, totalLifetimeViews } = data
+  const { campaigns, advertisers, developers, placements, events, system } = data
   const systemOk = system && Object.entries(system).filter(([k]) => k !== 'checkedAt').every(([, s]) => s.ok)
 
   return (
