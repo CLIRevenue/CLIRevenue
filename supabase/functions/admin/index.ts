@@ -1728,6 +1728,18 @@ async function adminGrantCredits(body: Record<string, unknown>, actor: Actor) {
     }
     return apiError("INTERNAL_ERROR", "Could not grant the credits.", 500);
   }
+
+  // Create notification for the advertiser
+  const notifErr = await admin.from("user_notifications").insert({
+    profile_id: profileId,
+    kind: "credit_grant",
+    severity: "info",
+    title: "Credits added to your wallet",
+    body: `${credits} credit${credits === 1 ? "" : "s"} granted: ${reason.trim()}`,
+    related_freeze_id: null,
+  }).then(({ error }) => error);
+  if (notifErr) console.error("credit grant notification failed:", notifErr);
+
   return json({ ok: true, grant: data });
 }
 
@@ -1750,6 +1762,23 @@ async function adminConfirmTopup(body: Record<string, unknown>, actor: Actor) {
     if (error.message === "TOPUP_NOT_CONFIRMABLE") return apiError("TOPUP_NOT_CONFIRMABLE", "That top-up cannot be confirmed.", 400);
     return apiError("INTERNAL_ERROR", "Could not confirm the top-up.", 500);
   }
+
+  // Create notification for the advertiser
+  const topup = data as Record<string, unknown> | null;
+  const profileId = topup?.profile_id as string | null;
+  const credits = topup?.credits as number | null;
+  if (profileId && credits !== null) {
+    const notifErr = await admin.from("user_notifications").insert({
+      profile_id: profileId,
+      kind: "topup_confirmed",
+      severity: "info",
+      title: "Top-up confirmed",
+      body: `${credits} credit${credits === 1 ? "" : "s"} added to your wallet.`,
+      related_freeze_id: null,
+    }).then(({ error }) => error);
+    if (notifErr) console.error("topup confirm notification failed:", notifErr);
+  }
+
   return json({ ok: true, topup: data });
 }
 
@@ -1803,6 +1832,20 @@ async function adminFreeze(body: Record<string, unknown>, actor: Actor) {
     console.error("admin freeze error:", error.message);
     return apiError("INTERNAL_ERROR", "Could not apply the freeze.", 500);
   }
+
+  // Create notification for the account holder
+  const freeze = data as Record<string, unknown> | null;
+  const freezeId = freeze?.id as string | null;
+  const notifErr = await admin.from("user_notifications").insert({
+    profile_id: profileId,
+    kind: "freeze_applied",
+    severity: "warn",
+    title: "Wallet freeze applied",
+    body: `Your ${scope} has been frozen: ${reason.trim()}`,
+    related_freeze_id: freezeId,
+  }).then(({ error }) => error);
+  if (notifErr) console.error("freeze notification failed:", notifErr);
+
   return json({ ok: true, freeze: data });
 }
 
@@ -1827,6 +1870,22 @@ async function adminReleaseFreeze(body: Record<string, unknown>, actor: Actor) {
     if (error.message === "FREEZE_NOT_FOUND") return apiError("NOT_FOUND", "No freeze with that id.", 404);
     return apiError("INTERNAL_ERROR", "Could not release the freeze.", 500);
   }
+
+  // Create notification for the account holder
+  const freeze = data as Record<string, unknown> | null;
+  const profileId = freeze?.profile_id as string | null;
+  if (profileId) {
+    const notifErr = await admin.from("user_notifications").insert({
+      profile_id: profileId,
+      kind: "freeze_released",
+      severity: "info",
+      title: "Wallet freeze released",
+      body: `Your freeze has been lifted: ${reason.trim()}`,
+      related_freeze_id: freezeId,
+    }).then(({ error }) => error);
+    if (notifErr) console.error("freeze release notification failed:", notifErr);
+  }
+
   return json({ ok: true, freeze: data });
 }
 

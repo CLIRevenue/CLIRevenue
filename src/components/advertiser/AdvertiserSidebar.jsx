@@ -18,7 +18,7 @@ const GLYPH = {
   overview: <Icon d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z" />,
   campaigns: <Icon d="M4 5h16v3H4V5Zm0 5.5h16v3H4v-3ZM4 16h10v3H4v-3Z" />,
   analytics: <Icon d="M5 19h14v2H5v-2ZM7 10h3v7H7v-7Zm4-4h3v11h-3V6Zm4 6h3v5h-3v-5Z" />,
-  billing: <Icon d="M3 7.5A2.5 2.5 0 0 1 5.5 5h13A2.5 2.5 0 0 1 21 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5v-9Zm2 1v2h14v-2H5Zm0 4v2.5h9V12.5H5Z" />,
+  wallet: <Icon d="M20 5v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2Zm-5 0v12M8 5v12M12 5v12M16 5v12" />,
   account: <Icon d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z" />,
   /* Sun for what the toggle gives you, moon for what you are leaving —
      the only pairing that is unambiguous without a tooltip. */

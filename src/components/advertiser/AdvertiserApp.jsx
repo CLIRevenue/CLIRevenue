@@ -18,7 +18,7 @@ const TABS = [
   { id: 'overview', label: 'Overview', path: '/app/advertiser', icon: 'overview' },
   { id: 'campaigns', label: 'Campaigns', path: '/app/advertiser/campaigns', icon: 'campaigns' },
   { id: 'analytics', label: 'Analytics', path: '/app/advertiser/analytics', icon: 'analytics' },
-  { id: 'billing', label: 'Billing', path: '/app/advertiser/billing', icon: 'billing' },
+  { id: 'wallet', label: 'Wallet', path: '/app/advertiser/wallet', icon: 'wallet' },
   { id: 'account', label: 'Account', path: '/app/advertiser/account', icon: 'settings' },
 ]
 
@@ -35,7 +35,7 @@ function tabForPath(path) {
   if (clean === '/app/advertiser') return 'overview'
   if (clean.startsWith('/app/advertiser/campaigns')) return 'campaigns'
   if (clean.startsWith('/app/advertiser/analytics')) return 'analytics'
-  if (clean.startsWith('/app/advertiser/billing')) return 'billing'
+  if (clean.startsWith('/app/advertiser/wallet')) return 'wallet'
   if (clean.startsWith('/app/advertiser/account')) return 'account'
   return 'overview'
 }
@@ -258,7 +258,7 @@ export default function AdvertiserApp() {
               onRetry={campaignsState.refresh}
             />
           ) : null}
-          {tab === 'billing' ? (
+          {tab === 'wallet' ? (
             <AdvertiserBilling
               campaigns={campaignsState.campaigns}
               loading={campaignsState.loading}
