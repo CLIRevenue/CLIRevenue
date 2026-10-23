@@ -1046,7 +1046,7 @@ BEGIN
   SELECT * INTO v_res FROM public.post_wallet_transaction(
     p_profile_id, 'admin_grant', 'credit', p_credits, v_key,
     NULL, NULL, NULL, 'admin_grant', p_actor_profile_id,
-    'Free credits from support', btrim(p_reason)
+    'Gift by CLIRevenue Team', btrim(p_reason)
   );
 
   RETURN v_res || jsonb_build_object(
