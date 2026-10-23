@@ -52,7 +52,7 @@ export default function AdminLifetimeViews() {
   const { pageViews, totalLifetimeViews } = data
 
   return (
-    <div>
+    <div className="adm-lifetime-views-page">
       <div className="adm-op-header">
         <div className="adm-op-header__left">
           <div className="adm-op-header__breadcrumb">Operations</div>

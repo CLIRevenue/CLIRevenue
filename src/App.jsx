@@ -19,6 +19,7 @@ import { setRouteMetadata } from './seo/routeMeta.js'
 import { usePageViewTracking } from './hooks/usePageViewTracking.js'
 import './components/advertiser/advertiser.css'
 import './App.css'
+import './components/landing/chrome.css'
 /* LAST stylesheet in the bundle, on purpose. fx.css is the effects
    layer, and an effects rule that ties on specificity with a component
    rule has to win — otherwise the press, the focus halo and the primary
