@@ -39,6 +39,7 @@ import {
   mintAccountKey,
   readStoredAccountKey,
 } from "../_shared/accountKey.ts";
+import { MONTHLY_GRANT_LIMIT } from "../_shared/walletRules.ts";
 
 const admin = adminClient();
 
@@ -1684,6 +1685,253 @@ async function systemStatus() {
   };
 }
 
+// --------------------------------------------------------------
+// Credit wallet administration
+//
+// Every route here is service_role territory exposed through an admin
+// JWT: granting credits, settling or rejecting a top-up, freezing and
+// releasing a freeze. The database enforces the monthly grant cap and
+// the freeze scopes, so the Edge Function only validates the request
+// shape and forwards the actor from the verified JWT.
+// --------------------------------------------------------------
+
+async function adminGrantCredits(body: Record<string, unknown>, actor: Actor) {
+  const profileId = body && typeof body.profile_id === "string" ? body.profile_id : null;
+  const credits = body && typeof body.credits === "number" ? body.credits : Number.parseInt(String(body?.credits ?? ""), 10);
+  const reason = body && typeof body.reason === "string" ? body.reason : null;
+
+  if (!profileId || !isUuid(profileId)) {
+    return apiError("INVALID_ID", "A valid profile identifier is required.", 400);
+  }
+  if (!Number.isInteger(credits) || credits <= 0) {
+    return apiError("INVALID_AMOUNT", "Enter a whole number of credits.", 400);
+  }
+  if (credits > MONTHLY_GRANT_LIMIT) {
+    return apiError("GRANT_TOO_LARGE", `A single grant cannot exceed ${MONTHLY_GRANT_LIMIT} credits.`, 400);
+  }
+  if (!reason || reason.trim().length < 3 || reason.length > 500) {
+    return apiError("REASON_REQUIRED", "Give a reason between 3 and 500 characters.", 400);
+  }
+
+  const idempotencyKey = `admin-grant:${profileId}:${credits}:${crypto.randomUUID()}`;
+  const { data, error } = await supabase.rpc("grant_free_credits", {
+    p_profile_id: profileId,
+    p_credits: credits,
+    p_reason: reason.trim(),
+    p_actor_profile_id: actor.profileId,
+    p_idempotency_key: idempotencyKey,
+  });
+  if (error) {
+    console.error("admin grant credits error:", error.message);
+    if (error.message === "MONTHLY_GRANT_LIMIT") {
+      return apiError("MONTHLY_GRANT_LIMIT", "This account already has its monthly free-credit allowance.", 403);
+    }
+    return apiError("INTERNAL_ERROR", "Could not grant the credits.", 500);
+  }
+  return json({ ok: true, grant: data });
+}
+
+async function adminConfirmTopup(body: Record<string, unknown>, actor: Actor) {
+  const topupId = body && typeof body.topup_id === "string" ? body.topup_id : null;
+  const paymentReference = body && typeof body.payment_reference === "string" ? body.payment_reference : null;
+
+  if (!topupId || !isUuid(topupId)) {
+    return apiError("INVALID_ID", "A valid top-up identifier is required.", 400);
+  }
+
+  const { data, error } = await supabase.rpc("confirm_wallet_topup", {
+    p_topup_id: topupId,
+    p_payment_reference: paymentReference || null,
+    p_actor_profile_id: actor.profileId,
+  });
+  if (error) {
+    console.error("admin confirm topup error:", error.message);
+    if (error.message === "TOPUP_NOT_FOUND") return apiError("NOT_FOUND", "No top-up with that id.", 404);
+    if (error.message === "TOPUP_NOT_CONFIRMABLE") return apiError("TOPUP_NOT_CONFIRMABLE", "That top-up cannot be confirmed.", 400);
+    return apiError("INTERNAL_ERROR", "Could not confirm the top-up.", 500);
+  }
+  return json({ ok: true, topup: data });
+}
+
+async function adminRejectTopup(body: Record<string, unknown>, actor: Actor) {
+  const topupId = body && typeof body.topup_id === "string" ? body.topup_id : null;
+  const reason = body && typeof body.reason === "string" ? body.reason : null;
+
+  if (!topupId || !isUuid(topupId)) {
+    return apiError("INVALID_ID", "A valid top-up identifier is required.", 400);
+  }
+  if (!reason || reason.trim().length < 3) {
+    return apiError("REASON_REQUIRED", "Give a reason between 3 and 500 characters.", 400);
+  }
+
+  const { data, error } = await supabase.rpc("reject_wallet_topup", {
+    p_topup_id: topupId,
+    p_reason: reason.trim(),
+    p_actor_profile_id: actor.profileId,
+  });
+  if (error) {
+    console.error("admin reject topup error:", error.message);
+    if (error.message === "TOPUP_NOT_FOUND") return apiError("NOT_FOUND", "No top-up with that id.", 404);
+    if (error.message === "TOPUP_ALREADY_SETTLED") return apiError("TOPUP_ALREADY_SETTLED", "That top-up is already settled.", 400);
+    return apiError("INTERNAL_ERROR", "Could not reject the top-up.", 500);
+  }
+  return json({ ok: true, topup: data });
+}
+
+async function adminFreeze(body: Record<string, unknown>, actor: Actor) {
+  const profileId = body && typeof body.profile_id === "string" ? body.profile_id : null;
+  const scope = body && typeof body.scope === "string" ? body.scope : null;
+  const reason = body && typeof body.reason === "string" ? body.reason : null;
+
+  if (!profileId || !isUuid(profileId)) {
+    return apiError("INVALID_ID", "A valid profile identifier is required.", 400);
+  }
+  if (!scope || !["account", "wallet", "keys"].includes(scope)) {
+    return apiError("INVALID_SCOPE", "Choose account, wallet, or keys.", 400);
+  }
+  if (!reason || reason.trim().length < 3 || reason.length > 500) {
+    return apiError("REASON_REQUIRED", "Give a reason between 3 and 500 characters.", 400);
+  }
+
+  const { data, error } = await supabase.rpc("freeze_account", {
+    p_profile_id: profileId,
+    p_scope: scope,
+    p_reason: reason.trim(),
+    p_actor_profile_id: actor.profileId,
+  });
+  if (error) {
+    console.error("admin freeze error:", error.message);
+    return apiError("INTERNAL_ERROR", "Could not apply the freeze.", 500);
+  }
+  return json({ ok: true, freeze: data });
+}
+
+async function adminReleaseFreeze(body: Record<string, unknown>, actor: Actor) {
+  const freezeId = body && typeof body.freeze_id === "string" ? body.freeze_id : null;
+  const reason = body && typeof body.reason === "string" ? body.reason : null;
+
+  if (!freezeId || !isUuid(freezeId)) {
+    return apiError("INVALID_ID", "A valid freeze identifier is required.", 400);
+  }
+  if (!reason || reason.trim().length < 3) {
+    return apiError("REASON_REQUIRED", "Give a reason between 3 and 500 characters.", 400);
+  }
+
+  const { data, error } = await supabase.rpc("release_freeze", {
+    p_freeze_id: freezeId,
+    p_reason: reason.trim(),
+    p_actor_profile_id: actor.profileId,
+  });
+  if (error) {
+    console.error("admin release freeze error:", error.message);
+    if (error.message === "FREEZE_NOT_FOUND") return apiError("NOT_FOUND", "No freeze with that id.", 404);
+    return apiError("INTERNAL_ERROR", "Could not release the freeze.", 500);
+  }
+  return json({ ok: true, freeze: data });
+}
+
+async function adminListFreezes(profileId: string | null) {
+  const { data, error } = await supabase.rpc("list_account_freezes", {
+    p_profile_id: profileId ?? null,
+    p_only_active: true,
+  });
+  if (error) {
+    console.error("admin list freezes error:", error.message);
+    return apiError("INTERNAL_ERROR", "Could not load freezes.", 500);
+  }
+  return json(data ?? { freezes: [], count: 0 });
+}
+
+async function adminListWallets() {
+  const { data, error } = await admin
+    .from("wallets")
+    .select(
+      "profile_id, balance_credits, reserved_credits, frozen_at, frozen_reason, created_at, updated_at",
+    )
+    .order("balance_credits", { ascending: false })
+    .limit(500);
+  if (error) {
+    console.error("admin list wallets error:", error.message);
+    return apiError("INTERNAL_ERROR", "Could not load wallets.", 500);
+  }
+  // Join profile info for display.
+  const profileIds = (data ?? []).map((r) => r.profile_id);
+  let profiles: Record<string, unknown>[] = [];
+  if (profileIds.length) {
+    const { data: profRes } = await admin
+      .from("profiles")
+      .select("id, role, full_name")
+      .in("id", profileIds);
+    profiles = (profRes ?? []) as Record<string, unknown>[];
+  }
+  const profileById = new Map<string, Record<string, unknown>>();
+  for (const p of profiles) {
+    profileById.set(String(p.id), p);
+  }
+  const wallets = (data ?? []).map((row) => {
+    const profile = profileById.get(String(row.profile_id)) ?? {};
+    return {
+      profileId: row.profile_id,
+      role: profile.role ?? null,
+      fullName: profile.full_name ?? null,
+      balanceCredits: row.balance_credits ?? 0,
+      reservedCredits: row.reserved_credits ?? 0,
+      frozenAt: row.frozen_at ?? null,
+      frozenReason: row.frozen_reason ?? null,
+      createdAt: row.created_at ?? null,
+      updatedAt: row.updated_at ?? null,
+    };
+  });
+  return json({ wallets });
+}
+
+async function adminListPendingTopups() {
+  const { data, error } = await admin
+    .from("wallet_topups")
+    .select("id, profile_id, amount_minor, currency, credits, status, payment_method, payer_name, payer_email, payer_address, idempotency_key, created_at, updated_at")
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) {
+    console.error("admin list pending topups error:", error.message);
+    return apiError("INTERNAL_ERROR", "Could not load pending top-ups.", 500);
+  }
+  const profileIds = (data ?? []).map((r) => r.profile_id);
+  let profiles: Record<string, unknown>[] = [];
+  if (profileIds.length) {
+    const { data: profRes } = await admin
+      .from("profiles")
+      .select("id, role, full_name")
+      .in("id", profileIds);
+    profiles = (profRes ?? []) as Record<string, unknown>[];
+  }
+  const profileById = new Map<string, Record<string, unknown>>();
+  for (const p of profiles) {
+    profileById.set(String(p.id), p);
+  }
+  const topups = (data ?? []).map((row) => {
+    const profile = profileById.get(String(row.profile_id)) ?? {};
+    return {
+      id: row.id,
+      profileId: row.profile_id,
+      role: profile.role ?? null,
+      fullName: profile.full_name ?? null,
+      amountMinor: row.amount_minor ?? 0,
+      currency: row.currency ?? null,
+      credits: row.credits ?? 0,
+      status: row.status ?? null,
+      paymentMethod: row.payment_method ?? null,
+      payerName: row.payer_name ?? null,
+      payerEmail: row.payer_email ?? null,
+      payerAddress: row.payer_address ?? null,
+      idempotencyKey: row.idempotency_key ?? null,
+      createdAt: row.created_at ?? null,
+      updatedAt: row.updated_at ?? null,
+    };
+  });
+  return json({ topups });
+}
+
 // ------------------------------------------------------------------
 // Handler
 // ------------------------------------------------------------------
@@ -2051,6 +2299,84 @@ const handler = serveWithCors(async (req) => {
         }
         const result = await operationsOverview();
         return result instanceof Response ? result : json(result);
+      }
+
+      case "credits": {
+        const sub = path[1];
+        if (req.method !== "POST") {
+          return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+        }
+        const body = await req.text();
+        let parsed;
+        try {
+          parsed = body ? JSON.parse(body) : {};
+        } catch {
+          return apiError("INVALID_JSON", "Request body must be valid JSON.", 400);
+        }
+        const actor = { profileId: user.id, email: user.email || "" };
+        if (!sub || sub === "grant") {
+          const result = await adminGrantCredits(parsed ?? {}, actor);
+          return result instanceof Response ? result : json(result);
+        }
+        if (sub === "topup") {
+          const action = path[2];
+          if (action === "confirm") {
+            const result = await adminConfirmTopup(parsed ?? {}, actor);
+            return result instanceof Response ? result : json(result);
+          }
+          if (action === "reject") {
+            const result = await adminRejectTopup(parsed ?? {}, actor);
+            return result instanceof Response ? result : json(result);
+          }
+          return apiError("NOT_FOUND", "Not found.", 404);
+        }
+        return apiError("NOT_FOUND", "Not found.", 404);
+      }
+
+      case "freeze": {
+        const sub = path[1];
+        if (req.method !== "POST") {
+          return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+        }
+        const body = await req.text();
+        let parsed;
+        try {
+          parsed = body ? JSON.parse(body) : {};
+        } catch {
+          return apiError("INVALID_JSON", "Request body must be valid JSON.", 400);
+        }
+        const actor = { profileId: user.id, email: user.email || "" };
+        if (!sub || sub === "apply") {
+          const result = await adminFreeze(parsed ?? {}, actor);
+          return result instanceof Response ? result : json(result);
+        }
+        if (sub === "release") {
+          const result = await adminReleaseFreeze(parsed ?? {}, actor);
+          return result instanceof Response ? result : json(result);
+        }
+        return apiError("NOT_FOUND", "Not found.", 404);
+      }
+
+      case "freezes": {
+        if (req.method !== "GET") {
+          return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+        }
+        const profileId = path[1] ?? null;
+        return adminListFreezes(profileId && isUuid(profileId) ? profileId : null);
+      }
+
+      case "wallets": {
+        if (req.method !== "GET") {
+          return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+        }
+        return adminListWallets();
+      }
+
+      case "wallet-topups": {
+        if (req.method !== "GET") {
+          return apiError("METHOD_NOT_ALLOWED", "Method not allowed.", 405);
+        }
+        return adminListPendingTopups();
       }
 
       default:

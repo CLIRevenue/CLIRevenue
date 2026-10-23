@@ -467,3 +467,152 @@ export function serveRow(db, requestId) {
     return rows[0] ?? null
   })
 }
+
+/* ------------------------------------------------------------------ *
+ * Wallet helpers (credit wallet layer, 20261021120000 / 20261021120100)
+ * ------------------------------------------------------------------ */
+
+export function walletSnapshot(db, profileId) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(`SELECT public.wallet_snapshot($1) AS snapshot`, [profileId])
+    return rows[0].snapshot
+  })
+}
+
+export function walletLedger(db, profileId, limit = 50) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(`SELECT public.wallet_ledger($1,$2) AS ledger`, [profileId, limit])
+    return rows[0].ledger
+  })
+}
+
+export function walletTopups(db, profileId, limit = 25) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(`SELECT public.wallet_topups_of($1,$2) AS topups`, [profileId, limit])
+    return rows[0].topups
+  })
+}
+
+export function reconcileWallet(db, profileId) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(`SELECT public.reconcile_wallet($1) AS result`, [profileId])
+    return rows[0].result
+  })
+}
+
+/** Create a top-up (pending, credits nothing) as the service role. */
+export function createWalletTopup(db, profileId, {
+  amountMinor = 10000,
+  currency = 'INR',
+  paymentMethod = 'upi',
+  payerName = 'Test Payer',
+  payerEmail = 'payer@example.test',
+  payerAddress = '1 Test Street',
+  idempotencyKey,
+} = {}) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT public.create_wallet_topup($1::uuid,$2::bigint,$3::text,$4::text,$5::text,$6::text,$7::text,$8::text,$9::text,$10::text) AS result`,
+      [
+        profileId, amountMinor, currency, paymentMethod, null,
+        payerName, payerEmail, idempotencyKey ?? `topup-test-${uuid()}`,
+        payerAddress, null,
+      ],
+    )
+    return rows[0].result
+  })
+}
+
+/** Confirm a top-up as the service role. */
+export function confirmWalletTopup(db, topupId, paymentReference = null, actorProfileId = null) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT public.confirm_wallet_topup($1::uuid,$2::text,$3::uuid) AS result`,
+      [topupId, paymentReference, actorProfileId],
+    )
+    return rows[0].result
+  })
+}
+
+/** Reject a top-up as the service role. */
+export function rejectWalletTopup(db, topupId, reason = 'test reject', actorProfileId = null) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT public.reject_wallet_topup($1::uuid,$2::text,$3::uuid) AS result`,
+      [topupId, reason, actorProfileId],
+    )
+    return rows[0].result
+  })
+}
+
+/** Grant free credits as the service role. */
+export function grantFreeCredits(db, profileId, credits, reason, actorProfileId = null, idempotencyKey = null) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT public.grant_free_credits($1::uuid,$2::bigint,$3::text,$4::uuid,$5::text) AS result`,
+      [profileId, credits, reason, actorProfileId, idempotencyKey],
+    )
+    return rows[0].result
+  })
+}
+
+/** Apply a freeze as the service role. */
+export function freezeAccount(db, profileId, scope, reason, actorProfileId = null) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT public.freeze_account($1::uuid,$2::text,$3::text,$4::uuid) AS result`,
+      [profileId, scope, reason, actorProfileId],
+    )
+    return rows[0].result
+  })
+}
+
+/** Release a freeze by id as the service role. */
+export function releaseFreezeById(db, freezeId, reason, actorProfileId = null) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT public.release_freeze($1::uuid,$2::text,$3::uuid) AS result`,
+      [freezeId, reason, actorProfileId],
+    )
+    return rows[0].result
+  })
+}
+
+/** List active freezes for a profile as the service role. */
+export function listFreezes(db, profileId) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT id, scope, reason, status, frozen_at, released_at,
+              unfreeze_request_id, unfreeze_requested_at
+       FROM public.account_freezes
+       WHERE profile_id = $1::uuid ORDER BY frozen_at DESC`,
+      [profileId],
+    )
+    return rows
+  })
+}
+
+/** File an unfreeze request as the service role. */
+export function requestUnfreeze(db, profileId, freezeId, subject, body, userEmail = null) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT public.request_unfreeze($1::uuid,$2::uuid,$3::text,$4::text,$5::text) AS result`,
+      [profileId, freezeId, subject, body, userEmail],
+    )
+    return rows[0].result
+  })
+}
+
+/** Read a wallet row as the service role. */
+export function walletRow(db, profileId) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT id, profile_id, owner_role, balance_credits, reserved_credits,
+              lifetime_credited_credits, lifetime_debited_credits,
+              frozen_at, frozen_reason
+       FROM public.wallets WHERE profile_id = $1`,
+      [profileId],
+    )
+    return rows[0] ?? null
+  })
+}

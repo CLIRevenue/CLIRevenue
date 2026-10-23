@@ -267,3 +267,82 @@ export async function fetchAdminTotalLifetimeViews() {
   const { data } = await tryCandidates([...urls.map(u => `${u}/total-lifetime-views`)], { method: 'GET' })
   return data?.totalLifetimeViews ?? data?.totalLifetimeViews ?? 0
 }
+
+/* ------------------------------------------------------------------ */
+/* Credit wallet administration                                       */
+/*                                                                     */
+/* These are staff-only actions. The actor identity is resolved from the   */
+/* bearer token; the body carries only the subject, the value, and a       */
+/* human reason.                                                         */
+/* ------------------------------------------------------------------ */
+
+export async function grantCredits(profileId, credits, reason) {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates(
+    [...urls.map(u => `${u}/credits/grant`)],
+    { method: 'POST', body: JSON.stringify({ profile_id: profileId, credits: Number(credits), reason: String(reason || '') }) }
+  )
+  return data ?? {}
+}
+
+export async function confirmTopup(topupId, paymentReference) {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates(
+    [...urls.map(u => `${u}/credits/topup/confirm`)],
+    { method: 'POST', body: JSON.stringify({ topup_id: topupId, payment_reference: paymentReference || null }) }
+  )
+  return data ?? {}
+}
+
+export async function rejectTopup(topupId, reason) {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates(
+    [...urls.map(u => `${u}/credits/topup/reject`)],
+    { method: 'POST', body: JSON.stringify({ topup_id: topupId, reason: String(reason || '') }) }
+  )
+  return data ?? {}
+}
+
+export async function applyFreeze(profileId, scope, reason) {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates(
+    [...urls.map(u => `${u}/freeze/apply`)],
+    { method: 'POST', body: JSON.stringify({ profile_id: profileId, scope, reason: String(reason || '') }) }
+  )
+  return data ?? {}
+}
+
+export async function releaseFreeze(freezeId, reason) {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates(
+    [...urls.map(u => `${u}/freeze/release`)],
+    { method: 'POST', body: JSON.stringify({ freeze_id: freezeId, reason: String(reason || '') }) }
+  )
+  return data ?? {}
+}
+
+export async function listFreezes(profileId = null) {
+  const urls = adminBaseCandidates()
+  const suffix = profileId ? `/freezes/${profileId}` : '/freezes'
+  const { data } = await tryCandidates([...urls.map(u => `${u}${suffix}`)], { method: 'GET' })
+  return data ?? { freezes: [], count: 0 }
+}
+
+/* ------------------------------------------------------------------ */
+/* Admin wallet directory                                             */
+/*                                                                     */
+/* Read-only directory of every wallet with balances, reservations     */
+/* and freeze state, plus pending top-ups awaiting staff action.       */
+/* ------------------------------------------------------------------ */
+
+export async function fetchAdminWallets() {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates([...urls.map(u => `${u}/wallets`)], { method: 'GET' })
+  return data?.wallets ?? data ?? []
+}
+
+export async function fetchAdminPendingTopups() {
+  const urls = adminBaseCandidates()
+  const { data } = await tryCandidates([...urls.map(u => `${u}/wallet-topups`)], { method: 'GET' })
+  return data?.topups ?? data ?? []
+}

@@ -110,24 +110,36 @@ describe('advertiser metrics come from backend rows, not from literals', () => {
   }
 })
 
-describe('billing money surface stays honest', () => {
+describe('wallet money surface stays honest', () => {
   const src = read('src/components/advertiser/AdvertiserBilling.jsx')
 
-  it('disables the payment action instead of faking a card form', () => {
-    // The label text is the button's child, so `disabled` sits before it.
-    expect(src).toMatch(/disabled[\s\S]{0,200}Add payment method/)
+  it('takes its data from a campaigns prop', () => {
+    expect(src).toMatch(/\(\{\s*campaigns/)
   })
 
-  it('states that payments are not connected', () => {
-    expect(src).toMatch(/aren't connected|not connected/i)
+  it('contains no simulated or seeded values', () => {
+    expect(src).not.toMatch(/\bMath\.random\b/)
+    expect(src).not.toMatch(/\bsample\b|\bmock\b|\bfake\b|\bfixture\b/i)
   })
 
-  it('tells the user not to enter real payment details', () => {
-    expect(src).toMatch(/Do not enter real payment details/)
+  it('shows a wallet balance rather than a literal metric', () => {
+    expect(src).toMatch(/balance_credits/)
+    expect(src).not.toMatch(/(?<![\w.$])\d{4,}(?![\w.%])/)
   })
 
-  it('derives its transaction list from campaign rows', () => {
-    expect(src).toMatch(/campaigns\.reduce/)
-    expect(src).toMatch(/rows\.length === 0/)
+  it('has a top-up form with payer fields', () => {
+    expect(src).toMatch(/payer_name/)
+    expect(src).toMatch(/payer_email/)
+    expect(src).toMatch(/payer_address/)
+    expect(src).toMatch(/payment_method/)
+  })
+
+  it('has a transaction ledger with empty state', () => {
+    expect(src).toMatch(/amount_credits/)
+    expect(src).toMatch(/length === 0/)
+  })
+
+  it('shows wallet notifications', () => {
+    expect(src).toMatch(/notifications/)
   })
 })

@@ -31,6 +31,7 @@ const GLYPH = {
   integrations: <Icon d="M10 4h4v3h3v4h-3v3h-4v-3H7V7h3V4Zm-5 9h4v4H5v-4Z" />,
   analytics: <Icon d="M5 20V10h3v10H5Zm5.5 0V4h3v16h-3ZM16 20v-7h3v7h-3Z" />,
   account: <Icon d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z" />,
+  wallet: <Icon d="M3 9v2h4v12h5V11h4V9H3Zm10 15v-5l-4-4-4 4v5Zm0-8V6l-4-4-4 4v10Z" />,
   support: <Icon d="M12 2a9 9 0 0 0-9 9v6a3 3 0 0 0 3 3h2v-8H5v-1a7 7 0 1 1 14 0v1h-3v8h2a3 3 0 0 0 3-3v-6a9 9 0 0 0-9-9Z" />,
   sun: <Icon d="M12 8.5A3.5 3.5 0 1 0 12 15.5 3.5 3.5 0 0 0 12 8.5Zm0-6.5 1.6 2.7h-3.2L12 2Zm0 20-1.6-2.7h3.2L12 22ZM2 12l2.7-1.6v3.2L2 12Zm20 0-2.7 1.6v-3.2L22 12ZM4.9 4.9 7.7 6v0L4.9 4.9Zm14.2 14.2L17 18v0l2.1 1.1ZM19.1 4.9 17 6v0l2.1-1.1ZM4.9 19.1 7 18v0l-2.1 1.1Z" />,
   moon: <Icon d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" />,

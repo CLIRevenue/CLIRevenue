@@ -14,6 +14,7 @@ import AdminOperations from './AdminOperations.jsx'
 import AdminAccounts from './AdminAccounts.jsx'
 import AdminModeration from './AdminModeration.jsx'
 import AdminHealth from './AdminHealth.jsx'
+import AdminWalletManagement from './AdminWalletManagement.jsx'
 import './AdminConsole.css'
 
 const PAGES = {
@@ -29,6 +30,7 @@ const PAGES = {
   accounts:   { label: 'Accounts',   icon: AdminAccountsIcon },
   contacts:   { label: 'Contacts',   icon: AdminContactsIcon },
   queries:    { label: 'Advertiser queries', icon: AdminQueriesIcon },
+  wallet:     { label: 'Wallet management', icon: AdminWalletIcon },
 }
 
 // "Account" is the one admin entry that is not a platform read surface, so it
@@ -69,6 +71,7 @@ function AdminSystemIcon()     { return <IconSvg d="M12 2v4M12 18v4M4.93 4.93l2.
 
 function AdminContactsIcon()   { return <IconSvg d="M4 4h16l-4 12H8z" /> }
 function AdminQueriesIcon()    { return <IconSvg d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> }
+function AdminWalletIcon()     { return <IconSvg d="M3 3v18h18M7 15l4-5 3 3 5-7M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /> }
 function AdminModerationIcon() { return <IconSvg d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /> }
 function AdminHealthIcon()     { return <IconSvg d="M2 12h4l3-8 4 16 3-8h6" /> }
 function AdminOperationsIcon()  { return <IconSvg d="M3 3v18h18M7 15l4-5 3 3 5-7" /> }
@@ -123,6 +126,7 @@ export default function AdminConsole() {
     operations: AdminOperations,
     contacts: AdminContacts,
     queries: AdminQueries,
+    wallet: AdminWalletManagement,
     account: AdminAccount,
   }
   const PageComponent = PAGE_COMPONENTS[page] || AdminOverview

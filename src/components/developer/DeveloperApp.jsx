@@ -4,6 +4,7 @@ import { Panel } from '../console/ui.jsx'
 import { supabase } from '../../lib/api.js'
 import { DEFAULT_INTERNAL_BACKEND } from '../../lib/backendBase.js'
 import DeveloperAccount from './DeveloperAccount.jsx'
+import DeveloperWallet from './DeveloperWallet.jsx'
 import DeveloperSidebar from './DeveloperSidebar.jsx'
 import { useAuth } from '../auth/authState.js'
 import SupportDialog from '../advertiser/SupportDialog.jsx'
@@ -291,6 +292,7 @@ export default function DeveloperApp() {
     { id: 'placements', label: 'Placements', icon: 'placements' },
     { id: 'integrations', label: 'Integrations', icon: 'integrations' },
     { id: 'analytics', label: 'Analytics', icon: 'analytics' },
+    { id: 'wallet', label: 'Wallet', icon: 'wallet' },
     { id: 'account', label: 'Account', icon: 'account' },
   ]
   /* Account is in TABS because the panel and the deep link both read it,
@@ -355,6 +357,7 @@ export default function DeveloperApp() {
                 keys: 'Manage your publisher keys.',
                 placements: 'Manage your ad placements.',
                 analytics: 'Where your earnings came from, and what is not measured yet.',
+                wallet: 'Top up your credit wallet and watch every movement.',
                 account: 'Your details, security, and account controls.',
               }[tab]}
             />
@@ -368,6 +371,8 @@ export default function DeveloperApp() {
             <PublisherKeys />
           ) : tab === 'placements' ? (
             <PublisherPlacements />
+          ) : tab === 'wallet' ? (
+            <DeveloperWallet />
           ) : loading ? (
             <AdvLoading label="Loading developer rewards…" />
           ) : (

@@ -53,6 +53,14 @@ export type PublisherIdentity = {
   allowedAudienceId: string | null;
 };
 
+/** The publisher row as the key lookup joins it, with the owning account. */
+type PublisherRow = {
+  id: string;
+  status: string;
+  owner_profile_id: string | null;
+  profiles: { frozen_at: string | null } | { frozen_at: string | null }[] | null;
+};
+
 /**
  * Resolve a raw key to a publisher, and optionally a placement within it.
  *
@@ -75,7 +83,13 @@ export async function authenticatePublisher(
   const { data, error } = await admin
     .from("publisher_keys")
     .select(
-      "id, publisher_id, revoked_at, publishers!inner(id, status)",
+      // frozen_at is the key-level freeze. The owner's account freeze is
+      // read through the publisher, because a frozen account must not be
+      // able to keep earning through a key that was minted before the
+      // freeze. The profiles embed is a LEFT join (no `!inner`): a
+      // publisher with no owner account still has to resolve, it simply
+      // has no account freeze to honour.
+      "id, publisher_id, revoked_at, frozen_at, publishers!inner(id, status, owner_profile_id, profiles(frozen_at))",
     )
     .eq("key_hash", keyHash)
     .maybeSingle();
@@ -88,11 +102,20 @@ export async function authenticatePublisher(
   }
   if (!data) return { error: unauthorized() };
   if (data.revoked_at) return { error: unauthorized() };
+  // A frozen key does not authenticate. Same 401 as every other failure,
+  // so a caller cannot tell a frozen key from an unknown one.
+  if (data.frozen_at) return { error: unauthorized() };
 
   const publisher = Array.isArray(data.publishers)
     ? data.publishers[0]
-    : (data.publishers as unknown as { id: string; status: string });
+    : (data.publishers as unknown as PublisherRow);
   if (!publisher || publisher.status !== "active") return { error: unauthorized() };
+
+  // The owning account is frozen: the key stops working with it.
+  const ownerProfile = Array.isArray(publisher.profiles)
+    ? publisher.profiles[0]
+    : publisher.profiles;
+  if (ownerProfile && ownerProfile.frozen_at) return { error: unauthorized() };
 
   let placementId: string | null = null;
   let placementKeyOut: string | null = null;

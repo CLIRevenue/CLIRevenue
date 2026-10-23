@@ -1317,3 +1317,158 @@
     transform: translateY(0);
   }
 }
+
+/* ---------- wallet drawer (admin) ---------- */
+.adm-wallet-drawer {
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface);
+  padding: var(--c-space-5);
+  margin-top: var(--c-space-5);
+  border-radius: var(--radius-md);
+  font-size: var(--c-text-read);
+}
+
+.adm-wallet-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--c-space-3);
+  margin-bottom: var(--c-space-4);
+}
+
+.adm-wallet-drawer__title {
+  margin: 0;
+  font-size: var(--c-text-prose);
+  font-weight: 600;
+  color: var(--adm-text);
+}
+
+.adm-wallet-drawer__close {
+  flex: none;
+  padding: var(--c-space-1) var(--c-space-2);
+  font-size: var(--c-text-small);
+}
+
+.adm-wallet-drawer__error {
+  margin: 0 0 var(--c-space-3);
+  padding: var(--c-space-2) var(--c-space-3);
+  background: var(--adm-status-error-bg);
+  color: var(--adm-status-error);
+  border: 1px solid var(--adm-status-error);
+  border-radius: var(--radius-sm);
+  font-size: var(--c-text-body);
+}
+
+.adm-wallet-drawer__section {
+  margin-bottom: var(--c-space-5);
+}
+
+.adm-wallet-drawer__section-title {
+  margin: 0 0 var(--c-space-2);
+  font-size: var(--c-text-label);
+  text-transform: uppercase;
+  letter-spacing: var(--track-caps);
+  color: var(--adm-muted);
+}
+
+.adm-wallet-drawer__section-sub {
+  margin: 0 0 var(--c-space-3);
+  font-size: var(--c-text-small);
+  color: var(--adm-muted-dim);
+}
+
+.adm-wallet-drawer__form {
+  display: grid;
+  gap: var(--c-space-3);
+}
+
+.adm-wallet-drawer__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--c-space-1);
+}
+
+.adm-wallet-drawer__label {
+  font-size: var(--c-text-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--track-caps);
+  color: var(--adm-muted);
+}
+
+.adm-wallet-drawer__input {
+  font-size: var(--c-text-read);
+  padding: var(--c-space-2) var(--c-space-3);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--radius-sm);
+  background: var(--adm-bg);
+  color: var(--adm-text);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.adm-wallet-drawer__input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.adm-wallet-drawer__empty {
+  margin: 0;
+  font-size: var(--c-text-body);
+  color: var(--adm-muted-dim);
+}
+
+.adm-wallet-drawer__freeze-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--c-space-2);
+}
+
+.adm-wallet-drawer__freeze-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--c-space-3);
+  padding: var(--c-space-2) var(--c-space-3);
+  border: 1px solid var(--adm-border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--adm-bg);
+}
+
+.adm-wallet-drawer__freeze-scope {
+  flex: none;
+  font-size: var(--c-text-small);
+  text-transform: uppercase;
+  letter-spacing: var(--track-caps);
+  color: var(--adm-brand);
+  font-weight: 600;
+}
+
+.adm-wallet-drawer__freeze-reason {
+  flex: 1;
+  font-size: var(--c-text-read);
+  color: var(--adm-text-dim);
+}
+
+/* wallet column on account tables */
+.adm-wallet__cell {
+  text-align: center;
+}
+
+.adm-profile__link {
+  color: var(--adm-brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  font-size: inherit;
+}
+
+.adm-profile__link:hover {
+  color: var(--adm-brand-bright);
+}

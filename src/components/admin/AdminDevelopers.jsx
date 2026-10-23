@@ -1,10 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { fetchAdminDevelopers } from '../../lib/adminApi.js'
+import AdminWalletDrawer from './AdminWalletDrawer.jsx'
 
 export default function AdminDevelopers() {
   const [rows, setRows] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [drawer, setDrawer] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -13,7 +15,7 @@ export default function AdminDevelopers() {
     finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useState(() => { void load() })
 
   if (loading) return <div className="adm-loading"><div className="adm-spinner" /> Loading developers…</div>
   if (error)   return <div className="adm-error">{error}</div>
@@ -38,7 +40,8 @@ export default function AdminDevelopers() {
               <tr>
                 <th>ID</th>
                 <th>Payout provider</th>
-                <th>Profile ID</th>
+                <th>Profile</th>
+                <th>Wallet</th>
                 <th>Created</th>
                 <th>Updated</th>
               </tr>
@@ -50,17 +53,42 @@ export default function AdminDevelopers() {
                   <tr key={d.id}>
                     <td className="adm-mono adm-dim adm-truncate">{d.id}</td>
                     <td className="adm-muted adm-mono">{prefs.preferred_provider || '—'}</td>
-                    <td className="adm-mono adm-dim adm-truncate">{d.profile_id}</td>
+                    <td className="adm-mono adm-dim adm-truncate">
+                      <button
+                        type="button"
+                        className="adm-profile__link"
+                        onClick={() => setDrawer({ profileId: d.profile_id, displayName: d.developer_name || d.profile_id })}
+                      >
+                        {d.profile_id}
+                      </button>
+                    </td>
+                    <td className="adm-wallet__cell">
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        onClick={() => setDrawer({ profileId: d.profile_id, displayName: d.developer_name || d.profile_id })}
+                      >
+                        Wallet
+                      </button>
+                    </td>
                     <td className="adm-muted">{fmtDate(d.created_at)}</td>
                     <td className="adm-muted">{fmtDate(d.updated_at)}</td>
                   </tr>
                 )
               })}
-              {rows.length === 0 && <tr><td colSpan={5}><div className="adm-empty">No developers found.</div></td></tr>}
+              {rows.length === 0 && <tr><td colSpan={6}><div className="adm-empty">No developers found.</div></td></tr>}
             </tbody>
           </table>
         </div>
       </div>
+
+      {drawer ? (
+        <AdminWalletDrawer
+          profileId={drawer.profileId}
+          displayName={drawer.displayName}
+          onClose={() => setDrawer(null)}
+        />
+      ) : null}
     </div>
   )
 }
