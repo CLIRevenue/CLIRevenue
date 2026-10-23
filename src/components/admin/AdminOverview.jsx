@@ -136,7 +136,7 @@ export default function AdminOverview() {
           <div className="adm-op-header__sub">Network command center / current operational state</div>
         </div>
         <div className="adm-op-header__right">
-          <div className="adm-status-pill">
+          <div className={`adm-status-pill${systemOk ? '' : ' adm-status-pill--fail'}`}>
             <span className="adm-status-pill__dot" />
             {systemOk ? 'System Operational' : 'Degraded'}
           </div>

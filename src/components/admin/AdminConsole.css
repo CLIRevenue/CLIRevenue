@@ -443,6 +443,17 @@
 .adm-status-pill--amber .adm-status-pill__dot {
   background: var(--adm-status-amber);
 }
+
+/* Fail/error state for degraded system */
+.adm-status-pill--fail {
+  color: var(--adm-status-error);
+  background: var(--adm-status-error-bg);
+  border-color: rgba(251, 113, 133, .18);
+}
+.adm-status-pill--fail .adm-status-pill__dot {
+  background: var(--adm-status-error);
+}
+
 @keyframes adm-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: .4; }
