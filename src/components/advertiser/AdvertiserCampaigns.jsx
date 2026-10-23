@@ -8,13 +8,13 @@ import {
   createAdvertiserCampaign,
   ctrPct,
   deleteAdvertiserCampaign,
-  formatCents,
+  formatCredits,
+  fetchAdvertiserWallet,
   setActiveCampaign,
   updateAdvertiserCampaign,
   validateCampaignInput,
   campaignWarnings,
 } from '../../lib/advertiserApi.js'
-import { fetchWalletSnapshot } from '../../lib/walletApi.js'
 import { campaignErrorCode, campaignErrorMessage } from '../../lib/campaignErrors.js'
 import {
   activationBlockerMessage,
@@ -117,8 +117,21 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
   const [wallet, setWallet] = useState(null)
 
   useEffect(() => {
-    fetchWalletSnapshot().then(setWallet).catch(() => {})
+    fetchAdvertiserWallet().then(setWallet).catch(() => {})
   }, [])
+
+  // Available credits = balance - reserved
+  const availableCredits = useMemo(() => {
+    if (!wallet) return null
+    return Number(wallet.balance_credits || 0) - Number(wallet.reserved_credits || 0)
+  }, [wallet])
+
+  // Check if budget exceeds available credits
+  const budgetExceedsBalance = useMemo(() => {
+    if (availableCredits === null) return false
+    const budget = Number(form.budgetCredits)
+    return Number.isFinite(budget) && budget > availableCredits
+  }, [form.budgetCredits, availableCredits])
 
   const stepState = useMemo(() => {
     const name = form.name.trim()
@@ -171,6 +184,10 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
   async function handleCreate(e) {
     e.preventDefault()
     const errors = validateCampaignInput(formToApiInput())
+    // Check wallet balance
+    if (budgetExceedsBalance) {
+      errors.budgetCredits = `Budget exceeds available credits (${availableCredits} available).`
+    }
     setFormErrors(errors)
     if (Object.keys(errors).length) return
     setSaving(true)
@@ -212,6 +229,10 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
     // campaign whose start date has already passed makes the form refuse
     // every other edit — the dates are not wrong, they are old.
     const errors = validateCampaignInput(apiInput, selected)
+    // Check wallet balance for budget increases
+    if (budgetExceedsBalance) {
+      errors.budgetCredits = `Budget exceeds available credits (${availableCredits} available).`
+    }
     setFormErrors(errors)
     if (Object.keys(errors).length) return
     setSaving(true)
@@ -224,11 +245,8 @@ export default function AdvertiserCampaigns({ campaigns, loading, error, onRetry
       if (form.description !== selected.description) patch.description = form.description
       if (form.cta !== selected.cta) patch.cta = form.cta
       if (form.audienceId !== selected.audienceId) patch.audienceId = form.audienceId
-      if (toBudgetDollars(selected.budgetCents) !== String(form.budgetDollars)) {
-        patch.budgetDollars = form.budgetDollars
-      }
-      if (toCpmDollars(selected.cpmCents) !== String(form.cpmDollars)) {
-        patch.cpmCents = apiInput.cpmCents
+      if (String(selected.budgetCents / 100) !== String(form.budgetCredits)) {
+        patch.budgetCredits = form.budgetCredits
       }
       if (toLocalInput(selected.startsAt) !== String(form.startsAt)) patch.startsAt = form.startsAt
       if (toLocalInput(selected.endsAt) !== String(form.endsAt)) patch.endsAt = form.endsAt
