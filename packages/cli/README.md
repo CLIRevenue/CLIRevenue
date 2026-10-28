@@ -76,7 +76,18 @@ placement key per integration, and registers whatever activation mechanism each
 of them genuinely supports.
 
 If your publisher has no placement yet, `setup` creates one for you through
-`POST /cli/placements`. You do not need to visit the dashboard first.
+`POST /cli/placements`. You do not need to visit the dashboard first. If you
+already have a placement, that one is used — setup never gives you a second
+placement for an ad you already have.
+
+Before it reports success, setup reads the placements back from the API and
+checks that every one your project points at is really there. A placement that
+is missing is a failure, not a warning: "setup complete" over a configuration
+that cannot serve an ad is the one thing this command must never print.
+
+Running `setup` again is safe and changes nothing. It reuses the placement and
+the ad slot your project already has, so a second run does not give you a
+second integration, a second placement, or a second ad.
 
 ## The placement editor
 

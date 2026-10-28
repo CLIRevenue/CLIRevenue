@@ -44,23 +44,14 @@ export function AdvEmpty({ title, body, actionLabel, onAction, to, mark = 'No re
   )
 }
 
-const SKELETON_CELLS = [0, 1, 2, 3]
-
 export function AdvLoading({ label = 'Loading advertiser data…' }) {
   return (
-    <Panel className="adv-loading" aria-live="polite" aria-busy="true">
-      <span className="adv-loading__label">
-        <span className="adv-loading__dot" aria-hidden="true" />
-        {label}
-      </span>
-      <span className="adv-loading__grid" aria-hidden="true">
-        {SKELETON_CELLS.map((i) => (
-          <span key={i} className="adv-loading__cell">
-            <span className="adv-loading__bar adv-loading__bar--label" />
-            <span className="adv-loading__bar adv-loading__bar--value" />
-          </span>
-        ))}
-      </span>
+    <Panel className="adv-loading glass-spinner" aria-live="polite" aria-busy="true">
+      <div className="glass-content">
+        <div className="spinner-ring" />
+        <div className="spinner-core" />
+        <span className="adv-loading__label">{label}</span>
+      </div>
     </Panel>
   )
 }

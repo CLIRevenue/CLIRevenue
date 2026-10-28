@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, lazy, Suspense } from 'react'
 import Atmosphere from './components/Atmosphere.jsx'
 import Landing from './components/landing/Landing.jsx'
-import AdminConsole from './components/admin/AdminConsole.jsx'
+const AdminConsole = lazy(() => import('./components/admin/AdminConsole.jsx'))
 import AdvertiserApp from './components/advertiser/AdvertiserApp.jsx'
 import DeveloperApp from './components/developer/DeveloperApp.jsx'
 import DeveloperLanding from './components/developer/DeveloperLanding.jsx'
@@ -18,6 +18,7 @@ import useAppRoute, { navigateApp } from './hooks/useAppRoute.js'
 import { setRouteMetadata } from './seo/routeMeta.js'
 import { usePageViewTracking } from './hooks/usePageViewTracking.js'
 import './components/advertiser/advertiser.css'
+import './components/liquid-glass.css'
 import './App.css'
 import './components/landing/chrome.css'
 /* LAST stylesheet in the bundle, on purpose. fx.css is the effects
@@ -179,7 +180,9 @@ function Routes() {
       <>
         <Atmosphere />
         <RequireRole allow={['admin']}>
-          <AdminConsole />
+          <Suspense fallback={null}>
+            <AdminConsole />
+          </Suspense>
         </RequireRole>
       </>
     )

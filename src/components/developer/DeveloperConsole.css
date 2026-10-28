@@ -85,3 +85,12 @@
      bridge re-export. */
   color: var(--accent-error);
 }
+
+/* Success/status line under the frozen-wallet unfreeze form. Muted body
+   ink, not an error colour: the request went through, there is nothing
+   to fix. */
+.adv-unfreeze-status {
+  margin: 0;
+  font-size: var(--c-text-body);
+  color: var(--ink-3);
+}

@@ -28,12 +28,6 @@ function FieldError({ message }) {
 const RESET_SENT_MESSAGE =
   'Password reset email sent. Open the link from any tab — it lands back inside the app.'
 
-/**
- * Email prefill from the query string (?email=…). Used when signup
- * detects an already-registered address and hands the user to login or
- * password reset without making them retype it. Only ever an email —
- * passwords never travel through URLs.
- */
 function readEmailParam() {
   if (typeof window === 'undefined') return ''
   const { search, hash } = window.location
@@ -91,8 +85,32 @@ function PasswordField({ label, value, onChange, name, autoComplete }) {
           className="btn btn--ghost adv-password__btn"
           onClick={() => setShow((s) => !s)}
           aria-pressed={show}
+          aria-label={show ? 'Hide password' : 'Show password'}
         >
-          {show ? 'Hide' : 'Show'}
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {show ? (
+              <>
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                <circle cx="12" cy="12" r="3" />
+              </>
+            ) : (
+              <>
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                <line x1="2" x2="22" y1="2" y2="22" />
+              </>
+            )}
+          </svg>
         </button>
       </span>
     </label>
@@ -100,34 +118,6 @@ function PasswordField({ label, value, onChange, name, autoComplete }) {
 }
 
 export function AuthShell({ eyebrow, title, body, children, footer, backHref = '/', mode = 'login' }) {
-  // One product: reuse adv-shell/panel/form/button primitives, and wear
-  // the same header as the rest of the site via PageChrome. Every auth
-  // screen — login, signup, and all four confirmation states — renders
-  // through here, so this one edit themes all of them.
-  //
-  // `mode` is the one piece of state the shell cannot infer: the curve has to
-  // know whether it is drawing the login dip or the signup S before it draws.
-  //
-  // There is no switcher above the form and no replay counter to keep. The
-  // ribbon draws once when the page arrives; getting from sign in to sign up is
-  // the link under the submit button, where it belongs, and a second pair of
-  // buttons above the email field only stole the first thing a reader looked
-  // at.
-  //
-  // `adv-shell--auth` is the hook the layout hangs off. The shell itself is
-  // shared with the dashboards and `/advertiser`, which genuinely do scroll,
-  // so the one-screen treatment cannot be a change to `.adv-shell` — it has to
-  // be something only an auth screen opts into. See `AuthCurve.css`, which is
-  // this feature's only stylesheet and therefore the natural home for it.
-  //
-  // The back link sits on the eyebrow's row rather than on a row of its own.
-  // It was its own row, and that row cost 21px plus a gap on the one screen
-  // where there is no slack left: the signup form is 427px tall and on a
-  // 1366x768 laptop the column was 42px over. It is also the right place —
-  // the link is page metadata, and so is the eyebrow, and the header 73px
-  // above already offers Home / Developers / Advertisers and the wordmark for
-  // anyone who wants to leave. Sharing one row costs nothing and says both
-  // things at once.
   return (
     <PageChrome flat>
       <section className="adv-shell adv-shell--auth" aria-label={title}>
@@ -149,15 +139,12 @@ export function AuthShell({ eyebrow, title, body, children, footer, backHref = '
 
 export function LoginPage() {
   const { signIn, role, isAuthenticated, loading } = useAuth()
-  // Prefilled when signup detects an existing account and navigates here
-  // with /login?email=… — the user never retypes their address.
   const [email, setEmail] = useState(() => readEmailParam())
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
 
-  // No chooser screen: an already-signed-in user with a known role leaves login immediately.
   useEffect(() => {
     if (!loading && isAuthenticated && role) {
       const home = roleHome(role)
@@ -176,7 +163,6 @@ export function LoginPage() {
     setBusy(true)
     try {
       await signIn(email.trim(), password)
-      // role resolution happens in provider refresh; redirect via effect on next render.
     } catch (err) {
       setError(authErrorMessage(normalizeAuthError(err, 'login')))
     } finally {
@@ -184,8 +170,6 @@ export function LoginPage() {
     }
   }
 
-  /** Shared reset request — pure I/O, no state writes, so both the
-   *  button handler and the one-shot auto-send effect can use it. */
   const requestPasswordReset = useCallback(async (target) => {
     const { error } = await sendPasswordReset(target)
     if (error) throw error
@@ -210,9 +194,6 @@ export function LoginPage() {
     [email, requestPasswordReset],
   )
 
-  // ?reset=1 arrives from the signup "Reset password" action: the existing
-  // forgot-password flow runs once with the email prefilled. The query is
-  // stripped afterwards so a browser Back cannot silently re-send emails.
   const resetRequested = useMemo(() => {
     if (typeof window === 'undefined') return false
     const { search, hash } = window.location
@@ -228,9 +209,6 @@ export function LoginPage() {
     if (busy || loading || !resetRequested || autoResetFired.current) return
     const candidate = readEmailParam()
     if (!candidate.trim() || !EMAIL_RE.test(candidate.trim())) return
-    // The email field is already initialised from the same query param,
-    // so no state write is needed here — just run the existing flow once
-    // and strip the query so Back cannot silently re-send the email.
     autoResetFired.current = true
     window.history.replaceState({}, '', '/login')
     window.dispatchEvent(new PopStateEvent('popstate'))
@@ -256,8 +234,8 @@ export function LoginPage() {
         <PasswordField label="Password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
         <FieldError message={error} />
         {info ? <div className="adv-notice" role="status">{info}</div> : null}
-        <button className="btn btn--primary" type="submit" disabled={busy}>
-          {busy ? 'Signing in…' : 'Log in'}
+        <button className="btn btn--auth-primary" type="submit" disabled={busy}>
+          <span>{busy ? 'Signing in…' : 'Log in'}</span>
         </button>
         <p className="form__note">
           <button type="button" className="adv-link" onClick={onForgot}>Forgot password?</button>
@@ -286,8 +264,6 @@ export function SignupPage() {
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
-  // null = normal form flow. Once set, the panel becomes the
-  // confirmation screen instead of the form continuing.
   const [confirmation, setConfirmation] = useState(null)
   const [resendState, setResendState] = useState({ busy: false, error: '', secondsLeft: 0 })
   const [privacyConsent, setPrivacyConsent] = useState(false)
@@ -308,12 +284,8 @@ export function SignupPage() {
       setResendState((s) => ({ ...s, secondsLeft: s.secondsLeft - 1 }))
     }, 1000)
     return () => window.clearInterval(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resendState.secondsLeft > 0])
 
-  // Errors are DERIVED from live values on every render — never stored — so
-  // correcting an input removes its error (and any disabled state) on the
-  // very next render. `attempted` only controls when messages first appear.
   const errors = useMemo(
     () => (attempted ? validateSignup({ step, email, password, confirm, role: accountType, values, privacyConsent, termsConsent }) : {}),
     [attempted, step, email, password, confirm, accountType, values, privacyConsent, termsConsent],
@@ -327,7 +299,6 @@ export function SignupPage() {
   function goStep1(e) {
     e.preventDefault()
     setStep(1)
-    // Fresh step, fresh validation state: no errors until the user acts.
     setAttempted(false)
   }
 
@@ -337,8 +308,6 @@ export function SignupPage() {
     setError('')
     if (errorCount === 0) {
       setStep(2)
-      // Reveal step 2 with a clean slate — otherwise every empty required
-      // profile field screams before the user has typed a character.
       setAttempted(false)
     }
   }
@@ -353,23 +322,14 @@ export function SignupPage() {
     try {
       const data = await signUp({ email: email.trim(), password, role: accountType, values, privacyConsent, termsConsent })
       if (data.session) {
-        // Session present: provider refresh resolves role, flushes profile
-        // fields, and the effect redirects.
         setInfo('Account created. Opening your dashboard…')
       } else {
-        // Email confirmation required: no session yet. Profile fields are
-        // parked and flush on the first authenticated refresh. The user
-        // stays right here — no new tab, no dead end — and returns to this
-        // tab after clicking the email link (which opens the app callback
-        // and routes into the dashboard).
         setConfirmation({ email: email.trim() })
         setResendState((s) => ({ ...s, secondsLeft: RESEND_COOLDOWN_SECONDS }))
       }
     } catch (err) {
       const kind = normalizeAuthError(err, 'signup')
       if (kind === AUTH_ERROR.EMAIL_ALREADY_REGISTERED) {
-        // Tell the user plainly and hand them the two ways forward. Form
-        // values (except passwords) stay exactly where they are.
         setConfirmation({
           email: email.trim(),
           existing: true,
@@ -399,8 +359,6 @@ export function SignupPage() {
 
   const activeRoleFields = accountType ? roleFields(accountType) : []
 
-  // Confirmation-required and existing-account screens replace the form
-  // entirely: no dead ends, and no re-submission of the same form.
   if (confirmation) {
     return (
       <AuthShell
@@ -424,19 +382,19 @@ export function SignupPage() {
             <div className="confirm__actions">
               <button
                 type="button"
-                className="btn btn--primary"
+                className="btn btn--auth-primary"
                 onClick={() => navigateApp(`/login?email=${encodeURIComponent(confirmation.email)}`)}
               >
-                Log in
+                <span>Log in</span>
               </button>
               <button
                 type="button"
-                className="btn btn--ghost"
+                className="btn btn--ghost glass-button glass-button--ghost"
                 onClick={() =>
                   navigateApp(`/login?email=${encodeURIComponent(confirmation.email)}&reset=1`)
                 }
               >
-                Reset password
+                <span>Reset password</span>
               </button>
             </div>
           ) : (
@@ -444,22 +402,24 @@ export function SignupPage() {
               <div className="confirm__actions">
                 <button
                   type="button"
-                  className="btn btn--primary"
+                  className="btn btn--auth-primary"
                   onClick={onResend}
                   disabled={resendState.busy || resendState.secondsLeft > 0}
                 >
-                  {resendState.busy
-                    ? 'Sending…'
-                    : resendState.secondsLeft > 0
-                      ? `Resend available in ${resendState.secondsLeft}s`
-                      : 'Resend confirmation email'}
+                  <span>
+                    {resendState.busy
+                      ? 'Sending…'
+                      : resendState.secondsLeft > 0
+                        ? `Resend available in ${resendState.secondsLeft}s`
+                        : 'Resend confirmation email'}
+                  </span>
                 </button>
                 <button
                   type="button"
-                  className="btn btn--ghost"
+                  className="btn btn--ghost glass-button glass-button--ghost"
                   onClick={() => navigateApp('/login')}
                 >
-                  Back to login
+                  <span>Back to login</span>
                 </button>
               </div>
               <FieldError message={resendState.error} />
@@ -490,8 +450,6 @@ export function SignupPage() {
           {step === 1 ? 'Step 1 of 2 — credentials' : 'Step 2 of 2 — profile'}
         </p>
 
-        {/* Step 1 fields stay mounted (hidden, not unmounted) on step 2 so
-            password managers and controlled state never lose the password. */}
         <div hidden={step !== 1}>
           <label className="field">
             <span className="field__label">Email <span aria-hidden="true">*</span></span>
@@ -502,8 +460,8 @@ export function SignupPage() {
           <FieldError message={errors.password} />
           <PasswordField label="Confirm password *" name="confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
           <FieldError message={errors.confirm} />
-          <button className="btn btn--primary" type="button" onClick={continueToStep2} disabled={busy}>
-            Continue
+          <button className="btn btn--primary glass-button" type="button" onClick={continueToStep2} disabled={busy}>
+            <span>Continue</span>
           </button>
         </div>
 
@@ -591,11 +549,11 @@ export function SignupPage() {
             <FieldError message={errors.termsConsent} />
           </div>
 
-          <button className="btn btn--primary" type="submit" disabled={busy || !privacyConsent || !termsConsent}>
-            {busy ? 'Creating…' : 'Sign up'}
+          <button className="btn btn--auth-primary" type="submit" disabled={busy || !privacyConsent || !termsConsent}>
+            <span>{busy ? 'Creating…' : 'Sign up'}</span>
           </button>
-          <button className="btn btn--ghost" type="button" onClick={goStep1} disabled={busy}>
-            Back
+          <button className="btn btn--ghost glass-button glass-button--ghost" type="button" onClick={goStep1} disabled={busy}>
+            <span>Back</span>
           </button>
         </div>
 
@@ -607,36 +565,19 @@ export function SignupPage() {
   )
 }
 
-/**
- * Landing target of the signup confirmation (and password-recovery)
- * email links. Supabase detects the `?code=…` PKCE param and exchanges
- * it for a session during client init; this page then routes the user
- * by their server-side profile role. No manual token parsing, no
- * second auth system, no URL/localStorage role.
- *
- * The session is the authority; this component only decides where to go
- * once it exists, and gives a recoverable answer when it never does.
- */
 export function AuthCallbackPage() {
   const { loading, isAuthenticated, role, error: authError, refresh } = useAuth()
   const home = roleHome(role)
   const [asyncFailure, setAsyncFailure] = useState(null)
 
-  // Read the URL once, at mount, before any navigation can rewrite it.
   const params = useMemo(
     () => readCallbackParams(typeof window === 'undefined' ? '' : window.location.href),
     [],
   )
   const urlVerdict = useMemo(() => classifyCallback(params), [params])
 
-  // Single-fire guard: the effect below must navigate exactly once even
-  // though role resolution re-renders this component a few times first.
   const navigated = useRef(false)
 
-  // Failures the URL or the environment already explains are *derived*, not
-  // stored: computing them at render time avoids a pointless state write and
-  // a cascading re-render. Only a genuinely asynchronous outcome (the
-  // settle-window exchange never producing a session) needs state.
   const immediateFailure =
     params.error || params.errorCode || params.errorDescription
       ? urlVerdict
@@ -649,18 +590,12 @@ export function AuthCallbackPage() {
         : null
   const failure = immediateFailure || asyncFailure
 
-  // The whole point of this route: a confirmed account lands in its
-  // dashboard. Without this effect the session is established and then
-  // the user is left staring at a confirmation screen forever.
   useEffect(() => {
     if (loading || !isAuthenticated || navigated.current) return
     navigated.current = true
     navigateApp(home || '/app')
   }, [loading, isAuthenticated, home])
 
-  // No session after a generous settle window means the exchange did not
-  // complete (expired/used link, no stored PKCE verifier, or the code was
-  // already consumed in another tab). Say which, and offer a way forward.
   useEffect(() => {
     if (loading || isAuthenticated) return undefined
     if (failure) return undefined
@@ -674,10 +609,6 @@ export function AuthCallbackPage() {
 
   if (failure) {
     const verdict = failure
-    /* `--callback`, not `--auth`. That name belongs to the sign-in and
-       sign-up form and the one-screen treatment is keyed to it. This page
-       reads the same and is laid out the same way, which is a different
-       thing and gets its own name. */
     return (
       <section className="adv-shell adv-shell--callback" aria-label="Confirmation problem">
         <div className="adv-shell__inner adv-shell__inner--narrow">
@@ -689,19 +620,19 @@ export function AuthCallbackPage() {
           </h2>
           <p className="block__body">{verdict.message}</p>
           <div className="confirm__actions">
-            <button type="button" className="btn btn--primary" onClick={() => navigateApp('/login')}>
-              Return to login
+            <button type="button" className="btn btn--auth-primary" onClick={() => navigateApp('/login')}>
+              <span>Return to login</span>
             </button>
             <button
               type="button"
-              className="btn btn--ghost"
+              className="btn btn--ghost glass-button glass-button--ghost"
               onClick={() => navigateApp('/signup')}
             >
-              Resend confirmation
+              <span>Resend confirmation</span>
             </button>
             <button
               type="button"
-              className="btn btn--ghost"
+              className="btn btn--ghost glass-button glass-button--ghost"
               onClick={() => {
                 setAsyncFailure(null)
                 refresh().catch(() =>
@@ -709,7 +640,7 @@ export function AuthCallbackPage() {
                 )
               }}
             >
-              Try again
+              <span>Try again</span>
             </button>
           </div>
         </div>
@@ -732,7 +663,7 @@ export function AuthCallbackPage() {
   }
 
   return (
-<section className="adv-shell adv-shell--callback" aria-label="Email confirmed">
+    <section className="adv-shell adv-shell--callback" aria-label="Email confirmed">
       <div className="adv-shell__inner adv-shell__inner--narrow">
         <p className="eyebrow eyebrow--plain">CLIRevenue · Email confirmed</p>
         <h2 className="block__title">Your account is ready.</h2>

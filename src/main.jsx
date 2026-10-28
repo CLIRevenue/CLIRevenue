@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import { initGlassEffects } from './lib/glass-effects.js'
 
 // The theme is committed before render: `light-theme` is a real class in
 // index.css (matched token-for-token by its dark :root), and applying it on
@@ -19,3 +20,6 @@ createRoot(document.getElementById('root')).render(
     <App />
   </StrictMode>,
 )
+
+// Initialize liquid glass mouse interaction effects
+initGlassEffects()

@@ -1,0 +1,287 @@
+/* =============================================================
+   CLIRevenue — Suggestions page
+   Theme-consistent with src/index.css; no new tokens introduced.
+   ============================================================= */
+
+.suggestions {
+  max-width: 740px;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--gutter);
+}
+
+.suggestions__card {
+  background: var(--surface);
+  border: var(--border-w) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-panel);
+}
+
+/* ------------------------------------------------------------------ */
+/* Header                                                             */
+/* ------------------------------------------------------------------ */
+
+.suggestions__header {
+  margin-bottom: var(--space-lg);
+}
+
+.suggestions__title {
+  font-family: var(--font-display);
+  font-size: var(--display-s);
+  font-weight: 700;
+  letter-spacing: var(--track-tight);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-xs);
+}
+
+.suggestions__subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Role selector — segmented control                                  */
+/* ------------------------------------------------------------------ */
+
+.suggestions__roles {
+  display: inline-flex;
+  border: var(--border-w) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  margin-bottom: var(--space-lg);
+}
+
+.suggestions__role {
+  padding: 0.55rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: #ffffff;
+  background: #000000;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--dur) var(--ease-ui), color var(--dur) var(--ease-ui);
+}
+
+.suggestions__role:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.suggestions__role--active,
+.suggestions__role:hover {
+  color: #000000;
+  background: #ffffff;
+}
+.suggestions__role--active { z-index: 3; }
+
+/* ------------------------------------------------------------------ */
+/* Form stack — animated role switching                               */
+/* ------------------------------------------------------------------ */
+
+.suggestions__stack {
+  position: relative;
+  overflow: hidden;
+  transition: height var(--dur-slow) var(--ease-ui);
+}
+
+.suggestions__form {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  transform: translateX(0);
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease-ui), transform var(--dur) var(--ease-ui);
+}
+
+.suggestions__form--active {
+  opacity: 1;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.suggestions__form--hidden {
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Directional exits (role being left) and entries (role being entered). */
+.suggestions__form--exit-left {
+  transform: translateX(-100%);
+}
+.suggestions__form--exit-right {
+  transform: translateX(100%);
+}
+.suggestions__form--enter-left {
+  transform: translateX(-100%);
+}
+.suggestions__form--enter-right {
+  transform: translateX(100%);
+}
+
+/* ------------------------------------------------------------------ */
+/* Form internals                                                     */
+/* ------------------------------------------------------------------ */
+
+.suggestions__heading {
+  font-family: var(--font-display);
+  font-size: var(--display-s);
+  font-weight: 700;
+  letter-spacing: var(--track-tight);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-xs);
+}
+
+.suggestions__lead {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-lg);
+  line-height: 1.55;
+}
+
+.suggestions__field {
+  margin-bottom: var(--space-md);
+}
+
+.suggestions__field--full {
+  width: 100%;
+}
+
+.suggestions__input {
+  width: 100%;
+}
+
+.suggestions__input--error {
+  border-color: var(--error);
+}
+
+.suggestions__required {
+  color: var(--text-dim);
+}
+
+.suggestions__error {
+  margin: var(--space-xs) 0 0;
+  font-size: 0.75rem;
+  color: var(--error);
+}
+
+.suggestions__segmented {
+  display: flex;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.suggestions__chip {
+  padding: 0.45rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: #ffffff;
+  background: #000000;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--dur) var(--ease-ui), color var(--dur) var(--ease-ui);
+}
+
+.suggestions__chip:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.suggestions__chip--active,
+.suggestions__chip:hover {
+  color: #000000;
+  background: #ffffff;
+}
+
+.suggestions__actions {
+  margin-top: var(--space-lg);
+  display: flex;
+  justify-content: flex-start;
+}
+
+.suggestions__submit {
+  /* overrides the global button reset so the submit keeps pointer events */
+  cursor: pointer;
+}
+
+.suggestions__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------------ */
+/* Result states                                                      */
+/* ------------------------------------------------------------------ */
+
+.suggestions__result {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  margin-top: var(--space-md);
+}
+
+.suggestions__result--success {
+  background: var(--success-bg);
+  color: var(--success);
+  border: var(--border-w) solid var(--success-border);
+}
+
+.suggestions__result--error {
+  background: var(--error-bg);
+  color: var(--error);
+  border: var(--border-w) solid var(--error-border);
+}
+
+/* ------------------------------------------------------------------ */
+/* Responsive                                                         */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 640px) {
+  .suggestions {
+    padding: var(--space-lg) var(--space-sm);
+  }
+  .suggestions__card {
+    padding: var(--space-lg);
+    border-radius: var(--radius-md);
+  }
+  .suggestions__title {
+    font-size: var(--display-m);
+  }
+  .suggestions__roles {
+    width: 100%;
+  }
+  .suggestions__role {
+    flex: 1;
+    text-align: center;
+    padding: 0.5rem 0.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .suggestions__stack,
+  .suggestions__form,
+  .suggestions__role,
+  .suggestions__chip,
+  .suggestions__submit {
+    transition: none !important;
+    animation: none !important;
+  }
+}

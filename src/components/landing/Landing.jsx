@@ -3,6 +3,7 @@ import './landing.css'
 import { landingFx } from './landing.js'
 import HeartFooter from './HeartFooter.jsx'
 import { spaNav } from '../../hooks/useAppRoute.js'
+import Suggestions from '../suggestions/Suggestions.jsx'
 
 const STEPS = [
   {
@@ -95,27 +96,27 @@ export default function Landing() {
       <header className="nav">
         <div className="nav-in">
           <a href="#top" className="brand-text brand-text-landing" aria-label="CLIRevenue — back to top">
-            <span className="brand-cli">CLI</span>
-            <span className="brand-revenue">Revenue</span>
-          </a>
+              <span className="brand-cli">CLI</span>
+              <span className="brand-revenue">Revenue</span>
+            </a>
 
           <nav className="nav-links" aria-label="Landing Navigation">
-            <a href="#preview">Product</a>
-            <a href="#how">How it works</a>
-            <a href="#platform">Platform</a>
-            <a href="#trust">Trust</a>
-            <a href="#advertisers">Advertisers</a>
-            <a href="#qsFace">Get started</a>
-          </nav>
+              <a href="#preview">Product</a>
+              <a href="#how">How it works</a>
+              <a href="#platform">Platform</a>
+              <a href="#trust">Trust</a>
+              <a href="#advertisers">Advertisers</a>
+              <a href="#qsFace">Get started</a>
+            </nav>
 
           <div className="nav-cta">
             <a className="lbtn lbtn--ghost lbtn--sm" href="/developer" onClick={spaNav}>For developers</a>
             <a className="lbtn lbtn--ghost lbtn--sm" href="/advertiser" onClick={spaNav}>For advertisers</a>
             <a className="lbtn lbtn--ghost lbtn--sm" href="/login" onClick={spaNav}>Sign in</a>
-            <a className="lbtn lbtn--primary lbtn--sm magnetic" href="/signup" onClick={spaNav}>Sign up</a>
+            <a className="lbtn lbtn--primary lbtn--sm" href="/signup" onClick={spaNav}>Sign up</a>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
       <main id="top">
         <section className="cube-face cube-face--hero" id="heroFace">
@@ -159,8 +160,8 @@ export default function Landing() {
               of every qualified impression — without reading a single prompt.
             </p>
             <div className="lhero-actions" data-reveal style={{ '--d': '180ms' }}>
-              <a className="lbtn lbtn--primary magnetic" href="#start">Start earning — free</a>
-              <a className="lbtn lbtn--ghost" href="#advertisers">Put your ad on CLIRevenue</a>
+              <a className="glass-button glass-button--primary glass-button--outlined glass-button--sm glass-button--hair-white magnetic" href="#start">Start earning — free</a>
+              <a className="glass-button glass-button--white glass-button--outlined glass-button--sm magnetic" href="#advertisers">Put your ad on CLIRevenue</a>
             </div>
             <p className="lhero-note" data-reveal style={{ '--d': '220ms' }}>
               Zero SDK dependencies · 60-character sponsor budget · one command to revert
@@ -331,10 +332,23 @@ export default function Landing() {
                 <p className="k">{r.k}</p>
                 <h3>{r.h}</h3>
                 <p>{r.p}</p>
-                <a className="lbtn lbtn--primary magnetic" href={i === 0 ? '#start' : '/advertiser'}>{r.a}</a>
+                <a className="lbtn lbtn--glass lbtn--primary magnetic" href={i === 0 ? '#start' : '/advertiser'}>{r.a}</a>
               </article>
             ))}
           </div>
+        </section>
+
+        <section id="suggestions" className="wrap sec">
+          <div className="sec-head">
+            <span className="sec-kicker" data-n="07" data-reveal>Send us a suggestion</span>
+            <h2 className="pickable" data-reveal>
+              <span data-pick>Have an idea, or is something not working?</span>
+            </h2>
+            <p className="sec-sub" data-reveal>
+              Tell us whether you are speaking as a developer or an advertiser.
+            </p>
+          </div>
+          <Suggestions />
         </section>
 
         <section id="start" className="wrap sec">
@@ -343,7 +357,7 @@ export default function Landing() {
               <h2 className="pickable"><span data-pick>Put a sponsor line in your terminal.</span></h2>
               <p>Run the setup against a clean project, keep the settings backup, and see your first qualified impression before you decide anything.</p>
             </div>
-            <a className="lbtn lbtn--primary magnetic" href="/signup">Start earning — free</a>
+            <a className="lbtn lbtn--glass lbtn--primary magnetic" href="/signup">Start earning — free</a>
           </div>
         </section>
       </main>
@@ -367,8 +381,8 @@ export default function Landing() {
               <a href="#preview">Preview</a>
             </nav>
             <div className="foot-cta">
-              <a className="lbtn lbtn--ghost lbtn--sm" href="/developer" onClick={spaNav}>For developer</a>
-              <a className="lbtn lbtn--ghost lbtn--sm" href="/advertiser" onClick={spaNav}>For advertiser</a>
+              <a className="glass-button glass-button--outlined glass-button--ghost glass-button--sm glass-button--hair-black" href="/developer" onClick={spaNav}>For developer</a>
+              <a className="glass-button glass-button--outlined glass-button--ghost glass-button--sm glass-button--hair-black" href="/advertiser" onClick={spaNav}>For advertiser</a>
             </div>
           </div>
           <div className="foot-col">

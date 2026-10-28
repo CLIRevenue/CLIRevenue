@@ -1,0 +1,613 @@
+/* =============================================================
+   CLIRevenue — Liquid Glass Design System
+   Boxes below, text above, no opaque overlays smudging text.
+   ============================================================= */
+
+/* ── Liquid Glass Button ──
+   Box behind text, no stacking context issues. */
+.glass-button {
+  --bg-color: rgba(255, 255, 255, 0.25);
+  --highlight: rgba(255, 255, 255, 0.75);
+  
+  position: relative;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  background: transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.glass-button:hover {
+  transform: scale(1.08);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.glass-button:active {
+  transform: scale(0.92);
+}
+
+/* Glass blur box — sits BEHIND text at z-index: -1 */
+.glass-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Text/content — sits ABOVE box naturally */
+.glass-button > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Primary variant — white text on black bg, inverted on hover */
+.glass-button--primary {
+  color: #ffffff !important;
+}
+.glass-button--primary::before {
+  background: #000000 !important;
+}
+.glass-button--primary:hover {
+  color: #000000 !important;
+  background: #ffffff !important;
+}
+.glass-button--primary:hover::before {
+  background: #ffffff !important;
+}
+
+/* Ghost variant — transparent, text color inherits */
+.glass-button--ghost {
+  color: inherit;
+}
+
+/* Small variant */
+.glass-button--sm {
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+/* RGB outline variant — colorful border around the glass box, on hover only */
+.glass-button--outlined {
+  position: relative;
+}
+.glass-button--outlined::before {
+  box-shadow: 0 0 0 1px transparent;
+}
+.glass-button--outlined::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 3px;
+  background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff, #ff0000);
+  background-size: 300% 300%;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: destination-out;
+}
+.glass-button--outlined:hover::after {
+  opacity: 1;
+  animation: glass-rgb-outline-move 4s ease infinite alternate;
+}
+@keyframes glass-rgb-outline-move {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Ghost variant — white opaque bg, black text */
+.glass-button--ghost {
+  color: #000000 !important;
+  background: #ffffff !important;
+}
+.glass-button--ghost::before {
+  background: #ffffff !important;
+}
+.glass-button--ghost:hover {
+  color: #ffffff !important;
+  background: #000000 !important;
+}
+.glass-button--ghost:hover::before {
+  background: #000000 !important;
+}
+
+/* White variant — opaque white background, dark text */
+.glass-button--white {
+  color: #000000 !important;
+}
+.glass-button--white::before {
+  background: #ffffff !important;
+}
+.glass-button--white > * {
+  color: #000000;
+}
+.glass-button--white:hover {
+  color: #000000;
+  background: #ffffff;
+}
+.glass-button--white:hover::before {
+  background: #ffffff;
+}
+
+/* Flipped color scheme — white-on-black normal, black-on-white hover */
+.glass-button--flip {
+  color: #ffffff !important;
+}
+.glass-button--flip::before {
+  background: #000000 !important;
+}
+.glass-button--flip:hover {
+  color: #000000 !important;
+  background: #ffffff !important;
+}
+.glass-button--flip:hover::before {
+  background: #ffffff !important;
+}
+.glass-button--flip > * {
+  color: #ffffff !important;
+}
+.glass-button--flip:hover > * {
+  color: #000000 !important;
+}
+
+/* ── Hair animations — opposite colour animated border ── */
+
+/* White hair animation (for black buttons) — includes RGB gradient */
+.glass-button--hair-white::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 3px;
+  background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff, #ff0000), #ffffff;
+  background-size: 300% 300%, auto;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: destination-out;
+}
+.glass-button--hair-white:hover::after {
+  opacity: 1;
+  animation: glass-rgb-outline-move 4s linear infinite alternate;
+}
+
+/* Black hair animation (for white buttons) — includes RGB gradient */
+.glass-button--hair-black::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 8px;
+  background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff, #ff0000), #000000;
+  background-size: 300% 300%, auto;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: destination-out;
+}
+.glass-button--hair-black:hover::after {
+  opacity: 1;
+  animation: glass-rgb-outline-move 4s linear infinite alternate;
+}
+
+/* Clear variant — header CTA anchors: transparent bg + hairline border at rest,
+   opaque white fill on hover. Border follows the header theme: black on the
+   light hero header, white on the dark header. --ghost left globally untouched. */
+.glass-button--clear {
+  color: #000000;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px #000000;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+.glass-button--clear:hover {
+  color: #000000;
+  background: #ffffff;
+}
+html:not(.at-hero) .glass-button--clear {
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px #ffffff;
+}
+html:not(.at-hero) .glass-button--clear:hover {
+  color: #000000;
+  background: #ffffff;
+}
+
+/* ── Liquid Glass Card ── */
+.glass-card {
+  --bg-color: rgba(255, 255, 255, 0.25);
+  --highlight: rgba(255, 255, 255, 0.75);
+  --text: #ffffff;
+  
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  min-height: 320px;
+  border-radius: var(--ld-r10);
+  overflow: hidden;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  margin: 0 auto;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.glass-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.glass-content {
+  position: relative;
+  z-index: 2;
+  padding: 2rem;
+  color: var(--text);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.glass-content h3 {
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.glass-content p {
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* Dark mode styles for glass card */
+@media (prefers-color-scheme: dark) {
+  .glass-card {
+    --bg-color: rgba(0, 0, 0, 0.25);
+    --highlight: rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* ── Liquid Glass Form ──
+   Ribbon is background, form sits on top. No opaque overlay smudging. */
+.glass-form {
+  position: relative;
+  z-index: 0;
+  width: 400px;
+  min-height: 450px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  margin: 0 auto;
+}
+
+.glass-form::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.glass-form > * {
+  position: relative;
+  z-index: 2;
+}
+
+.glass-form .form-container {
+  display: none;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.glass-form .form-container.active {
+  display: block;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.glass-form .form-container h3 {
+  margin: 0 0 20px 0;
+  font-size: 28px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.glass-form .form-group {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.glass-form .form-group i {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.glass-form .form-group input {
+  width: 100%;
+  padding: 12px 15px 12px 45px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: 16px;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  font-family: inherit;
+}
+
+.glass-form .form-group input:focus {
+  outline: none;
+  background: var(--input-focus);
+  border-color: var(--highlight);
+}
+
+.glass-form .form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.glass-form button[type="submit"] {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  font-family: inherit;
+}
+
+.glass-form button[type="submit"]:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.glass-form .form-switch {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.glass-form .form-switch a {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+  opacity: 1;
+}
+
+.glass-form .form-switch a:hover {
+  text-decoration: underline;
+}
+
+/* Dark mode styles for glass form */
+@media (prefers-color-scheme: dark) {
+  .glass-form {
+    --bg-color: rgba(0, 0, 0, 0.25);
+    --input-bg: rgba(0, 0, 0, 0.2);
+    --input-border: rgba(255, 255, 255, 0.1);
+    --input-focus: rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ── Liquid Glass Navigation ── */
+.glass-nav {
+  --bg-color: rgba(255, 255, 255, 0.25);
+  --highlight: rgba(255, 255, 255, 0.75);
+  --text: #ffffff;
+  
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  max-width: 600px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: transparent;
+  margin: 0 auto;
+}
+
+.glass-nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.glass-nav > * {
+  position: relative;
+  z-index: 2;
+}
+
+.glass-nav .nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.glass-nav .nav-item {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 16px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.glass-nav .nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.glass-nav .nav-item.active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark mode styles for glass nav */
+@media (prefers-color-scheme: dark) {
+  .glass-nav {
+    --bg-color: rgba(0, 0, 0, 0.25);
+    --highlight: rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* ── Liquid Glass Spinner ── */
+.glass-spinner {
+  --bg-color: rgba(255, 255, 255, 0.25);
+  --highlight: rgba(255, 255, 255, 0.75);
+  --spinner-size: 80px;
+  --ring-size: 64px;
+  --core-size: 24px;
+  
+  position: relative;
+  width: var(--spinner-size);
+  height: var(--spinner-size);
+  border-radius: 50%;
+  overflow: hidden;
+  background: transparent;
+}
+
+.glass-spinner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.glass-spinner > * {
+  position: relative;
+  z-index: 2;
+}
+
+.glass-spinner .glass-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.glass-spinner .spinner-ring {
+  position: absolute;
+  width: var(--ring-size);
+  height: var(--ring-size);
+  border: 2px solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.8);
+  border-right-color: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.glass-spinner .spinner-core {
+  width: var(--core-size);
+  height: var(--core-size);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  animation: pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  from { transform: scale(0.8); opacity: 0.5; }
+  to { transform: scale(1); opacity: 0.8; }
+}
+
+/* Dark mode styles for glass spinner */
+@media (prefers-color-scheme: dark) {
+  .glass-spinner {
+    --bg-color: rgba(0, 0, 0, 0.25);
+    --highlight: rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* ── Glass Overlay (full-screen modal/overlay) ── */
+.glass-overlay-full {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--c-space-4);
+  animation: welcome-fade-in 300ms ease-out;
+}
+
+.glass-overlay-full::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.glass-overlay-full > * {
+  position: relative;
+  z-index: 2;
+}
+
+@keyframes welcome-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Mouse interaction for glass elements ── */
+.glass-interactive {
+  cursor: default;
+}

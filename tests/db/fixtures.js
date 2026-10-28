@@ -616,3 +616,94 @@ export function walletRow(db, profileId) {
     return rows[0] ?? null
   })
 }
+
+/* ------------------------------------------------------------------ *
+ * Referral helpers (20261027000000_referral_system.sql)
+ * ------------------------------------------------------------------ */
+
+export function referralGetOrCreateCode(db, profileId) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT public.referral_get_or_create_code($1::uuid) AS result`,
+      [profileId],
+    )
+    return rows[0].result
+  })
+}
+
+export function referralResolveToken(db, token) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT public.referral_resolve_token($1::text) AS result`,
+      [token],
+    )
+    return rows[0].result
+  })
+}
+
+export function referralAttribute(db, referredProfileId, token) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT public.referral_attribute($1::uuid,$2::text) AS result`,
+      [referredProfileId, token],
+    )
+    return rows[0].result
+  })
+}
+
+export function referralQualifyFromTopup(db, topupId) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT public.referral_qualify_from_topup($1::uuid) AS result`,
+      [topupId],
+    )
+    return rows[0].result
+  })
+}
+
+export function referralReverse(db, referralId, reason, actorProfileId = null) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT public.referral_reverse($1::uuid,$2::text,$3::uuid) AS result`,
+      [referralId, reason, actorProfileId],
+    )
+    return rows[0].result
+  })
+}
+
+/** Read a referral row as the service role. */
+export function referralRow(db, referralId) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT id, referrer_profile_id, referred_profile_id, status,
+              qualifying_topup_id, qualified_at, rewarded_at,
+              rejected_reason, reversal_reason, created_at, updated_at
+       FROM public.referrals WHERE id = $1`,
+      [referralId],
+    )
+    return rows[0] ?? null
+  })
+}
+
+/** Count rewarded referrals for a referrer as the service role. */
+export function referralRewardedCount(db, referrerProfileId) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT COUNT(*)::bigint AS n
+       FROM public.referrals
+       WHERE referrer_profile_id = $1::uuid AND status = 'rewarded'`,
+      [referrerProfileId],
+    )
+    return Number(rows[0].n)
+  })
+}
+
+/** Read referral config as the service role. */
+export function referralConfig(db) {
+  return asService(db, async (tx) => {
+    const { rows } = await tx.query(
+      `SELECT key, value_json FROM public.referral_config ORDER BY key`,
+    )
+    return rows
+  })
+}

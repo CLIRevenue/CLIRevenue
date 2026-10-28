@@ -1,86 +1,59 @@
 /* ================================================================
    CLIRevenue Admin Console
-   Operations control plane — genuine visual composition
+   Operations control plane — premium glassmorphism over cinematic neon
    ================================================================ */
 
-/* ---------- design tokens (mapped to main design system) ----------- */
+/* ---------- design tokens (premium glass box system) --------------- */
 .adm-root {
-  /* Structural tokens → the landing palette.
-     These used to read var(--bg) / var(--surface) / var(--border) / var(--text),
-     which are index.css :root values. The admin console is rendered bare at
-     App.jsx — no PageChrome, no .clr-surface — so it was the one surface on
-     the site painting itself from :root while everything else wore the
-     landing. Same shapes, different product. chrome.css now lists .adm-root
-     beside .clr-surface so the --ld-* tokens resolve here too, and these
-     point at them. */
+  /* Cinematic Neon Background Tokens */
+  --adm-bg-void:           var(--bg-void);
+  --adm-bg-void-soft:      var(--bg-void-soft);
+  --adm-neon-violet-deep:  var(--neon-violet-deep);
+  --adm-neon-purple:       var(--neon-purple);
+  --adm-neon-blue:         var(--neon-blue);
+  --adm-neon-cyan:         var(--neon-cyan);
+  --adm-neon-turquoise:    var(--neon-turquoise);
+  --adm-neon-coral:        var(--neon-coral);
+  --adm-neon-peach:        var(--neon-peach);
+
+  /* Structural tokens → mapped from index.css */
   --adm-bg:          var(--ld-bg);
-  --adm-bg-grid:     var(--ld-line);
   --adm-surface:     var(--ld-surface);
-  --adm-raised:      var(--ld-bg-tint);
-  --adm-border:      var(--ld-line-strong);
-  --adm-border-soft: var(--ld-line);
-  --adm-text:        var(--ld-ink);
-  --adm-text-dim:    var(--ld-ink-2);
-  /* Was --ld-ink-3. Measured against the real cascade, that one token put
-     29 of the console's 70 text elements under WCAG AA: every sidebar
-     section, table header, status pill, telemetry label, note, empty-state
-     line and .adm-muted table cell (spend, impressions, dates). --ld-ink-3
-     is 4.31:1 on the canvas and 3.86:1 on a panel; --ld-ink-4 is 5.22:1 and
-     5.22:1. One line here fixes every one of them. */
-  --adm-muted:       var(--ld-ink-4);
-  /* Was var(--ink-4), which nothing in the project defines — it fell through
-     to :root and came back as a grey that could not be read. */
-  --adm-muted-dim:   var(--ld-ink-4);
+  --adm-text:        var(--text);
+  --adm-text-dim:    var(--text-muted);
+  --adm-muted:       var(--text-dim);
+  --adm-muted-dim:   var(--text-subtle);
+  --adm-border-soft: var(--adm-glass-border);
 
-  /* Admin brand token (distinct from status).
-     It was #dc2626 — red, and the loudest colour on the page. On a site
-     whose accent is a periwinkle blue, a red wordmark reads as an alert, not
-     as a brand, which is why the console looked like a different product
-     before a single pixel of it was laid out. */
+  /* Admin brand token */
   --adm-brand:       var(--ld-accent);
-  --adm-brand-bright:var(--ld-accent);
-  --adm-brand-dim:   var(--ld-accent-soft);
-  --adm-brand-bg:    var(--ld-accent-soft);
+  --adm-brand-bright:var(--accent-purple);
+  --adm-brand-dim:   var(--accent-violet);
+  --adm-brand-bg:    rgba(167, 139, 250, 0.12);
 
-  /* Status tokens → semantic mappings. These deliberately stay on :root:
-     red for error and green for ok are not branding, they are meaning, and
-     the landing has no red to borrow. */
-  --adm-status-error:  var(--accent-error);
-  --adm-status-error-bg:  var(--accent-error-wash);
-  --adm-status-error-dim: rgba(251, 113, 133, .25);
-  --adm-status-ok:     var(--ok);
-  --adm-status-ok-bg:     rgba(74, 222, 128, 0.07);
-  --adm-status-amber:  var(--amber);
-  --adm-status-amber-bg:  var(--amber-wash);
+  /* Status tokens → semantic mappings */
+  --adm-status-error:    var(--accent-error);
+  --adm-status-error-bg: var(--error-bg);
+  --adm-status-error-dim:rgba(251, 113, 133, .25);
+  --adm-status-ok:       var(--success);
+  --adm-status-ok-bg:    var(--success-bg);
+  --adm-status-amber:    var(--amber);
+  --adm-status-amber-bg: var(--amber-wash);
 
   /* Fonts → main design system */
   --adm-mono:        var(--mono);
   --adm-sans:        var(--sans);
 
-  /* Admin-specific layout tokens.
-     The density is the point of this console: 44px topbar, 13px base. What
-     changes is the rhythm they sit in, not how many rows fit on a screen.
-     The sidebar gained 16px because the active-item marker and the nav's own
-     padding were eating the label column; at 208px the longest label
-     ("Moderation") touched the marker. */
+  /* Admin-specific layout tokens */
   --adm-sidebar-w:   224px;
   --adm-topbar-h:    44px;
-  --adm-radius:      var(--radius-md);
-  --adm-radius-sm:   var(--radius-sm);
-  --adm-radius-lg:   var(--radius-lg);
-  /* A pill is not a rounded rectangle. Status pills, badges and the role
-     badge all sit under 20px tall; at the card radius (12px) they came out
-     as lopsided lozenges with straight middles. A pill radius is its own
-     step, borrowed from index.css rather than invented here. */
+  --adm-radius:      var(--adm-glass-radius);
+  --adm-radius-sm:   var(--adm-glass-radius-sm);
+  --adm-radius-lg:   var(--adm-glass-radius-lg);
   --adm-radius-pill: var(--radius-pill);
   --adm-max-w:       var(--measure);
 
-  /* Spacing and type are ALIASES of the shared console scale in
-     chrome.css, not a second private copy. This console runs one rung
-     tighter than the marketing pages -- it picks its density by choosing a
-     rung, not by carrying a scale of its own that will drift from theirs.
-     The names stay, because this file reads better with --adm- in it and
-     every call site is already written that way. */
+  /* Spacing and type aliases */
   --adm-space-1: var(--c-space-1);
   --adm-space-2: var(--c-space-2);
   --adm-space-3: var(--c-space-3);
@@ -90,30 +63,21 @@
   --adm-space-7: var(--c-space-7);
   --adm-space-8: var(--c-space-8);
 
-  --adm-text-micro: var(--c-text-micro);   /* topbar meta, table count, empty-state label */
-  --adm-text-label: var(--c-text-label);   /* section titles, table heads, card labels */
-  --adm-text-small: var(--c-text-small);   /* mono inline, chips, event meta */
-  --adm-text-body:  var(--c-text-body);    /* table cells, notes, rows */
-  --adm-text-read:  var(--c-text-read);    /* the base, and any prose a person reads twice */
-  --adm-text-title: var(--c-text-title);   /* the page title, once per screen */
-  --adm-text-figure: var(--c-text-figure); /* telemetry values */
-  /* Every --adm-track rule is a mono uppercase label: a topbar wordmark, a
-     section heading, a table header, a pill, a badge, a field name. Before
-     this pointed at --track-label (0.09em) the admin console tracked its
-     caps at a fifth less than the two consoles beside it, which is most of
-     why it did not read as the same product. */
+  --adm-text-micro: var(--c-text-micro);
+  --adm-text-label: var(--c-text-label);
+  --adm-text-small: var(--c-text-small);
+  --adm-text-body:  var(--c-text-body);
+  --adm-text-read:  var(--c-text-read);
+  --adm-text-title: var(--c-text-title);
+  --adm-text-figure: var(--c-text-figure);
   --adm-track:      var(--track-caps);
-  /* Text that sits ON the brand fill and on the error fill. Both answers are
-     palette facts rather than console facts, so the bridge owns them: white on
-     the mid-lightness periwinkle measures 3.06:1 and fails AA, which is what
-     this token used to be, and white on the light error pink measures 2.69:1,
-     which is what the delete button shipped before. One name each so every
-     filled button in the console agrees and nobody re-derives it per button. */
   --adm-on-brand:   var(--ld-on-accent);
   --adm-on-error:   var(--ld-on-error);
 
+  /* Neon flow background handled by .neon-flow-bg */
+  background: transparent;
+
   color: var(--adm-text);
-  background: var(--adm-bg);
   font-family: var(--adm-sans);
   font-size: var(--adm-text-read);
   line-height: 1.5;
@@ -124,27 +88,136 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ---------- background grid ---------------------------------------- */
-.adm-root::before {
-  content: '';
+/* ---------- neon flow background --------------------------------------- */
+.neon-flow-bg {
   position: fixed;
   inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  isolation: isolate;
   pointer-events: none;
-  z-index: 0;
-  background-image:
-    linear-gradient(var(--adm-bg-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--adm-bg-grid) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse 80% 70% at 50% 10%, black, transparent);
-  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 10%, black, transparent);
+  background: linear-gradient(180deg, rgb(5, 10, 20) 0%, rgb(10, 16, 32) 50%, rgb(5, 10, 20) 100%);
 }
-.adm-root > * { position: relative; z-index: 1; }
+
+.neon-flow-bg::before {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  background-image: url("/images/neon-flow.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  transform: translate3d(4%, 4%, 0) scale(1.12);
+  will-change: transform;
+  animation: neon-image-flow 22s ease-in-out infinite alternate;
+}
+
+.neon-flow-bg__glow {
+  position: absolute;
+  inset: -25%;
+  background:
+    radial-gradient(
+      ellipse at 20% 80%,
+      rgba(0, 255, 180, 0.35) 0%,
+      rgba(0, 180, 120, 0.18) 25%,
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 50% 50%,
+      rgba(60, 120, 255, 0.25) 0%,
+      rgba(120, 60, 255, 0.15) 22%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 80% 20%,
+      rgba(0, 220, 255, 0.32) 0%,
+      rgba(80, 160, 255, 0.16) 27%,
+      transparent 55%
+    );
+  opacity: 0.85;
+  mix-blend-mode: screen;
+  filter: blur(45px);
+  transform: translate3d(5%, 5%, 0) scale(1.05);
+  will-change: transform, opacity;
+  animation: neon-glow-flow 16s ease-in-out infinite alternate;
+}
+
+.neon-flow-bg__shimmer {
+  position: absolute;
+  inset: -45%;
+  background: linear-gradient(
+    132deg,
+    transparent 31%,
+    rgba(0, 255, 180, 0.06) 39%,
+    rgba(60, 120, 255, 0.12) 44%,
+    rgba(0, 220, 255, 0.20) 48%,
+    rgba(120, 60, 255, 0.16) 51%,
+    rgba(0, 255, 160, 0.10) 54%,
+    transparent 63%
+  );
+  mix-blend-mode: screen;
+  filter: blur(35px);
+  opacity: 0.7;
+  transform: translate3d(8%, 8%, 0) scale(1.1);
+  will-change: transform, opacity;
+  animation: neon-shimmer-flow 12s ease-in-out infinite alternate;
+}
+
+.neon-flow-bg__vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse at 50% 48%,
+      transparent 30%,
+      rgba(3, 3, 5, 0.18) 67%,
+      rgba(3, 3, 5, 0.68) 115%
+    );
+  opacity: 0.85;
+}
+
+@keyframes neon-image-flow {
+  from { transform: translate3d(4%, 4%, 0) scale(1.12); }
+  to { transform: translate3d(-4%, -4%, 0) scale(1.18); }
+}
+@keyframes neon-glow-flow {
+  0% { transform: translate3d(5%, 5%, 0) scale(1.05); opacity: 0.65; }
+  50% { opacity: 0.95; }
+  100% { transform: translate3d(-6%, -6%, 0) scale(1.12); opacity: 0.8; }
+}
+@keyframes neon-shimmer-flow {
+  from { transform: translate3d(8%, 8%, 0) scale(1.1); opacity: 0.35; }
+  to { transform: translate3d(-8%, -8%, 0) scale(1.15); opacity: 0.8; }
+}
+
+/* Custom neon flow overrides */
+.neon-flow-bg::before { animation-duration: 22s; }
+.neon-flow-bg__glow { opacity: 0.6; filter: blur(40px); }
+.neon-flow-bg__shimmer { filter: blur(44px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .neon-flow-bg::before,
+  .neon-flow-bg__glow,
+  .neon-flow-bg__shimmer {
+    animation: none;
+    transform: none;
+  }
+}
+@media (max-width: 768px) {
+  .neon-flow-bg__glow { filter: blur(28px); }
+  .neon-flow-bg__shimmer { filter: blur(24px); }
+}
 
 /* ---------- top command bar ---------------------------------------- */
 .adm-topbar {
   height: var(--adm-topbar-h);
-  background: var(--adm-surface);
-  border-bottom: 1px solid var(--adm-border);
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  border-bottom: 1px solid var(--adm-glass-border);
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight),
+    0 4px 20px var(--adm-glass-shadow);
   display: flex;
   align-items: center;
   padding: 0 20px;
@@ -262,8 +335,13 @@
 /* ---------- control rail ------------------------------------------- */
 .adm-sidebar {
   width: var(--adm-sidebar-w);
-  background: var(--adm-surface);
-  border-right: 1px solid var(--adm-border);
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  border-right: 1px solid var(--adm-glass-border);
+  box-shadow:
+    inset 1px 0 0 var(--adm-glass-highlight),
+    8px 0 24px var(--adm-glass-shadow);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -484,17 +562,35 @@
   margin-bottom: var(--adm-space-7);
 }
 .adm-tele-card {
-  background: var(--adm-surface);
-  border: 1px solid var(--adm-border);
-  border-radius: var(--adm-radius);
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  border: 1px solid var(--adm-glass-border);
+  border-radius: var(--adm-glass-radius);
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight),
+    0 8px 32px var(--adm-glass-shadow);
   padding: var(--adm-space-4) var(--adm-space-4);
   display: flex;
   flex-direction: column;
   gap: var(--adm-space-1);
-  transition: border-color .12s;
+  transition:
+    border-color var(--adm-space-1) ease-out,
+    box-shadow var(--adm-space-1) ease-out,
+    background-color var(--adm-space-1) ease-out,
+    transform var(--adm-space-1) ease-out;
 }
 .adm-tele-card:hover {
-  border-color: var(--adm-border);
+  border-color: var(--adm-glass-border-hover);
+  background: var(--adm-glass-tint-hover);
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight-hover),
+    0 12px 40px var(--adm-glass-shadow-hover);
+  transform: translateY(-1px);
+}
+.adm-tele-card:active {
+  transform: translateY(0) scale(0.995);
+  background: var(--adm-glass-tint-active);
 }
 .adm-tele-card__label {
   font-family: var(--adm-mono);
@@ -521,8 +617,15 @@
   margin-top: var(--adm-space-1);
 }
 .adm-tele-card--primary {
-  border-color: var(--adm-brand-dim);
-  background: var(--adm-raised);
+  background: var(--adm-glass-tint);
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight),
+    0 8px 32px var(--adm-glass-shadow);
+}
+.adm-tele-card--primary:hover {
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight-hover),
+    0 12px 40px var(--adm-glass-shadow-hover);
 }
 .adm-tele-card--primary .adm-tele-card__value {
   font-size: 30px;
@@ -531,9 +634,14 @@
 
 /* ---------- data table -------------------------------------------- */
 .adm-table-wrap {
-  background: var(--adm-surface);
-  border: 1px solid var(--adm-border);
-  border-radius: var(--adm-radius);
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  border: 1px solid var(--adm-glass-border);
+  border-radius: var(--adm-glass-radius);
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight),
+    0 8px 32px var(--adm-glass-shadow);
   overflow: hidden;
   margin-bottom: var(--adm-space-6);
 }
@@ -541,9 +649,11 @@
   display: flex;
   align-items: center;
   padding: var(--adm-space-3) var(--adm-space-4);
-  border-bottom: 1px solid var(--adm-border);
+  border-bottom: 1px solid var(--adm-glass-border);
   gap: var(--adm-space-3);
-  background: var(--adm-raised);
+  background: var(--adm-glass-tint-hover);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
 }
 .adm-table-title {
   font-family: var(--adm-mono);
@@ -573,8 +683,8 @@
 .adm-table th {
   text-align: left;
   padding: var(--adm-space-3) var(--adm-space-4);
-  background: var(--adm-raised);
-  border-bottom: 1px solid var(--adm-border);
+  background: transparent;
+  border-bottom: 1px solid var(--adm-glass-border);
   font-family: var(--adm-mono);
   font-size: var(--adm-text-micro);
   font-weight: 600;
@@ -587,7 +697,7 @@
 }
 .adm-table td {
   padding: var(--adm-space-3) var(--adm-space-4);
-  border-bottom: 1px solid var(--adm-border-soft);
+  border-bottom: 1px solid var(--adm-glass-border);
   color: var(--adm-text);
   vertical-align: middle;
   white-space: nowrap;
@@ -597,7 +707,7 @@
   transition: background .08s;
 }
 .adm-table tbody tr:hover td {
-  background: var(--adm-raised);
+  background: var(--adm-glass-tint-hover);
 }
 .adm-table tbody tr:last-child:hover td {
   background: none;
@@ -646,15 +756,31 @@
   flex-wrap: wrap;
 }
 .adm-system-chip {
-  background: var(--adm-surface);
-  border: 1px solid var(--adm-border);
-  border-radius: var(--adm-radius);
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  border: 1px solid var(--adm-glass-border);
+  border-radius: var(--adm-glass-radius);
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight),
+    0 4px 16px var(--adm-glass-shadow);
   padding: var(--adm-space-3) var(--adm-space-4);
   display: flex;
   align-items: center;
   gap: var(--adm-space-3);
   min-width: 180px;
   flex: 1;
+  transition:
+    border-color var(--adm-space-1) ease-out,
+    box-shadow var(--adm-space-1) ease-out,
+    background-color var(--adm-space-1) ease-out;
+}
+.adm-system-chip:hover {
+  border-color: var(--adm-glass-border-hover);
+  background: var(--adm-glass-tint-hover);
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight-hover),
+    0 8px 24px var(--adm-glass-shadow-hover);
 }
 .adm-system-chip__label {
   font-family: var(--adm-mono);
@@ -702,12 +828,25 @@
   align-items: flex-start;
   gap: var(--adm-space-3);
   padding: var(--adm-space-3) var(--adm-space-4);
-  border-bottom: 1px solid var(--adm-border-soft);
+  border-bottom: 1px solid var(--adm-glass-border);
   font-size: var(--adm-text-body);
   transition: background .08s;
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  border-radius: var(--adm-glass-radius-sm);
+  margin-bottom: var(--adm-space-2);
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight),
+    0 2px 8px var(--adm-glass-shadow);
 }
-.adm-event-row:last-child { border-bottom: none; }
-.adm-event-row:hover { background: var(--adm-raised); }
+.adm-event-row:last-child { border-bottom: none; margin-bottom: 0; }
+.adm-event-row:hover {
+  background: var(--adm-glass-tint-hover);
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight-hover),
+    0 4px 16px var(--adm-glass-shadow-hover);
+}
 .adm-event-kind {
   font-family: var(--adm-mono);
   font-size: var(--adm-text-micro);
@@ -716,11 +855,14 @@
   text-transform: uppercase;
   padding: var(--adm-space-1) var(--adm-space-2);
   border-radius: var(--adm-radius-pill);
-  border: 1px solid var(--adm-border);
+  border: 1px solid var(--adm-glass-border);
   color: var(--adm-muted);
   white-space: nowrap;
   flex-shrink: 0;
   line-height: 1.4;
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
 }
 .adm-event-body {
   flex: 1;
@@ -753,9 +895,15 @@
 
 /* ---------- loading / error --------------------------------------- */
 .adm-error {
-  background: var(--adm-status-error-bg);
-  border: 1px solid rgba(251, 113, 133, .25);
-  border-radius: var(--adm-radius);
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  border: 1px solid var(--adm-status-error);
+  border-radius: var(--adm-glass-radius);
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight),
+    0 4px 16px var(--adm-glass-shadow),
+    0 0 0 1px var(--adm-status-error);
   padding: var(--adm-space-3) var(--adm-space-4);
   color: var(--adm-status-error);
   font-family: var(--adm-mono);
@@ -772,6 +920,14 @@
   font-family: var(--adm-mono);
   font-size: var(--adm-text-small);
   letter-spacing: .04em;
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  border: 1px solid var(--adm-glass-border);
+  border-radius: var(--adm-glass-radius);
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight),
+    0 8px 32px var(--adm-glass-shadow);
 }
 .adm-spinner {
   width: 12px;
@@ -1114,7 +1270,9 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(9, 9, 12, 0.7);
+  background: rgba(3, 3, 5, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1130,10 +1288,14 @@
 .adm-modal-overlay__panel {
   width: min(90vw, 800px);
   max-height: 85vh;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 24px rgba(9, 9, 12, 0.25);
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  border: 1px solid var(--adm-glass-border);
+  border-radius: var(--adm-glass-radius-lg);
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight),
+    0 16px 48px var(--adm-glass-shadow);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1156,15 +1318,17 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--c-space-4) var(--c-space-5);
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-container-low);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-bottom: 1px solid var(--adm-glass-border);
+  background: var(--adm-glass-tint-hover);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  border-radius: var(--adm-glass-radius-lg) var(--adm-glass-radius-lg) 0 0;
 }
 
 .adm-modal-overlay__title {
   font-size: var(--c-text-title);
   font-weight: 600;
-  color: var(--ink);
+  color: var(--adm-text);
   margin: 0;
 }
 
@@ -1175,20 +1339,23 @@
   width: 36px;
   height: 36px;
   border: none;
-  background: transparent;
-  color: var(--ink-2);
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  color: var(--adm-text-dim);
+  border: 1px solid var(--adm-glass-border);
   border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-
 .adm-modal-overlay__close:hover {
-  background: var(--surface-container-low);
-  color: var(--ink);
+  background: var(--adm-glass-tint-hover);
+  border-color: var(--adm-glass-border-hover);
+  color: var(--adm-text);
 }
 
 .adm-modal-overlay__close:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--adm-brand);
   outline-offset: 2px;
 }
 
@@ -1203,8 +1370,12 @@
   gap: var(--c-space-4);
   margin-bottom: var(--c-space-5);
   padding: var(--c-space-4);
-  background: var(--surface-container-lowest);
-  border-radius: var(--radius-md);
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  border: 1px solid var(--adm-glass-border);
+  border-radius: var(--adm-glass-radius);
+  box-shadow: inset 0 1px 0 var(--adm-glass-highlight);
 }
 
 .adm-modal-overlay__summary-item {
@@ -1219,7 +1390,7 @@
   font-size: var(--c-text-label);
   letter-spacing: var(--track-caps);
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--adm-muted);
   font-weight: 500;
 }
 
@@ -1227,11 +1398,17 @@
   font-size: var(--c-text-hero);
   font-weight: 700;
   font-family: var(--mono);
-  color: var(--ink);
+  color: var(--adm-text);
 }
 
 .adm-modal-overlay__table-wrap {
   overflow-x: auto;
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  border: 1px solid var(--adm-glass-border);
+  border-radius: var(--adm-glass-radius);
+  box-shadow: inset 0 1px 0 var(--adm-glass-highlight);
 }
 
 .adm-modal-overlay__table {
@@ -1244,7 +1421,7 @@
 .adm-modal-overlay__table td {
   padding: var(--c-space-3) var(--c-space-4);
   text-align: left;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--adm-glass-border);
 }
 
 .adm-modal-overlay__table th {
@@ -1252,16 +1429,22 @@
   font-size: var(--c-text-label);
   letter-spacing: var(--track-caps);
   text-transform: uppercase;
-  color: var(--ink-3);
-  background: var(--surface-container-lowest);
+  color: var(--adm-muted);
+  background: var(--adm-glass-tint-hover);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
 }
 
 .adm-modal-overlay__table td {
-  color: var(--ink);
+  color: var(--adm-text);
 }
 
 .adm-modal-overlay__table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.adm-modal-overlay__table tbody tr:hover td {
+  background: var(--adm-glass-tint-hover);
 }
 
 .adm-modal-overlay__table td.adm-truncate {
@@ -1272,14 +1455,14 @@
 }
 
 .adm-modal-overlay__table .adm-muted {
-  color: var(--ink-3);
+  color: var(--adm-muted);
   font-size: var(--c-text-small);
 }
 
 .adm-modal-overlay__table .adm-empty {
   padding: var(--c-space-6);
   text-align: center;
-  color: var(--ink-3);
+  color: var(--adm-muted);
 }
 
 /* Clickable stat card */
@@ -1306,12 +1489,17 @@
 
 /* ---------- wallet drawer (admin) ---------- */
 .adm-wallet-drawer {
-  border: 1px solid var(--adm-border);
-  background: var(--adm-surface);
+  border: 1px solid var(--adm-glass-border);
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
   padding: var(--c-space-5);
   margin-top: var(--c-space-5);
-  border-radius: var(--radius-md);
+  border-radius: var(--adm-glass-radius);
   font-size: var(--c-text-read);
+  box-shadow:
+    inset 0 1px 0 var(--adm-glass-highlight),
+    0 8px 32px var(--adm-glass-shadow);
 }
 
 .adm-wallet-drawer__head {
@@ -1384,17 +1572,26 @@
 .adm-wallet-drawer__input {
   font-size: var(--c-text-read);
   padding: var(--c-space-2) var(--c-space-3);
-  border: 1px solid var(--adm-border);
-  border-radius: var(--radius-sm);
-  background: var(--adm-bg);
+  border: 1px solid var(--adm-glass-border);
+  border-radius: var(--adm-glass-radius-sm);
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
   color: var(--adm-text);
   width: 100%;
   box-sizing: border-box;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
-
+.adm-wallet-drawer__input:hover:not(:disabled) {
+  border-color: var(--adm-glass-border-hover);
+  background: var(--adm-glass-tint-hover);
+}
 .adm-wallet-drawer__input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  outline: none;
+  border-color: var(--adm-brand);
+  box-shadow:
+    0 0 0 3px var(--adm-brand-bg),
+    inset 0 1px 0 var(--adm-glass-highlight);
 }
 
 .adm-wallet-drawer__empty {
@@ -1418,9 +1615,12 @@
   justify-content: space-between;
   gap: var(--c-space-3);
   padding: var(--c-space-2) var(--c-space-3);
-  border: 1px solid var(--adm-border-soft);
-  border-radius: var(--radius-sm);
-  background: var(--adm-bg);
+  border: 1px solid var(--adm-glass-border);
+  border-radius: var(--adm-glass-radius-sm);
+  background: var(--adm-glass-tint);
+  backdrop-filter: blur(var(--adm-glass-blur));
+  -webkit-backdrop-filter: blur(var(--adm-glass-blur));
+  box-shadow: inset 0 1px 0 var(--adm-glass-highlight);
 }
 
 .adm-wallet-drawer__freeze-scope {
@@ -1457,4 +1657,114 @@
 
 .adm-profile__link:hover {
   color: var(--adm-brand-bright);
+}
+
+/* ---------- premium glass card (reference) ---------- */
+.glass-card {
+  width: 240px;
+  height: 360px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(11px);
+  -webkit-backdrop-filter: blur(11px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0px 0px rgba(255, 255, 255, 0);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+}
+
+.glass-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.8),
+    transparent,
+    rgba(255, 255, 255, 0.3)
+  );
+}
+
+/* ---------- glass box (reference) ---------- */
+.glass-box {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: rgba(25, 25, 32, 0.48);
+  backdrop-filter: blur(24px) saturate(135%);
+  -webkit-backdrop-filter: blur(24px) saturate(135%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 20px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 10px 35px rgba(0, 0, 0, 0.18);
+  transition:
+    background 280ms ease,
+    border-color 280ms ease,
+    box-shadow 280ms ease,
+    transform 280ms ease;
+}
+.glass-box:hover {
+  background: rgba(35, 33, 45, 0.52);
+  border-color: rgba(255, 255, 255, 0.38);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 14px 42px rgba(0, 0, 0, 0.24);
+  transform: translateY(-2px);
+}
+
+/* Liquid Chrome animated background */
+.liquid-chrome-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: rgb(2, 2, 3);
+  pointer-events: none;
+}
+
+.liquid-chrome-bg__scene {
+  position: absolute;
+  inset: 0;
+}
+
+.liquid-chrome-bg__scene canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.liquid-chrome-bg__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 35%,
+    rgba(0, 0, 0, 0.12) 70%,
+    rgba(0, 0, 0, 0.48) 100%
+  );
 }

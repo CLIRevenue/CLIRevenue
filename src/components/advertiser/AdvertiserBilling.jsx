@@ -16,7 +16,7 @@ import {
    collects the payer's details and the amount in minor units (cents), and
    the Edge Function converts to credits server-side. Nothing here invents
    money. */
-function formatCredits(credits) {
+export function formatCredits(credits) {
   const n = Number(credits || 0)
   const abs = Math.abs(n)
   const body = abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')

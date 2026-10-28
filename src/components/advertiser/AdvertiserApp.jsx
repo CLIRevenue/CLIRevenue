@@ -9,9 +9,11 @@ import Notifications from './Notifications.jsx'
 import AdvertiserOverview from './AdvertiserOverview.jsx'
 import AdvertiserCampaigns from './AdvertiserCampaigns.jsx'
 import AdvertiserAnalytics from './AdvertiserAnalytics.jsx'
+import AdvertiserReferrals from './AdvertiserReferrals.jsx'
 import AdvertiserBilling from './AdvertiserBilling.jsx'
 import BillingPage from './BillingPage.jsx'
 import AdvertiserAccount from './AdvertiserAccount.jsx'
+import WelcomeOverlay from './WelcomeOverlay.jsx'
 import { campaignWarnings } from '../../lib/advertiserApi.js'
 import './advertiser.css'
 
@@ -21,6 +23,7 @@ const TABS = [
   { id: 'analytics', label: 'Analytics', path: '/app/advertiser/analytics', icon: 'analytics' },
   { id: 'billing', label: 'Billing', path: '/app/advertiser/billing', icon: 'billing' },
   { id: 'wallet', label: 'Wallet', path: '/app/advertiser/wallet', icon: 'wallet' },
+  { id: 'referrals', label: 'Referrals', path: '/app/advertiser/referrals', icon: 'referrals' },
   { id: 'account', label: 'Account', path: '/app/advertiser/account', icon: 'settings' },
 ]
 
@@ -39,6 +42,7 @@ function tabForPath(path) {
   if (clean.startsWith('/app/advertiser/analytics')) return 'analytics'
   if (clean.startsWith('/app/advertiser/billing')) return 'billing'
   if (clean.startsWith('/app/advertiser/wallet')) return 'wallet'
+  if (clean.startsWith('/app/advertiser/referrals')) return 'referrals'
   if (clean.startsWith('/app/advertiser/account')) return 'account'
   return 'overview'
 }
@@ -173,8 +177,28 @@ export default function AdvertiserApp() {
   const [supportOpen, setSupportOpen] = useState(false)
   const [supportSent, setSupportSent] = useState(0)
   const [theme, setTheme] = useState(readTheme)
+  const [wallet, setWallet] = useState(null)
+  const [showWelcome, setShowWelcome] = useState(false)
+
   /* The frame, not the rail: it owns the grid column the rail's width
      actually controls. */
+
+  /* Load wallet for welcome overlay */
+  useEffect(() => {
+    import('../../lib/walletApi.js').then(({ fetchWalletSnapshot }) => {
+      fetchWalletSnapshot().then((snap) => {
+        const w = snap?.wallet ?? snap
+        if (w && !window.localStorage.getItem('welcomeOverlayShown')) {
+          setWallet(w)
+          setShowWelcome(true)
+        }
+      }).catch(() => {})
+    })
+  }, [])
+
+  const handleWelcomeDismiss = () => {
+    setShowWelcome(false)
+  }
 
   return (
     /* clr-surface stays. It is the wrapper the site's shared control
@@ -269,6 +293,7 @@ export default function AdvertiserApp() {
               onRetry={campaignsState.refresh}
             />
           ) : null}
+          {tab === 'referrals' ? <AdvertiserReferrals /> : null}
           {tab === 'billing' ? (
             <BillingPage
               campaigns={campaignsState.campaigns}
@@ -293,6 +318,9 @@ export default function AdvertiserApp() {
           companyName={auth?.profile?.company_name || ''}
         />
       ) : null}
+      {showWelcome && (
+        <WelcomeOverlay wallet={wallet} onDismiss={handleWelcomeDismiss} />
+      )}
     </div>
   )
 }

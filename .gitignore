@@ -64,3 +64,5 @@ tmpconfig/
 .env.filebase
 # Local env variables
 .env.local
+
+.env.staging

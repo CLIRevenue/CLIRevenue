@@ -142,11 +142,12 @@
   stroke-width: 3.2;
   /*
    * `round` on the join, not the default `miter`. These paths are meant to read
-   * as one continuous gesture and they are not: `T 48 38` continues from
-   * `Q 20 22, 42 25` at a slightly different angle, which leaves a kink at
-   * (42, 25), and the signup path changes direction at both of its joints. A
-   * miter turns every one of those into a spike. Rounding costs nothing and is
-   * the difference between a drawn curve and a folded one.
+   * as one continuous gesture and they are not: the login path's
+   * `Q 56 58 48 38` meets `Q 64 28 42 25` at (48, 38) from a slightly
+   * different angle, which leaves a kink there, and the signup path changes
+   * direction at both of its joints. A miter turns every one of those into a
+   * spike. Rounding costs nothing and is the difference between a drawn curve
+   * and a folded one.
    */
   stroke-linecap: round;
   stroke-linejoin: round;

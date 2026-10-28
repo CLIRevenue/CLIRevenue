@@ -66,7 +66,7 @@ export default function PageChrome({ active, subnav, children, footer, flat }) {
      safe on every route. */
   useEffect(() => landingFx(document.body), [])
 
-  return (
+      return (
     <div className="clr-surface">
       <header className={flat ? 'clrhead clrhead--flat' : 'clrhead'} ref={ref}>
         <div className="clrhead-in">
@@ -91,17 +91,17 @@ export default function PageChrome({ active, subnav, children, footer, flat }) {
           <div className="clrhead-cta">
             {nav.showLogin ? (
               <a className="btn is-ghost clrhead-sm" href="/login" onClick={spa}>
-                Sign in
+                <span>Sign in</span>
               </a>
             ) : null}
             {nav.showSignup ? (
               <a className="btn clrhead-sm" href="/signup" onClick={spa}>
-                Sign up
+                <span>Sign up</span>
               </a>
             ) : null}
             {nav.showDashboard ? (
               <a className="btn clrhead-sm" href={nav.dashboardHref} onClick={spa}>
-                Dashboard
+                <span>Dashboard</span>
               </a>
             ) : null}
             {nav.showLogout ? (

@@ -834,3 +834,114 @@
   line-height: 1.6;
   max-width: 60ch;
 }
+
+/* ── Liquid Glass — Developer Landing ── */
+.sdk-page .sdk-panel {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--ld-r9);
+  overflow: hidden;
+}
+
+.sdk-page .sdk-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.sdk-page .sdk-panel > * {
+  position: relative;
+  z-index: 2;
+}
+
+.sdk-page .btn,
+.sdk-page .lbtn,
+.sdk-page button {
+  position: relative;
+  z-index: 0;
+  padding: 0.6rem 1.25rem;
+  border: none;
+  border-radius: var(--ld-r7);
+  cursor: pointer;
+  overflow: hidden;
+  background: transparent;
+  outline: none;
+  transition: transform 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.sdk-page .btn::before,
+.sdk-page .lbtn::before,
+.sdk-page button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.sdk-page .btn > *,
+.sdk-page .lbtn > *,
+.sdk-page button > * {
+  position: relative;
+  z-index: 2;
+}
+
+.sdk-page .btn:hover,
+.sdk-page .lbtn:hover {
+  transform: scale(1.05);
+}
+
+.sdk-page .btn:active,
+.sdk-page .lbtn:active {
+  transform: scale(0.95);
+}
+
+.sdk-page .sdk-code {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--ld-r8);
+  overflow: hidden;
+}
+
+.sdk-page .sdk-code::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.sdk-page .sdk-code > * {
+  position: relative;
+  z-index: 2;
+}
+
+.sdk-page .sdk-spec__row {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--ld-r6);
+  overflow: hidden;
+}
+
+.sdk-page .sdk-spec__row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.sdk-page .sdk-spec__row > * {
+  position: relative;
+  z-index: 2;
+}

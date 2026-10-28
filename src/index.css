@@ -152,6 +152,7 @@
   --adm-bg: var(--bg);
   --adm-bg-grid: var(--hair);
   --adm-border: var(--outline);
+  --adm-border-soft: var(--border-soft);
   --adm-text: var(--on-surface);
   --adm-text-dim: var(--on-surface-variant);
   --adm-muted: var(--outline-variant);
@@ -169,6 +170,8 @@
   --sans: var(--font-sans);
   --display: var(--font-display);
   --body: var(--font-body);
+  --caption: 0.75rem;
+  --body-lg: 1.125rem;
   --telemetry: var(--font-telemetry);
 
   /* Rhythm */
@@ -194,6 +197,34 @@
   --glass-blur: 16px;
   --glass-cyan: rgba(0, 240, 255, 0.06);
   --glass-violet: rgba(189, 0, 255, 0.06);
+
+  /* Premium Glass Box System (Admin Console) */
+  --adm-glass-tint: rgba(25, 25, 32, 0.48);
+  --adm-glass-tint-hover: rgba(25, 25, 32, 0.54);
+  --adm-glass-tint-active: rgba(25, 25, 32, 0.6);
+  --adm-glass-border: rgba(255, 255, 255, 0.22);
+  --adm-glass-border-hover: rgba(255, 255, 255, 0.35);
+  --adm-glass-border-active: rgba(255, 255, 255, 0.28);
+  --adm-glass-highlight: rgba(255, 255, 255, 0.1);
+  --adm-glass-highlight-hover: rgba(255, 255, 255, 0.14);
+  --adm-glass-inner-shadow: rgba(0, 0, 0, 0.08);
+  --adm-glass-shadow: rgba(0, 0, 0, 0.18);
+  --adm-glass-shadow-hover: rgba(0, 0, 0, 0.24);
+  --adm-glass-blur: 11px;
+  --adm-glass-radius: 20px;
+  --adm-glass-radius-sm: 10px;
+  --adm-glass-radius-lg: 24px;
+
+  /* Cinematic Neon Background Tokens */
+  --bg-void: #030305;
+  --bg-void-soft: #07060B;
+  --neon-violet-deep: #4500A8;
+  --neon-purple: #8B20FF;
+  --neon-blue: #245CFF;
+  --neon-cyan: #20DDF5;
+  --neon-turquoise: #42E5D0;
+  --neon-coral: #FF8C91;
+  --neon-peach: #FFB18A;
 
   /* Neumorphism */
   --neumorph-light: rgba(255, 255, 255, 0.04);
@@ -394,6 +425,7 @@
   --adm-bg: var(--bg);
   --adm-bg-grid: var(--hair);
   --adm-border: var(--outline);
+  --adm-border-soft: var(--border-soft);
   --adm-text: var(--on-surface);
   --adm-text-dim: var(--on-surface-variant);
   --adm-muted: var(--outline-variant);
@@ -410,6 +442,8 @@
   --sans: var(--font-sans);
   --display: var(--font-display);
   --body: var(--font-body);
+  --caption: 0.75rem;
+  --body-lg: 1.125rem;
   --telemetry: var(--font-telemetry);
 
   --gutter: 1rem;
@@ -433,6 +467,34 @@
   --glass-blur: 16px;
   --glass-cyan: rgba(0, 184, 217, 0.1);
   --glass-violet: rgba(138, 0, 255, 0.1);
+
+  /* Premium Glass Box System (Admin Console) - Light Theme */
+  --adm-glass-tint: rgba(230, 230, 235, 0.48);
+  --adm-glass-tint-hover: rgba(230, 230, 235, 0.54);
+  --adm-glass-tint-active: rgba(230, 230, 235, 0.6);
+  --adm-glass-border: rgba(0, 0, 0, 0.12);
+  --adm-glass-border-hover: rgba(0, 0, 0, 0.2);
+  --adm-glass-border-active: rgba(0, 0, 0, 0.16);
+  --adm-glass-highlight: rgba(255, 255, 255, 0.3);
+  --adm-glass-highlight-hover: rgba(255, 255, 255, 0.4);
+  --adm-glass-inner-shadow: rgba(0, 0, 0, 0.04);
+  --adm-glass-shadow: rgba(0, 0, 0, 0.08);
+  --adm-glass-shadow-hover: rgba(0, 0, 0, 0.12);
+  --adm-glass-blur: 11px;
+  --adm-glass-radius: 20px;
+  --adm-glass-radius-sm: 10px;
+  --adm-glass-radius-lg: 24px;
+
+  /* Cinematic Neon Background Tokens - Light Theme (muted) */
+  --bg-void: #F5F5F0;
+  --bg-void-soft: #EBEBE4;
+  --neon-violet-deep: #7C3AED;
+  --neon-purple: #A78BFA;
+  --neon-blue: #60A5FA;
+  --neon-cyan: #22D3EE;
+  --neon-turquoise: #2DD4BF;
+  --neon-coral: #F472B6;
+  --neon-peach: #FB923C;
 
   --neumorph-light: rgba(0, 0, 0, 0.08);
   --neumorph-dark: rgba(0, 0, 0, 0.12);

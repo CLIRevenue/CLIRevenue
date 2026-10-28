@@ -127,13 +127,19 @@ export const VIEWBOX = { x: 0, y: 0, width: 100, height: 60 }
  * The extensions are drawn along each end's own tangent, which is why the first
  * and last commands are not arbitrary:
  *
- *   login lead-in   the tangent leaving (10, 50) is (10, -28); a control at
- *                   (3.3, 68.8) continues that exact direction, so the curve is
- *                   unbroken and only the endpoint moved, to (-20, 56).
- *   login lead-out  the tangent arriving at (45, 2) is (-10, -3); a straight
- *                   run to (16, -6.7) is parallel to it, so `L` is as smooth as
- *                   a curve would be and the end leaves through the top edge.
- *   signup          both ends are extended with a straight `L` because both of
+ *   login            the path is written top-to-bottom (same as signup) so the
+ *                    ribbon's stroke reveal and the trail's lead-in both start
+ *                    at the top edge and flow downward. The original geometry
+ *                    is preserved exactly — every segment is the original one,
+ *                    just traversed in reverse; the tangent extensions are
+ *                    therefore unchanged:
+ *     start (top)    the run out through (16, -6.7) is parallel to the tangent
+ *                    arriving at (45, 2) — (-10, -3) — so `L` is as smooth as
+ *                    a curve would be and the path leaves through the top edge.
+ *     end (bottom)   the control at (3.3, 68.8) continues the tangent arriving
+ *                    at (10, 50) exactly, so the curve is unbroken and only
+ *                    the final endpoint moved, to (-20, 56).
+ *   signup           both ends are extended with a straight `L` because both of
  *                   its tangents are shallow enough that the line *is* the
  *                   tangent: (-20, 5.8) -> (8, 12) and (96.5, 52) -> (120, 57.9).
  *
@@ -144,7 +150,7 @@ export const CURVES = {
   login: {
     id: 'login',
     label: 'SIGN IN',
-    d: 'M -20 56 Q 3.3 68.8 10 50 Q 20 22, 42 25 T 48 38 Q 56 58, 76 36 T 65 19 Q 55 5, 45 2 L 16 -6.7',
+    d: 'M 16 -6.7 L 45 2 Q 55 5 65 19 Q 96 14 76 36 Q 56 58 48 38 Q 64 28 42 25 Q 20 22 10 50 Q 3.3 68.8 -20 56',
   },
   signup: {
     id: 'signup',
@@ -208,6 +214,28 @@ export function unitLength(textLength, repeats = TRAIL_REPEATS) {
 }
 
 /**
+ * How many repeated units the trail needs to cover the path outright.
+ *
+ * Coverage has to beat the path's length, not match it. The scroll anchors
+ * `leadInPercent` into the path and then swings a whole unit below that
+ * before the wrap lands, and a measurement taken before the web font has
+ * loaded reads long against the glyphs that finally render. The old
+ * `ceil((pathLength + unit) / unit)` paid only for the swing, so a
+ * measurement error ate the spare and the string ran out short of the path's
+ * end — the ribbon closing bare, which first surfaced as "the text does not
+ * appear from the top" before the path was reversed, after which the same
+ * shortfall sat at the bottom edge. Two spare units: one for the swing, one
+ * for the font.
+ *
+ * Returns 0 for anything that cannot be measured, which the caller treats
+ * as "do not touch the string".
+ */
+export function coverRepeats(pathLength, unit) {
+  if (!(pathLength > 0) || !(unit > 0)) return 0
+  return Math.ceil(pathLength / unit) + 2
+}
+
+/**
  * How far the offset travels in one second, as a percentage of the path.
  * `startOffset` percentages are of `pathLength`, so the speed has to be
  * converted through it — this is what keeps both curves moving at one speed.
@@ -239,6 +267,30 @@ export function leadInPercent(path, step = 0.5) {
     }
   }
   return 0
+}
+
+/**
+ * Where the curve leaves the page again, as a percentage of its own length.
+ *
+ * The counterpart of `leadInPercent`: that one anchors the trail where the
+ * ribbon first becomes visible, this one anchors it where the ribbon leaves
+ * the frame. A trail anchored here starts at the top edge and flows down
+ * toward the entry point, which is the direction the words are read in.
+ */
+export function leadOutPercent(path, step = 0.5) {
+  if (!path || typeof path.getTotalLength !== 'function') return 100
+  const total = path.getTotalLength()
+  if (!(total > 0)) return 100
+  const { x, y, width, height } = VIEWBOX
+  let last = null
+  for (let at = 0; at <= total; at += step) {
+    const point = path.getPointAtLength(at)
+    if (point.x >= x && point.x <= x + width && point.y >= y && point.y <= y + height) {
+      last = at
+    }
+  }
+  if (last === null) return 100
+  return (last / total) * 100
 }
 
 export function stepPercentPerSecond(pathLength, unitsPerSecond = TRAIL_SPEED) {

@@ -59,6 +59,7 @@ export default function Footer() {
         <nav className="sitefoot__nav" aria-label="Legal">
           <a className="sitefoot__link" href="/privacy">Privacy Policy</a>
           <a className="sitefoot__link" href="/terms">Terms & Conditions</a>
+          <a className="sitefoot__link" href="#suggestions">Suggestions</a>
           <a className="sitefoot__link" href="mailto:clirevenue@gmail.com">Contact</a>
         </nav>
 

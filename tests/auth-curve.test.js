@@ -72,6 +72,7 @@ import {
   VIEWBOX,
   advance,
   buildTrail,
+  coverRepeats,
   curveFor,
   dashPair,
   stepPercentPerSecond,
@@ -130,9 +131,12 @@ describe('the two curves are the ones the design asked for', () => {
     // The middle of each curve is the original geometry from the brief, with
     // one addition at each end: a lead-in and a lead-out that run off the
     // page. Changing any of these coordinates is a design change and the test
-    // should say so rather than silently accept a different curve.
+    // should say so rather than silently accept a different curve. The login
+    // path is written top-to-bottom (reversed traversal of the original
+    // geometry) so the ribbon reveals and generates from the top edge, like
+    // signup does.
     expect(CURVES.login.d).toBe(
-      'M -20 56 Q 3.3 68.8 10 50 Q 20 22, 42 25 T 48 38 Q 56 58, 76 36 T 65 19 Q 55 5, 45 2 L 16 -6.7',
+      'M 16 -6.7 L 45 2 Q 55 5 65 19 Q 96 14 76 36 Q 56 58 48 38 Q 64 28 42 25 Q 20 22 10 50 Q 3.3 68.8 -20 56',
     )
     expect(CURVES.signup.d).toBe(
       'M -20 5.8 L 8 12 Q 35 18, 53 26.5 Q 31.8 40.5, 46.5 50.8 Q 72.5 46, 96.5 52 L 120 57.9',
@@ -163,9 +167,10 @@ describe('the two curves are the ones the design asked for', () => {
     // A lead-in that arrives at a different angle from the curve it continues
     // puts a kink at the join, and a kink is a spike once the stroke is thick
     // enough. Each extension therefore has to leave and arrive parallel to the
-    // tangent it is continuing.
-    expect(CURVES.login.d).toMatch(/^M -20 56 Q 3\.3 68\.8 10 50/) // (10,-28) continued
-    expect(CURVES.login.d).toMatch(/45 2 L 16 -6\.7$/) // parallel to (-10,-3)
+    // tangent it is continuing. The login path runs top-to-bottom: it leaves
+    // through (16, -6.7) at the top and exits through (-20, 56) at the bottom.
+    expect(CURVES.login.d).toMatch(/^M 16 -6\.7 L 45 2/) // parallel to (-10,-3)
+    expect(CURVES.login.d).toMatch(/Q 3\.3 68\.8 -20 56$/) // (10,-28) continued
     expect(CURVES.signup.d).toMatch(/^M -20 5\.8 L 8 12/) // tangent is shallow enough
     expect(CURVES.signup.d).toMatch(/96\.5 52 L 120 57\.9$/)
   })
@@ -288,6 +293,25 @@ describe('the scroll maths is measured, never assumed', () => {
 
   it('the offset runs backwards along the path', () => {
     expect(advance(0, 1000, 10, 50)).toBeCloseTo(-10, 10)
+  })
+})
+
+describe('the trail outlasts the path so the ribbon never closes bare', () => {
+  it('spares two units — one for the scroll swing, one for the font', () => {
+    // The loop swings a whole unit below its anchor before the wrap lands,
+    // and the first measurement happens before the web font has loaded, so a
+    // count that merely reaches the path's length leaves the end of the
+    // ribbon empty — which is what "the text does not appear from the top"
+    // was before the path was reversed, and the bare bottom edge after.
+    const needed = coverRepeats(170, 8.5)
+    expect(needed).toBe(Math.ceil(170 / 8.5) + 2)
+    expect(needed * 8.5).toBeGreaterThan(170 + 8.5)
+  })
+
+  it('returns 0 rather than dividing by nothing', () => {
+    expect(coverRepeats(0, 8.5)).toBe(0)
+    expect(coverRepeats(170, 0)).toBe(0)
+    expect(coverRepeats(170, -8.5)).toBe(0)
   })
 })
 
@@ -658,10 +682,11 @@ describe('the ribbon is cheap to animate and soft at the corners', () => {
   })
 
   it('rounds every join, because these paths genuinely kink', () => {
-    // `T 48 38` continues from `Q 20 22, 42 25` at a slightly different
-    // angle, which leaves a kink at (42, 25); the signup path changes
-    // direction at both of its joints. The SVG default is `miter`, and a miter
-    // turns every one of those into a spike pointing off the curve.
+    // `Q 56 58 48 38` meets `Q 64 28 42 25` at (48, 38) from a slightly
+    // different angle than it leaves, which leaves a kink there; the signup
+    // path changes direction at both of its joints. The SVG default is
+    // `miter`, and a miter turns every one of those into a spike pointing
+    // off the curve.
     for (const rule of ['line', 'halo', 'mask-line']) {
       const block = css_block(curveCss(), `.auth-curve__${rule}`)
       expect(block).toMatch(/stroke-linejoin: round/)
@@ -690,7 +715,9 @@ describe('the auth pages are one screen: a header and the form, nothing below th
     // genuinely do scroll and are genuinely taller than the window. A change
     // to `.adv-shell` itself would reflow all of them, so the one-screen
     // treatment hangs off a name only this section carries.
-    expect(shell()).toMatch(/<section className="adv-shell adv-shell--auth" aria-label=\{title\}>/)
+    // The hook class must be present on that element; extra classes after it
+    // (the auth glass layer adds `glass-form`) do not opt the layout out.
+    expect(shell()).toMatch(/<section className="adv-shell adv-shell--auth[^"]*" aria-label=\{title\}>/)
     expect(authPages().match(/adv-shell--auth/g)?.length).toBe(1)
   })
 

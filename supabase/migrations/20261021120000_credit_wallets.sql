@@ -333,7 +333,7 @@ CREATE TABLE IF NOT EXISTS public.user_notifications (
     kind                    TEXT NOT NULL CHECK (kind IN (
                                 'account_frozen', 'wallet_frozen', 'keys_frozen',
                                 'unfreeze_granted', 'unfreeze_denied',
-                                'credits_granted', 'topup_confirmed'
+                                'credit_grant', 'topup_confirmed'
                             )),
     severity                TEXT NOT NULL DEFAULT 'info' CHECK (severity IN ('info','warning','critical')),
     title                   TEXT NOT NULL,
@@ -945,6 +945,16 @@ BEGIN
   SELECT * INTO v_tx FROM public.wallet_transactions
   WHERE idempotency_key = 'topup:' || v_topup.id::text;
 
+  -- Notify the advertiser
+  PERFORM public.notify_user(
+    v_topup.profile_id,
+    'topup_confirmed',
+    'info',
+    'Top-up confirmed',
+    v_topup.credits || ' credit' || CASE WHEN v_topup.credits = 1 THEN '' ELSE 's' END || ' added to your wallet.',
+    NULL
+  );
+
   RETURN jsonb_build_object(
     'ok', true, 'duplicate', false, 'topup', row_to_json(v_topup),
     'transaction', CASE WHEN v_tx.id IS NULL THEN NULL ELSE row_to_json(v_tx) END,
@@ -1047,6 +1057,16 @@ BEGIN
     p_profile_id, 'admin_grant', 'credit', p_credits, v_key,
     NULL, NULL, NULL, 'admin_grant', p_actor_profile_id,
     'Gift by CLIRevenue Team', btrim(p_reason)
+  );
+
+  -- Notify the advertiser
+  PERFORM public.notify_user(
+    p_profile_id,
+    'credit_grant',
+    'info',
+    'Credits added to your wallet',
+    p_credits || ' credit' || CASE WHEN p_credits = 1 THEN '' ELSE 's' END || ' granted: ' || btrim(p_reason),
+    NULL
   );
 
   RETURN v_res || jsonb_build_object(

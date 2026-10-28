@@ -78,7 +78,7 @@ async function tryCandidates(urls, options) {
       return { url, data: await authedFetch(url, options) }
     } catch (e) {
       lastErr = e
-      if (e.status !== 404 && e.status !== 405) throw e
+      if (e.status != null && e.status !== 404 && e.status !== 405) throw e
     }
   }
   throw lastErr

@@ -9,6 +9,16 @@ import {
 import { installSdk } from '../install/sdk.js';
 import { verifyKey, KeyVerificationError, type VerifiedKey } from '../verify/key.js';
 import {
+  createPlacement as createPlacementOnServer,
+  PlacementCreateError,
+  type CreatedPlacement,
+} from '../verify/placement.js';
+import {
+  planPlacements,
+  type PlacementPlan,
+  type ServerPlacement,
+} from '../verify/placementPlan.js';
+import {
   readKeyFromEnvFile,
   PUBLISHABLE_KEY_PATTERN as KEY_PATTERN,
 } from '../verify/key-file.js';
@@ -66,6 +76,14 @@ export interface SetupOptions {
    * they use and provisions one placement key per integration.
    */
   chooseIntegrations?: typeof chooseIntegrations;
+  /**
+   * Seam for tests, following the same convention as `install` and `verify`.
+   * Defaults to the real implementation, which asks the backend to create the
+   * placement. Nothing in the shipped CLI can be told to skip it: a local
+   * configuration that names a placement the server does not have is a
+   * configuration that renders nothing.
+   */
+  createPlacement?: typeof createPlacementOnServer;
 }
 
 export interface SetupOutcome {
@@ -77,6 +95,24 @@ export interface SetupOutcome {
   integrations: IntegrationConfig[];
   /** True only when a working Ctrl+I binding is actually registered here. */
   shortcutReady: boolean;
+  /**
+   * What happened to each placement this run touched.
+   *
+   * `created` means the backend did not have it. `reused` means it did, and
+   * the local configuration now points at it. `verified` is a separate fact:
+   * the placement was read back from the backend after it was written, and it
+   * is there.
+   */
+  placements: PlacementOutcome[];
+}
+
+/** The fate of one placement during setup. */
+export interface PlacementOutcome {
+  integrationId: string;
+  placementKey: string;
+  action: 'created' | 'reused';
+  /** False when the backend has the placement but it is switched off. */
+  enabled: boolean;
 }
 
 export async function setup(options: SetupOptions = {}): Promise<SetupOutcome> {
@@ -184,11 +220,31 @@ export async function setup(options: SetupOptions = {}): Promise<SetupOutcome> {
    * is what determines how many ads exist on the account. Slots come later and
    * are free: three ads on one page share one key.
    */
-  const integrations = await provisionIntegrations({
+  const { integrations, placements } = await provisionIntegrations({
     projectRoot: project.root,
     verified,
+    rawKey,
     write,
     choose: options.chooseIntegrations ?? chooseIntegrations,
+    createPlacement: options.createPlacement ?? createPlacementOnServer,
+  });
+
+  /*
+   * The last thing setup does is check its own work.
+   *
+   * Everything above is a claim: the placement was created, the configuration
+   * points at it. A claim is only worth what a check is worth, so the
+   * placements are read back from the backend and compared against what the
+   * local configuration now references. A mismatch is reported as a failure,
+   * not a warning, because "setup complete" over a configuration that cannot
+   * serve an ad is the one outcome this command must never produce.
+   */
+  const verification = await verifyPlacements({
+    rawKey,
+    integrations,
+    placements,
+    verify,
+    write,
   });
 
   write(`${info('Configuring project...')}\n`);
@@ -211,22 +267,105 @@ export async function setup(options: SetupOptions = {}): Promise<SetupOutcome> {
 
   const shortcutReady = reportNextSteps(project, write);
 
-  return { project, key: rawKey, verified, result, integrations, shortcutReady };
+  return {
+    project,
+    key: rawKey,
+    verified,
+    result,
+    integrations,
+    shortcutReady,
+    placements: verification.outcomes,
+  };
 }
 
 /**
- * Print the closing instructions.
+ * Read the placements back and check them against the local configuration.
  *
- * The Ctrl+I lines are printed **only** when `clirevenue keybindings install`
- * has actually left a working binding in this project — decided from real
- * project state via `keybindingStatus`, never assumed. Telling users to press
- * a key that does nothing is the easiest way to ship a CLI that lies, so the
- * fallback below prints the real command instead and lists what to install to
- * get the shortcut.
+ * The check is deliberately narrow and mechanical: every placement key the
+ * project references must exist on the publisher's account. A placement that
+ * exists but is switched off is reported as a warning, because that is a
+ * state the user can fix in the dashboard and it is not a broken setup — but
+ * it is worth saying out loud, because an ad behind a disabled placement
+ * never appears and looks exactly like a bug.
  */
-/** Placement key derived from a target id: `<target>-1`, `<target>-2`, … */
-function placementKeyFor(targetId: string, index: number): string {
-  return `${targetId}-${index}`;
+async function verifyPlacements(options: {
+  rawKey: string;
+  integrations: IntegrationConfig[];
+  placements: PlacementOutcome[];
+  verify: (rawKey: string) => Promise<VerifiedKey>;
+  write: (message: string) => void;
+}): Promise<{ outcomes: PlacementOutcome[] }> {
+  const { rawKey, integrations, placements, verify, write } = options;
+
+  if (integrations.length === 0) return { outcomes: [] };
+
+  let live: VerifiedKey;
+  try {
+    live = await verify(rawKey);
+  } catch (err) {
+    throw new SetupError(
+      err instanceof Error ? err.message : 'The placements could not be read back.',
+      'Setup could not confirm that the placements exist. Nothing was changed — try again when you are online.',
+    );
+  }
+
+  const byKey = new Map(live.placements.map((placement) => [placement.key, placement]));
+  const outcomes: PlacementOutcome[] = [];
+  const missing: string[] = [];
+  const disabled: string[] = [];
+
+  for (const integration of integrations) {
+    const placement = byKey.get(integration.placementKey);
+    if (!placement) {
+      missing.push(integration.placementKey);
+      continue;
+    }
+    const enabled = placement.enabled !== false;
+    if (!enabled) disabled.push(integration.placementKey);
+    /* The action is what provisioning decided — created or reused — and the
+       check does not get to relabel it. Only the live state of the
+       placement is new information here. */
+    const known = placements.find((entry) => entry.placementKey === integration.placementKey);
+    outcomes.push({
+      integrationId: integration.id,
+      placementKey: integration.placementKey,
+      action: known?.action ?? 'reused',
+      enabled,
+    });
+  }
+
+  if (missing.length > 0) {
+    throw new SetupError(
+      `The backend does not have the placement${missing.length > 1 ? 's' : ''} ${missing
+        .map((key) => `"${key}"`)
+        .join(', ')}.`,
+      /* The project file *has* been written by this point — the
+         integration and its slot are in it — so "nothing was changed" would
+         be a lie. What is true is that the project now points at a
+         placement the account does not have, and the fix is the same
+         either way: put the placement on the account, then run setup
+         again. */
+      'Your project now points at a placement your account does not have. Create it in your dashboard, then run setup again.',
+    );
+  }
+
+  for (const key of disabled) {
+    write(
+      `${warn(
+        `Placement "${key}" is switched off on your account, so it will not serve an ad. Turn it on in your dashboard to see it.`,
+      )}\n`,
+    );
+  }
+
+  if (outcomes.length > 0) {
+    write(
+      `${success(
+        `Verified ${outcomes.length} placement${outcomes.length > 1 ? 's' : ''} on your account`,
+      )}\n`,
+    );
+  }
+
+  return { outcomes };
 }
 
 export interface ChooseIntegrationsOptions {
@@ -289,22 +428,37 @@ export async function chooseIntegrations(options: ChooseIntegrationsOptions): Pr
 export interface ProvisionIntegrationsOptions {
   projectRoot: string;
   verified: VerifiedKey;
+  rawKey: string;
   write: (message: string) => void;
   choose: typeof chooseIntegrations;
+  createPlacement: typeof createPlacementOnServer;
 }
 
 /**
- * Turn the user's choice into one placement key per integration.
+ * Turn the user's choice into one working integration per CLI.
  *
- * A key is derived from the *target id* (`codex-1`, `codex-2`) rather than
- * from a timestamp or the project name, so a retry after a partial failure
- * lands on the same key and the backend's uniqueness constraint turns the
- * retry into a no-op instead of a second placement.
+ * "Working" is the operative word. An integration is not a line in a config
+ * file; it is a local record *and* a backend placement the SDK can actually
+ * ask for. So this function does four things, in this order:
+ *
+ *   1. Asks which coding CLIs the project serves.
+ *   2. Plans the placement for each: reuse the project's own integration for
+ *      that CLI, else adopt a placement the publisher already has, else mint
+ *      a new key.
+ *   3. Makes sure the backend has every planned placement, creating the ones
+ *      it is missing.
+ *   4. Writes the local configuration, reusing the existing integration and
+ *      its slot when they are already there.
+ *
+ * The order matters because steps 3 and 4 are the difference between a setup
+ * that works and a setup that claims to work. A placement that was never
+ * created server-side produces a 204 on every delivery, and a 204 is
+ * indistinguishable from "no ad sold" to the person looking at their page.
  */
 export async function provisionIntegrations(
   options: ProvisionIntegrationsOptions,
-): Promise<IntegrationConfig[]> {
-  const { projectRoot, verified, write, choose } = options;
+): Promise<{ integrations: IntegrationConfig[]; placements: PlacementOutcome[] }> {
+  const { projectRoot, verified, rawKey, write, choose, createPlacement } = options;
   const existing = listIntegrations(projectRoot);
   const detected = detectTargets(projectRoot).map((target) => target.id);
 
@@ -312,41 +466,130 @@ export async function provisionIntegrations(
   const chosen = await choose({ projectRoot, detected, existing });
   if (chosen.length === 0) {
     write(`${info('Skipped. You can add integrations later with: clirevenue integrations add')}\n`);
-    return existing;
+    return { integrations: existing, placements: [] };
   }
 
-  const created: IntegrationConfig[] = [];
-  for (const targetId of chosen) {
-    const target = findTarget(targetId);
-    if (!target) continue;
+  const serverPlacements: ServerPlacement[] = verified.placements.map((placement) => ({
+    key: placement.key,
+    name: placement.name ?? null,
+    enabled: placement.enabled !== false,
+  }));
 
-    const sameTarget = existing.filter((entry) => entry.target === targetId);
-    const id = sameTarget.length === 0 ? targetId : `${targetId}-${sameTarget.length + 1}`;
-    const placementKey = placementKeyFor(targetId, sameTarget.length + 1);
+  const plans = planPlacements({
+    chosen: chosen.map((id) => {
+      const target = findTarget(id);
+      return { id, name: target?.name ?? id };
+    }),
+    existing,
+    serverPlacements,
+    claimedKeys: existing.map((entry) => entry.placementKey),
+  });
+
+  const placements = await ensurePlacements({
+    plans,
+    rawKey,
+    serverPlacements,
+    createPlacement,
+  });
+
+  const configured: IntegrationConfig[] = [];
+  for (const plan of plans) {
+    const sameTarget = existing.filter((entry) => entry.target === plan.targetId);
+    const id = plan.integrationId;
+    const placementKey = plan.placementKey;
 
     const result = addIntegration(projectRoot, {
       id,
-      target: targetId,
-      label: sameTarget.length === 0 ? target.name : `${target.name} ${sameTarget.length + 1}`,
+      target: plan.targetId,
+      label: sameTarget.length === 0 ? plan.targetName : `${plan.targetName} ${sameTarget.length + 1}`,
       placementKey,
     });
-    /* A slot is always created alongside its integration: an integration with
-       no slot renders nothing, which would look like the setup failed. */
-    const withSlot = addSlot(projectRoot, id, {
-      label: 'Ad 1',
-      layout: loadLayout(projectRoot, id),
-    });
-    created.push(withSlot.config.integrations[id]);
 
+    /* A slot is always created alongside its integration: an integration with
+       no slot renders nothing, which would look like the setup failed. But a
+       slot is only created once — re-running setup must not stack a second
+       "Ad 2" on top of the first one, because that is a second ad the user
+       never asked for. */
+    const current = result.config.integrations[id];
+    const hasSlot = current && Object.keys(current.slots).length > 0;
+    if (!hasSlot) {
+      addSlot(projectRoot, id, {
+        label: 'Ad 1',
+        layout: loadLayout(projectRoot, id),
+      });
+    }
+    configured.push(listIntegrations(projectRoot).find((entry) => entry.id === id)!);
+
+    const outcome = placements.find((entry) => entry.placementKey === placementKey);
     write(
-      result.created
-        ? `${success(`${target.name} added as "${id}" with placement key "${placementKey}"`)}\n`
-        : `${success(`${target.name} was already configured as "${id}"`)}\n`,
+      outcome?.action === 'created'
+        ? `${success(`${plan.targetName} added as "${id}" with placement "${placementKey}" (created on your account)`)}\n`
+        : `${success(`${plan.targetName} ${result.created ? 'added' : 'was already configured'} as "${id}" with placement "${placementKey}"`)}\n`,
     );
   }
 
-  configureBindings(projectRoot, created, write);
-  return created;
+  configureBindings(projectRoot, configured, write);
+  return { integrations: configured, placements };
+}
+
+/**
+ * Make sure the backend has every planned placement.
+ *
+ * A placement the backend already has is adopted without a write — the read
+ * that produced the list was the proof. A placement it is missing is created,
+ * and the create is idempotent server-side, so a request that times out and is
+ * retried lands on the same placement rather than a second one.
+ */
+async function ensurePlacements(options: {
+  plans: PlacementPlan[];
+  rawKey: string;
+  serverPlacements: ServerPlacement[];
+  createPlacement: typeof createPlacementOnServer;
+}): Promise<PlacementOutcome[]> {
+  const { plans, rawKey, serverPlacements, createPlacement } = options;
+  const known = new Map(serverPlacements.map((placement) => [placement.key, placement]));
+  const outcomes: PlacementOutcome[] = [];
+
+  for (const plan of plans) {
+    const existing = known.get(plan.placementKey);
+    if (existing) {
+      outcomes.push({
+        integrationId: plan.integrationId,
+        placementKey: plan.placementKey,
+        action: 'reused',
+        enabled: existing.enabled !== false,
+      });
+      continue;
+    }
+
+    let created: CreatedPlacement;
+    try {
+      created = await createPlacement(rawKey, {
+        placementKey: plan.placementKey,
+        name: plan.placementName,
+      });
+    } catch (err) {
+      /* A placement that could not be created is a failure, and it is
+         reported as one. Writing the key into the config anyway would produce
+         exactly the silent no-ad this whole path exists to prevent. */
+      throw new SetupError(
+        err instanceof PlacementCreateError
+          ? err.message
+          : 'The placement could not be created on your account.',
+        'Your project was not changed. Check your publisher key and your connection, then run setup again.',
+      );
+    }
+
+    outcomes.push({
+      integrationId: plan.integrationId,
+      placementKey: created.key,
+      action: created.created ? 'created' : 'reused',
+      enabled: created.enabled !== false,
+    });
+    known.set(created.key, { key: created.key, name: created.name, enabled: created.enabled });
+  }
+
+  return outcomes;
 }
 
 /**
@@ -380,6 +623,16 @@ function configureBindings(
   }
 }
 
+/**
+ * Print the closing instructions.
+ *
+ * The Ctrl+I lines are printed **only** when `clirevenue keybindings install`
+ * has actually left a working binding in this project — decided from real
+ * project state via `keybindingStatus`, never assumed. Telling users to press
+ * a key that does nothing is the easiest way to ship a CLI that lies, so the
+ * fallback below prints the real command instead and lists what to install to
+ * get the shortcut.
+ */
 function reportNextSteps(project: ProjectInfo, write: (message: string) => void): boolean {
   const statuses = keybindingStatus(project.root);
   const working = statuses.find(

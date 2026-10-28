@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { AdvEmpty, AdvError, AdvLoading, AdvPageHead, AdvStats } from '../advertiser/AdvertiserUI.jsx'
 import { Panel } from '../console/ui.jsx'
 import { formatCredits } from '../../lib/walletFormat.js'
+import { useAuth } from '../auth/authState.js'
 import {
   fetchWalletSnapshot,
   fetchWalletLedger,
@@ -9,6 +10,7 @@ import {
   createWalletTopup,
   fetchWalletNotifications,
   markWalletNotificationsRead,
+  requestWalletUnfreeze,
   MIN_TOPUP_AMOUNT,
 } from '../../lib/walletApi.js'
 
@@ -18,12 +20,15 @@ function parseAmount(value) {
 }
 
 export default function DeveloperWallet() {
+  const auth = useAuth()
   const [wallet, setWallet] = useState(null)
   const [ledger, setLedger] = useState({ transactions: [], count: 0 })
   const [topups, setTopups] = useState({ topups: [], count: 0 })
   const [notifications, setNotifications] = useState({ notifications: [], unreadCount: 0 })
   const [topupLoading, setTopupLoading] = useState(false)
   const [topupError, setTopupError] = useState('')
+  const [unfreezeSending, setUnfreezeSending] = useState(false)
+  const [unfreezeStatus, setUnfreezeStatus] = useState(null)
 
   const load = useCallback(async () => {
     try {
@@ -96,6 +101,46 @@ export default function DeveloperWallet() {
     markWalletNotificationsRead(ids).catch(() => {})
   }, [notifications.notifications])
 
+  /* The freeze id is never in the snapshot — only in the notification
+     that announced the freeze (freeze_account notifies with the id, and
+     the notification row carries related_freeze_id). Any freeze
+     notification therefore gives us the handle the unfreeze RPC wants. */
+  const freezeId = useMemo(
+    () => notifications.notifications.find((n) => n.related_freeze_id)?.related_freeze_id || null,
+    [notifications.notifications]
+  )
+
+  const handleUnfreeze = useCallback(
+    async (event) => {
+      event.preventDefault()
+      const formData = new FormData(event.currentTarget)
+      const body = String(formData.get('body') || '').trim()
+      if (body.length < 3) {
+        setUnfreezeStatus({ ok: false, message: 'Tell us what happened, in a few words.' })
+        return
+      }
+      if (!freezeId) {
+        setUnfreezeStatus({ ok: false, message: 'No freeze reference found on this wallet. Contact support instead.' })
+        return
+      }
+      setUnfreezeSending(true)
+      try {
+        await requestWalletUnfreeze({
+          freezeId,
+          subject: 'Request to unfreeze my wallet',
+          body,
+          userEmail: auth?.user?.email || undefined,
+        })
+        setUnfreezeStatus({ ok: true, message: 'Request filed. Support will review the freeze and reply.' })
+      } catch (err) {
+        setUnfreezeStatus({ ok: false, message: err.message || 'Could not file the request.' })
+      } finally {
+        setUnfreezeSending(false)
+      }
+    },
+    [auth, freezeId]
+  )
+
   const topupRows = useMemo(() => [...topups.topups].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)), [topups.topups])
   const txRows = useMemo(() => [...ledger.transactions].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)), [ledger.transactions])
 
@@ -142,8 +187,33 @@ export default function DeveloperWallet() {
             <Panel className="adv-note adv-note--warn">
               <p className="adv-note__body">
                 This wallet is frozen. No credit can move in or out until it is
-                released. Open a support request below to ask for unfreezing.
+                released. File an unfreeze request below — it lands in support's
+                inbox tied to this freeze.
               </p>
+              <form className="form adv-form" onSubmit={handleUnfreeze} noValidate>
+                <label className="field">
+                  <span className="field__label">What happened?</span>
+                  <textarea
+                    name="body"
+                    className="field__input"
+                    rows="2"
+                    placeholder="A few words on why the freeze should be lifted"
+                    required
+                  />
+                </label>
+                {unfreezeStatus ? (
+                  <p className={unfreezeStatus.ok ? 'adv-unfreeze-status' : 'adv-field-error'} role="status">
+                    {unfreezeStatus.message}
+                  </p>
+                ) : null}
+                <button
+                  type="submit"
+                  className="btn btn--primary"
+                  disabled={unfreezeSending || unfreezeStatus?.ok}
+                >
+                  {unfreezeSending ? 'Sending…' : unfreezeStatus?.ok ? 'Request filed' : 'Request unfreeze'}
+                </button>
+              </form>
             </Panel>
           ) : null}
 

@@ -439,6 +439,66 @@
     color: var(--ink);
   }
 
+  /* Liquid glass button — overrides the landing button with glass structure */
+  .lbtn--glass {
+    position: relative;
+    padding: 0 20px;
+    border: none;
+    border-radius: var(--ld-r6);
+    cursor: pointer;
+    overflow: hidden;
+    background: transparent;
+    outline: none;
+    color: var(--ink);
+    transition: transform 0.2s ease;
+    height: 46px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .lbtn--glass.sm, .lbtn--glass--sm {
+    height: 36px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+  .lbtn--glass:hover {
+    transform: scale(1.05);
+  }
+  .lbtn--glass:active {
+    transform: scale(0.95);
+  }
+  .lbtn--glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .lbtn--glass > * {
+    position: relative;
+    z-index: 2;
+    color: var(--ink);
+  }
+
+  .lbtn--glass--primary {
+    color: #000000;
+  }
+  .lbtn--glass--primary::before {
+    background: #ffffff;
+  }
+  .lbtn--glass--primary:hover {
+    color: #ffffff;
+    background: #000000;
+  }
+  .lbtn--glass--primary:hover::before {
+    background: #000000;
+  }
+
   /* magnetic primary -- the hero CTA leans toward the pointer.
      This rule REPLACES the .lbtn transition list (same specificity, later
      in the file), so it has to restate the colour properties too or the

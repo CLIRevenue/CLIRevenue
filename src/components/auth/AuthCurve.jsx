@@ -56,6 +56,7 @@ import {
   advance,
   DRAW_MS,
   buildTrail,
+  coverRepeats,
   curveFor,
   dashPair,
   leadInPercent,
@@ -64,6 +65,10 @@ import {
   wrapPercent,
 } from '../../lib/authCurve.js'
 import './AuthCurve.css'
+
+// Target 28 FPS = ~35.7ms per frame
+const TARGET_FPS = 28
+const FRAME_INTERVAL = 1000 / TARGET_FPS
 
 /**
  * The ribbon. `mode` selects the curve; everything else about the draw is
@@ -82,6 +87,10 @@ export default function AuthCurve({ mode = 'login' }) {
      telling the wrap leaves the two disagreeing, and a wrap that is out by
      a fraction of a unit is a jump you can see. */
   const repeatsRef = useRef(TRAIL_REPEATS)
+  /* The wrap distance as a percentage of the path, recomputed by the sizing
+     effect every time the trail is re-measured and read fresh by every frame,
+     so the two can never drift apart by hand. */
+  const wrapRef = useRef(0)
   const trail = useMemo(() => buildTrail(curve.label), [curve.label])
 
   /**
@@ -159,86 +168,114 @@ export default function AuthCurve({ mode = 'login' }) {
   /* The trail has to outlast the path, or the ribbon runs out of badges
      partway along and its last stretch is bare. A fixed repeat count cannot
      promise that: the path length, the glyph size and the viewport all move,
-     and on /login the sixteen repeats were ending around x=77 while the
-     ribbon stayed visible to x=96.
+     and a period measured against the wrong font ends short of the end.
 
      Measured, not guessed — the unit's length comes from the rendered text
      rather than from an assumed character width, and the count is rounded up
      to whole units so the scroll's wrap stays seamless. Only ever grows the
      string, and it writes to the DOM directly because re-rendering would
-     restart the draw. */
+     restart the draw.
+
+     The whole laid-out string is divided by the repeat count that is in the
+     DOM right now. `getSubStringLength` looks like the more honest measure
+     and is not: startOffset is positive, so the first characters sit BEFORE
+     the start of the path and have no position on it — asking for the length
+     of the first ten returns a degenerate number, the wrap collapses to
+     almost nothing, and the trail vibrates in place instead of scrolling. */
   useEffect(() => {
     const path = pathRef.current
     const trailNode = trailRef.current
     const trailPath = trailPathRef.current
     if (!path || !trailNode || !trailPath) return
 
-    const pathLength = path.getTotalLength()
-    if (!(pathLength > 0)) return
+    let alive = true
 
-    const unit = unitLength(trailNode.getComputedTextLength(), TRAIL_REPEATS)
-    if (!(unit > 0)) return
+    const resize = () => {
+      const pathLength = path.getTotalLength()
+      if (!(pathLength > 0)) return
 
-    const needed = Math.ceil((pathLength + unit) / unit)
-    if (needed <= TRAIL_REPEATS) return
+      const unit = unitLength(trailNode.getComputedTextLength(), repeatsRef.current)
+      if (!(unit > 0)) return
 
-    trailPath.textContent = buildTrail(curve.label, needed)
-    repeatsRef.current = needed
+      const needed = coverRepeats(pathLength, unit)
+      if (needed > repeatsRef.current) {
+        trailPath.textContent = buildTrail(curve.label, needed)
+        repeatsRef.current = needed
+      }
+      // Re-measured against the string that is on the path now: the wrap has
+      // to be the period of what is actually rendered, or every snap lands
+      // mid-unit and shows a seam.
+      wrapRef.current = wrapPercent(
+        pathLength,
+        trailNode.getComputedTextLength(),
+        repeatsRef.current,
+      )
+    }
+
+    resize()
+    // Fonts change the measurement. The trail renders in IBM Plex Mono, which
+    // is still loading while this effect first runs, and the fallback measures
+    // wider — so the first pass grows the string too short and, once the real
+    // font swaps in, it runs out before the path's end. That is the bare
+    // stretch that used to close the top of the ribbon and moved to the
+    // bottom when the path was reversed. Re-measure when the font lands.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        if (alive) resize()
+      })
+    }
+    return () => {
+      alive = false
+    }
   }, [mode, curve.label])
 
   useEffect(() => {
     if (reduced) return undefined
     const path = pathRef.current
-    const trailNode = trailRef.current
     const trailPath = trailPathRef.current
-    if (!path || !trailNode || !trailPath) return undefined
+    if (!path || !trailPath) return undefined
 
     const pathLength = path.getTotalLength()
     // Anchor the cycle where the ribbon actually reaches the page, not at the
-    // path's off-page origin. The wrap is by whole units, so a glyph at this
-    // distance is the same glyph every time round.
+    // path's off-page origin. Both paths are written top-to-bottom, so that is
+    // the top edge: the text arrives where the ribbon enters the frame. The
+    // wrap is by whole units, so a glyph at this distance is the same glyph
+    // every time round.
     const base = leadInPercent(path)
     const step = stepPercentPerSecond(pathLength)
-    // The repeat count has to come from what is on the path now. Measuring
-    // the unit against the original TRAIL_REPEATS while the string holds
-    // `needed` of them makes the wrap short by a factor of needed/16, and a
-    // wrap that does not land on a unit boundary is a visible jump.
-    /* The whole laid-out string, divided by the repeat count.
-
-       getSubStringLength looks like the more honest measure and is not:
-       startOffset is positive, so the first characters sit BEFORE the
-       start of the path and have no position on it. Asking for the length
-       of the first ten returns a degenerate number, the wrap collapses to
-       almost nothing, and the trail does not scroll at all — it vibrates
-       in place, advancing less than a period before snapping back. That
-       is a worse bug than the seam it was meant to remove, and it is why
-       this measures the string. */
-    const wrap = wrapPercent(
-      pathLength,
-      trailNode.getComputedTextLength(),
-      repeatsRef.current,
-    )
-    // A hidden or not-yet-laid-out element measures zero. Stop rather than
-    // divide by it — an unmeasured trail would run at an arbitrary speed.
-    if (!(step > 0) || !(wrap > 0)) return undefined
+    // `step` divides the path length: zero means the path could not be
+    // measured, so stop rather than run at an arbitrary speed. A wrap that is
+    // not measured yet does not stop the loop — advance() returns 0 while
+    // wrapRef is 0 and the trail holds at `base` until the sizing effect has
+    // measured it (including its re-measure when the font lands).
+    if (!(step > 0)) return undefined
 
     let offset = 0
     let previous = null
     let frame = 0
+    let lastUpdateTime = 0
 
     const tick = (now) => {
-      // The first frame is the baseline, not a step: a long frame between the
-      // rAF being scheduled and it running would otherwise jump the trail.
-      const delta = previous === null ? 0 : now - previous
-      previous = now
-      offset = advance(offset, delta, step, wrap)
-      trailPath.setAttribute('startOffset', `${(base + offset).toFixed(3)}%`)
-      frame = requestAnimationFrame(tick)
+      // Only do work on the cadence we actually want (TARGET_FPS).
+      // Scheduling rAF unconditionally runs the loop at 60fps and pays
+      // the callback overhead on every frame even when nothing changes.
+      if (!lastUpdateTime || now - lastUpdateTime >= FRAME_INTERVAL) {
+        lastUpdateTime = now
+        const delta = previous === null ? 0 : now - previous
+        previous = now
+        offset = advance(offset, delta, step, wrapRef.current)
+        trailPath.setAttribute('startOffset', `${(base + offset).toFixed(3)}%`)
+        frame = requestAnimationFrame(tick)
+      } else {
+        // Gap until the next due frame, without running rAF 60 times a second.
+        const delay = Math.max(0, FRAME_INTERVAL - (now - lastUpdateTime))
+        frame = setTimeout(tick, delay)
+      }
     }
 
     trailPath.setAttribute('startOffset', `${base.toFixed(3)}%`)
     frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
+    return () => cancelAnimationFrame(frame), clearTimeout(frame)
   }, [mode, reduced])
 
   return (

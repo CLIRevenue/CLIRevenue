@@ -3,8 +3,11 @@ import { AdvBarChart, AdvEmpty, AdvError, AdvLoading, AdvPageHead, AdvStats } fr
 import { Panel } from '../console/ui.jsx'
 import { supabase } from '../../lib/api.js'
 import { DEFAULT_INTERNAL_BACKEND } from '../../lib/backendBase.js'
+import { formatCredits } from '../../lib/walletFormat.js'
+import { fetchWalletSnapshot } from '../../lib/walletApi.js'
 import DeveloperAccount from './DeveloperAccount.jsx'
 import DeveloperWallet from './DeveloperWallet.jsx'
+import DeveloperReferrals from './DeveloperReferrals.jsx'
 import DeveloperSidebar from './DeveloperSidebar.jsx'
 import { useAuth } from '../auth/authState.js'
 import SupportDialog from '../advertiser/SupportDialog.jsx'
@@ -177,7 +180,7 @@ export default function DeveloperApp() {
     if (typeof window !== 'undefined') {
       try {
         const stored = window.sessionStorage.getItem(STORAGE_KEY)
-        if (stored && ['dashboard', 'earnings', 'sdk', 'keys', 'integrations', 'analytics', 'account', 'placements'].includes(stored)) {
+        if (stored && ['dashboard', 'earnings', 'sdk', 'keys', 'wallet', 'integrations', 'analytics', 'account', 'placements'].includes(stored)) {
           return stored
         }
       } catch (e) {
@@ -195,6 +198,11 @@ export default function DeveloperApp() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [supportOpen, setSupportOpen] = useState(false)
   const [supportSent, setSupportSent] = useState(0)
+  /* Credit-wallet balance for the rail fact. Separate from `balance`,
+     which is the reward ledger in cents — two different pots, two
+     different formats (₹ whole rupees vs $ cents). Null until the
+     snapshot lands; the rail prints an em-dash until then. */
+  const [walletCredits, setWalletCredits] = useState(null)
 
   // Persist tab state to sessionStorage whenever it changes
   useEffect(() => {
@@ -243,6 +251,22 @@ export default function DeveloperApp() {
       await load()
     })()
   }, [load])
+
+  // Wallet fact for the rail. Stale-guarded so StrictMode's double
+  // invocation cannot write a second time; a failed snapshot just
+  // leaves the em-dash rather than erroring the whole console.
+  useEffect(() => {
+    let stale = false
+    fetchWalletSnapshot()
+      .then((snap) => {
+        if (stale) return
+        setWalletCredits(Number(snap?.wallet?.balance_credits ?? snap?.balance_credits ?? 0))
+      })
+      .catch(() => {})
+    return () => {
+      stale = true
+    }
+  }, [])
 
   const available = Number(balance?.availableCents ?? 0)
   const pending = Number(balance?.pendingCents ?? 0)
@@ -293,6 +317,7 @@ export default function DeveloperApp() {
     { id: 'integrations', label: 'Integrations', icon: 'integrations' },
     { id: 'analytics', label: 'Analytics', icon: 'analytics' },
     { id: 'wallet', label: 'Wallet', icon: 'wallet' },
+    { id: 'referrals', label: 'Referrals', icon: 'referrals' },
     { id: 'account', label: 'Account', icon: 'account' },
   ]
   /* Account is in TABS because the panel and the deep link both read it,
@@ -314,7 +339,8 @@ export default function DeveloperApp() {
         onOpenSupport={() => setSupportOpen(true)}
         workspace={{
           name: auth?.profile?.display_name || auth?.user?.email || '—',
-          balance: balance ? formatCents(balance) : '—',
+          balance: balance ? formatCents(balance.availableCents) : '—',
+          wallet: walletCredits === null ? '—' : formatCredits(walletCredits),
           entries: rewards.length,
         }}
         logoutSlot={<LogoutButton />}
@@ -373,6 +399,8 @@ export default function DeveloperApp() {
             <PublisherPlacements />
           ) : tab === 'wallet' ? (
             <DeveloperWallet />
+          ) : tab === 'referrals' ? (
+            <DeveloperReferrals />
           ) : loading ? (
             <AdvLoading label="Loading developer rewards…" />
           ) : (

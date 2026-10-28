@@ -362,3 +362,555 @@ button.btn--ghost:hover .sitehead__icon {
 .confirm__actions > .btn:not(.btn--primary) {
   justify-self: start;
 }
+
+/* Welcome Overlay — liquid glass card (structure in liquid-glass.css) */
+.welcome-overlay__burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  width: 200%;
+  height: 200%;
+}
+
+.welcome-overlay__star {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  color: var(--signal);
+  animation: welcome-star-burst 800ms ease-out forwards;
+  transform-origin: center;
+}
+
+.welcome-overlay__star::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 100px;
+  background: linear-gradient(180deg, var(--signal) 0%, transparent 100%);
+  transform: translate(-50%, -50%);
+  animation: welcome-star-trail 800ms ease-out forwards;
+}
+
+@keyframes welcome-star-burst {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+@keyframes welcome-star-trail {
+  0% { transform: translate(-50%, -50%) scaleY(0); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scaleY(1); opacity: 0; }
+}
+
+.welcome-overlay__sparkles {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.welcome-overlay__sparkle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  color: var(--signal);
+  opacity: 0;
+  animation: welcome-sparkle 3s ease-in-out infinite;
+}
+
+.welcome-overlay__sparkle:nth-child(odd) { color: var(--accent); }
+.welcome-overlay__sparkle:nth-child(3n) { color: var(--warm); }
+
+@keyframes welcome-sparkle {
+  0% { transform: translate(var(--tx, 0), var(--ty, 0)) scale(0) rotate(0deg); opacity: 0; }
+  20% { opacity: 1; }
+  50% { transform: translate(var(--tx2, 0), var(--ty2, 0)) scale(1) rotate(180deg); opacity: 0.8; }
+  100% { transform: translate(var(--tx3, 0), var(--ty3, 0)) scale(0) rotate(360deg); opacity: 0; }
+}
+
+.welcome-overlay__sparkle:nth-child(1) { --tx: -120px; --ty: -80px; --tx2: -140px; --ty2: -100px; --tx3: -160px; --ty3: -120px; }
+.welcome-overlay__sparkle:nth-child(2) { --tx: 140px; --ty: -60px; --tx2: 160px; --ty2: -80px; --tx3: 180px; --ty3: -100px; }
+.welcome-overlay__sparkle:nth-child(3) { --tx: -100px; --ty: 100px; --tx2: -120px; --ty2: 120px; --tx3: -140px; --ty3: 140px; }
+.welcome-overlay__sparkle:nth-child(4) { --tx: 120px; --ty: 80px; --tx2: 140px; --ty2: 100px; --tx3: 160px; --ty3: 120px; }
+.welcome-overlay__sparkle:nth-child(5) { --tx: -60px; --ty: -120px; --tx2: -80px; --ty2: -140px; --tx3: -100px; --ty3: -160px; }
+.welcome-overlay__sparkle:nth-child(6) { --tx: 80px; --ty: 120px; --tx2: 100px; --ty2: 140px; --tx3: 120px; --ty3: 160px; }
+.welcome-overlay__sparkle:nth-child(7) { --tx: -140px; --ty: 20px; --tx2: -160px; --ty2: 40px; --tx3: -180px; --ty3: 60px; }
+.welcome-overlay__sparkle:nth-child(8) { --tx: 160px; --ty: -20px; --tx2: 180px; --ty2: 0px; --tx3: 200px; --ty3: -20px; }
+.welcome-overlay__sparkle:nth-child(9) { --tx: -40px; --ty: -140px; --tx2: -60px; --ty2: -160px; --tx3: -80px; --ty3: -180px; }
+.welcome-overlay__sparkle:nth-child(10) { --tx: 100px; --ty: 140px; --tx2: 120px; --ty2: 160px; --tx3: 140px; --ty3: 180px; }
+.welcome-overlay__sparkle:nth-child(11) { --tx: -80px; --ty: 140px; --tx2: -100px; --ty2: 160px; --tx3: -120px; --ty3: 180px; }
+.welcome-overlay__sparkle:nth-child(12) { --tx: 60px; --ty: -100px; --tx2: 80px; --ty2: -120px; --tx3: 100px; --ty3: -140px; }
+
+.welcome-overlay__content {
+  text-align: center;
+  position: relative;
+  z-index: 4;
+}
+
+.welcome-overlay__title {
+  margin: 0 0 var(--c-space-3);
+  font-size: var(--display-s);
+  font-weight: 800;
+  line-height: 1.1;
+  background: linear-gradient(135deg, var(--ink) 0%, var(--signal) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.welcome-overlay__subtitle {
+  margin: 0 0 var(--c-space-2);
+  font-size: var(--body);
+  color: var(--text-muted);
+}
+
+.welcome-overlay__credit {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--c-space-1);
+  margin: var(--c-space-3) 0 var(--c-space-4);
+  padding: var(--c-space-3) var(--c-space-5);
+  background: linear-gradient(135deg, var(--warm) 0%, var(--signal) 100%);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(255, 140, 0, 0.3);
+}
+
+.welcome-overlay__amount {
+  font-size: var(--display-m);
+  font-weight: 900;
+  line-height: 1;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.welcome-overlay__unit {
+  font-size: var(--caption);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--track-caps);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.welcome-overlay__tagline {
+  margin: var(--c-space-4) 0;
+  font-size: var(--body);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.welcome-overlay__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--c-space-3);
+  margin: var(--c-space-6) 0 var(--c-space-4);
+}
+
+.welcome-overlay__dismiss {
+  padding: var(--c-space-3) var(--c-space-5);
+  font-size: var(--body);
+  color: var(--text-dim);
+}
+
+.welcome-overlay__dismiss:hover {
+  color: var(--text);
+}
+
+.welcome-overlay__note {
+  margin: 0;
+  font-size: var(--caption);
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ── Liquid Glass — all buttons and boxes in the advertiser panel ──
+   Uses ::before/::after pseudo-elements so no component HTML changes
+   are needed — the glass layers are injected via CSS. */
+.adv-console .btn,
+.adv-console .lbtn,
+.adv-console button.btn {
+  position: relative;
+  z-index: 0;
+  padding: 0.6rem 1.25rem;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  overflow: hidden;
+  background: transparent;
+  outline: none;
+  transition: transform 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.adv-console .btn::before,
+.adv-console .lbtn::before,
+.adv-console button.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.adv-console .btn > *,
+.adv-console .lbtn > *,
+.adv-console button.btn > * {
+  position: relative;
+  z-index: 2;
+}
+
+.adv-console .btn:hover,
+.adv-console .lbtn:hover {
+  transform: scale(1.05);
+}
+
+.adv-console .btn:active,
+.adv-console .lbtn:active {
+  transform: scale(0.95);
+}
+
+/* Glass panels — replace .adv-panel and .panel backgrounds */
+.adv-console .adv-panel,
+.adv-console .panel {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--ld-r9);
+  overflow: hidden;
+}
+
+.adv-console .adv-panel::before,
+.adv-console .panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.adv-console .adv-panel > *,
+.adv-console .panel > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Glass sidebar nav buttons */
+.adv-console .adv-nav__btn {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.adv-console .adv-nav__btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.adv-console .adv-nav__btn > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Glass settings panel */
+.adv-console .adv-settings {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--ld-r10);
+  overflow: hidden;
+}
+
+.adv-console .adv-settings::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.adv-console .adv-settings > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Glass dangertz modal */
+.adv-console .dangertz-modal {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--ld-r10);
+  overflow: hidden;
+}
+
+.adv-console .dangertz-modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.adv-console .dangertz-modal > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Glass confirm email box */
+.adv-console .confirm__email {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.adv-console .confirm__email::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.adv-console .confirm__email > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Glass stat cards */
+.adv-console .stat-card {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.adv-console .stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.adv-console .stat-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Glass form containers */
+.adv-console .form {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.adv-console .form::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.adv-console .form > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Glass table wraps */
+.adv-console .tablewrap {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.adv-console .tablewrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.adv-console .tablewrap > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Glass ad preview */
+.adv-console .adpreview {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.adv-console .adpreview::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.adv-console .adpreview > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Glass notices */
+.adv-console .adv-notice {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.adv-console .adv-notice::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.adv-console .adv-notice > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Glass empty states */
+.adv-console .adv-empty {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.adv-console .adv-empty::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.adv-console .adv-empty > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Remove cursor/focus halo from advertiser console */
+.adv-console :focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.adv-console .btn--ghost:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ── Advertiser Sidebar — liquid glass effects (override sidebar.css) ── */
+
+/* Theme toggle & settings icon buttons */
+.adv-console .adv-side__icon-btn {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+}
+.adv-console .adv-side__icon-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.adv-console .adv-side__icon-btn > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Sidebar navigation buttons */
+.adv-console .adv-side .adv-nav__btn {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+}
+.adv-console .adv-side .adv-nav__btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.adv-console .adv-side .adv-nav__btn > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Support row */
+.adv-console .adv-side__row {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+}
+.adv-console .adv-side__row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.adv-console .adv-side__row > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Logout button (hosted in .adv-side__row--host) */
+.adv-console .adv-side__row--host > .adv-nav__btn {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+}
+.adv-console .adv-side__row--host > .adv-nav__btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.adv-console .adv-side__row--host > .adv-nav__btn > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Active state for sidebar nav buttons — glass accent */
+.adv-console .adv-side .adv-nav__btn[data-active="true"]::before {
+  background: color-mix(in srgb, var(--signal) 15%, transparent);
+}

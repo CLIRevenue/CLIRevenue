@@ -986,17 +986,16 @@
      wordmark rather than as run-together text. Declared here as
      well as on .landing because the landing is not a
      .clr-surface, and both wordmarks live in the same document. */
-  .brand-cli,
+  .brand-cli{color:#ffffff}
   .clr-surface .brand-cli,
-  .landing .brand-cli,
   .sitefoot__name,
-  .clr-surface .sitefoot__name{color:var(--clr-word-a,#fff)}
+  .clr-surface .sitefoot__name{color:#ffffff !important}
   .brand-revenue,
   .clr-surface .brand-revenue,
   .landing .brand-revenue,
   .sitefoot__name em,
   .clr-surface .sitefoot__name em,
-  .landing .foot-brand .brand-revenue{color:var(--clr-word-b,#ff1f2d);font-style:normal}
+  .landing .foot-brand .brand-revenue{color:#ff1f2d !important;font-style:normal}
   .foot-brand{margin:0 0 22px;font-size:17px;font-weight:600;letter-spacing:-.02em}
   .sitefoot__name em{font-style:normal}
 
@@ -1032,7 +1031,7 @@
    :not() guards) = (0,6,0) against App.css's (0,3,0). The
    :not(:focus-visible) guard is load-bearing: line 279's focus ring must
    survive, so this rule must not fire while the button is focused. */
-:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn, .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn, .sdk-btn, .adv-nav__btn, .adm-topbar__logout, .clrhead-cta a, .adv-password__btn, .placement-slot__cta, .switcher__btn, .magnetic):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):hover:not(:disabled):not(:focus-visible) {
+:is(.clr-surface, .adm-root, .landing) :is(button, .cmd-copy, .qs-step, .btn, .btn--primary, .btn--ghost, .lbtn, .lbtn--primary, .lbtn--ghost, .is-ghost, .adv-btn, .sdk-btn, .adv-nav__btn, .adm-topbar__logout, .clrhead-cta a, .adv-password__btn, .placement-slot__cta, .switcher__btn, .magnetic, .glass-button):not(.adv-console *, .adm-root *, .adv-settings__foot *, .adv-link, .form__note, .sdk-inline, .nav-link-plain, .note-btn, .heart):hover:not(:disabled):not(:focus-visible) {
   transform: none;
   box-shadow: none;
 }
@@ -1157,4 +1156,29 @@
    its white: the same value, read against the right ground. */
 .clr-surface.adv-console:not([data-theme="dark"]) .eyebrow {
   color: var(--ld-ink-2);
+}
+
+/* ── Auth submit buttons (login / signup) ──────────────────────────────
+   The auth pages used `btn--primary` + `glass-button` + `glass-button--primary`
+   together: three conflicting fill/colour rules that produced an opaque,
+   unpredictable button. Replaced with a single clean class — white fill
+   with black text at rest, black fill with white text on hover and click,
+   no RGB ring and no glass effect. */
+.btn--auth-primary {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-color: #000000 !important;
+}
+.btn--auth-primary:hover,
+.btn--auth-primary:active,
+.btn--auth-primary:focus-visible {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+}
+.btn--auth-primary:disabled {
+  background: rgba(255, 255, 255, 0.5) !important;
+  color: rgba(0, 0, 0, 0.4) !important;
+  border-color: rgba(0, 0, 0, 0.4) !important;
+  cursor: not-allowed;
 }
